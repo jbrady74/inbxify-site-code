@@ -1,0 +1,484 @@
+/* ================================================
+   INBXIFY — Site-Wide Head Code
+   Repo: jbrady74/inbxify-site-code
+   File: head.js
+   Version: 1.0 — March 2026
+   
+   CONTENTS:
+   1. Sign In Modal Restyle
+   2. Sign In Backdrop
+   3. Subscribe Popup CSS
+   4. Contact Modal CSS
+   5. Character Counter CSS
+   ================================================ */
+
+
+/* ── 1. SIGN IN MODAL RESTYLE ───────────────────── */
+
+.sign-in::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(91, 127, 255, 0.25);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.modal {
+  background: #ffffff !important;
+  border-top: 3px solid #5b7fff !important;
+  border-radius: 0 0 8px 8px !important;
+  box-shadow: 0 16px 48px rgba(26,58,58,0.14), 0 4px 12px rgba(26,58,58,0.08) !important;
+  padding: 28px 28px 24px !important;
+  font-family: 'Lato', sans-serif !important;
+}
+
+.modal h4,
+.modal .w-form-label,
+.sign-in .modal > h4 {
+  font-family: 'Playfair Display', serif !important;
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  color: #5b7fff !important;
+  margin-bottom: 20px !important;
+}
+
+.modal::before {
+  content: "Publisher Portal";
+  display: block;
+  font-family: 'Lato', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #C4A35A;
+  margin-bottom: 5px;
+}
+
+.sign-in .w-form,
+.sign-in form {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+.sign-in .w-form > div,
+.sign-in form > div {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  margin-bottom: 14px !important;
+}
+
+.signin-label {
+  font-family: 'Lato', sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  color: #7a7a6a !important;
+  margin-bottom: 5px !important;
+  width: 100% !important;
+}
+
+.signin-input {
+  font-family: 'Lato', sans-serif !important;
+  font-size: 14px !important;
+  color: #1a3a3a !important;
+  background: #f0edd8 !important;
+  border: 1.5px solid #ddd8c4 !important;
+  border-radius: 4px !important;
+  padding: 10px 13px !important;
+  width: 100% !important;
+  transition: border-color 0.18s, background 0.18s !important;
+  box-shadow: none !important;
+}
+
+.signin-input::placeholder { color: #b0ac98 !important; }
+
+.signin-input:focus {
+  border-color: #5b7fff !important;
+  background: #ffffff !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.eye-wrap {
+  color: #7a7a6a !important;
+  opacity: 0.7 !important;
+  transition: opacity 0.15s !important;
+}
+
+.eye-wrap:hover { opacity: 1 !important; }
+
+.sign-in-btn-go {
+  background: #5b7fff !important;
+  color: #ffffff !important;
+  font-family: 'Lato', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 11px !important;
+  width: 100% !important;
+  cursor: pointer !important;
+  transition: background 0.2s !important;
+  box-shadow: none !important;
+  margin-top: 4px !important;
+}
+
+.sign-in-btn-go:hover { background: #4a6ee6 !important; }
+
+.modal a[href*="forgot"],
+.modal .w-commerce-commercecheckoutforgotpassword,
+.sign-in a {
+  font-size: 12px !important;
+  color: #7a7a6a !important;
+  text-decoration: none !important;
+}
+
+.sign-in a:hover {
+  color: #1a3a3a !important;
+  text-decoration: underline !important;
+}
+
+.modal .login-link,
+.sign-in .login-link {
+  font-size: 12px !important;
+  color: #5B7FFF !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+}
+
+.sign-in .login-link:hover { text-decoration: underline !important; }
+
+
+/* ── 2. SIGN IN BACKDROP ────────────────────────── */
+
+#inbx-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(91, 127, 255, 0.25);
+  z-index: 997;
+  pointer-events: none;
+}
+
+#inbx-backdrop.visible { display: block; }
+
+
+/* ── 3. SUBSCRIBE POPUP ─────────────────────────── */
+
+.subscribe-popup-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 99998;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.subscribe-popup-overlay.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+}
+.subscribe-popup {
+  display: none;
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  width: 90%;
+  max-width: 440px;
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  z-index: 99999;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+}
+.subscribe-popup.active {
+  display: block;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.subscribe-popup__close {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,0.9);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #374151;
+  z-index: 2;
+  transition: background 0.2s;
+}
+.subscribe-popup__close:hover { background: #f3f4f6; }
+.subscribe-popup__header {
+  background: linear-gradient(135deg, #1a3a3a 0%, #2d5a5a 100%);
+  padding: 28px 24px 20px;
+  text-align: center;
+}
+.subscribe-popup__title {
+  margin: 0 0 6px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.subscribe-popup__subtitle {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  color: #a8c4c4;
+}
+.subscribe-popup__benefits {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px 24px;
+  background: #f0faf5;
+  border-bottom: 1px solid #e5e7eb;
+}
+.subscribe-popup__benefit {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  color: #1a3a3a;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.subscribe-popup__benefit svg { width: 14px; height: 14px; color: #10b981; flex-shrink: 0; }
+.subscribe-popup__body { padding: 20px 24px 24px; }
+.subscribe-popup__form { display: flex; flex-direction: column; gap: 10px; }
+.subscribe-popup__form.hidden { display: none; }
+.subscribe-popup__input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  color: #1f2937;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.subscribe-popup__input:focus {
+  border-color: #1a3a3a;
+  box-shadow: 0 0 0 3px rgba(26,58,58,0.1);
+}
+.subscribe-popup__input.input-error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+}
+.subscribe-popup__error-msg {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  color: #ef4444;
+  margin: -4px 0 0 2px;
+  display: none;
+}
+.subscribe-popup__error-msg.show { display: block; }
+.subscribe-popup__submit {
+  width: 100%;
+  padding: 14px;
+  background: #f4a127;
+  color: #1a3a3a;
+  border: none;
+  border-radius: 8px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+.subscribe-popup__submit:hover { background: #e6941f; }
+.subscribe-popup__submit:disabled { background: #d1d5db; cursor: not-allowed; }
+.subscribe-popup__note {
+  text-align: center;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  color: #9ca3af;
+  margin: 12px 0 0;
+}
+.subscribe-popup__success-wrapper {
+  display: none;
+  padding: 48px 32px 40px;
+  text-align: center;
+}
+.subscribe-popup__success-wrapper.show { display: block; }
+.subscribe-popup__success-emoji { font-size: 56px; margin-bottom: 16px; line-height: 1; }
+.subscribe-popup__success-heading {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a3a3a;
+  margin: 0 0 14px;
+}
+.subscribe-popup__success-body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+.subscribe-popup__success-body strong { color: #1a3a3a; }
+.subscribe-popup__success-spam {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+@media (max-width: 790px) {
+  .subscribe-popup { width: 94%; border-radius: 12px; }
+  .subscribe-popup__header { padding: 24px 20px 16px; }
+  .subscribe-popup__title { font-size: 20px; }
+  .subscribe-popup__benefits { flex-wrap: wrap; gap: 8px 14px; padding: 12px 16px; }
+  .subscribe-popup__body { padding: 16px 20px 20px; }
+  .subscribe-popup__success-wrapper { padding: 36px 24px 32px; }
+  .subscribe-popup__success-heading { font-size: 22px; }
+  .subscribe-popup__success-body { font-size: 15px; }
+}
+
+
+/* ── 4. CONTACT MODAL ───────────────────────────── */
+
+.contact-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 9996;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.contact-modal-overlay.active { opacity: 1; visibility: visible; }
+.contact-modal {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  z-index: 9997;
+  width: 92%;
+  max-width: 500px;
+  max-height: 90vh;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+.contact-modal.active { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
+.contact-modal__header {
+  background: linear-gradient(135deg, #0d9488 0%, #115e59 100%);
+  padding: 28px 24px 20px;
+  text-align: center;
+  position: relative;
+  flex-shrink: 0;
+}
+.contact-modal__close {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+.contact-modal__close:hover { background: rgba(255,255,255,0.3); }
+.contact-modal__close svg { width: 16px; height: 16px; stroke: white; stroke-width: 2.5; }
+.contact-modal__title { color: white; font-size: 22px; font-weight: 700; margin: 0 0 4px 0; letter-spacing: 0.5px; }
+.contact-modal__subtitle { color: rgba(255,255,255,0.8); font-size: 14px; margin: 0; font-weight: 400; }
+.contact-modal__body { padding: 20px 24px 24px; overflow-y: auto; flex: 1; }
+.contact-modal__publisher {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px; background: #f0fdfa;
+  border-radius: 10px; margin-bottom: 18px;
+}
+.contact-modal__publisher-photo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #0d9488; flex-shrink: 0; }
+.contact-modal__publisher-info { display: flex; flex-direction: column; gap: 1px; }
+.contact-modal__publisher-name { font-size: 15px; font-weight: 700; color: #1e293b; margin: 0; }
+.contact-modal__publisher-phone { font-size: 13px; color: #475569; margin: 0; }
+.contact-modal__publisher-email { font-size: 13px; color: #0d9488; text-decoration: none; margin: 0; }
+.contact-modal__publisher-email:hover { text-decoration: underline; }
+.contact-modal__field { margin-bottom: 12px; }
+.contact-modal__label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+.contact-modal__input,
+.contact-modal__textarea {
+  width: 100%; padding: 10px 14px;
+  border: 1.5px solid #d1d5db; border-radius: 8px;
+  font-size: 14px; font-family: inherit; color: #1e293b; background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+.contact-modal__input:focus,
+.contact-modal__textarea:focus {
+  outline: none; border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.1);
+}
+.contact-modal__input::placeholder,
+.contact-modal__textarea::placeholder { color: #9ca3af; }
+.contact-modal__textarea { min-height: 70px; resize: vertical; }
+.contact-modal__purpose-group { display: flex; flex-direction: column; gap: 6px; }
+.contact-modal__radio-label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #374151; cursor: pointer; padding: 4px 0; }
+.contact-modal__radio-label input[type="radio"] { accent-color: #0d9488; margin: 0; width: 16px; height: 16px; cursor: pointer; }
+.contact-modal__hp { position: absolute; left: -9999px; width: 0; height: 0; opacity: 0; overflow: hidden; }
+.contact-modal__submit {
+  width: 100%; padding: 13px 24px;
+  background: linear-gradient(135deg, #0d9488, #0f766e);
+  color: white; border: none; border-radius: 10px;
+  font-size: 16px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+  margin-top: 6px; letter-spacing: 0.3px;
+}
+.contact-modal__submit:hover { opacity: 0.92; }
+.contact-modal__submit:active { transform: scale(0.98); }
+.contact-modal__submit:disabled { opacity: 0.6; cursor: not-allowed; }
+.contact-modal__success { display: none; text-align: center; padding: 30px 20px; }
+.contact-modal__success.active { display: block; }
+.contact-modal__success-icon {
+  width: 56px; height: 56px; background: #d1fae5; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;
+}
+.contact-modal__success-icon svg { width: 28px; height: 28px; stroke: #059669; stroke-width: 2.5; fill: none; }
+.contact-modal__success h3 { font-size: 20px; color: #1e293b; margin: 0 0 6px 0; text-align: center; }
+.contact-modal__success p { font-size: 14px; color: #64748b; margin: 0; line-height: 1.5; }
+.contact-modal__error {
+  display: none; background: #fef2f2; color: #991b1b;
+  padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 12px;
+}
+.contact-modal__error.active { display: block; }
+
+
+/* ── 5. CHARACTER COUNTER ───────────────────────── */
+
+.ib-char-counter { font-size: 12px; color: #666; margin-top: 4px; }
+.ib-char-counter.ib-warn { color: #b7791f; }
+.ib-char-counter.ib-danger { color: #c53030; font-weight: 600; }
