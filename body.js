@@ -2,7 +2,7 @@
    INBXIFY — Site-Wide Body Code
    Repo: jbrady74/inbxify-site-code
    File: body.js
-   Version: 1.0 — March 2026
+   Version: 1.1 — March 2026
 
    CONTENTS:
    1.  Mobile Nav (slide menu)
@@ -23,6 +23,27 @@
    16. GA4 Element Visibility Tracking
    17. Sign In Backdrop
    ================================================ */
+
+
+/* ── 0. LIBRARY LOADERS ─────────────────────────── */
+(function() {
+  function loadScript(src, onload) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.async = false;
+    if (onload) s.onload = onload;
+    document.head.appendChild(s);
+  }
+
+  // Uploadcare
+  window.UPLOADCARE_PUBLIC_KEY = '4534a0ba747a413f13c8';
+  loadScript('https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js');
+
+  // Cleave.js + US phone addon
+  loadScript('https://cdn.jsdelivr.net/npm/cleave.js@1.6.0', function() {
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/cleave.js/1.6.0/addons/cleave-phone.us.js');
+  });
+})();
 
 
 /* ── 1. MOBILE NAV ──────────────────────────────── */
@@ -257,8 +278,7 @@ window.JETBOOST_SITE_ID = "clkv6ks4h012u0juqgxzeb7n6";
 
 
 /* ── 12. UPLOADCARE ─────────────────────────────── */
-// Public key set inline; widget loaded via external script tag in Webflow
-// UPLOADCARE_PUBLIC_KEY = '4534a0ba747a413f13c8'
+// Loaded via Section 0 library loader above
 
 
 /* ── 13. CLEAVE.JS FORM FORMATTING ─────────────── */
