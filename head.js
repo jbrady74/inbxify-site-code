@@ -2,7 +2,7 @@
    INBXIFY — Site-Wide Head Code
    Repo: jbrady74/inbxify-site-code
    File: head.js
-   Version: 1.0 — March 2026
+   Version: 1.1 — March 2026
    
    CONTENTS:
    1. Sign In Modal Restyle
@@ -14,15 +14,6 @@
 
 
 /* ── 1. SIGN IN MODAL RESTYLE ───────────────────── */
-
-.sign-in::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: rgba(91, 127, 255, 0.25);
-  z-index: -1;
-  pointer-events: none;
-}
 
 .modal {
   background: #ffffff !important;
