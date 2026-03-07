@@ -2,7 +2,7 @@
    INBXIFY — Site-Wide Head Code
    Repo: jbrady74/inbxify-site-code
    File: head.js
-   Version: 1.1 — March 2026
+   Version: 1.2 — March 2026
    
    CONTENTS:
    1. Sign In Modal Restyle
@@ -15,26 +15,34 @@
 
 /* ── 1. SIGN IN MODAL RESTYLE ───────────────────── */
 
+/* modal = full-viewport transparent backdrop */
 .modal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(91, 127, 255, 0.25) !important;
+  z-index: 998 !important;
+}
+
+/* modal-div = white sign-in panel */
+.modal-div {
   background: #ffffff !important;
   border-top: 3px solid #5b7fff !important;
   border-radius: 0 0 8px 8px !important;
   box-shadow: 0 16px 48px rgba(26,58,58,0.14), 0 4px 12px rgba(26,58,58,0.08) !important;
   padding: 28px 28px 24px !important;
   font-family: 'Lato', sans-serif !important;
+  position: absolute !important;
+  top: 64px !important;
+  right: 24px !important;
+  width: 360px !important;
+  z-index: 999 !important;
 }
 
-.modal h4,
-.modal .w-form-label,
-.sign-in .modal > h4 {
-  font-family: 'Playfair Display', serif !important;
-  font-size: 22px !important;
-  font-weight: 600 !important;
-  color: #5b7fff !important;
-  margin-bottom: 20px !important;
-}
-
-.modal::before {
+/* Eyebrow */
+.modal-div::before {
   content: "Publisher Portal";
   display: block;
   font-family: 'Lato', sans-serif;
@@ -46,6 +54,16 @@
   margin-bottom: 5px;
 }
 
+/* Heading */
+.modal-div h4 {
+  font-family: 'Playfair Display', serif !important;
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  color: #5b7fff !important;
+  margin-bottom: 20px !important;
+}
+
+/* Vertical form layout */
 .sign-in .w-form,
 .sign-in form {
   display: flex !important;
@@ -61,6 +79,7 @@
   margin-bottom: 14px !important;
 }
 
+/* Field labels */
 .signin-label {
   font-family: 'Lato', sans-serif !important;
   font-size: 10px !important;
@@ -72,6 +91,7 @@
   width: 100% !important;
 }
 
+/* Inputs */
 .signin-input {
   font-family: 'Lato', sans-serif !important;
   font-size: 14px !important;
@@ -94,14 +114,11 @@
   box-shadow: none !important;
 }
 
-.eye-wrap {
-  color: #7a7a6a !important;
-  opacity: 0.7 !important;
-  transition: opacity 0.15s !important;
-}
-
+/* Password toggle */
+.eye-wrap { color: #7a7a6a !important; opacity: 0.7 !important; transition: opacity 0.15s !important; }
 .eye-wrap:hover { opacity: 1 !important; }
 
+/* Submit button */
 .sign-in-btn-go {
   background: #5b7fff !important;
   color: #ffffff !important;
@@ -122,20 +139,16 @@
 
 .sign-in-btn-go:hover { background: #4a6ee6 !important; }
 
-.modal a[href*="forgot"],
-.modal .w-commerce-commercecheckoutforgotpassword,
+/* Links */
+.modal-div a[href*="forgot"],
 .sign-in a {
   font-size: 12px !important;
   color: #7a7a6a !important;
   text-decoration: none !important;
 }
 
-.sign-in a:hover {
-  color: #1a3a3a !important;
-  text-decoration: underline !important;
-}
+.sign-in a:hover { color: #1a3a3a !important; text-decoration: underline !important; }
 
-.modal .login-link,
 .sign-in .login-link {
   font-size: 12px !important;
   color: #5B7FFF !important;
