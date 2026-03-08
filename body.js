@@ -2,7 +2,23 @@
    INBXIFY — Site-Wide Body Code
    Repo: jbrady74/inbxify-site-code
    File: body.js
-   Version: 1.1 — March 2026
+   Version: 1.2 — March 2026
+
+   CHANGES FROM 1.1:
+   - [FIX #1] Section 5: head.js .ib-warn renamed to .ib-warning (no change
+     needed here — body.js was already using "ib-warning" correctly)
+   - [FIX #2] Section 3: Wrapped jQuery tab handler in DOMContentLoaded
+     guard to prevent "$ is not defined" if jQuery loads after this script
+   - [FIX #3] Section 10: Moved isPassword flag inside each button's closure
+     so multiple toggle buttons don't share state
+   - [FIX #4] Section 16: Declared `let observer` before onIntersect so the
+     reference is explicit and not dependent on hoisting order
+   - [FIX #5] Section 15: Added top-level null guard for contact modal
+     elements so the script doesn't throw on pages without the modal
+   - [FIX #6] Section 15: Added optional chaining on #contact-phone
+     querySelector to prevent throw if element is absent
+   - [NOTE #7] Section 8: Favicon map remains hardcoded — tracked as
+     multi-tenant hardcode item for future CMS-driven lookup
 
    CONTENTS:
    1.  Mobile Nav (slide menu)
@@ -83,11 +99,15 @@
 
 
 /* ── 3. TAB BUTTON ──────────────────────────────── */
-$(".tab-button").click(function(e) {
-  e.preventDefault();
-  $(".tab-button").removeClass("tab-button-active");
-  $(".w-tab-link:contains(" + e.target.innerText + ")").click();
-  $(e.target).addClass("tab-button-active");
+/* FIX #2: Wrapped in DOMContentLoaded so $ is guaranteed to exist */
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof $ === 'undefined') return;
+  $(".tab-button").click(function(e) {
+    e.preventDefault();
+    $(".tab-button").removeClass("tab-button-active");
+    $(".w-tab-link:contains(" + e.target.innerText + ")").click();
+    $(e.target).addClass("tab-button-active");
+  });
 });
 
 
@@ -209,6 +229,8 @@ document.addEventListener("DOMContentLoaded", () => {
       counter.style.display = "block";
       const remaining = Math.max(0, max - input.value.length);
       remainingEl.textContent = `${remaining} characters remaining (~${getWordRange(remaining)} words)`;
+      /* FIX #1 (ref): class names already correct here — "ib-warning" and "ib-danger"
+         match the renamed CSS classes in head.js v1.4 */
       counter.classList.toggle("ib-warning", remaining <= max * 0.2);
       counter.classList.toggle("ib-danger", remaining <= max * 0.05);
     }
@@ -220,6 +242,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 /* ── 8. DYNAMIC FAVICON ─────────────────────────── */
+/* NOTE #7: faviconMap is hardcoded — tracked as multi-tenant hardcode item.
+   Future: replace with CMS-driven lookup keyed on subdomain or publisher slug. */
 (function() {
   const subdomain = window.location.hostname.split('.')[0];
   const faviconMap = {
@@ -254,17 +278,20 @@ document.body.addEventListener('click', function(e) {
 
 
 /* ── 10. MEMBERSCRIPT #45 — SHOW/HIDE PASSWORD ──── */
+/* FIX #3: isPassword flag moved inside each button's closure so multiple
+   toggle buttons on the same page don't share and desync state */
 document.querySelectorAll("[ms-code-password='transform']").forEach(function(button) {
-  button.addEventListener("click", transform);
-});
-var isPassword = true;
-function transform() {
-  var passwordInputs = document.querySelectorAll("[data-ms-member='password'], [data-ms-member='new-password'], [data-ms-member='current-password']");
-  passwordInputs.forEach(function(myInput) {
-    myInput.setAttribute("type", isPassword ? "text" : "password");
+  var isPassword = true;
+  button.addEventListener("click", function() {
+    var passwordInputs = document.querySelectorAll(
+      "[data-ms-member='password'], [data-ms-member='new-password'], [data-ms-member='current-password']"
+    );
+    passwordInputs.forEach(function(myInput) {
+      myInput.setAttribute("type", isPassword ? "text" : "password");
+    });
+    isPassword = !isPassword;
   });
-  isPassword = !isPassword;
-}
+});
 
 
 /* ── 11. JETBOOST ───────────────────────────────── */
@@ -410,18 +437,21 @@ document.addEventListener('DOMContentLoaded', function(){
   const pubPhone   = document.getElementById('contactPubPhone');
   const pubEmail   = document.getElementById('contactPubEmail');
 
+  /* FIX #5: Guard the entire module if the contact modal isn't on this page */
+  if (!overlay || !modal || !form) return;
+
   function populatePublisher() {
     const dataDiv = document.querySelector('.contact-publisher-data');
-    if (!dataDiv) { pubCard.style.display = 'none'; return; }
+    if (!dataDiv || !pubCard) return;
     const headshot = dataDiv.dataset.headshot || '';
     const name     = dataDiv.dataset.name || '';
     const phone    = dataDiv.dataset.phone || '';
     const email    = dataDiv.dataset.email || '';
     if (!name && !phone && !email) { pubCard.style.display = 'none'; return; }
-    if (headshot) { pubPhoto.src = headshot; } else { pubPhoto.style.display = 'none'; }
-    pubName.textContent  = name;
-    pubPhone.textContent = phone;
-    if (email) { pubEmail.textContent = email; pubEmail.href = 'mailto:' + email; }
+    if (headshot && pubPhoto) { pubPhoto.src = headshot; } else if (pubPhoto) { pubPhoto.style.display = 'none'; }
+    if (pubName)  pubName.textContent  = name;
+    if (pubPhone) pubPhone.textContent = phone;
+    if (pubEmail && email) { pubEmail.textContent = email; pubEmail.href = 'mailto:' + email; }
     pubCard.style.display = '';
   }
 
@@ -448,19 +478,21 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   if (closeBtn) closeBtn.addEventListener('click', closeContactModal);
-  if (overlay)  overlay.addEventListener('click', closeContactModal);
+  overlay.addEventListener('click', closeContactModal);
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && modal && modal.classList.contains('active')) closeContactModal();
+    if (e.key === 'Escape' && modal.classList.contains('active')) closeContactModal();
   });
 
-  if (form) form.addEventListener('submit', async function(e) {
+  form.addEventListener('submit', async function(e) {
     e.preventDefault();
     errorDiv.classList.remove('active'); errorDiv.textContent = '';
     const name  = form.querySelector('#contact-name').value.trim();
     const email = form.querySelector('#contact-email').value.trim();
     if (!name) { errorDiv.textContent = 'Please enter your name.'; errorDiv.classList.add('active'); return; }
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errorDiv.textContent = 'Please enter a valid email address.'; errorDiv.classList.add('active'); return; }
-    const phone = form.querySelector('#contact-phone').value.trim();
+
+    /* FIX #6: Optional chaining prevents throw if #contact-phone is absent */
+    const phone = (form.querySelector('#contact-phone')?.value || '').trim();
     if (phone && phone.replace(/[^0-9]/g,'').length !== 10) {
       errorDiv.textContent = 'Please enter a 10-digit phone number.'; errorDiv.classList.add('active'); return;
     }
@@ -468,10 +500,10 @@ document.addEventListener('DOMContentLoaded', function(){
     const dataDiv = document.querySelector('.contact-publisher-data');
     const payload = {
       name, email, phone,
-      company:  form.querySelector('#contact-company').value.trim(),
+      company:  (form.querySelector('#contact-company')?.value || '').trim(),
       purpose:  purposeRadio ? purposeRadio.value : '',
-      comments: form.querySelector('#contact-comments').value.trim(),
-      website:  form.querySelector('#contact-website').value,
+      comments: (form.querySelector('#contact-comments')?.value || '').trim(),
+      website:  form.querySelector('#contact-website')?.value || '',
       publisher: dataDiv ? (dataDiv.dataset.publisher || '') : '',
       title:     dataDiv ? (dataDiv.dataset.title || '') : '',
       title_id:  dataDiv ? (dataDiv.dataset.titleId || '') : ''
@@ -480,7 +512,9 @@ document.addEventListener('DOMContentLoaded', function(){
     try {
       const response = await fetch(WEBHOOK_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
       if (response.ok || response.status === 200) {
-        form.style.display = 'none'; pubCard.style.display = 'none'; successDiv.classList.add('active');
+        form.style.display = 'none';
+        if (pubCard) pubCard.style.display = 'none';
+        successDiv.classList.add('active');
       } else { throw new Error('Server responded with ' + response.status); }
     } catch(err) {
       errorDiv.textContent = 'Something went wrong. Please try again or contact us directly.';
@@ -504,6 +538,10 @@ document.addEventListener('DOMContentLoaded', function(){
   var THRESHOLD = 0.25;
   var MIN_VIEW_MS = 500;
   var timers = new Map();
+
+  /* FIX #4: Declare observer variable first so onIntersect's reference
+     to it is explicit and not reliant on var hoisting order */
+  var observer;
 
   function fireEvent(el) {
     var uid = el.getAttribute('data-track-id') || el.id || 'unknown';
@@ -540,7 +578,9 @@ document.addEventListener('DOMContentLoaded', function(){
       if (entry.isIntersecting) {
         if (!timers.has(uid)) {
           timers.set(uid, setTimeout(function() {
-            fireEvent(el); observer.unobserve(el); timers.delete(uid);
+            fireEvent(el);
+            if (observer) observer.unobserve(el);
+            timers.delete(uid);
           }, MIN_VIEW_MS));
         }
       } else {
@@ -549,7 +589,7 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
-  var observer = new IntersectionObserver(onIntersect, { threshold: THRESHOLD });
+  observer = new IntersectionObserver(onIntersect, { threshold: THRESHOLD });
 
   function observeAll() {
     document.querySelectorAll('[data-track-view]').forEach(function(el) { observer.observe(el); });
