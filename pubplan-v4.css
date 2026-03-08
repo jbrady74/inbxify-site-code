@@ -77,12 +77,43 @@
 
 /* ═══ SUBMIT BUTTON — both class names supported ═══ */
 .psb, .ppt-submit-btn {
-  padding: 10px 20px; font-size: 12px; font-family: 'DM Mono', monospace;
-  letter-spacing: 0.02em; border: 1px solid #ddd; background: #fff;
-  color: #999; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+  padding: 7px 16px;
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 500;
+  border: 1.5px solid #e0ddd6;
+  background: #f5f3ee;
+  color: #bbb;
+  border-radius: 5px;
+  cursor: default;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  user-select: none;
 }
-.psb.active, .ppt-submit-btn.active { background: #22c55e; border-color: #22c55e; color: #fff; }
-.psb.submitting, .ppt-submit-btn.submitting { opacity: 0.6; pointer-events: none; }
+.psb.active, .ppt-submit-btn.active {
+  background: #1a3a3a;
+  border-color: #1a3a3a;
+  color: #fff;
+  cursor: pointer;
+  pointer-events: all;
+  box-shadow: 0 2px 8px rgba(26,58,58,0.25);
+}
+.psb.active:hover, .ppt-submit-btn.active:hover {
+  background: #22c55e;
+  border-color: #22c55e;
+  box-shadow: 0 2px 10px rgba(34,197,94,0.3);
+}
+.psb.submitting, .ppt-submit-btn.submitting {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #fff;
+  opacity: 0.7;
+  cursor: wait;
+  pointer-events: none;
+}
 
 /* ═══ HORIZONTAL TILE ROW (FA/TS) ═══ */
 .ppt-grid-h { display: flex; flex-direction: column; gap: 0; }
