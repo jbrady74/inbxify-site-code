@@ -1,3 +1,4 @@
+// pubplan-v4.js — v4.0.4
 // ── SECTION TOGGLE — defined outside IIFE so HTML onclick can reach it ──
 window.toggleSection = function(section) {
   const el = document.getElementById('section-' + section);
@@ -125,7 +126,7 @@ function buildTsArtOpts(selectedId) {
 }
 
 function buildCatOpts(group, selectedId) {
-  const prodEls = document.querySelectorAll('.products-wrapper');
+  const prodEls = document.querySelectorAll('.product-wrapper');
   const cats = [];
   prodEls.forEach(el => {
     if (el.dataset.group === group && el.dataset.id) {
@@ -863,9 +864,11 @@ function renBa(sc) {
   if (!s) return;
   const isEd = s.dirty || origSt[sc];
   const d = getBaPickerData(s.slotNum);
-  const adThumb = d.adGet
+  const adThumb = s.adId && d.adGet
     ? `<img src="${d.adGet}" class="ppt-ad-thumb" alt="">`
-    : `<div class="ppt-ad-thumb-placeholder">🖼</div>`;
+    : s.adId && !d.adGet
+    ? `<div class="ppt-ad-thumb-placeholder">🖼</div>`
+    : '';
   let custCol;
   if (s.custId && !isEd) {
     custCol = `<div class="ppt-card-field"><span class="pcl">Customer</span><span class="pcv">${s.custNm}</span></div>`;
@@ -1040,9 +1043,11 @@ function renTxa(sc) {
   if (!s) return;
   const isEd = s.dirty || origSt[sc];
   const d = getTxaPickerData(s.slotNum);
-  const logoThumb = d.logoLink
+  const logoThumb = s.custId && d.logoLink
     ? `<img src="${d.logoLink}" class="ppt-ad-thumb" alt="">`
-    : `<div class="ppt-ad-thumb-placeholder">🖼</div>`;
+    : s.custId && !d.logoLink
+    ? `<div class="ppt-ad-thumb-placeholder">🖼</div>`
+    : '';
   let custCol;
   if (s.custId && !isEd) {
     custCol = `<div class="ppt-card-field"><span class="pcl">Customer</span><span class="pcv">${s.custNm}</span></div>`;
