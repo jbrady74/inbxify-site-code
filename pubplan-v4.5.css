@@ -1,3 +1,15 @@
+/* pubplan-v4.5.css
+   CHANGES FROM v4.4:
+   - [FIX #4] Renamed .pcc (card content column) → .ptc-body to eliminate
+     collision with .pcc character counter class
+   - [FIX #5] Renamed .pcl (column label) → .ppt-col-label to eliminate
+     collision with .pcl cancel link class (which had display:none,
+     hiding all column labels on page load)
+   - [FIX #5] Renamed cancel link class .pcl → .ppt-cancel-lnk
+   - [CLEANUP #6] Removed dead .ppt-swap-link rule
+   - [CLEANUP #7] Removed dead .lbp-status-grid rule
+*/
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --page-bg: #f0ede2;
@@ -144,7 +156,7 @@
 .sgr { color: var(--gr-primary); }
 .sem { color: var(--em-primary); }
 
-/* ═══ CHARACTER COUNTER ═══ */
+/* ═══ CHARACTER COUNTER (span inside field) ═══ */
 .pcc { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text-light); margin-top: 4px; text-align: right; }
 .pcc.warning { color: #f59e0b; }
 .pcc.danger { color: #dc2626; }
@@ -195,7 +207,10 @@
 .ptc.hp { border-color: var(--pending-border); box-shadow: inset 0 0 0 1px var(--pending-border); }
 .ptc.hp::before { background: var(--pending-border); }
 .pcs { font-size: 12px; font-family: 'DM Mono', monospace; font-weight: 700; color: var(--text-dark); min-width: 50px; flex-shrink: 0; background: #f5f3ee; padding: 4px 8px; border-radius: 4px; text-align: center; }
-.pcc { flex: 1; display: flex; gap: 12px; min-width: 0; overflow: hidden; }
+
+/* FIX #4: Renamed from .pcc → .ptc-body (card content column in BA/TXA/LBP tiles) */
+.ptc-body { flex: 1; display: flex; gap: 12px; min-width: 0; overflow: hidden; }
+
 .ppt-card-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; overflow: hidden; }
 .ppt-card-status { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; }
 .pca { display: flex; align-items: center; min-width: 45px; justify-content: flex-end; flex-shrink: 0; }
@@ -219,12 +234,25 @@
 
 /* ═══ COLUMN LABELS & VALUES ═══ */
 .pc { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.pcl { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* FIX #5: Renamed from .pcl → .ppt-col-label (column label in FA/TS/GR/EM tiles) */
+.ppt-col-label {
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .pcv { font-size: 11px; font-family: 'DM Sans', sans-serif; font-weight: 500; color: var(--text-dark); line-height: 1.4; word-wrap: break-word; }
 .pcv.clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
 .pcv.sponsor { color: var(--sponsor-purple); }
 .pcv.sponsor::before { content: '⚑ '; }
-.pcv.ns { color: #999; font-style: italic; display: flex; align-items: center; gap: 6px; }
 .pcv.ns { color: #999; font-style: italic; display: flex; align-items: center; gap: 6px; }
 
 /* ═══ CHECKBOX STYLES ═══ */
@@ -281,14 +309,19 @@
 .ppt-gr-fields { flex: 1; display: flex; flex-direction: column; gap: 12px; }
 .ppt-gr-row { display: flex; gap: 16px; }
 
-/* ═══ SWAP/CANCEL LINKS ═══ */
-.ppt-swap-link { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-light); text-decoration: none; cursor: pointer; }
-.ppt-swap-link:hover { color: var(--text-dark); text-decoration: underline; }
-
 /* ═══ CANCEL LINK ═══ */
-.pcl { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--pending-border); text-decoration: none; cursor: pointer; display: none; letter-spacing: 0.03em; }
-.pcl.visible { display: inline; }
-.pcl:hover { text-decoration: underline; }
+/* FIX #5: Renamed from .pcl → .ppt-cancel-lnk */
+.ppt-cancel-lnk {
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  color: var(--pending-border);
+  text-decoration: none;
+  cursor: pointer;
+  display: none;
+  letter-spacing: 0.03em;
+}
+.ppt-cancel-lnk.visible { display: inline; }
+.ppt-cancel-lnk:hover { text-decoration: underline; }
 
 /* ═══ EDIT ICON ═══ */
 .pei { font-size: 16px; color: var(--text-light); cursor: pointer; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background 0.15s; }
@@ -310,8 +343,32 @@
 .the-find-lbp, .the-find-txa { display: none; }
 .the-find-lbp.is-active, .the-find-txa.is-active { display: block; }
 
-/* ═══ LBP STATUS GRID ═══ */
-.lbp-status-grid { display: grid; grid-template-columns: repeat(4, auto); gap: 4px; }
+/* ═══ INLINE CONFIRM (replaces confirm() dialogs) ═══ */
+.ppt-inline-confirm {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  color: var(--bad-fg);
+  background: var(--bad-bg);
+  border: 1px solid #f5c6c6;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-top: 4px;
+}
+.ppt-inline-confirm.visible { display: flex; }
+.ppt-inline-confirm-yes {
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  color: var(--bad-fg);
+}
+.ppt-inline-confirm-no {
+  cursor: pointer;
+  color: var(--text-light);
+  text-decoration: underline;
+}
 
 /* ═══ TOAST ═══ */
 .ppt-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--teal); color: #fff; font-family: 'DM Mono', monospace; font-size: 11px; padding: 10px 20px; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
