@@ -1,4 +1,4 @@
-// pubplan-v4.js — v4.0.5
+// pubplan-v4.js — v4.0.7
 // ── SECTION TOGGLE — defined outside IIFE so HTML onclick can reach it ──
 window.toggleSection = function(section) {
   const el = document.getElementById('section-' + section);
@@ -1250,53 +1250,113 @@ window.submitSection = async function(section) {
   btn.classList.add('submitting');
   btn.textContent = 'Saving...';
   const pubplanId = getPubplanId();
-  const payload = { section, pubplanId, slots: [] };
+  // Payload uses existing Make field names — one call per dirty slot
+  const slots = [];
 
   if (section === 'gr') {
     const s = state['gr-1'];
-    if (s && s.dirty) payload.slots.push({ sc: s.sc, grTit: s.grTit, grMsg: s.grMsg });
+    if (s && s.dirty) slots.push({
+      'hidden-pubplan-id':      pubplanId,
+      'hidden-slot-code':       s.sc,
+      'hidden-titleadmin-id':   s.titleadminId || '',
+      'hidden-gr-title':        s.grTit,
+      'hidden-gr-message':      s.grMsg
+    });
   } else if (section === 'em') {
     const s = state['em-1'];
-    if (s && s.dirty) payload.slots.push({ sc: s.sc, emSub: s.emSub, emPre: s.emPre });
+    if (s && s.dirty) slots.push({
+      'hidden-pubplan-id':      pubplanId,
+      'hidden-slot-code':       s.sc,
+      'hidden-titleadmin-id':   s.titleadminId || '',
+      'hidden-em-subject':      s.emSub,
+      'hidden-em-preview':      s.emPre
+    });
   } else if (section === 'fa') {
     for (let i = 1; i <= 4; i++) {
       const s = state[`fa-${i}`];
-      if (s && s.dirty) payload.slots.push({ sc: s.sc, artId: s.artId, custId: s.custId, sponsorId: s.sponsorId, artAdId: s.artAdId, noSponsor: s.noSponsor });
+      if (s && s.dirty) slots.push({
+        'hidden-pubplan-id':      pubplanId,
+        'hidden-slot-code':       s.sc,
+        'hidden-titleadmin-id':   s.titleadminId || '',
+        'hidden-article-id':      s.artId,
+        'hidden-customer-id':     s.custId,
+        'hidden-sponsor-id':      s.sponsorId,
+        'hidden-ba-picker-id':    s.artAdId,
+        'hidden-no-sponsor':      s.noSponsor,
+        'hidden-category-id':     s.catId
+      });
     }
   } else if (section === 'ts') {
     for (let i = 1; i <= 4; i++) {
       const s = state[`ts-${i}`];
-      if (s && s.dirty) payload.slots.push({ sc: s.sc, artId: s.artId, sponsorId: s.sponsorId, artAdId: s.artAdId, noSponsor: s.noSponsor });
+      if (s && s.dirty) slots.push({
+        'hidden-pubplan-id':      pubplanId,
+        'hidden-slot-code':       s.sc,
+        'hidden-titleadmin-id':   s.titleadminId || '',
+        'hidden-article-id':      s.artId,
+        'hidden-sponsor-id':      s.sponsorId,
+        'hidden-ba-picker-id':    s.artAdId,
+        'hidden-no-sponsor':      s.noSponsor,
+        'hidden-category-id':     s.catId
+      });
     }
   } else if (section === 'ba') {
     for (let i = 1; i <= 12; i++) {
       const s = state[`ba-${i}`];
-      if (s && s.dirty) payload.slots.push({ sc: s.sc, custId: s.custId, adId: s.adId });
+      if (s && s.dirty) slots.push({
+        'hidden-pubplan-id':      pubplanId,
+        'hidden-slot-code':       s.sc,
+        'hidden-titleadmin-id':   s.titleadminId || '',
+        'hidden-customer-id':     s.custId,
+        'hidden-ba-picker-id':    s.adId
+      });
     }
   } else if (section === 'tf') {
-    payload.mode = currentTfMode;
     if (currentTfMode === 'txa') {
       for (let i = 1; i <= 5; i++) {
         const s = state[`txa-${i}`];
-        if (s && s.dirty) payload.slots.push({ sc: s.sc, custId: s.custId });
+        if (s && s.dirty) slots.push({
+          'hidden-pubplan-id':    pubplanId,
+          'hidden-slot-code':     s.sc,
+          'hidden-titleadmin-id': s.titleadminId || '',
+          'hidden-customer-id':   s.custId
+        });
       }
     } else {
       const s = state['lbp-1'];
-      if (s && s.dirty) payload.slots.push({ sc: 'lbp-1', custId: s.custId });
+      if (s && s.dirty) slots.push({
+        'hidden-pubplan-id':      pubplanId,
+        'hidden-slot-code':       'lbp-1',
+        'hidden-titleadmin-id':   s.titleadminId || '',
+        'hidden-customer-id':     s.custId
+      });
     }
   }
+  // Send one webhook call per dirty slot
+  const payload = slots.length > 0 ? slots[0] : { 'hidden-pubplan-id': pubplanId, section };
 
   try {
-    const resp = await fetch(WEBHOOK_URLS[section], {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (resp.ok) {
+    // Fire one webhook per dirty slot
+    const responses = await Promise.all(
+      slots.map(slot => fetch(WEBHOOK_URLS[section], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(slot)
+      }))
+    );
+    const allOk = responses.every(r => r.ok);
+    if (allOk) {
       showToast(`${section.toUpperCase()} changes saved!`);
-      payload.slots.forEach(slot => {
-        if (state[slot.sc]) { state[slot.sc].dirty = false; delete origSt[slot.sc]; }
-      });
+      // Clear dirty flags for saved section
+      if (section === 'gr') { if (state['gr-1']) { state['gr-1'].dirty = false; delete origSt['gr-1']; } }
+      else if (section === 'em') { if (state['em-1']) { state['em-1'].dirty = false; delete origSt['em-1']; } }
+      else if (section === 'fa') { for (let i=1;i<=4;i++) { if (state[`fa-${i}`]) { state[`fa-${i}`].dirty=false; delete origSt[`fa-${i}`]; } } }
+      else if (section === 'ts') { for (let i=1;i<=4;i++) { if (state[`ts-${i}`]) { state[`ts-${i}`].dirty=false; delete origSt[`ts-${i}`]; } } }
+      else if (section === 'ba') { for (let i=1;i<=12;i++) { if (state[`ba-${i}`]) { state[`ba-${i}`].dirty=false; delete origSt[`ba-${i}`]; } } }
+      else if (section === 'tf') {
+        if (currentTfMode === 'txa') { for (let i=1;i<=5;i++) { if (state[`txa-${i}`]) { state[`txa-${i}`].dirty=false; delete origSt[`txa-${i}`]; } } }
+        else { if (state['lbp-1']) { state['lbp-1'].dirty=false; delete origSt['lbp-1']; } }
+      }
       if (section === 'gr') { renGr(); updGrProg(); }
       else if (section === 'em') { renEm(); updEmProg(); }
       else if (section === 'fa') { renderAllFa(); }
