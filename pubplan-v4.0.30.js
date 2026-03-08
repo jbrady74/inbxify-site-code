@@ -1407,7 +1407,7 @@ window.submitSection = async function(section) {
         'hidden-category-name':   s.catNm,
         'hidden-customer-id':     s.custId,
         'hidden-customer-name':   s.custNm,
-        'hidden-ba-picker-id':    s.adId
+        'hidden-ad-id':           s.adId
       });
     }
   } else if (section === 'tf') {
