@@ -1,3 +1,9 @@
+// ── SECTION TOGGLE — defined outside IIFE so HTML onclick can reach it ──
+window.toggleSection = function(section) {
+  const el = document.getElementById('section-' + section);
+  if (el) el.classList.toggle('collapsed');
+};
+
 (function(){
 'use strict';
 
@@ -32,11 +38,7 @@ function showToast(msg, isError) {
   setTimeout(() => t.classList.remove('show'), 3500);
 }
 
-/* ─── SECTION TOGGLE ─── */
-window.toggleSection = function(section) {
-  const el = document.getElementById(`section-${section}`);
-  if (el) el.classList.toggle('collapsed');
-};
+/* ─── SECTION TOGGLE — defined above IIFE ─── */
 
 /* ─── DRAWER TOGGLE ─── */
 window.tD = function(sc) {
