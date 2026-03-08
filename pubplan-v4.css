@@ -1,11 +1,3 @@
-<!-- ============================================================
-  PUBPLAN TILE UI v4.0.1 — CSS EMBED
-  Horizontal tile layout for FA, TS, BA, TF sections
-  Fixed: ppt-submit-btn alias, ppt-icon alias, drawer grid styles,
-         ppt-x button, cpn class
-============================================================ -->
-
-<style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --page-bg: #f0ede2;
@@ -289,4 +281,3 @@
 .fa-picker-wrapper, .ts-picker-wrapper, .ba-picker-1-wrapper, .ba-picker-2-wrapper,
 .txa-picker-wrapper, .customers-wrapper, .ads-wrapper, .pubplan-slot-wrapper,
 .ba-slot-wrapper, .txa-slot-wrapper, .articles-wrapper, .products-wrapper { display: none !important; }
-</style>
