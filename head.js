@@ -2,8 +2,12 @@
    INBXIFY — Site-Wide Head Code
    Repo: jbrady74/inbxify-site-code
    File: head.js
-   Version: 1.3 — March 2026
-   
+   Version: 1.4 — March 2026
+
+   CHANGES FROM 1.3:
+   - [FIX #1] Section 5: Renamed .ib-warn to .ib-warning to match
+     the class name toggled by body.js Section 7
+
    CONTENTS:
    1. Sign In Modal Restyle
    2. Sign In Backdrop
@@ -337,6 +341,7 @@
 
 /* ── 5. CHARACTER COUNTER ───────────────────────── */
 
+/* FIX #1: Renamed .ib-warn → .ib-warning to match body.js Section 7 */
 .ib-char-counter { font-size: 12px; color: #666; margin-top: 4px; }
-.ib-char-counter.ib-warn { color: #b7791f; }
+.ib-char-counter.ib-warning { color: #b7791f; }
 .ib-char-counter.ib-danger { color: #c53030; font-weight: 600; }
