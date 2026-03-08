@@ -1,16 +1,3 @@
-<!-- ============================================================
-  PUBPLAN TILE UI v4.0.1 — JS EMBED
-  Fixed: querySelectorAllllll→querySelectorAll, delet e→delete,
-         qS→querySelector, qSAll→querySelectorAll,
-         .psw→.pubplan-slot-wrapper, .cw→.customers-wrapper,
-         .pw→.products-wrapper, .adw→.ads-wrapper,
-         .aw→.articles-wrapper (with data-article-id attr),
-         .fpw→.fa-picker-wrapper, .tpw→.ts-picker-wrapper,
-         .bpw1→.ba-picker-1-wrapper, .bpw2→.ba-picker-2-wrapper,
-         toggleSection (was tS), toast ID ppt-toast (was pto),
-         submit btn class ppt-submit-btn (was psb)
-============================================================ -->
-<script>
 (function(){
 'use strict';
 
@@ -1347,4 +1334,3 @@ if (document.readyState === 'loading') {
 }
 
 })();
-</script>
