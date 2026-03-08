@@ -1,4 +1,17 @@
-// pubplan-v4.0.29.js — v4.0.29
+// pubplan-v4.0.30.js
+// CHANGES FROM v4.0.29:
+// - [FIX #5]  All .pcl column label spans → .ppt-col-label
+// - [FIX #5]  All cancel link class .pcl → .ppt-cancel-lnk
+// - [FIX #4]  All .pcc card body divs (BA/TXA/LBP) → .ptc-body
+// - [FIX #8]  renLbp(): removed duplicate buildLbpDrawer() insertion
+// - [FIX #9]  submitSection(): removed dead `payload` variable
+// - [FIX #10] Removed buildCustomerOptions(); all callers now use buildCustOpts()
+// - [FIX #11] currentTfMode now synced from DOM on init via data-tf-mode attribute
+// - [FIX #12] initLbpState() now populates titleadminId from DOM
+// - [FIX #13] buildFaDrawer()/buildTsDrawer() merged into buildArtAdDrawer()
+// - [FIX #14] Removed dead onFaCatClear() and onTsCatClear()
+// - [FIX #15] All confirm() dialogs replaced with inline confirmation pattern
+
 // ── SECTION TOGGLE — defined outside IIFE so HTML onclick can reach it ──
 window.toggleSection = function(section) {
   const el = document.getElementById('section-' + section);
@@ -19,7 +32,8 @@ const WEBHOOK_URLS = {
 
 const state = {};
 const origSt = {};
-let currentTfMode = 'txa';
+// FIX #11: initialized to null; synced from DOM in init()
+let currentTfMode = null;
 
 /* ─── UTILITIES ─── */
 function pill(status, label) {
@@ -37,6 +51,39 @@ function showToast(msg, isError) {
   t.textContent = msg;
   t.className = 'ppt-toast show' + (isError ? ' error' : '');
   setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ─── INLINE CONFIRM HELPER ─── */
+// FIX #15: Replaces all confirm() dialogs with an inline pattern.
+// Shows a small red "Are you sure? yes / no" bar inside the tile.
+// onYes and onNo are callbacks; onNo reverts the select if provided.
+function showInlineConfirm(anchorEl, msg, onYes, onNo) {
+  // Remove any existing confirm bar first
+  const existing = document.querySelector('.ppt-inline-confirm');
+  if (existing) existing.remove();
+
+  const bar = document.createElement('div');
+  bar.className = 'ppt-inline-confirm visible';
+  bar.innerHTML = `<span>${msg}</span>
+    <span class="ppt-inline-confirm-yes">Yes, continue</span>
+    <span class="ppt-inline-confirm-no">Cancel</span>`;
+
+  bar.querySelector('.ppt-inline-confirm-yes').addEventListener('click', () => {
+    bar.remove();
+    onYes();
+  });
+  bar.querySelector('.ppt-inline-confirm-no').addEventListener('click', () => {
+    bar.remove();
+    if (onNo) onNo();
+  });
+
+  // Insert after the anchor element (the select or its parent .pc)
+  const parent = anchorEl.closest('.pc') || anchorEl.parentElement;
+  if (parent && parent.parentElement) {
+    parent.parentElement.insertBefore(bar, parent.nextSibling);
+  } else {
+    anchorEl.insertAdjacentElement('afterend', bar);
+  }
 }
 
 /* ─── SECTION TOGGLE — defined above IIFE ─── */
@@ -76,20 +123,8 @@ function getTitleadminId() {
 }
 
 /* ─── OPTION BUILDERS ─── */
-function buildCustomerOptions(selectedId) {
-  const custEls = document.querySelectorAll('.customers-wrapper');
-  const allCust = [];
-  custEls.forEach(el => {
-    if (el.dataset.id) {
-      allCust.push({ id: el.dataset.id, name: el.dataset.name || '(unnamed)' });
-    }
-  });
-  if (!allCust.length) return '<option value="" disabled selected>No customers</option>';
-  return '<option value="" disabled' + (!selectedId ? ' selected' : '') + '>Select customer...</option>' +
-    allCust.sort((a, b) => a.name.localeCompare(b.name))
-      .map(c => `<option value="${c.id}"${c.id === selectedId ? ' selected' : ''}>${c.name}</option>`).join('');
-}
 
+// FIX #10: buildCustomerOptions() removed; all callers now use buildCustOpts() directly.
 function buildCustOpts(selectedId, placeholder) {
   const custEls = document.querySelectorAll('.customers-wrapper');
   const allCust = [];
@@ -99,7 +134,7 @@ function buildCustOpts(selectedId, placeholder) {
     }
   });
   if (!allCust.length) return '<option value="" disabled selected>No options</option>';
-  return '<option value="" disabled' + (!selectedId ? ' selected' : '') + '>' + placeholder + '</option>' +
+  return '<option value="" disabled' + (!selectedId ? ' selected' : '') + '>' + (placeholder || 'Select customer...') + '</option>' +
     allCust.sort((a, b) => a.name.localeCompare(b.name))
       .map(c => `<option value="${c.id}"${c.id === selectedId ? ' selected' : ''}>${c.name}</option>`).join('');
 }
@@ -209,14 +244,16 @@ function renGr() {
   const hasCon = s.grTit || s.grMsg;
   let cHtml;
   if (isEd) {
-    cHtml = `<div class="pc" style="flex:1;"><span class="pcl">Greeting Title</span><input type="text" class="pi" maxlength="${GR_LIMITS.grTit}" value="${(s.grTit || '').replace(/"/g, '&quot;')}" oninput="onGrFieldChange('grTit',this)" placeholder="title...">${charCount(GR_LIMITS.grTit, s.grTit)}</div><div class="pc" style="flex:2;"><span class="pcl">Greeting Message</span><textarea class="ppt-textarea" maxlength="${GR_LIMITS.grMsg}" oninput="onGrFieldChange('grMsg',this)" placeholder="message...">${s.grMsg || ''}</textarea>${charCount(GR_LIMITS.grMsg, s.grMsg)}</div>`;
+    // FIX #5: pcl → ppt-col-label
+    cHtml = `<div class="pc" style="flex:1;"><span class="ppt-col-label">Greeting Title</span><input type="text" class="pi" maxlength="${GR_LIMITS.grTit}" value="${(s.grTit || '').replace(/"/g, '&quot;')}" oninput="onGrFieldChange('grTit',this)" placeholder="title...">${charCount(GR_LIMITS.grTit, s.grTit)}</div><div class="pc" style="flex:2;"><span class="ppt-col-label">Greeting Message</span><textarea class="ppt-textarea" maxlength="${GR_LIMITS.grMsg}" oninput="onGrFieldChange('grMsg',this)" placeholder="message...">${s.grMsg || ''}</textarea>${charCount(GR_LIMITS.grMsg, s.grMsg)}</div>`;
   } else if (hasCon) {
-    cHtml = `<div class="pc" style="flex:1;"><span class="pcl">Greeting Title</span><span class="pcv">${s.grTit || '—'}</span></div><div class="pc" style="flex:2;"><span class="pcl">Greeting Message</span><span class="pcv">${s.grMsg || '—'}</span></div>`;
+    cHtml = `<div class="pc" style="flex:1;"><span class="ppt-col-label">Greeting Title</span><span class="pcv">${s.grTit || '—'}</span></div><div class="pc" style="flex:2;"><span class="ppt-col-label">Greeting Message</span><span class="pcv">${s.grMsg || '—'}</span></div>`;
   } else {
     cHtml = `<div class="pc" style="flex:1;"><span style="color:#ccc;">No greeting set. Click edit to add.</span></div>`;
   }
+  // FIX #5: pcl visible → ppt-cancel-lnk visible
   const actLnk = isEd
-    ? `<a class="pcl visible" onclick="cancelGrEdit()">cancel</a>`
+    ? `<a class="ppt-cancel-lnk visible" onclick="cancelGrEdit()">cancel</a>`
     : `<a class="pei" onclick="initGrEdit()" title="Edit">✎</a>`;
   const html = `<div class="ptr grr${isEd ? ' hp' : ''}" id="tile-gr-1"><div class="psi sgr">GR-1</div>${cHtml}<div class="pac">${actLnk}</div></div>`;
   const existing = document.getElementById('tile-gr-1');
@@ -284,14 +321,14 @@ function renEm() {
   const hasCon = s.emSub || s.emPre;
   let cHtml;
   if (isEd) {
-    cHtml = `<div class="pc" style="flex:1;"><span class="pcl">Email Subject</span><input type="text" class="pi" maxlength="${EM_LIMITS.emSub}" value="${(s.emSub || '').replace(/"/g, '&quot;')}" oninput="onEmFieldChange('emSub',this)" placeholder="subject...">${charCount(EM_LIMITS.emSub, s.emSub)}</div><div class="pc" style="flex:1;"><span class="pcl">Email Preview</span><input type="text" class="pi" maxlength="${EM_LIMITS.emPre}" value="${(s.emPre || '').replace(/"/g, '&quot;')}" oninput="onEmFieldChange('emPre',this)" placeholder="preview...">${charCount(EM_LIMITS.emPre, s.emPre)}</div>`;
+    cHtml = `<div class="pc" style="flex:1;"><span class="ppt-col-label">Email Subject</span><input type="text" class="pi" maxlength="${EM_LIMITS.emSub}" value="${(s.emSub || '').replace(/"/g, '&quot;')}" oninput="onEmFieldChange('emSub',this)" placeholder="subject...">${charCount(EM_LIMITS.emSub, s.emSub)}</div><div class="pc" style="flex:1;"><span class="ppt-col-label">Email Preview</span><input type="text" class="pi" maxlength="${EM_LIMITS.emPre}" value="${(s.emPre || '').replace(/"/g, '&quot;')}" oninput="onEmFieldChange('emPre',this)" placeholder="preview...">${charCount(EM_LIMITS.emPre, s.emPre)}</div>`;
   } else if (hasCon) {
-    cHtml = `<div class="pc" style="flex:1;"><span class="pcl">Email Subject</span><span class="pcv">${s.emSub || '—'}</span></div><div class="pc" style="flex:1;"><span class="pcl">Email Preview</span><span class="pcv">${s.emPre || '—'}</span></div>`;
+    cHtml = `<div class="pc" style="flex:1;"><span class="ppt-col-label">Email Subject</span><span class="pcv">${s.emSub || '—'}</span></div><div class="pc" style="flex:1;"><span class="ppt-col-label">Email Preview</span><span class="pcv">${s.emPre || '—'}</span></div>`;
   } else {
     cHtml = `<div class="pc" style="flex:1;"><span style="color:#ccc;">No email settings. Click edit to add.</span></div>`;
   }
   const actLnk = isEd
-    ? `<a class="pcl visible" onclick="cancelEmEdit()">cancel</a>`
+    ? `<a class="ppt-cancel-lnk visible" onclick="cancelEmEdit()">cancel</a>`
     : `<a class="pei" onclick="initEmEdit()" title="Edit">✎</a>`;
   const html = `<div class="ptr emr${isEd ? ' hp' : ''}" id="tile-em-1"><div class="psi sem">EM-1</div>${cHtml}<div class="pac">${actLnk}</div></div>`;
   const existing = document.getElementById('tile-em-1');
@@ -399,10 +436,27 @@ function getFaPickerData(slotNum) {
   return { artImgGet, artWfImg, adImgGet: artAdGet, adGoLink: artAdGo, artPgSet, nlPgSet, sponsored: sponsoredStatus };
 }
 
-function buildFaDrawer(sc) {
+function getTsPickerData(slotNum) {
+  const pickerEl = document.querySelector('.ts-picker-wrapper');
+  if (!pickerEl) return {};
+  const prefix = `ts${slotNum}`;
+  const artAdGet = pickerEl.dataset[`${prefix}ArtAdGet`] || '';
+  const artAdGo = pickerEl.dataset[`${prefix}ArtAdGo`] || '';
+  const s = state[`ts-${slotNum}`];
+  const artEl = s && s.artId ? document.querySelector(`.articles-wrapper[data-article-id="${s.artId}"]`) : null;
+  const artImgGet = artEl ? artEl.dataset.artImgGet || '' : '';
+  const artWfImg = artEl ? artEl.dataset.imageUrl || '' : '';
+  const showArtAd = artEl ? artEl.dataset.showArtAd || '' : '';
+  const artPgSet = (showArtAd === 'Show' || showArtAd === 'true') ? 'true' : '';
+  const nlPgSet = pickerEl.dataset[`${prefix}NlPgSet`] || '';
+  return { artImgGet, artWfImg, adImgGet: artAdGet, adGoLink: artAdGo, artPgSet, nlPgSet };
+}
+
+// FIX #13: Merged buildFaDrawer() + buildTsDrawer() into single buildArtAdDrawer()
+function buildArtAdDrawer(sc, pickerData, fallbackId) {
   const s = state[sc];
   if (!s) return '';
-  const d = getFaPickerData(s.slotNum);
+  const d = pickerData;
   const artEl = s.artId ? document.querySelector(`.articles-wrapper[data-article-id="${s.artId}"]`) : null;
   const fields = [
     { label: 'Summary', value: artEl && artEl.dataset.articleSummary ? artEl.dataset.articleSummary : '—', status: artEl && artEl.dataset.articleSummary ? 'ok' : 'bad' },
@@ -413,8 +467,8 @@ function buildFaDrawer(sc) {
     { label: 'Img GET', value: d.artImgGet ? 'Present' : '—', status: d.artImgGet ? 'ok' : 'bad' },
     { label: 'Type', value: artEl && artEl.dataset.articleType ? artEl.dataset.articleType : '—', status: artEl && artEl.dataset.articleType ? 'ok' : 'bad' },
     { label: 'Ad Stat', value: d.artPgSet ? 'ON' : 'OFF', status: d.artPgSet ? 'ok' : 'na' },
-    { label: 'Ad Img', value: d.adImgGet ? 'Present' : '—', status: d.adImgGet ? 'ok' : (s.custId || s.sponsorId ? 'bad' : 'na') },
-    { label: 'Ad Go', value: d.adGoLink ? 'Present' : '—', status: d.adGoLink ? 'ok' : (s.custId || s.sponsorId ? 'bad' : 'na') }
+    { label: 'Ad Img', value: d.adImgGet ? 'Present' : '—', status: d.adImgGet ? 'ok' : (fallbackId ? 'bad' : 'na') },
+    { label: 'Ad Go', value: d.adGoLink ? 'Present' : '—', status: d.adGoLink ? 'ok' : (fallbackId ? 'bad' : 'na') }
   ];
   return `<div class="pdr" id="drawer-${sc}"><div class="pdr-grid">${fields.map(f => `<div class="pdr-field"><span class="pdr-label">${f.label}</span><span class="pdr-value">${f.value}</span></div><div class="pdr-status">${icon(f.status, f.status === 'ok' ? '✓' : f.status === 'bad' ? '✕' : '—')}</div>`).join('')}</div></div>`;
 }
@@ -426,54 +480,52 @@ function renFa(sc) {
   const isPaid = s.catType && s.catType.toLowerCase().includes('paid');
   const isSponsored = s.catType && s.catType.toLowerCase().includes('sponsor');
 
-  // ── Category column: always dropdown, hs when selected, static pill when saved ──
   let catCol;
   if (!isEd) {
     catCol = s.catId
-      ? `<div class="pc"><span class="pcl">Category</span><span class="pcp cfa">${s.catNm || '—'}</span></div>`
-      : `<div class="pc"><span class="pcl">Category</span><select class="pd" onchange="onFaCatChange('${sc}',this)">${buildCatOpts('FA', '')}</select></div>`;
+      ? `<div class="pc"><span class="ppt-col-label">Category</span><span class="pcp cfa">${s.catNm || '—'}</span></div>`
+      : `<div class="pc"><span class="ppt-col-label">Category</span><select class="pd" onchange="onFaCatChange('${sc}',this)">${buildCatOpts('FA', '')}</select></div>`;
   } else {
-    catCol = `<div class="pc"><span class="pcl">Category</span><select class="pd${s.catId ? ' hs' : ''}" onchange="onFaCatChange('${sc}',this)">${buildCatOpts('FA', s.catId)}</select></div>`;
+    catCol = `<div class="pc"><span class="ppt-col-label">Category</span><select class="pd${s.catId ? ' hs' : ''}" onchange="onFaCatChange('${sc}',this)">${buildCatOpts('FA', s.catId)}</select></div>`;
   }
 
-  // ── Customer column (Paid only) — always dropdown, hs class when selected ──
   let custCol = '';
   if (isPaid) {
     if (!isEd && s.custId) {
-      custCol = `<div class="pc"><span class="pcl">Customer</span><span class="pcv">${s.custNm}</span></div>`;
+      custCol = `<div class="pc"><span class="ppt-col-label">Customer</span><span class="pcv">${s.custNm}</span></div>`;
     } else {
-      custCol = `<div class="pc"><span class="pcl">Customer</span><select class="pd${s.custId ? ' hs' : ''}" onchange="onFaCustomerChange('${sc}',this)"${!s.catId ? ' disabled' : ''}>${buildCustOpts(s.custId, '--')}</select></div>`;
+      custCol = `<div class="pc"><span class="ppt-col-label">Customer</span><select class="pd${s.custId ? ' hs' : ''}" onchange="onFaCustomerChange('${sc}',this)"${!s.catId ? ' disabled' : ''}>${buildCustOpts(s.custId, '--')}</select></div>`;
     }
   }
 
-  // ── Article column — always dropdown when editing, hs when selection persists ──
   let artCol;
   const artDisabled = (!s.catId || (isPaid && !s.custId)) ? ' disabled' : '';
   if (!isEd && s.artId) {
-    artCol = `<div class="pc"><span class="pcl">Article</span><span class="pcv">${s.artNm}</span></div>`;
+    artCol = `<div class="pc"><span class="ppt-col-label">Article</span><span class="pcv">${s.artNm}</span></div>`;
   } else {
-    artCol = `<div class="pc"><span class="pcl">Article</span><select class="pd${s.artId ? ' hs' : ''}" onchange="onFaArticleChange('${sc}',this)"${artDisabled}>${buildArtOpts(isPaid ? s.custId : '', s.catId, s.artId)}</select></div>`;
+    artCol = `<div class="pc"><span class="ppt-col-label">Article</span><select class="pd${s.artId ? ' hs' : ''}" onchange="onFaArticleChange('${sc}',this)"${artDisabled}>${buildArtOpts(isPaid ? s.custId : '', s.catId, s.artId)}</select></div>`;
   }
 
-  // ── Sponsor column (Sponsored categories only) — always dropdown when editing ──
   let sponCol = '';
   if (isSponsored) {
     const noSpCb = `<label class="pxl"><input type="checkbox" ${s.noSponsor ? 'checked' : ''} onchange="onFaNoSponsorChange('${sc}',this)"> No Sponsor</label>`;
     if (s.noSponsor) {
-      sponCol = `<div class="pc"><span class="pcl">Sponsor</span><span class="pcv ns">${noSpCb}</span></div>`;
+      sponCol = `<div class="pc"><span class="ppt-col-label">Sponsor</span><span class="pcv ns">${noSpCb}</span></div>`;
     } else if (!isEd && s.sponsorId) {
-      sponCol = `<div class="pc"><span class="pcl">Sponsor</span><span class="pcv sponsor">${s.sponNm}</span></div>`;
+      sponCol = `<div class="pc"><span class="ppt-col-label">Sponsor</span><span class="pcv sponsor">${s.sponNm}</span></div>`;
     } else {
-      sponCol = `<div class="pc"><span class="pcl">Sponsor ${noSpCb}</span><select class="pd${s.sponsorId ? ' hs' : ''}" onchange="onFaSponsorChange('${sc}',this)"${!s.artId ? ' disabled' : ''}>${buildCustOpts(s.sponsorId, '--')}</select></div>`;
+      sponCol = `<div class="pc"><span class="ppt-col-label">Sponsor ${noSpCb}</span><select class="pd${s.sponsorId ? ' hs' : ''}" onchange="onFaSponsorChange('${sc}',this)"${!s.artId ? ' disabled' : ''}>${buildCustOpts(s.sponsorId, '--')}</select></div>`;
     }
   }
 
   const actLnk = isEd
-    ? `<a class="pcl visible" onclick="cancelFaEdit('${sc}')">cancel</a>`
+    ? `<a class="ppt-cancel-lnk visible" onclick="cancelFaEdit('${sc}')">cancel</a>`
     : (s.catId ? `<a class="pei" onclick="initFaEdit('${sc}')" title="Edit">✎</a>` : '<span style="color:#ccc;">—</span>');
   const chevron = `<span class="pch" onclick="tD('${sc}')">▾</span>`;
-
   const tileHtml = `<div class="ptr${isEd ? ' hp' : ''}" id="tile-${sc}"><div class="psi sfa">${sc.toUpperCase()}</div>${catCol}${custCol}${artCol}${sponCol}<div class="pac">${actLnk}${chevron}</div></div>`;
+
+  // FIX #13: use unified buildArtAdDrawer()
+  const drawerHtml = buildArtAdDrawer(sc, getFaPickerData(s.slotNum), s.custId || s.sponsorId);
 
   const existing = document.getElementById(`tile-${sc}`);
   const existingDrawer = document.getElementById(`drawer-${sc}`);
@@ -483,7 +535,7 @@ function renFa(sc) {
     if (existingDrawer) existingDrawer.remove();
     const newTile = document.getElementById(`tile-${sc}`);
     if (newTile) {
-      newTile.insertAdjacentHTML('afterend', buildFaDrawer(sc));
+      newTile.insertAdjacentHTML('afterend', drawerHtml);
       if (drawerOpen) {
         const d = document.getElementById(`drawer-${sc}`);
         if (d) d.classList.add('open');
@@ -493,7 +545,7 @@ function renFa(sc) {
     }
   } else {
     const grid = document.getElementById('fa-grid');
-    if (grid) grid.insertAdjacentHTML('beforeend', tileHtml + buildFaDrawer(sc));
+    if (grid) grid.insertAdjacentHTML('beforeend', tileHtml + drawerHtml);
   }
 }
 
@@ -533,30 +585,11 @@ window.onFaCatChange = function(sc, sel) {
     renFa(sc);
     updFaProg();
   };
+  // FIX #15: inline confirm instead of confirm()
   if (hasDownstream) {
-    if (confirm('Changing the category will clear your article and sponsor selections. Continue?')) doChange();
-    else { sel.value = s.catId || ''; }
+    showInlineConfirm(sel, 'Changing category will clear article & sponsor.', doChange, () => { sel.value = s.catId || ''; });
   } else {
     doChange();
-  }
-};
-
-window.onFaCatClear = function(sc) {
-  const s = state[sc];
-  if (!s) return;
-  const hasDownstream = s.artId || s.custId || s.sponsorId;
-  const doReset = () => {
-    if (!origSt[sc]) origSt[sc] = Object.assign({}, s);
-    s.catId = ''; s.catNm = ''; s.catType = '';
-    s.artId = ''; s.artNm = ''; s.custId = ''; s.custNm = ''; s.sponsorId = ''; s.sponNm = '';
-    s.dirty = true;
-    renFa(sc);
-    updFaProg();
-  };
-  if (hasDownstream) {
-    if (confirm('Changing the category will clear your article and sponsor selections. Continue?')) doReset();
-  } else {
-    doReset();
   }
 };
 
@@ -574,9 +607,9 @@ window.onFaCustomerChange = function(sc, sel) {
     renFa(sc);
     updFaProg();
   };
+  // FIX #15: inline confirm instead of confirm()
   if (s.artId && newCustId !== s.custId) {
-    if (confirm('Changing the customer will clear your article selection. Continue?')) doChange();
-    else { sel.value = s.custId || ''; }
+    showInlineConfirm(sel, 'Changing customer will clear article selection.', doChange, () => { sel.value = s.custId || ''; });
   } else {
     doChange();
   }
@@ -669,85 +702,47 @@ function initTsState() {
   }
 }
 
-function getTsPickerData(slotNum) {
-  const pickerEl = document.querySelector('.ts-picker-wrapper');
-  if (!pickerEl) return {};
-  const prefix = `ts${slotNum}`;
-  const sponsoredStatus = pickerEl.dataset[`${prefix}SponsoredStatus`] || '';
-  const artAdGet = pickerEl.dataset[`${prefix}ArtAdGet`] || '';
-  const artAdGo = pickerEl.dataset[`${prefix}ArtAdGo`] || '';
-  const s = state[`ts-${slotNum}`];
-  const artEl = s && s.artId ? document.querySelector(`.articles-wrapper[data-article-id="${s.artId}"]`) : null;
-  const artImgGet = artEl ? artEl.dataset.artImgGet || '' : '';
-  const artWfImg = artEl ? artEl.dataset.imageUrl || '' : '';
-  const showArtAd = artEl ? artEl.dataset.showArtAd || '' : '';
-  const artPgSet = (showArtAd === 'Show' || showArtAd === 'true') ? 'true' : '';
-  const nlPgSet = pickerEl.dataset[`${prefix}NlPgSet`] || '';
-  return { artImgGet, artWfImg, adImgGet: artAdGet, adGoLink: artAdGo, artPgSet, nlPgSet };
-}
-
-function buildTsDrawer(sc) {
-  const s = state[sc];
-  if (!s) return '';
-  const d = getTsPickerData(s.slotNum);
-  const artEl = s.artId ? document.querySelector(`.articles-wrapper[data-article-id="${s.artId}"]`) : null;
-  const fields = [
-    { label: 'Summary', value: artEl && artEl.dataset.articleSummary ? artEl.dataset.articleSummary : '—', status: artEl && artEl.dataset.articleSummary ? 'ok' : 'bad' },
-    { label: 'Body', value: artEl && artEl.dataset.articleBody ? 'Present' : '—', status: artEl && artEl.dataset.articleBody ? 'ok' : 'bad' },
-    { label: 'Writer', value: artEl && artEl.dataset.writerName ? artEl.dataset.writerName : '—', status: artEl && artEl.dataset.writerName ? 'ok' : 'bad' },
-    { label: 'CoWriter', value: artEl && artEl.dataset.cowriterName ? artEl.dataset.cowriterName : '—', status: artEl && artEl.dataset.cowriterName ? 'ok' : 'na' },
-    { label: 'Image', value: d.artWfImg ? 'Present' : '—', status: d.artWfImg ? 'ok' : 'bad' },
-    { label: 'Img GET', value: d.artImgGet ? 'Present' : '—', status: d.artImgGet ? 'ok' : 'bad' },
-    { label: 'Type', value: artEl && artEl.dataset.articleType ? artEl.dataset.articleType : '—', status: artEl && artEl.dataset.articleType ? 'ok' : 'bad' },
-    { label: 'Ad Stat', value: d.artPgSet ? 'ON' : 'OFF', status: d.artPgSet ? 'ok' : 'na' },
-    { label: 'Ad Img', value: d.adImgGet ? 'Present' : '—', status: d.adImgGet ? 'ok' : (s.sponsorId ? 'bad' : 'na') },
-    { label: 'Ad Go', value: d.adGoLink ? 'Present' : '—', status: d.adGoLink ? 'ok' : (s.sponsorId ? 'bad' : 'na') }
-  ];
-  return `<div class="pdr" id="drawer-${sc}"><div class="pdr-grid">${fields.map(f => `<div class="pdr-field"><span class="pdr-label">${f.label}</span><span class="pdr-value">${f.value}</span></div><div class="pdr-status">${icon(f.status, f.status === 'ok' ? '✓' : f.status === 'bad' ? '✕' : '—')}</div>`).join('')}</div></div>`;
-}
-
 function renTs(sc) {
   const s = state[sc];
   if (!s) return;
   const isEd = s.dirty || !!origSt[sc];
   const isSponsored = s.catType && s.catType.toLowerCase().includes('sponsor');
 
-  // ── Category column: always dropdown, hs when selected, static pill when saved ──
   let catCol;
   if (!isEd) {
     catCol = s.catId
-      ? `<div class="pc"><span class="pcl">Category</span><span class="pcp cts">${s.catNm || '—'}</span></div>`
-      : `<div class="pc"><span class="pcl">Category</span><select class="pd" onchange="onTsCatChange('${sc}',this)">${buildCatOpts('TS', '')}</select></div>`;
+      ? `<div class="pc"><span class="ppt-col-label">Category</span><span class="pcp cts">${s.catNm || '—'}</span></div>`
+      : `<div class="pc"><span class="ppt-col-label">Category</span><select class="pd" onchange="onTsCatChange('${sc}',this)">${buildCatOpts('TS', '')}</select></div>`;
   } else {
-    catCol = `<div class="pc"><span class="pcl">Category</span><select class="pd${s.catId ? ' hs' : ''}" onchange="onTsCatChange('${sc}',this)">${buildCatOpts('TS', s.catId)}</select></div>`;
+    catCol = `<div class="pc"><span class="ppt-col-label">Category</span><select class="pd${s.catId ? ' hs' : ''}" onchange="onTsCatChange('${sc}',this)">${buildCatOpts('TS', s.catId)}</select></div>`;
   }
 
-  // ── Article column — always dropdown when editing, static when saved ──
   let artCol;
   if (!isEd && s.artId) {
-    artCol = `<div class="pc"><span class="pcl">Article</span><span class="pcv">${s.artNm}</span></div>`;
+    artCol = `<div class="pc"><span class="ppt-col-label">Article</span><span class="pcv">${s.artNm}</span></div>`;
   } else {
-    artCol = `<div class="pc"><span class="pcl">Article</span><select class="pd${s.artId ? ' hs' : ''}" onchange="onTsArticleChange('${sc}',this)"${!s.catId ? ' disabled' : ''}>${buildTsArtOpts(s.catId, s.artId)}</select></div>`;
+    artCol = `<div class="pc"><span class="ppt-col-label">Article</span><select class="pd${s.artId ? ' hs' : ''}" onchange="onTsArticleChange('${sc}',this)"${!s.catId ? ' disabled' : ''}>${buildTsArtOpts(s.catId, s.artId)}</select></div>`;
   }
 
-  // ── Sponsor column (Sponsored categories only) — always dropdown when editing ──
   let sponCol = '';
   if (isSponsored) {
     const noSpCb = `<label class="pxl"><input type="checkbox" ${s.noSponsor ? 'checked' : ''} onchange="onTsNoSponsorChange('${sc}',this)"> No Sponsor</label>`;
     if (s.noSponsor) {
-      sponCol = `<div class="pc"><span class="pcl">Sponsor</span><span class="pcv ns">${noSpCb}</span></div>`;
+      sponCol = `<div class="pc"><span class="ppt-col-label">Sponsor</span><span class="pcv ns">${noSpCb}</span></div>`;
     } else if (!isEd && s.sponsorId) {
-      sponCol = `<div class="pc"><span class="pcl">Sponsor</span><span class="pcv sponsor">${s.sponNm}</span></div>`;
+      sponCol = `<div class="pc"><span class="ppt-col-label">Sponsor</span><span class="pcv sponsor">${s.sponNm}</span></div>`;
     } else {
-      sponCol = `<div class="pc"><span class="pcl">Sponsor ${noSpCb}</span><select class="pd${s.sponsorId ? ' hs' : ''}" onchange="onTsSponsorChange('${sc}',this)"${!s.artId ? ' disabled' : ''}>${buildCustOpts(s.sponsorId, '--')}</select></div>`;
+      sponCol = `<div class="pc"><span class="ppt-col-label">Sponsor ${noSpCb}</span><select class="pd${s.sponsorId ? ' hs' : ''}" onchange="onTsSponsorChange('${sc}',this)"${!s.artId ? ' disabled' : ''}>${buildCustOpts(s.sponsorId, '--')}</select></div>`;
     }
   }
 
   const actLnk = isEd
-    ? `<a class="pcl visible" onclick="cancelTsEdit('${sc}')">cancel</a>`
+    ? `<a class="ppt-cancel-lnk visible" onclick="cancelTsEdit('${sc}')">cancel</a>`
     : (s.catId ? `<a class="pei" onclick="initTsEdit('${sc}')" title="Edit">✎</a>` : '<span style="color:#ccc;">—</span>');
   const chevron = `<span class="pch" onclick="tD('${sc}')">▾</span>`;
 
+  // FIX #13: use unified buildArtAdDrawer()
+  const drawerHtml = buildArtAdDrawer(sc, getTsPickerData(s.slotNum), s.sponsorId);
   const tileHtml = `<div class="ptr tsr${isEd ? ' hp' : ''}" id="tile-${sc}"><div class="psi sts">${sc.toUpperCase()}</div>${catCol}${artCol}${sponCol}<div class="pac">${actLnk}${chevron}</div></div>`;
 
   const existing = document.getElementById(`tile-${sc}`);
@@ -758,7 +753,7 @@ function renTs(sc) {
     if (existingDrawer) existingDrawer.remove();
     const newTile = document.getElementById(`tile-${sc}`);
     if (newTile) {
-      newTile.insertAdjacentHTML('afterend', buildTsDrawer(sc));
+      newTile.insertAdjacentHTML('afterend', drawerHtml);
       if (drawerOpen) {
         const d = document.getElementById(`drawer-${sc}`);
         if (d) d.classList.add('open');
@@ -768,7 +763,7 @@ function renTs(sc) {
     }
   } else {
     const grid = document.getElementById('ts-grid');
-    if (grid) grid.insertAdjacentHTML('beforeend', tileHtml + buildTsDrawer(sc));
+    if (grid) grid.insertAdjacentHTML('beforeend', tileHtml + drawerHtml);
   }
 }
 
@@ -808,30 +803,11 @@ window.onTsCatChange = function(sc, sel) {
     renTs(sc);
     updTsProg();
   };
+  // FIX #15: inline confirm instead of confirm()
   if (hasDownstream) {
-    if (confirm('Changing the category will clear your article and sponsor selections. Continue?')) doChange();
-    else { sel.value = s.catId || ''; }
+    showInlineConfirm(sel, 'Changing category will clear article & sponsor.', doChange, () => { sel.value = s.catId || ''; });
   } else {
     doChange();
-  }
-};
-
-window.onTsCatClear = function(sc) {
-  const s = state[sc];
-  if (!s) return;
-  const hasDownstream = s.artId || s.sponsorId;
-  const doReset = () => {
-    if (!origSt[sc]) origSt[sc] = Object.assign({}, s);
-    s.catId = ''; s.catNm = ''; s.catType = '';
-    s.artId = ''; s.artNm = ''; s.sponsorId = ''; s.sponNm = '';
-    s.dirty = true;
-    renTs(sc);
-    updTsProg();
-  };
-  if (hasDownstream) {
-    if (confirm('Changing the category will clear your article and sponsor selections. Continue?')) doReset();
-  } else {
-    doReset();
   }
 };
 
@@ -955,19 +931,22 @@ function renBa(sc) {
     : '';
   let custCol;
   if (s.custId && !isEd) {
-    custCol = `<div class="ppt-card-field"><span class="pcl">Customer</span><span class="pcv">${s.custNm}</span></div>`;
+    // FIX #5: pcl → ppt-col-label
+    custCol = `<div class="ppt-card-field"><span class="ppt-col-label">Customer</span><span class="pcv">${s.custNm}</span></div>`;
   } else {
-    custCol = `<div class="ppt-card-field"><span class="pcl">Customer</span><select class="pd${s.custId ? ' hs' : ''}" onchange="onBaCustomerChange('${sc}',this)">${buildCustomerOptions(s.custId)}</select></div>`;
+    // FIX #10: buildCustomerOptions() → buildCustOpts()
+    custCol = `<div class="ppt-card-field"><span class="ppt-col-label">Customer</span><select class="pd${s.custId ? ' hs' : ''}" onchange="onBaCustomerChange('${sc}',this)">${buildCustOpts(s.custId, 'Select customer...')}</select></div>`;
   }
   let adCol = '';
   if (isEd || !s.adId) {
-    adCol = `<div class="ppt-card-field"><span class="pcl">Ad</span><select class="pd${s.adId ? ' hs' : ''}" onchange="onBaAdChange('${sc}',this)"${!s.custId ? ' disabled' : ''}>${buildAdOptions(s.custId, s.adId)}</select></div>`;
+    adCol = `<div class="ppt-card-field"><span class="ppt-col-label">Ad</span><select class="pd${s.adId ? ' hs' : ''}" onchange="onBaAdChange('${sc}',this)"${!s.custId ? ' disabled' : ''}>${buildAdOptions(s.custId, s.adId)}</select></div>`;
   }
   const actLnk = isEd
-    ? `<a class="pcl visible" onclick="cancelBaEdit('${sc}')">cancel</a>`
+    ? `<a class="ppt-cancel-lnk visible" onclick="cancelBaEdit('${sc}')">cancel</a>`
     : (s.adId ? `<a class="pei" onclick="initBaEdit('${sc}')" title="Edit">✎</a>` : '<span style="color:#ccc;">—</span>');
   const chevron = `<span class="pch" onclick="tD('${sc}')">▾</span>`;
-  const html = `<div class="ptw" id="wrapper-${sc}"><div class="ptc${isEd ? ' hp' : ''}" id="tile-${sc}"><div class="pcs">${sc.toUpperCase()}</div>${adThumb}<div class="pcc">${custCol}${adCol}</div><div class="pca">${actLnk}${chevron}</div></div>${buildBaDrawer(sc)}</div>`;
+  // FIX #4: pcc → ptc-body
+  const html = `<div class="ptw" id="wrapper-${sc}"><div class="ptc${isEd ? ' hp' : ''}" id="tile-${sc}"><div class="pcs">${sc.toUpperCase()}</div>${adThumb}<div class="ptc-body">${custCol}${adCol}</div><div class="pca">${actLnk}${chevron}</div></div>${buildBaDrawer(sc)}</div>`;
   const existing = document.getElementById(`wrapper-${sc}`);
   if (existing) {
     const drawerWasOpen = document.getElementById(`drawer-${sc}`) ? document.getElementById(`drawer-${sc}`).classList.contains('open') : false;
@@ -1049,8 +1028,7 @@ window.switchTfMode = function(mode) {
   const hasTxaChanges = [1, 2, 3, 4, 5].some(i => state[`txa-${i}`] && state[`txa-${i}`].dirty);
   const hasLbpChanges = state['lbp-1'] && state['lbp-1'].dirty;
   const hasChanges = (currentTfMode === 'txa' && hasTxaChanges) || (currentTfMode === 'lbp' && hasLbpChanges);
-  if (hasChanges) {
-    if (!confirm('Switching modes will clear unsaved changes. Continue?')) return;
+  const doSwitch = () => {
     if (currentTfMode === 'txa') {
       for (let i = 1; i <= 5; i++) {
         const code = `txa-${i}`;
@@ -1061,18 +1039,25 @@ window.switchTfMode = function(mode) {
       if (state['lbp-1']) { state['lbp-1'].dirty = false; state['lbp-1'].custId = ''; state['lbp-1'].custNm = ''; }
       delete origSt['lbp-1'];
     }
+    currentTfMode = mode;
+    document.querySelectorAll('.tf-mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+    const tfTxa = document.querySelector('.the-find-txa');
+    const tfLbp = document.querySelector('.the-find-lbp');
+    if (tfTxa) tfTxa.classList.toggle('is-active', mode === 'txa');
+    if (tfLbp) tfLbp.classList.toggle('is-active', mode === 'lbp');
+    const countEl = document.getElementById('tf-slot-count');
+    if (countEl) countEl.textContent = mode === 'txa' ? '5 slots' : '1 slot';
+    updTfProg();
+  };
+  // FIX #15: inline confirm instead of confirm()
+  if (hasChanges) {
+    const btn = document.querySelector(`.tf-mode-btn[data-mode="${mode}"]`);
+    showInlineConfirm(btn || document.getElementById('tf-submit-btn'), 'Switching modes will clear unsaved changes.', doSwitch, null);
+  } else {
+    doSwitch();
   }
-  currentTfMode = mode;
-  document.querySelectorAll('.tf-mode-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.mode === mode);
-  });
-  const tfTxa = document.querySelector('.the-find-txa');
-  const tfLbp = document.querySelector('.the-find-lbp');
-  if (tfTxa) tfTxa.classList.toggle('is-active', mode === 'txa');
-  if (tfLbp) tfLbp.classList.toggle('is-active', mode === 'lbp');
-  const countEl = document.getElementById('tf-slot-count');
-  if (countEl) countEl.textContent = mode === 'txa' ? '5 slots' : '1 slot';
-  updTfProg();
 };
 
 function initTxaState() {
@@ -1138,15 +1123,17 @@ function renTxa(sc) {
     : '';
   let custCol;
   if (s.custId && !isEd) {
-    custCol = `<div class="ppt-card-field"><span class="pcl">Customer</span><span class="pcv">${s.custNm}</span></div>`;
+    custCol = `<div class="ppt-card-field"><span class="ppt-col-label">Customer</span><span class="pcv">${s.custNm}</span></div>`;
   } else {
-    custCol = `<div class="ppt-card-field"><span class="pcl">Customer</span><select class="pd${s.custId ? ' hs' : ''}" onchange="onTxaCustomerChange('${sc}',this)">${buildCustomerOptions(s.custId)}</select></div>`;
+    // FIX #10: buildCustomerOptions() → buildCustOpts()
+    custCol = `<div class="ppt-card-field"><span class="ppt-col-label">Customer</span><select class="pd${s.custId ? ' hs' : ''}" onchange="onTxaCustomerChange('${sc}',this)">${buildCustOpts(s.custId, 'Select customer...')}</select></div>`;
   }
   const actLnk = isEd
-    ? `<a class="pcl visible" onclick="cancelTxaEdit('${sc}')">cancel</a>`
+    ? `<a class="ppt-cancel-lnk visible" onclick="cancelTxaEdit('${sc}')">cancel</a>`
     : (s.custId ? `<a class="pei" onclick="initTxaEdit('${sc}')" title="Edit">✎</a>` : '<span style="color:#ccc;">—</span>');
   const chevron = `<span class="pch" onclick="tD('${sc}')">▾</span>`;
-  const html = `<div class="ptw" id="wrapper-${sc}"><div class="ptc tfc${isEd ? ' hp' : ''}" id="tile-${sc}"><div class="pcs">${sc.toUpperCase()}</div>${logoThumb}<div class="pcc">${custCol}</div><div class="pca">${actLnk}${chevron}</div></div>${buildTxaDrawer(sc)}</div>`;
+  // FIX #4: pcc → ptc-body
+  const html = `<div class="ptw" id="wrapper-${sc}"><div class="ptc tfc${isEd ? ' hp' : ''}" id="tile-${sc}"><div class="pcs">${sc.toUpperCase()}</div>${logoThumb}<div class="ptc-body">${custCol}</div><div class="pca">${actLnk}${chevron}</div></div>${buildTxaDrawer(sc)}</div>`;
   const existing = document.getElementById(`wrapper-${sc}`);
   if (existing) {
     const drawerWasOpen = document.getElementById(`drawer-${sc}`) ? document.getElementById(`drawer-${sc}`).classList.contains('open') : false;
@@ -1197,11 +1184,13 @@ window.cancelTxaEdit = function(sc) {
   updTfProg();
 };
 
+// FIX #12: initLbpState now reads titleadminId from DOM
 function initLbpState() {
   const el = document.querySelector('.txa-slot-wrapper[data-slot-code="txa-1"]');
   state['lbp-1'] = {
     sc: 'lbp-1', secC: 'lbp',
     section: 'The Find',
+    titleadminId: el ? (el.dataset.titleAdminId || el.dataset.titleadminId || '') : getTitleadminId(),
     custId: el ? el.dataset.customerId || '' : '',
     custNm: el ? el.dataset.customerName || '' : '',
     dirty: false
@@ -1247,24 +1236,30 @@ function renLbp() {
   const isEd = s.dirty || origSt['lbp-1'];
   let custCol;
   if (s.custId && !isEd) {
-    custCol = `<div class="ppt-card-field"><span class="pcl">Featured Business</span><span class="pcv">${s.custNm}</span></div>`;
+    custCol = `<div class="ppt-card-field"><span class="ppt-col-label">Featured Business</span><span class="pcv">${s.custNm}</span></div>`;
   } else {
-    custCol = `<div class="ppt-card-field"><span class="pcl">Featured Business</span><select class="pd${s.custId ? ' hs' : ''}" style="min-width:200px;" onchange="onLbpCustomerChange(this)">${buildCustomerOptions(s.custId)}</select></div>`;
+    // FIX #10: buildCustomerOptions() → buildCustOpts()
+    custCol = `<div class="ppt-card-field"><span class="ppt-col-label">Featured Business</span><select class="pd${s.custId ? ' hs' : ''}" style="min-width:200px;" onchange="onLbpCustomerChange(this)">${buildCustOpts(s.custId, 'Select business...')}</select></div>`;
   }
   const actLnk = isEd
-    ? `<a class="pcl visible" onclick="cancelLbpEdit()">cancel</a>`
+    ? `<a class="ppt-cancel-lnk visible" onclick="cancelLbpEdit()">cancel</a>`
     : (s.custId ? `<a class="pei" onclick="initLbpEdit()" title="Edit">✎</a>` : '<span style="color:#ccc;">—</span>');
   const chevron = `<span class="pch" onclick="tD('lbp-1')">▾</span>`;
-  const html = `<div class="ptc tfc${isEd ? ' hp' : ''}" id="tile-lbp-1"><div class="pcs">LBP</div><div class="pcc">${custCol}</div><div class="pca">${actLnk}${chevron}</div></div>${buildLbpDrawer()}`;
+  // FIX #4: pcc → ptc-body
+  // FIX #8: tile HTML and drawer HTML kept separate; no double insertion
+  const tileHtml = `<div class="ptc tfc${isEd ? ' hp' : ''}" id="tile-lbp-1"><div class="pcs">LBP</div><div class="ptc-body">${custCol}</div><div class="pca">${actLnk}${chevron}</div></div>`;
+  const drawerHtml = buildLbpDrawer();
+
   const existing = document.getElementById('tile-lbp-1');
   const existingDrawer = document.getElementById('drawer-lbp-1');
   if (existing) {
     const drawerWasOpen = existingDrawer ? existingDrawer.classList.contains('open') : false;
-    existing.outerHTML = html;
+    existing.outerHTML = tileHtml;
     if (existingDrawer) existingDrawer.remove();
     const newTile = document.getElementById('tile-lbp-1');
     if (newTile) {
-      newTile.insertAdjacentHTML('afterend', buildLbpDrawer());
+      // FIX #8: insert drawer exactly once here
+      newTile.insertAdjacentHTML('afterend', drawerHtml);
       if (drawerWasOpen) {
         const d = document.getElementById('drawer-lbp-1');
         if (d) d.classList.add('open');
@@ -1274,7 +1269,8 @@ function renLbp() {
     }
   } else {
     const grid = document.getElementById('lbp-grid');
-    if (grid) grid.insertAdjacentHTML('beforeend', html);
+    // FIX #8: single concatenated insertion on first render
+    if (grid) grid.insertAdjacentHTML('beforeend', tileHtml + drawerHtml);
   }
 }
 
@@ -1434,7 +1430,8 @@ window.submitSection = async function(section) {
       if (s && s.dirty) slots.push({
         'hidden-pubplan-id':      pubplanId,
         'hidden-slot-label':      'lbp-1',
-        'hidden-titleadmin-id':   getTitleadminId(),
+        // FIX #12: now reads from state, which initLbpState() populates from DOM
+        'hidden-titleadmin-id':   s.titleadminId,
         'hidden-section-code':    s.secC,
         'hidden-category-group':  s.section,
         'hidden-customer-id':     s.custId,
@@ -1443,10 +1440,8 @@ window.submitSection = async function(section) {
     }
   }
 
-  // Send one webhook call per dirty slot
-  const payload = slots.length > 0 ? slots[0] : { 'hidden-pubplan-id': pubplanId, section };
+  // FIX #9: removed dead `payload` variable — Promise.all uses `slots` directly
 
-  // Section anchor IDs for scroll-back after redirect
   const SECTION_ANCHORS = {
     gr: 'gr-loc', em: 'em-loc', fa: 'fa-loc', ts: 'ts-loc', ba: 'ba-loc', tf: 'tf-loc'
   };
@@ -1482,6 +1477,21 @@ function init() {
   if (nameEl && dataWrapper) {
     nameEl.textContent = dataWrapper.dataset.pubplanName || '';
   }
+
+  // FIX #11: Read saved TF mode from DOM; fall back to 'txa' if not set
+  const tfModeEl = document.querySelector('[data-tf-mode]');
+  currentTfMode = (tfModeEl && tfModeEl.dataset.tfMode) ? tfModeEl.dataset.tfMode : 'txa';
+  // Sync the toggle button UI to match the loaded mode
+  document.querySelectorAll('.tf-mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === currentTfMode);
+  });
+  const tfTxa = document.querySelector('.the-find-txa');
+  const tfLbp = document.querySelector('.the-find-lbp');
+  if (tfTxa) tfTxa.classList.toggle('is-active', currentTfMode === 'txa');
+  if (tfLbp) tfLbp.classList.toggle('is-active', currentTfMode === 'lbp');
+  const countEl = document.getElementById('tf-slot-count');
+  if (countEl) countEl.textContent = currentTfMode === 'txa' ? '5 slots' : '1 slot';
+
   initGrState();
   initEmState();
   initFaState();
