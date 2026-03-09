@@ -1,1376 +1,1468 @@
-<!-- ============================================================
-PUBPLAN TILE UI v4.0.0 — JS EMBED
-Horizontal tile layout logic
-Make webhook: https://hook.us1.make.com/4cbueud23qmtrkwq396rgw2yhh5yzajb
-============================================================ -->
+<!-- PUBPLAN v4.0.1 - FA/TS category-first flow fixed -->
 <script>
 (function(){
 'use strict';
 const WEBHOOK_URLS ={
-gr: 'https://hook.us1.make.com/4cbueud23qmtrkwq396rgw2yhh5yzajb',
+gr: 'https://hook.us1.make.com/ganq7imi5erisgnlplsmhicog6ixjdwq',
+em: 'https://hook.us1.make.com/ganq7imi5erisgnlplsmhicog6ixjdwq',
 fa: 'https://hook.us1.make.com/4cbueud23qmtrkwq396rgw2yhh5yzajb',
 ts: 'https://hook.us1.make.com/4cbueud23qmtrkwq396rgw2yhh5yzajb',
 ba: 'https://hook.us1.make.com/gr6i2ang1gpgox8ipotppi26gbjj1f7d',
 tf: 'https://hook.us1.make.com/4cbueud23qmtrkwq396rgw2yhh5yzajb'
 };
 const state ={};
-const originalState ={};
-let currentTfMode = 'txa';
-// UTILITY FUNCTIONS
-function pill(status, label){
-const icons ={ok: '✓', bad: '✕', na: '—' };
-return `<div class="ppt-mini-pill ${status}">${icons[status]} ${label}</div>`;
+const origSt ={};
+let currentTfMode='txa';
+function pill(status,label){
+const icons ={ok: '✓',bad: '✕',na: '—'};
+return `<div class="pmp ${status}">${icons[status]} ${label}</div>`;
 }
-function icon(status, symbol){
-return `<div class="ppt-icon ${status}">${symbol}</div>`;
+function icon(status,symbol){
+return `<div class="pio ${status}">${symbol}</div>`;
 }
-function showToast(msg, isError){
-const t = document.getElementById('ppt-toast');
+function showToast(msg,isError){
+const t=document.getElementById('pto');
 if (!t) return;
-t.textContent = msg;
-t.className = 'ppt-toast show' + (isError ? ' error' : '');
-setTimeout(() => t.classList.remove('show'), 3500);
+t.textContent=msg;
+t.className='pto show'+(isError?' error':'');
+setTimeout(()=>t.classList.remove('show'),3500);
 }
-window.toggleDrawer = function(slotCode){
-const drawer = document.getElementById(`drawer-${slotCode}`);
-const tile = document.getElementById(`tile-${slotCode}`);
-const chevron = tile?.querySelector('.ppt-chevron');
+window.tD=function(sc){
+const drawer=document.getElementById(`drawer-${sc}`);
+const tile=document.getElementById(`tile-${sc}`);
+const chevron=tile?.qS('.pch');
 if (drawer){
- drawer.classList.toggle('open');
- chevron?.classList.toggle('open');
+drawer.classList.toggle('open');
+chevron?.classList.toggle('open');
 }
 };
-window.toggleSection = function(section){
-const el = document.getElementById(`section-${section}`);
+window.tS=function(section){
+const el=document.getElementById(`section-${section}`);
 if (el) el.classList.toggle('collapsed');
 };
-function updateSlotIndicators(section, count, readyFn){
-const container = document.getElementById(`${section}-indicators`);
+function updSlotInd(section,count,readyFn){
+const container=document.getElementById(`${section}-indicators`);
 if (!container) return;
-let html = '';
-for (let i = 1; i <= count; i++){
- const code = `${section}-${i}`;
- const isReady = readyFn(code);
- html += `<div class="ppt-slot-dot ${isReady ? 'ready' : 'empty'}">${i}</div>`;
+let html='';
+for (let i=1;i <= count;i++){
+const code=`${section}-${i}`;
+const isReady=readyFn(code);
+html += `<div class="ppt-slot-dot ${isReady?'ready':'empty'}">${i}</div>`;
 }
-container.innerHTML = html;
+container.innerHTML=html;
 }
 function getPubplanId(){
-const el = document.querySelector('.pubplan-data-wrapper');
+const el=document.querySelector('.psw[data-pubplan-id]');
 return el?.dataset?.pubplanId||'';
 }
-// DROPDOWN BUILDERS
 function buildCustomerOptions(selectedId){
-const custEls = document.querySelectorAll('.customers-wrapper');
-const allCust = [];
-custEls.forEach(el =>{
- if (el.dataset.id){
- allCust.push({id: el.dataset.id, name: el.dataset.name||'(unnamed)' });
- }
+const custEls=document.querySelectorAllllll('.cw');
+const allCust=[];
+custEls.forEach(el=>{
+if (el.dataset.id){
+allCust.push({id: el.dataset.id,name: el.dataset.name||'(unnamed)'});
+}
 });
 if (!allCust.length) return '<option value="" disabled selected>No customers</option>';
-return '<option value="" disabled' + (!selectedId ? ' selected' : '') + '>Select customer...</option>' +
- allCust.sort((a,b) => a.name.localeCompare(b.name))
- .map(c => `<option value="${c.id}"${c.id === selectedId ? ' selected' : ''}>${c.name}</option>`).join('');
+return '<option value="" disabled'+(!selectedId?' selected':'')+'>Select customer...</option>' +
+allCust.sort((a,b)=>a.name.localeCompare(b.name))
+.map(c=>`<option value="${c.id}"${c.id===selectedId?' selected':''}>${c.name}</option>`).join('');
 }
-function buildSponsorOptions(selectedId){
-const custEls = document.querySelectorAll('.customers-wrapper');
-const allCust = [];
-custEls.forEach(el =>{
- if (el.dataset.id){
- allCust.push({id: el.dataset.id, name: el.dataset.name||'(unnamed)' });
- }
+function buildSponOpts(selectedId){
+const custEls=document.querySelectorAllllll('.cw');
+const allCust=[];
+custEls.forEach(el=>{
+if (el.dataset.id){
+allCust.push({id: el.dataset.id,name: el.dataset.name||'(unnamed)'});
+}
 });
 if (!allCust.length) return '<option value="" disabled selected>No sponsors</option>';
-return '<option value="" disabled' + (!selectedId ? ' selected' : '') + '>Add sponsor...</option>' +
- allCust.sort((a,b) => a.name.localeCompare(b.name))
- .map(c => `<option value="${c.id}"${c.id === selectedId ? ' selected' : ''}>${c.name}</option>`).join('');
+return '<option value="" disabled'+(!selectedId?' selected':'')+'>Add sponsor...</option>' +
+allCust.sort((a,b)=>a.name.localeCompare(b.name))
+.map(c=>`<option value="${c.id}"${c.id===selectedId?' selected':''}>${c.name}</option>`).join('');
 }
-function buildCustomerOptionsWithLabel(selectedId, placeholder){
-const custEls = document.querySelectorAll('.customers-wrapper');
-const allCust = [];
-custEls.forEach(el =>{
- if (el.dataset.id){
- allCust.push({id: el.dataset.id, name: el.dataset.name||'(unnamed)' });
- }
+function buildCustOpts(selectedId,placeholder){
+const custEls=document.querySelectorAllllll('.cw');
+const allCust=[];
+custEls.forEach(el=>{
+if (el.dataset.id){
+allCust.push({id: el.dataset.id,name: el.dataset.name||'(unnamed)'});
+}
 });
 if (!allCust.length) return '<option value="" disabled selected>No options</option>';
-return '<option value="" disabled' + (!selectedId ? ' selected' : '') + '>' + placeholder + '</option>' +
- allCust.sort((a,b) => a.name.localeCompare(b.name))
- .map(c => `<option value="${c.id}"${c.id === selectedId ? ' selected' : ''}>${c.name}</option>`).join('');
+return '<option value="" disabled'+(!selectedId?' selected':'')+'>'+placeholder+'</option>' +
+allCust.sort((a,b)=>a.name.localeCompare(b.name))
+.map(c=>`<option value="${c.id}"${c.id===selectedId?' selected':''}>${c.name}</option>`).join('');
 }
-function buildArticleOptions(customerId, selectedId){
-const wrapper = document.querySelector('.fa-picker-wrapper');
+function buildArtOpts(custId,selectedId){
+const wrapper=document.querySelector('.fpw');
 if (!wrapper) return '<option value="" disabled selected>No articles</option>';
-const items = Array.from(wrapper.querySelectorAll('.fa-picker-item')).filter(el =>{
- return !customerId||el.dataset.customerId === customerId;
-}).map(el => ({
- id: el.dataset.articleId||'',
- name: el.dataset.articleName||''
-})).filter(a => a.id && a.name);
+const items=Array.from(wrapper.qSAll('.fa-picker-item')).filter(el=>{
+return !custId||el.dataset.custId===custId;
+}).map(el=>({
+id: el.dataset.artId||'',
+name: el.dataset.artNm||''
+})).filter(a=>a.id&&a.name);
 if (!items.length) return '<option value="" disabled selected>No articles</option>';
-return '<option value="" disabled' + (!selectedId ? ' selected' : '') + '>Select article...</option>' +
- items.map(a => `<option value="${a.id}"${a.id === selectedId ? ' selected' : ''}>${a.name}</option>`).join('');
+return '<option value="" disabled'+(!selectedId?' selected':'')+'>Select article...</option>' +
+items.map(a=>`<option value="${a.id}"${a.id===selectedId?' selected':''}>${a.name}</option>`).join('');
 }
-function buildTsArticleOptions(selectedId){
-const wrapper = document.querySelector('.ts-picker-wrapper');
+function buildTsArtOpts(selectedId){
+const wrapper=document.querySelector('.tpw');
 if (!wrapper) return '<option value="" disabled selected>No articles</option>';
-const items = Array.from(wrapper.querySelectorAll('.ts-picker-item')).map(el => ({
- id: el.dataset.articleId||'',
- name: el.dataset.articleName||''
-})).filter(a => a.id && a.name);
+const items=Array.from(wrapper.qSAll('.ts-picker-item')).map(el=>({
+id: el.dataset.artId||'',
+name: el.dataset.artNm||''
+})).filter(a=>a.id&&a.name);
 if (!items.length) return '<option value="" disabled selected>No articles</option>';
-return '<option value="" disabled' + (!selectedId ? ' selected' : '') + '>Select article...</option>' +
- items.map(a => `<option value="${a.id}"${a.id === selectedId ? ' selected' : ''}>${a.name}</option>`).join('');
+return '<option value="" disabled'+(!selectedId?' selected':'')+'>Select article...</option>' +
+items.map(a=>`<option value="${a.id}"${a.id===selectedId?' selected':''}>${a.name}</option>`).join('');
 }
-function buildAdOptions(customerId, selectedId, wrapperClass){
-const adEls = document.querySelectorAll('.ads-wrapper');
-const allAds = [];
-adEls.forEach(el =>{
- const id = el.dataset.adId;
- if (id){
- allAds.push({
- id,
- name: el.dataset.adName||el.dataset.adTitle||el.dataset.name||'(untitled)',
- customerId: el.dataset.adCustomerId||el.dataset.customerId||''
- });
- }
+function buildCatOpts(group,selectedId){
+
+const prodEls=document.querySelectorAllllll('.pw');
+const cats=[];
+prodEls.forEach(el=>{
+if (el.dataset.group===group&&el.dataset.id){
+cats.push({
+id: el.dataset.id,
+name: el.dataset.name||'(unnamed)',
+type: el.dataset.type||''
 });
-const filtered = allAds.filter(a => !customerId||a.customerId === customerId);
+}
+});
+if (!cats.length) return '<option value="" disabled selected>No categories</option>';
+cats.sort((a,b)=>a.name.localeCompare(b.name));
+return '<option value="" disabled'+(!selectedId?' selected':'')+'>Select category...</option>' +
+cats.map(c=>`<option value="${c.id}" data-type="${c.type}"${c.id===selectedId?' selected':''}>${c.name}</option>`).join('');
+}
+function buildAdOptions(custId,selectedId,wrapperClass){
+const adEls=document.querySelectorAllllll('.adw');
+const allAds=[];
+adEls.forEach(el=>{
+const id=el.dataset.adId;
+if (id){
+allAds.push({
+id,
+name: el.dataset.adName||el.dataset.adTitle||el.dataset.name||'(untitled)',
+custId: el.dataset.adCustomerId||el.dataset.custId||''
+});
+}
+});
+const filtered=allAds.filter(a=>!custId||a.custId===custId);
 if (!filtered.length) return '<option value="" disabled selected>No ads</option>';
-return '<option value="" disabled' + (!selectedId ? ' selected' : '') + '>Select ad...</option>' +
- filtered.sort((a,b) => a.name.localeCompare(b.name))
- .map(a => `<option value="${a.id}"${a.id === selectedId ? ' selected' : ''}>${a.name}</option>`).join('');
+return '<option value="" disabled'+(!selectedId?' selected':'')+'>Select ad...</option>' +
+filtered.sort((a,b)=>a.name.localeCompare(b.name))
+.map(a=>`<option value="${a.id}"${a.id===selectedId?' selected':''}>${a.name}</option>`).join('');
 }
-// GR - GREETING
+const GR_LIMITS={grTit: 50,grMsg: 300};
+const EM_LIMITS={emSub: 60,emPre: 100};
 function initGrState(){
-const el = document.querySelector('.pubplan-slot-wrapper[data-section-code="gr"]');
-state['gr-1'] ={
- slotCode: 'gr-1',
- sectionCode: 'gr',
- slotNum: 1,
- pubplanId: el?.dataset.pubplanId||'',
- greetingTitle: el?.dataset.greetingTitle||'',
- greetingMessage: el?.dataset.greetingMessage||'',
- dirty: false
-};
+const el=document.querySelector('.psw[data-section-code="gr"]');
+state['gr-1']={sc:'gr-1',secC:'gr',slotNum:1,pubplanId:el?.dataset.ppId||'',grTit:el?.dataset.grTitle||'',grMsg:el?.dataset.grMessage||'',dirty:0};
 }
-function renderGrTile(){
-const s = state['gr-1'];
-if (!s) return;
-const isEditing = s.dirty||originalState['gr-1'];
-const hasContent = s.greetingTitle||s.greetingMessage;
-let contentHtml;
-if (isEditing){
- contentHtml = `
- <div class="ppt-col" style="flex:1;">
- <span class="ppt-col-label">Greeting Title</span>
- <input type="text" class="ppt-input" value="${(s.greetingTitle||'').replace(/"/g, '&quot;')}" onchange="onGrTitleChange(this)" placeholder="Enter title...">
- </div>
- <div class="ppt-col" style="flex:2;">
- <span class="ppt-col-label">Greeting Message</span>
- <textarea class="ppt-textarea" onchange="onGrMessageChange(this)" placeholder="Enter message...">${s.greetingMessage||''}</textarea>
- </div>`;
-} else if (hasContent){
- contentHtml = `
- <div class="ppt-col" style="flex:1;">
- <span class="ppt-col-label">Greeting Title</span>
- <span class="ppt-col-value">${s.greetingTitle||'—'}</span>
- </div>
- <div class="ppt-col" style="flex:2;">
- <span class="ppt-col-label">Greeting Message</span>
- <span class="ppt-col-value">${s.greetingMessage||'—'}</span>
- </div>`;
-} else{
- contentHtml = `<div class="ppt-col" style="flex:1;"><span style="color:#ccc;">No greeting set. Click edit to add.</span></div>`;
+function initEmState(){
+const el=document.querySelector('.psw[data-section-code="em"]');
+state['em-1']={sc:'em-1',secC:'em',slotNum:1,pubplanId:el?.dataset.ppId||'',emSub:el?.dataset.emSubject||'',emPre:el?.dataset.emPreview||'',dirty:0};
 }
-const actionLink = isEditing ? 
- `<a class="ppt-cancel-link visible" onclick="cancelGrEdit()">cancel</a>` :
- `<a class="ppt-edit-icon" onclick="initGrEdit()" title="Edit">✎</a>`;
-const html = `
- <div class="ppt-tile-row gr-row${isEditing ? ' has-pending' : ''}" id="tile-gr-1">
- <div class="ppt-slot-id sid-gr">GR-1</div>
- ${contentHtml}
- <div class="ppt-actions">${actionLink}</div>
- </div>`;
-const existing = document.getElementById('tile-gr-1');
-if (existing){existing.outerHTML = html;} else{const grid = document.getElementById('gr-grid'); if (grid) grid.insertAdjacentHTML('beforeend', html);}
+function charCount(max,val){const rem=Math.max(0,max-(val||'').length);const cls=rem<=max*0.1?'danger':rem<=max*0.2?'warning':'';return `<span class="pcc ${cls}">${rem} left</span>`;}
+function renGr(){
+const s=state['gr-1'];if (!s) return;
+const isEd=s.dirty||origSt['gr-1'];
+const hasCon=s.grTit||s.grMsg;
+let cHtml;
+if (isEd){
+cHtml=`<div class="pc" style="flex:1;"><span class="pcl">Greeting Title</span><input type="text" class="pi" maxlength="${GR_LIMITS.grTit}" value="${(s.grTit||'').replace(/"/g,'&quot;')}" oninput="onGrFieldChange('grTit',this)" placeholder="title...">${charCount(GR_LIMITS.grTit,s.grTit)}</div><div class="pc" style="flex:2;"><span class="pcl">Greeting Message</span><textarea class="ppt-textarea" maxlength="${GR_LIMITS.grMsg}" oninput="onGrFieldChange('grMsg',this)" placeholder="message...">${s.grMsg||''}</textarea>${charCount(GR_LIMITS.grMsg,s.grMsg)}</div>`;
+} else if (hasCon){
+cHtml=`<div class="pc" style="flex:1;"><span class="pcl">Greeting Title</span><span class="pcv">${s.grTit||'—'}</span></div><div class="pc" style="flex:2;"><span class="pcl">Greeting Message</span><span class="pcv">${s.grMsg||'—'}</span></div>`;
+} else {
+cHtml=`<div class="pc" style="flex:1;"><span style="color:#ccc;">No greeting set. Click edit to add.</span></div>`;
 }
-function updateGrProgress(){
-const isSlotReady = (code) =>{const s = state[code]; return !!(s?.greetingTitle && s?.greetingMessage);};
-updateSlotIndicators('gr', 1, isSlotReady);
-const btn = document.getElementById('gr-submit-btn');
-if (btn) btn.className = 'ppt-submit-btn' + (state['gr-1']?.dirty ? ' active' : '');
+const actLnk=isEd?`<a class="pcl visible" onclick="cancelGrEdit()">cancel</a>`:`<a class="pei" onclick="initGrEdit()" title="Edit">✎</a>`;
+const html=`<div class="ptr grr${isEd?' hp':''}" id="tile-gr-1"><div class="psi sgr">GR-1</div>${cHtml}<div class="pac">${actLnk}</div></div>`;
+const existing=document.getElementById('tile-gr-1');
+if (existing){existing.outerHTML=html;} else {const grid=document.getElementById('gr-grid');if (grid) grid.insertAdjacentHTML('beforeend',html);}
 }
-window.onGrTitleChange = function(input){const s = state['gr-1']; if (!s) return; s.greetingTitle = input.value; s.dirty = true; updateGrProgress();};
-window.onGrMessageChange = function(textarea){const s = state['gr-1']; if (!s) return; s.greetingMessage = textarea.value; s.dirty = true; updateGrProgress();};
-window.initGrEdit = function(){
-const s = state['gr-1'];
-if (!s) return;
-originalState['gr-1'] ={...s};
-s.dirty = true;
-renderGrTile();
-updateGrProgress();
-};
-window.cancelGrEdit = function(){
-const s = state['gr-1'];
-const orig = originalState['gr-1'];
-if (s && orig){
- Object.assign(s, orig);
- s.dirty = false;
- delete originalState['gr-1'];
+function renEm(){
+const s=state['em-1'];if (!s) return;
+const isEd=s.dirty||origSt['em-1'];
+const hasCon=s.emSub||s.emPre;
+let cHtml;
+if (isEd){
+cHtml=`<div class="pc" style="flex:1;"><span class="pcl">Email Subject</span><input type="text" class="pi" maxlength="${EM_LIMITS.emSub}" value="${(s.emSub||'').replace(/"/g,'&quot;')}" oninput="onEmFieldChange('emSub',this)" placeholder="subject...">${charCount(EM_LIMITS.emSub,s.emSub)}</div><div class="pc" style="flex:1;"><span class="pcl">Email Preview</span><input type="text" class="pi" maxlength="${EM_LIMITS.emPre}" value="${(s.emPre||'').replace(/"/g,'&quot;')}" oninput="onEmFieldChange('emPre',this)" placeholder="preview...">${charCount(EM_LIMITS.emPre,s.emPre)}</div>`;
+} else if (hasCon){
+cHtml=`<div class="pc" style="flex:1;"><span class="pcl">Email Subject</span><span class="pcv">${s.emSub||'—'}</span></div><div class="pc" style="flex:1;"><span class="pcl">Email Preview</span><span class="pcv">${s.emPre||'—'}</span></div>`;
+} else {
+cHtml=`<div class="pc" style="flex:1;"><span style="color:#ccc;">No email settings. Click edit to add.</span></div>`;
 }
-renderGrTile();
-updateGrProgress();
-};
-// FA - FEATURE ARTICLES
+const actLnk=isEd?`<a class="pcl visible" onclick="cancelEmEdit()">cancel</a>`:`<a class="pei" onclick="initEmEdit()" title="Edit">✎</a>`;
+const html=`<div class="ptr emr${isEd?' hp':''}" id="tile-em-1"><div class="psi sem">EM-1</div>${cHtml}<div class="pac">${actLnk}</div></div>`;
+const existing=document.getElementById('tile-em-1');
+if (existing){existing.outerHTML=html;} else {const grid=document.getElementById('em-grid');if (grid) grid.insertAdjacentHTML('beforeend',html);}
+}
+function updGrProg(){updSlotInd('gr',1,(c)=>!!(state[c]?.grTit&&state[c]?.grMsg));const btn=document.getElementById('gr-submit-btn');if (btn) btn.className='psb'+(state['gr-1']?.dirty?' active':'');}
+function updEmProg(){updSlotInd('em',1,(c)=>!!(state[c]?.emSub&&state[c]?.emPre));const btn=document.getElementById('em-submit-btn');if (btn) btn.className='psb'+(state['em-1']?.dirty?' active':'');}
+window.onGrFieldChange=function(f,el){const s=state['gr-1'];if (!s) return;s[f]=el.value;s.dirty=true;const c=el.parentElement.qS('.pcc');if (c){const max=GR_LIMITS[f]||100;const rem=Math.max(0,max-el.value.length);c.textContent=rem+' left';c.className='pcc'+(rem<=max*0.1?' danger':rem<=max*0.2?' warning':'');} updGrProg();};
+window.onEmFieldChange=function(f,el){const s=state['em-1'];if (!s) return;s[f]=el.value;s.dirty=true;const c=el.parentElement.qS('.pcc');if (c){const max=EM_LIMITS[f]||100;const rem=Math.max(0,max-el.value.length);c.textContent=rem+' left';c.className='pcc'+(rem<=max*0.1?' danger':rem<=max*0.2?' warning':'');} updEmProg();};
+window.initGrEdit=function(){const s=state['gr-1'];if (!s) return;origSt['gr-1']={...s};s.dirty=true;renGr();updGrProg();};
+window.cancelGrEdit=function(){const s=state['gr-1'];const o=origSt['gr-1'];if (s&&o){Object.assign(s,o);s.dirty=false;delet e origSt['gr-1'];} renGr();updGrProg();};
+window.initEmEdit=function(){const s=state['em-1'];if (!s) return;origSt['em-1']={...s};s.dirty=true;renEm();updEmProg();};
+window.cancelEmEdit=function(){const s=state['em-1'];const o=origSt['em-1'];if (s&&o){Object.assign(s,o);s.dirty=false;delet e origSt['em-1'];} renEm();updEmProg();};
 function initFaState(){
-const slotEls = document.querySelectorAll('.pubplan-slot-wrapper[data-section-code="fa"]');
-slotEls.forEach(el =>{
- const code = el.dataset.slotCode;
- if (!code) return;
- state[code] ={
- slotCode: code,
- sectionCode: 'fa',
- slotNum: parseInt(code.replace(/\D/g, ''), 10),
- pubplanId: el.dataset.pubplanId||'',
- titleadminId: el.dataset.titleadminId||'',
- categoryId: el.dataset.catId||el.dataset.categoryId||'',
- categoryName: el.dataset.catLabel||el.dataset.categoryName||'',
- categoryType: el.dataset.catType||'',
- articleId: el.dataset.articleId||'',
- articleName: el.dataset.articleTitle||el.dataset.articleName||'',
- customerId: el.dataset.customerId||'',
- customerName: el.dataset.customerName||'',
- sponsorId: el.dataset.sponsorId||'',
- sponsorName: el.dataset.sponsorName||'',
- artAdId: el.dataset.artAdId||'',
- artAdName: el.dataset.artAdName||'',
- artAdUrl: el.dataset.artAdUrl||'',
- artAdGo: el.dataset.artAdGo||'',
- nlSponsored: el.dataset.nlSponsored||'',
- dirty: false
- };
+const slotEls=document.querySelectorAllllll('.psw[data-section-code="fa"]');
+slotEls.forEach(el=>{
+const code=el.dataset.sc;
+if (!code) return;
+state[code] ={
+sc: code,
+secC: 'fa',
+slotNum: parseInt(code.replace(/\D/g,''),10),
+pubplanId: el.dataset.ppId||'',
+titleadminId: el.dataset.taId||'',
+catId: el.dataset.catId||el.dataset.catId||'',
+catNm: el.dataset.catLabel||el.dataset.catNm||'',
+catType: el.dataset.catType||'',
+artId: el.dataset.artId||'',
+artNm: el.dataset.articleTitle||el.dataset.artNm||'',
+custId: el.dataset.custId||'',
+custNm: el.dataset.custNm||'',
+sponsorId: el.dataset.sponId||'',
+sponNm: el.dataset.sponNm||'',
+artAdId: el.dataset.artAdId||'',
+artAdName: el.dataset.artAdName||'',
+artAdUrl: el.dataset.artAdUrl||'',
+artAdGo: el.dataset.artAdGo||'',
+nlSponsored: el.dataset.nlSponsored||'',
+noSponsor: el.dataset.noSponsor=='true',
+locked: el.dataset.locked=='true',
+dirty: false
+};
 });
-// Ensure fa-1 through fa-4 exist
-for (let i = 1; i <= 4; i++){
- const code = `fa-${i}`;
- if (!state[code]){
- state[code] ={slotCode: code, sectionCode: 'fa', slotNum: i, categoryId: '', categoryName: '', articleId: '', articleName: '', customerId: '', customerName: '', sponsorId: '', sponsorName: '', artAdId: '', artAdName: '', dirty: false };
- }
+for (let i=1;i <= 4;i++){
+const code=`fa-${i}`;
+if (!state[code]){
+state[code] ={sc: code,secC: 'fa',slotNum: i,catId: '',catNm: '',artId: '',artNm: '',custId: '',custNm: '',sponsorId: '',sponNm: '',artAdId: '',artAdName: '',noSponsor: false,dirty: false};
+}
 }
 }
 function getFaPickerData(slotNum){
-const pickerEl = document.querySelector('.fa-picker-wrapper');
+const pickerEl=document.querySelector('.fpw');
 if (!pickerEl) return{};
-const prefix = `fa${slotNum}`;
-// Read from picker wrapper attributes
-const sponsoredStatus = pickerEl.dataset[`${prefix}SponsoredStatus`]||'';
-const artAdGet = pickerEl.dataset[`${prefix}ArtAdGet`]||'';
-const artAdGo = pickerEl.dataset[`${prefix}ArtAdGo`]||'';
-// Get article-specific data from articles-wrapper element
-const s = state[`fa-${slotNum}`];
-const artEl = s?.articleId ? document.querySelector(`.articles-wrapper[data-article-id="${s.articleId}"]`) : null;
-const artImgGet = artEl?.dataset.artImgGet||'';
-const artWfImg = artEl?.dataset.imageUrl||'';
-const showArtAd = artEl?.dataset.showArtAd||'';
-const artPgSet = showArtAd === 'Show'||showArtAd === 'true' ? 'true' : '';
-const nlPgSet = pickerEl.dataset[`${prefix}NlPgSet`]||'';
+const prefix=`fa${slotNum}`;
+const sponsoredStatus=pickerEl.dataset[`${prefix}SponsoredStatus`]||'';
+const artAdGet=pickerEl.dataset[`${prefix}ArtAdGet`]||'';
+const artAdGo=pickerEl.dataset[`${prefix}ArtAdGo`]||'';
+const s=state[`fa-${slotNum}`];
+const artEl=s?.artId?document.querySelector(`.aw[data-article-id="${s.artId}"]`):null;
+const artImgGet=artEl?.dataset.artImgGet||'';
+const artWfImg=artEl?.dataset.imageUrl||'';
+const showArtAd=artEl?.dataset.showArtAd||'';
+const artPgSet=showArtAd==='Show'||showArtAd=='true'?'true':'';
+const nlPgSet=pickerEl.dataset[`${prefix}NlPgSet`]||'';
 return{
- artImgGet,
- artWfImg,
- adImgGet: artAdGet,
- adGoLink: artAdGo,
- artPgSet,
- nlPgSet,
- sponsored: sponsoredStatus
+artImgGet,
+artWfImg,
+adImgGet: artAdGet,
+adGoLink: artAdGo,
+artPgSet,
+nlPgSet,
+sponsored: sponsoredStatus
 };
 }
-function buildFaDrawer(slotCode){
-const s = state[slotCode];
+function buildFaDrawer(sc){
+const s=state[sc];
 if (!s) return '';
-const d = getFaPickerData(s.slotNum);
-const artEl = s.articleId ? document.querySelector(`.articles-wrapper[data-article-id="${s.articleId}"]`) : null;
-const fields = [
-{label: 'Article Summary', value: artEl?.dataset.articleSummary||'—', status: artEl?.dataset.articleSummary ? 'ok' : 'bad' },
-{label: 'Article Body', value: artEl?.dataset.articleBody ? 'Present' : '—', status: artEl?.dataset.articleBody ? 'ok' : 'bad' },
-{label: 'Writer Name & Title', value: artEl?.dataset.writerName||'—', status: artEl?.dataset.writerName ? 'ok' : 'bad' },
-{label: 'CoWriter Name & Title', value: artEl?.dataset.cowriterName||'—', status: artEl?.dataset.cowriterName ? 'ok' : 'na' },
-{label: 'Main Image', value: d.artWfImg ? 'Present' : '—', status: d.artWfImg ? 'ok' : 'bad' },
-{label: 'Main Image GET URL', value: d.artImgGet ? 'Present' : '—', status: d.artImgGet ? 'ok' : 'bad' },
-{label: 'Article Type', value: artEl?.dataset.articleType||'—', status: artEl?.dataset.articleType ? 'ok' : 'bad' },
-{label: 'ArtAd Status', value: d.artPgSet ? 'ON' : 'OFF', status: d.artPgSet ? 'ok' : 'na' },
-{label: 'ArtAd Image Link', value: d.adImgGet ? 'Present' : '—', status: d.adImgGet ? 'ok' : (s.customerId||s.sponsorId ? 'bad' : 'na') },
-{label: 'ArtAd Redirect', value: d.adGoLink ? 'Present' : '—', status: d.adGoLink ? 'ok' : (s.customerId||s.sponsorId ? 'bad' : 'na') }
+const d=getFaPickerData(s.slotNum);
+const artEl=s.artId?document.querySelector(`.aw[data-article-id="${s.artId}"]`):null;
+const fields=[
+{label: 'Summary',value: artEl?.dataset.articleSummary||'—',status: artEl?.dataset.articleSummary?'ok':'bad'},
+{label: 'Body',value: artEl?.dataset.articleBody?'Present':'—',status: artEl?.dataset.articleBody?'ok':'bad'},
+{label: 'Writer',value: artEl?.dataset.writerName||'—',status: artEl?.dataset.writerName?'ok':'bad'},
+{label: 'CoWriter',value: artEl?.dataset.cowriterName||'—',status: artEl?.dataset.cowriterName?'ok':'na'},
+{label: 'Image',value: d.artWfImg?'Present':'—',status: d.artWfImg?'ok':'bad'},
+{label: 'Img GET',value: d.artImgGet?'Present':'—',status: d.artImgGet?'ok':'bad'},
+{label: 'Type',value: artEl?.dataset.articleType||'—',status: artEl?.dataset.articleType?'ok':'bad'},
+{label: 'Ad Stat',value: d.artPgSet?'ON':'OFF',status: d.artPgSet?'ok':'na'},
+{label: 'Ad Img',value: d.adImgGet?'Present':'—',status: d.adImgGet?'ok':(s.custId||s.sponsorId?'bad':'na')},
+{label: 'Ad Go',value: d.adGoLink?'Present':'—',status: d.adGoLink?'ok':(s.custId||s.sponsorId?'bad':'na')}
 ];
-return `<div class="ppt-drawer" id="drawer-${slotCode}"><div class="ppt-drawer-grid">${fields.map(f => `<div class="ppt-drawer-field"><span class="ppt-drawer-label">${f.label}</span><span class="ppt-drawer-value">${f.value}</span></div><div class="ppt-drawer-status">${icon(f.status, f.status === 'ok' ? '✓' : f.status === 'bad' ? '✕' : '—')}</div>`).join('')}</div></div>`;
+return `<div class="pdr" id="drawer-${sc}"><div class="pdr-grid">${fields.map(f=>`<div class="pdr-field"><span class="pdr-label">${f.label}</span><span class="pdr-value">${f.value}</span></div><div class="pdr-status">${icon(f.status,f.status==='ok'?'✓':f.status==='bad'?'✕':'—')}</div>`).join('')}</div></div>`;
 }
-function renderFaTile(slotCode){
-const s = state[slotCode];
+function renFa(sc){
+const s=state[sc];
 if (!s) return;
-const isEditing = s.dirty||originalState[slotCode];
-// Check if Paid Article based on category type or name
-const isPaid = s.categoryType === 'Paid Article'||s.categoryName?.toLowerCase().includes('paid');
-// Article column (no status icons)
-let articleCol;
-if (isEditing && !s.articleId){
- articleCol = `<div class="ppt-col">
- <span class="ppt-col-label">Article</span>
- <select class="ppt-dd${s.articleId ? ' has-selection' : ''}" onchange="onFaArticleChange('${slotCode}',this)">
- ${buildArticleOptions(s.customerId, s.articleId)}
- </select>
- </div>`;
-} else if (s.articleId){
- articleCol = `<div class="ppt-col">
- <span class="ppt-col-label">Article</span>
- <span class="ppt-col-value">${s.articleName}</span>
- </div>`;
-} else{
- articleCol = `<div class="ppt-col">
- <span class="ppt-col-label">Article</span>
- <select class="ppt-dd" onchange="onFaArticleChange('${slotCode}',this)">
- ${buildArticleOptions(s.customerId, '')}
- </select>
- </div>`;
-}
-// Customer/Sponsor column - conditional label based on Revenue Type
-let custSponCol;
-if (isPaid){
- // Paid article - show Customer
- const label = 'Customer';
- const ddLabel = 'Add customer...';
- if (s.customerId && !isEditing){
- custSponCol = `<div class="ppt-col">
- <span class="ppt-col-label">${label}</span>
- <span class="ppt-col-value">${s.customerName}</span>
- </div>`;
- } else{
- custSponCol = `<div class="ppt-col">
- <span class="ppt-col-label">${label}</span>
- <select class="ppt-dd${s.customerId ? ' has-selection' : ''}" onchange="onFaCustomerChange('${slotCode}',this)">
- ${buildCustomerOptionsWithLabel(s.customerId, ddLabel)}
- </select>
- </div>`;
- }
-} else{
- // Sponsorable - show Sponsor
- const label = 'Sponsor';
- const ddLabel = 'Add sponsor...';
- if (s.sponsorId && !isEditing){
- custSponCol = `<div class="ppt-col">
- <span class="ppt-col-label">${label}</span>
- <span class="ppt-col-value sponsor">${s.sponsorName}</span>
- </div>`;
- } else{
- custSponCol = `<div class="ppt-col">
- <span class="ppt-col-label">${label}</span>
- <select class="ppt-dd${s.sponsorId ? ' has-selection' : ''}" onchange="onFaSponsorChange('${slotCode}',this)">
- ${buildCustomerOptionsWithLabel(s.sponsorId, ddLabel)}
- </select>
- </div>`;
- }
-}
-// Category with label
-const catCol = `<div class="ppt-col">
- <span class="ppt-col-label">Category</span>
- <span class="ppt-cat-pill cpill-fa">${s.categoryName||'—'}</span>
+const isEd=s.dirty||origSt[sc];
+const isPaid=s.catType==='Paid Article'||s.catNm?.toLowerCase().includes('paid');
+let html;
+
+if (!s.catId) {
+const catDd=`<div class="pc" style="flex:2;">
+<span class="pcl">Category</span>
+<select class="pd" onchange="onFaCatChange('${sc}',this)">
+${buildCatOpts('FA','')}
+</select>
 </div>`;
-const actionLink = isEditing ? 
- `<a class="ppt-cancel-link visible" onclick="cancelFaEdit('${slotCode}')">cancel</a>` :
- `<a class="ppt-edit-icon" onclick="initFaEdit('${slotCode}')" title="Edit">✎</a>`;
-const chevron = `<span class="ppt-chevron" onclick="toggleDrawer('${slotCode}')">▾</span>`;
-const html = `
- <div class="ppt-tile-row${isEditing ? ' has-pending' : ''}" id="tile-${slotCode}">
- <div class="ppt-slot-id sid-fa">${slotCode.toUpperCase()}</div>
- ${catCol}
- ${articleCol}
- ${custSponCol}
- <div class="ppt-actions">${actionLink}${chevron}</div>
- </div>
- ${buildFaDrawer(slotCode)}`;
-const existing = document.getElementById(`tile-${slotCode}`);
-const existingDrawer = document.getElementById(`drawer-${slotCode}`);
+const emptyCol=`<div class="pc"><span class="pcl">Article</span><span style="color:#ccc;font-size:11px;">—</span></div>`;
+const emptyCs=`<div class="pc"><span class="pcl">C/S</span><span style="color:#ccc;font-size:11px;">—</span></div>`;
+const chevron=`<span class="pch" onclick="tD('${sc}')">▾</span>`;
+html=`<div class="ptr" id="tile-${sc}">
+<div class="psi sfa">${sc.toUpperCase()}</div>
+${catDd}${emptyCol}${emptyCs}
+<div class="pac">${chevron}</div>
+</div>${buildFaDrawer(sc)}`;
+}
+
+else if (s.catId&&!s.artId) {
+const catPill=`<div class="pc">
+<span class="pcl">Category</span>
+<div style="display:flex;align-items:center;gap:6px;">
+<span class="pcp cfa${isEd?' cpn':''}">${s.catNm||'—'}</span>
+<span class="ppt-x" onclick="resetFaCat('${sc}')" title="Change category">✕</span>
+</div>
+</div>`;
+
+let custCol='';
+if (isPaid){
+if (s.custId){
+custCol=`<div class="pc"><span class="pcl">Customer</span><span class="pcv">${s.custNm}</span></div>`;
+} else {
+custCol=`<div class="pc"><span class="pcl">Customer</span>
+<select class="pd${s.custId?' hs':''}" onchange="onFaCustomerChange('${sc}',this)">
+${buildCustOpts(s.custId,'--')}
+</select></div>`;
+}
+}
+const artDd=`<div class="pc">
+<span class="pcl">Article</span>
+<select class="pd" onchange="onFaArticleChange('${sc}',this)">
+${buildArtOpts(s.custId,'')}
+</select>
+</div>`;
+
+let sponCol='';
+if (!isPaid){
+sponCol=`<div class="pc"><span class="pcl">Sponsor</span><span style="color:#ccc;font-size:11px;">—</span></div>`;
+}
+const actLnk=isEd?`<a class="pcl visible" onclick="cancelFaEdit('${sc}')">cancel</a>`:`<a class="pei" onclick="initFaEdit('${sc}')" title="Edit">✎</a>`;
+const chevron=`<span class="pch" onclick="tD('${sc}')">▾</span>`;
+html=`<div class="ptr${isEd?' hp':''}" id="tile-${sc}">
+<div class="psi sfa">${sc.toUpperCase()}</div>
+${catPill}${isPaid?custCol:''}${artDd}${!isPaid?sponCol:''}
+<div class="pac">${actLnk}${chevron}</div>
+</div>${buildFaDrawer(sc)}`;
+}
+
+else {
+const catCol=`<div class="pc">
+<span class="pcl">Category</span>
+<span class="pcp cfa">${s.catNm||'—'}</span>
+</div>`;
+const artCol=`<div class="pc">
+<span class="pcl">Article</span>
+<span class="pcv">${s.artNm}</span>
+</div>`;
+let csCol;
+if (isPaid){
+
+if (s.custId&&!isEd){
+csCol=`<div class="pc"><span class="pcl">Customer</span><span class="pcv">${s.custNm}</span></div>`;
+} else {
+csCol=`<div class="pc"><span class="pcl">Customer</span>
+<select class="pd${s.custId?' hs':''}" onchange="onFaCustomerChange('${sc}',this)">
+${buildCustOpts(s.custId,'--')}
+</select></div>`;
+}
+} else {
+
+const noSpCb=`<label class="pxl"><input type="checkbox" ${s.noSponsor?'checked':''} onchange="onFaNoSponsorChange('${sc}',this)"> No Sponsor</label>`;
+if (s.noSponsor){
+csCol=`<div class="pc"><span class="pcl">Sponsor ${noSpCb}</span><span class="pcv" style="color:#999;font-style:italic;">No sponsor</span></div>`;
+} else if (s.sponsorId&&!isEd){
+csCol=`<div class="pc"><span class="pcl">Sponsor ${noSpCb}</span><span class="pcv sponsor">${s.sponNm}</span></div>`;
+} else {
+csCol=`<div class="pc"><span class="pcl">Sponsor ${noSpCb}</span>
+<select class="pd${s.sponsorId?' hs':''}" onchange="onFaSponsorChange('${sc}',this)">
+${buildCustOpts(s.sponsorId,'--')}
+</select></div>`;
+}
+}
+const actLnk=isEd?`<a class="pcl visible" onclick="cancelFaEdit('${sc}')">cancel</a>`:`<a class="pei" onclick="initFaEdit('${sc}')" title="Edit">✎</a>`;
+const chevron=`<span class="pch" onclick="tD('${sc}')">▾</span>`;
+html=`<div class="ptr${isEd?' hp':''}" id="tile-${sc}">
+<div class="psi sfa">${sc.toUpperCase()}</div>
+${catCol}${artCol}${csCol}
+<div class="pac">${actLnk}${chevron}</div>
+</div>${buildFaDrawer(sc)}`;
+}
+const existing=document.getElementById(`tile-${sc}`);
+const existingDrawer=document.getElementById(`drawer-${sc}`);
 if (existing){
- // Preserve drawer state
- const drawerWasOpen = existingDrawer?.classList.contains('open');
- existing.outerHTML = html.split('\n').filter(l => !l.includes('ppt-drawer')).join('\n');
- if (existingDrawer) existingDrawer.remove();
- // Re-add drawer
- const newTile = document.getElementById(`tile-${slotCode}`);
- if (newTile){
- newTile.insertAdjacentHTML('afterend', buildFaDrawer(slotCode));
- if (drawerWasOpen){
- document.getElementById(`drawer-${slotCode}`)?.classList.add('open');
- newTile.querySelector('.ppt-chevron')?.classList.add('open');
- }
- }
-} else{
- const grid = document.getElementById('fa-grid');
- if (grid) grid.insertAdjacentHTML('beforeend', html);
+const drawerWasOpen=existingDrawer?.classList.contains('open');
+existing.outerHTML=html.split('\n').filter(l=>!l.includes('pdr')).join('\n');
+if (existingDrawer) existingDrawer.remove();
+const newTile=document.getElementById(`tile-${sc}`);
+if (newTile){
+newTile.insertAdjacentHTML('afterend',buildFaDrawer(sc));
+if (drawerWasOpen){
+document.getElementById(`drawer-${sc}`)?.classList.add('open');
+newTile.qS('.pch')?.classList.add('open');
+}
+}
+} else {
+const grid=document.getElementById('fa-grid');
+if (grid) grid.insertAdjacentHTML('beforeend',html);
 }
 }
 function renderAllFa(){
-for (let i = 1; i <= 4; i++) renderFaTile(`fa-${i}`);
-updateFaProgress();
+for (let i=1;i <= 4;i++) renFa(`fa-${i}`);
+updFaProg();
 }
-window.onFaArticleChange = function(slotCode, sel){
-const s = state[slotCode];
+window.onFaArticleChange=function(sc,sel){
+const s=state[sc];
 if (!s) return;
-if (!originalState[slotCode]){
- originalState[slotCode] ={...s };
+if (!origSt[sc]){
+origSt[sc] ={...s};
 }
-const opt = sel.options[sel.selectedIndex];
-s.articleId = opt?.value||'';
-s.articleName = opt?.textContent||'';
-s.dirty = true;
-renderFaTile(slotCode);
-updateFaProgress();
+const opt=sel.options[sel.selectedIndex];
+s.artId=opt?.value||'';
+s.artNm=opt?.textContent||'';
+s.dirty=true;
+renFa(sc);
+updFaProg();
 };
-window.onFaCustomerChange = function(slotCode, sel){
-const s = state[slotCode];
+window.onFaCatChange=function(sc,sel){
+const s=state[sc];
 if (!s) return;
-if (!originalState[slotCode]){
- originalState[slotCode] ={...s };
+if (!origSt[sc]){
+origSt[sc] ={...s};
 }
-const opt = sel.options[sel.selectedIndex];
-s.customerId = opt?.value||'';
-s.customerName = opt?.textContent||'';
-s.dirty = true;
-renderFaTile(slotCode);
-updateFaProgress();
+const opt=sel.options[sel.selectedIndex];
+s.catId=opt?.value||'';
+s.catNm=opt?.textContent||'';
+s.catType=opt?.dataset?.type||'';
+
+s.artId='';s.artNm='';s.custId='';s.custNm='';s.sponsorId='';s.sponNm='';
+s.dirty=true;
+renFa(sc);
+updFaProg();
 };
-window.onFaSponsorChange = function(slotCode, sel){
-const s = state[slotCode];
+window.resetFaCat=function(sc){
+const s=state[sc];
 if (!s) return;
-if (!originalState[slotCode]){
- originalState[slotCode] ={...s };
+if (!origSt[sc]){
+origSt[sc] ={...s};
 }
-const opt = sel.options[sel.selectedIndex];
-s.sponsorId = opt?.value||'';
-s.sponsorName = opt?.textContent||'';
-s.dirty = true;
-renderFaTile(slotCode);
-updateFaProgress();
+
+s.catId='';s.catNm='';s.catType='';
+s.artId='';s.artNm='';s.custId='';s.custNm='';s.sponsorId='';s.sponNm='';
+s.dirty=false;
+delet e origSt[sc];
+renFa(sc);
+updFaProg();
 };
-window.onFaArtAdChange = function(slotCode, sel){
-const s = state[slotCode];
+window.onFaCustomerChange=function(sc,sel){
+const s=state[sc];
 if (!s) return;
-if (!originalState[slotCode]){
- originalState[slotCode] ={...s };
+if (!origSt[sc]){
+origSt[sc] ={...s};
 }
-const opt = sel.options[sel.selectedIndex];
-s.artAdId = opt?.value||'';
-s.artAdName = opt?.textContent||'';
-s.dirty = true;
-renderFaTile(slotCode);
-updateFaProgress();
+const opt=sel.options[sel.selectedIndex];
+s.custId=opt?.value||'';
+s.custNm=opt?.textContent||'';
+s.dirty=true;
+renFa(sc);
+updFaProg();
 };
-window.initFaEdit = function(slotCode){
-const s = state[slotCode];
+window.onFaSponsorChange=function(sc,sel){
+const s=state[sc];
 if (!s) return;
-originalState[slotCode] ={...s };
-s.dirty = true;
-renderFaTile(slotCode);
-updateFaProgress();
-};
-window.cancelFaEdit = function(slotCode){
-const s = state[slotCode];
-const orig = originalState[slotCode];
-if (s && orig){
- Object.assign(s, orig);
- s.dirty = false;
- delete originalState[slotCode];
+if (!origSt[sc]){
+origSt[sc] ={...s};
 }
-renderFaTile(slotCode);
-updateFaProgress();
+const opt=sel.options[sel.selectedIndex];
+s.sponsorId=opt?.value||'';
+s.sponNm=opt?.textContent||'';
+s.dirty=true;
+renFa(sc);
+updFaProg();
 };
-function updateFaProgress(){
-const isSlotReady = (code) =>{
- const s = state[code];
- return !!(s?.articleId);
+window.onFaArtAdChange=function(sc,sel){
+const s=state[sc];
+if (!s) return;
+if (!origSt[sc]){
+origSt[sc] ={...s};
+}
+const opt=sel.options[sel.selectedIndex];
+s.artAdId=opt?.value||'';
+s.artAdName=opt?.textContent||'';
+s.dirty=true;
+renFa(sc);
+updFaProg();
 };
-updateSlotIndicators('fa', 4, isSlotReady);
-let pendingCount = 0;
-for (let i = 1; i <= 4; i++){
- if (state[`fa-${i}`]?.dirty) pendingCount++;
+window.onFaNoSponsorChange=function(sc,cb){
+const s=state[sc];
+if (!s) return;
+if (!origSt[sc]) origSt[sc]={...s};
+s.noSponsor=cb.checked;
+if (cb.checked){s.sponsorId='';s.sponNm='';}
+s.dirty=true;
+renFa(sc);
+updFaProg();
+};
+window.initFaEdit=function(sc){
+const s=state[sc];
+if (!s) return;
+origSt[sc] ={...s};
+s.dirty=true;
+renFa(sc);
+updFaProg();
+};
+window.cancelFaEdit=function(sc){
+const s=state[sc];
+const orig=origSt[sc];
+if (s&&orig){
+Object.assign(s,orig);
+s.dirty=false;
+delet e origSt[sc];
 }
-const btn = document.getElementById('fa-submit-btn');
-if (btn) btn.className = 'ppt-submit-btn' + (pendingCount > 0 ? ' active' : '');
+renFa(sc);
+updFaProg();
+};
+function updFaProg(){
+const isRdy=(code)=>{
+const s=state[code];
+return !!(s?.artId);
+};
+updSlotInd('fa',4,isRdy);
+let pCnt=0;
+for (let i=1;i <= 4;i++){
+if (state[`fa-${i}`]?.dirty) pCnt++;
 }
-// TS - THEMED SPOTLIGHTS
+const btn=document.getElementById('fa-submit-btn');
+if (btn) btn.className='psb'+(pCnt > 0?' active':'');
+}
 function initTsState(){
-const slotEls = document.querySelectorAll('.pubplan-slot-wrapper[data-section-code="ts"]');
-slotEls.forEach(el =>{
- const code = el.dataset.slotCode;
- if (!code) return;
- state[code] ={
- slotCode: code,
- sectionCode: 'ts',
- slotNum: parseInt(code.replace(/\D/g, ''), 10),
- pubplanId: el.dataset.pubplanId||'',
- titleadminId: el.dataset.titleadminId||'',
- categoryId: el.dataset.catId||el.dataset.categoryId||'',
- categoryName: el.dataset.catLabel||el.dataset.categoryName||'',
- articleId: el.dataset.articleId||'',
- articleName: el.dataset.articleTitle||el.dataset.articleName||'',
- sponsorId: el.dataset.sponsorId||'',
- sponsorName: el.dataset.sponsorName||'',
- artAdId: el.dataset.artAdId||'',
- artAdName: el.dataset.artAdName||'',
- artAdUrl: el.dataset.artAdUrl||'',
- artAdGo: el.dataset.artAdGo||'',
- dirty: false
- };
+const slotEls=document.querySelectorAllllll('.psw[data-section-code="ts"]');
+slotEls.forEach(el=>{
+const code=el.dataset.sc;
+if (!code) return;
+state[code] ={
+sc: code,
+secC: 'ts',
+slotNum: parseInt(code.replace(/\D/g,''),10),
+pubplanId: el.dataset.ppId||'',
+titleadminId: el.dataset.taId||'',
+catId: el.dataset.catId||el.dataset.catId||'',
+catNm: el.dataset.catLabel||el.dataset.catNm||'',
+artId: el.dataset.artId||'',
+artNm: el.dataset.articleTitle||el.dataset.artNm||'',
+sponsorId: el.dataset.sponId||'',
+sponNm: el.dataset.sponNm||'',
+artAdId: el.dataset.artAdId||'',
+artAdName: el.dataset.artAdName||'',
+artAdUrl: el.dataset.artAdUrl||'',
+artAdGo: el.dataset.artAdGo||'',
+noSponsor: el.dataset.noSponsor=='true',
+locked: el.dataset.locked=='true',
+dirty: false
+};
 });
-// Ensure ts-1 through ts-4 exist
-for (let i = 1; i <= 4; i++){
- const code = `ts-${i}`;
- if (!state[code]){
- state[code] ={slotCode: code, sectionCode: 'ts', slotNum: i, categoryId: '', categoryName: '', articleId: '', articleName: '', sponsorId: '', sponsorName: '', artAdId: '', artAdName: '', dirty: false };
- }
+for (let i=1;i <= 4;i++){
+const code=`ts-${i}`;
+if (!state[code]){
+state[code] ={sc: code,secC: 'ts',slotNum: i,catId: '',catNm: '',artId: '',artNm: '',sponsorId: '',sponNm: '',artAdId: '',artAdName: '',noSponsor: false,dirty: false};
+}
 }
 }
 function getTsPickerData(slotNum){
-const pickerEl = document.querySelector('.ts-picker-wrapper');
+const pickerEl=document.querySelector('.tpw');
 if (!pickerEl) return{};
-const prefix = `ts${slotNum}`;
-const sponsoredStatus = pickerEl.dataset[`${prefix}SponsoredStatus`]||'';
-const artAdGet = pickerEl.dataset[`${prefix}ArtAdGet`]||'';
-const artAdGo = pickerEl.dataset[`${prefix}ArtAdGo`]||'';
-// Get article-specific data from articles-wrapper element
-const s = state[`ts-${slotNum}`];
-const artEl = s?.articleId ? document.querySelector(`.articles-wrapper[data-article-id="${s.articleId}"]`) : null;
-const artImgGet = artEl?.dataset.artImgGet||'';
-const artWfImg = artEl?.dataset.imageUrl||'';
-const showArtAd = artEl?.dataset.showArtAd||'';
-const artPgSet = showArtAd === 'Show'||showArtAd === 'true' ? 'true' : '';
-const nlPgSet = pickerEl.dataset[`${prefix}NlPgSet`]||'';
+const prefix=`ts${slotNum}`;
+const sponsoredStatus=pickerEl.dataset[`${prefix}SponsoredStatus`]||'';
+const artAdGet=pickerEl.dataset[`${prefix}ArtAdGet`]||'';
+const artAdGo=pickerEl.dataset[`${prefix}ArtAdGo`]||'';
+const s=state[`ts-${slotNum}`];
+const artEl=s?.artId?document.querySelector(`.aw[data-article-id="${s.artId}"]`):null;
+const artImgGet=artEl?.dataset.artImgGet||'';
+const artWfImg=artEl?.dataset.imageUrl||'';
+const showArtAd=artEl?.dataset.showArtAd||'';
+const artPgSet=showArtAd==='Show'||showArtAd=='true'?'true':'';
+const nlPgSet=pickerEl.dataset[`${prefix}NlPgSet`]||'';
 return{
- artImgGet,
- artWfImg,
- adImgGet: artAdGet,
- adGoLink: artAdGo,
- artPgSet,
- nlPgSet
+artImgGet,
+artWfImg,
+adImgGet: artAdGet,
+adGoLink: artAdGo,
+artPgSet,
+nlPgSet
 };
 }
-function buildTsDrawer(slotCode){
-const s = state[slotCode];
+function buildTsDrawer(sc){
+const s=state[sc];
 if (!s) return '';
-const d = getTsPickerData(s.slotNum);
-const artEl = s.articleId ? document.querySelector(`.articles-wrapper[data-article-id="${s.articleId}"]`) : null;
-const fields = [
-{label: 'Article Summary', value: artEl?.dataset.articleSummary||'—', status: artEl?.dataset.articleSummary ? 'ok' : 'bad' },
-{label: 'Article Body', value: artEl?.dataset.articleBody ? 'Present' : '—', status: artEl?.dataset.articleBody ? 'ok' : 'bad' },
-{label: 'Writer Name & Title', value: artEl?.dataset.writerName||'—', status: artEl?.dataset.writerName ? 'ok' : 'bad' },
-{label: 'CoWriter Name & Title', value: artEl?.dataset.cowriterName||'—', status: artEl?.dataset.cowriterName ? 'ok' : 'na' },
-{label: 'Main Image', value: d.artWfImg ? 'Present' : '—', status: d.artWfImg ? 'ok' : 'bad' },
-{label: 'Main Image GET URL', value: d.artImgGet ? 'Present' : '—', status: d.artImgGet ? 'ok' : 'bad' },
-{label: 'Article Type', value: artEl?.dataset.articleType||'—', status: artEl?.dataset.articleType ? 'ok' : 'bad' },
-{label: 'ArtAd Status', value: d.artPgSet ? 'ON' : 'OFF', status: d.artPgSet ? 'ok' : 'na' },
-{label: 'ArtAd Image Link', value: d.adImgGet ? 'Present' : '—', status: d.adImgGet ? 'ok' : (s.sponsorId ? 'bad' : 'na') },
-{label: 'ArtAd Redirect', value: d.adGoLink ? 'Present' : '—', status: d.adGoLink ? 'ok' : (s.sponsorId ? 'bad' : 'na') }
+const d=getTsPickerData(s.slotNum);
+const artEl=s.artId?document.querySelector(`.aw[data-article-id="${s.artId}"]`):null;
+const fields=[
+{label: 'Summary',value: artEl?.dataset.articleSummary||'—',status: artEl?.dataset.articleSummary?'ok':'bad'},
+{label: 'Body',value: artEl?.dataset.articleBody?'Present':'—',status: artEl?.dataset.articleBody?'ok':'bad'},
+{label: 'Writer',value: artEl?.dataset.writerName||'—',status: artEl?.dataset.writerName?'ok':'bad'},
+{label: 'CoWriter',value: artEl?.dataset.cowriterName||'—',status: artEl?.dataset.cowriterName?'ok':'na'},
+{label: 'Image',value: d.artWfImg?'Present':'—',status: d.artWfImg?'ok':'bad'},
+{label: 'Img GET',value: d.artImgGet?'Present':'—',status: d.artImgGet?'ok':'bad'},
+{label: 'Type',value: artEl?.dataset.articleType||'—',status: artEl?.dataset.articleType?'ok':'bad'},
+{label: 'Ad Stat',value: d.artPgSet?'ON':'OFF',status: d.artPgSet?'ok':'na'},
+{label: 'Ad Img',value: d.adImgGet?'Present':'—',status: d.adImgGet?'ok':(s.sponsorId?'bad':'na')},
+{label: 'Ad Go',value: d.adGoLink?'Present':'—',status: d.adGoLink?'ok':(s.sponsorId?'bad':'na')}
 ];
-return `<div class="ppt-drawer" id="drawer-${slotCode}"><div class="ppt-drawer-grid">${fields.map(f => `<div class="ppt-drawer-field"><span class="ppt-drawer-label">${f.label}</span><span class="ppt-drawer-value">${f.value}</span></div><div class="ppt-drawer-status">${icon(f.status, f.status === 'ok' ? '✓' : f.status === 'bad' ? '✕' : '—')}</div>`).join('')}</div></div>`;
+return `<div class="pdr" id="drawer-${sc}"><div class="pdr-grid">${fields.map(f=>`<div class="pdr-field"><span class="pdr-label">${f.label}</span><span class="pdr-value">${f.value}</span></div><div class="pdr-status">${icon(f.status,f.status==='ok'?'✓':f.status==='bad'?'✕':'—')}</div>`).join('')}</div></div>`;
 }
-function renderTsTile(slotCode){
-const s = state[slotCode];
+function renTs(sc){
+const s=state[sc];
 if (!s) return;
-const isEditing = s.dirty||originalState[slotCode];
-// Article column (no status icons)
-let articleCol;
-if (s.articleId){
- articleCol = `<div class="ppt-col">
- <span class="ppt-col-label">Article</span>
- <span class="ppt-col-value">${s.articleName}</span>
- </div>`;
-} else{
- articleCol = `<div class="ppt-col">
- <span class="ppt-col-label">Article</span>
- <select class="ppt-dd" onchange="onTsArticleChange('${slotCode}',this)">
- ${buildTsArticleOptions(s.articleId)}
- </select>
- </div>`;
-}
-// Sponsor column - TS is always sponsorable
-let sponsorCol;
-if (s.sponsorId && !isEditing){
- sponsorCol = `<div class="ppt-col">
- <span class="ppt-col-label">Sponsor</span>
- <span class="ppt-col-value sponsor">${s.sponsorName}</span>
- </div>`;
-} else{
- sponsorCol = `<div class="ppt-col">
- <span class="ppt-col-label">Sponsor</span>
- <select class="ppt-dd${s.sponsorId ? ' has-selection' : ''}" onchange="onTsSponsorChange('${slotCode}',this)">
- ${buildCustomerOptionsWithLabel(s.sponsorId, 'Add sponsor...')}
- </select>
- </div>`;
-}
-// Category with label
-const catCol = `<div class="ppt-col">
- <span class="ppt-col-label">Category</span>
- <span class="ppt-cat-pill cpill-ts">${s.categoryName||'—'}</span>
+const isEd=s.dirty||origSt[sc];
+let html;
+
+if (!s.catId) {
+const catDd=`<div class="pc" style="flex:2;">
+<span class="pcl">Category</span>
+<select class="pd" onchange="onTsCatChange('${sc}',this)">
+${buildCatOpts('TS','')}
+</select>
 </div>`;
-const actionLink = isEditing ? 
- `<a class="ppt-cancel-link visible" onclick="cancelTsEdit('${slotCode}')">cancel</a>` :
- `<a class="ppt-edit-icon" onclick="initTsEdit('${slotCode}')" title="Edit">✎</a>`;
-const chevron = `<span class="ppt-chevron" onclick="toggleDrawer('${slotCode}')">▾</span>`;
-const html = `
- <div class="ppt-tile-row ts-row${isEditing ? ' has-pending' : ''}" id="tile-${slotCode}">
- <div class="ppt-slot-id sid-ts">${slotCode.toUpperCase()}</div>
- ${catCol}
- ${articleCol}
- ${sponsorCol}
- <div class="ppt-actions">${actionLink}${chevron}</div>
- </div>
- ${buildTsDrawer(slotCode)}`;
-const existing = document.getElementById(`tile-${slotCode}`);
-const existingDrawer = document.getElementById(`drawer-${slotCode}`);
+const emptyCol=`<div class="pc"><span class="pcl">Article</span><span style="color:#ccc;font-size:11px;">—</span></div>`;
+const emptySp=`<div class="pc"><span class="pcl">Sponsor</span><span style="color:#ccc;font-size:11px;">—</span></div>`;
+const chevron=`<span class="pch" onclick="tD('${sc}')">▾</span>`;
+html=`<div class="ptr tsr" id="tile-${sc}">
+<div class="psi sts">${sc.toUpperCase()}</div>
+${catDd}${emptyCol}${emptySp}
+<div class="pac">${chevron}</div>
+</div>${buildTsDrawer(sc)}`;
+}
+
+else if (s.catId&&!s.artId) {
+const catPill=`<div class="pc">
+<span class="pcl">Category</span>
+<div style="display:flex;align-items:center;gap:6px;">
+<span class="pcp cts${isEd?' cpn':''}">${s.catNm||'—'}</span>
+<span class="ppt-x" onclick="resetTsCat('${sc}')" title="Change category">✕</span>
+</div>
+</div>`;
+const artDd=`<div class="pc">
+<span class="pcl">Article</span>
+<select class="pd" onchange="onTsArticleChange('${sc}',this)">
+${buildTsArtOpts('')}
+</select>
+</div>`;
+const sponCol=`<div class="pc"><span class="pcl">Sponsor</span><span style="color:#ccc;font-size:11px;">—</span></div>`;
+const actLnk=isEd?`<a class="pcl visible" onclick="cancelTsEdit('${sc}')">cancel</a>`:`<a class="pei" onclick="initTsEdit('${sc}')" title="Edit">✎</a>`;
+const chevron=`<span class="pch" onclick="tD('${sc}')">▾</span>`;
+html=`<div class="ptr tsr${isEd?' hp':''}" id="tile-${sc}">
+<div class="psi sts">${sc.toUpperCase()}</div>
+${catPill}${artDd}${sponCol}
+<div class="pac">${actLnk}${chevron}</div>
+</div>${buildTsDrawer(sc)}`;
+}
+
+else {
+const catCol=`<div class="pc">
+<span class="pcl">Category</span>
+<span class="pcp cts">${s.catNm||'—'}</span>
+</div>`;
+const artCol=`<div class="pc">
+<span class="pcl">Article</span>
+<span class="pcv">${s.artNm}</span>
+</div>`;
+let sponCol;
+const noSpCb=`<label class="pxl"><input type="checkbox" ${s.noSponsor?'checked':''} onchange="onTsNoSponsorChange('${sc}',this)"> No Sponsor</label>`;
+if (s.noSponsor){
+sponCol=`<div class="pc"><span class="pcl">Sponsor ${noSpCb}</span><span class="pcv" style="color:#999;font-style:italic;">No sponsor</span></div>`;
+} else if (s.sponsorId&&!isEd){
+sponCol=`<div class="pc"><span class="pcl">Sponsor ${noSpCb}</span><span class="pcv sponsor">${s.sponNm}</span></div>`;
+} else {
+sponCol=`<div class="pc"><span class="pcl">Sponsor ${noSpCb}</span>
+<select class="pd${s.sponsorId?' hs':''}" onchange="onTsSponsorChange('${sc}',this)">
+${buildCustOpts(s.sponsorId,'--')}
+</select></div>`;
+}
+const actLnk=isEd?`<a class="pcl visible" onclick="cancelTsEdit('${sc}')">cancel</a>`:`<a class="pei" onclick="initTsEdit('${sc}')" title="Edit">✎</a>`;
+const chevron=`<span class="pch" onclick="tD('${sc}')">▾</span>`;
+html=`<div class="ptr tsr${isEd?' hp':''}" id="tile-${sc}">
+<div class="psi sts">${sc.toUpperCase()}</div>
+${catCol}${artCol}${sponCol}
+<div class="pac">${actLnk}${chevron}</div>
+</div>${buildTsDrawer(sc)}`;
+}
+const existing=document.getElementById(`tile-${sc}`);
+const existingDrawer=document.getElementById(`drawer-${sc}`);
 if (existing){
- // Preserve drawer state
- const drawerWasOpen = existingDrawer?.classList.contains('open');
- existing.outerHTML = html.split('\n').filter(l => !l.includes('ppt-drawer')).join('\n');
- if (existingDrawer) existingDrawer.remove();
- // Re-add drawer
- const newTile = document.getElementById(`tile-${slotCode}`);
- if (newTile){
- newTile.insertAdjacentHTML('afterend', buildTsDrawer(slotCode));
- if (drawerWasOpen){
- document.getElementById(`drawer-${slotCode}`)?.classList.add('open');
- newTile.querySelector('.ppt-chevron')?.classList.add('open');
- }
- }
-} else{
- const grid = document.getElementById('ts-grid');
- if (grid) grid.insertAdjacentHTML('beforeend', html);
+const drawerWasOpen=existingDrawer?.classList.contains('open');
+existing.outerHTML=html.split('\n').filter(l=>!l.includes('pdr')).join('\n');
+if (existingDrawer) existingDrawer.remove();
+const newTile=document.getElementById(`tile-${sc}`);
+if (newTile){
+newTile.insertAdjacentHTML('afterend',buildTsDrawer(sc));
+if (drawerWasOpen){
+document.getElementById(`drawer-${sc}`)?.classList.add('open');
+newTile.qS('.pch')?.classList.add('open');
+}
+}
+} else {
+const grid=document.getElementById('ts-grid');
+if (grid) grid.insertAdjacentHTML('beforeend',html);
 }
 }
 function renderAllTs(){
-for (let i = 1; i <= 4; i++) renderTsTile(`ts-${i}`);
-updateTsProgress();
+for (let i=1;i <= 4;i++) renTs(`ts-${i}`);
+updTsProg();
 }
-window.onTsArticleChange = function(slotCode, sel){
-const s = state[slotCode];
+window.onTsArticleChange=function(sc,sel){
+const s=state[sc];
 if (!s) return;
-if (!originalState[slotCode]) originalState[slotCode] ={...s };
-const opt = sel.options[sel.selectedIndex];
-s.articleId = opt?.value||'';
-s.articleName = opt?.textContent||'';
-s.dirty = true;
-renderTsTile(slotCode);
-updateTsProgress();
+if (!origSt[sc]) origSt[sc] ={...s};
+const opt=sel.options[sel.selectedIndex];
+s.artId=opt?.value||'';
+s.artNm=opt?.textContent||'';
+s.dirty=true;
+renTs(sc);
+updTsProg();
 };
-window.onTsSponsorChange = function(slotCode, sel){
-const s = state[slotCode];
+window.onTsCatChange=function(sc,sel){
+const s=state[sc];
 if (!s) return;
-if (!originalState[slotCode]) originalState[slotCode] ={...s };
-const opt = sel.options[sel.selectedIndex];
-s.sponsorId = opt?.value||'';
-s.sponsorName = opt?.textContent||'';
-s.dirty = true;
-renderTsTile(slotCode);
-updateTsProgress();
+if (!origSt[sc]) origSt[sc]={...s};
+const opt=sel.options[sel.selectedIndex];
+s.catId=opt?.value||'';
+s.catNm=opt?.textContent||'';
+s.catType=opt?.dataset?.type||'';
+
+s.artId='';s.artNm='';s.sponsorId='';s.sponNm='';
+s.dirty=true;
+renTs(sc);
+updTsProg();
 };
-window.onTsArtAdChange = function(slotCode, sel){
-const s = state[slotCode];
+window.resetTsCat=function(sc){
+const s=state[sc];
 if (!s) return;
-if (!originalState[slotCode]) originalState[slotCode] ={...s };
-const opt = sel.options[sel.selectedIndex];
-s.artAdId = opt?.value||'';
-s.artAdName = opt?.textContent||'';
-s.dirty = true;
-renderTsTile(slotCode);
-updateTsProgress();
+if (!origSt[sc]) origSt[sc]={...s};
+
+s.catId='';s.catNm='';s.catType='';
+s.artId='';s.artNm='';s.sponsorId='';s.sponNm='';
+s.dirty=false;
+delet e origSt[sc];
+renTs(sc);
+updTsProg();
 };
-window.initTsEdit = function(slotCode){
-const s = state[slotCode];
+window.onTsSponsorChange=function(sc,sel){
+const s=state[sc];
 if (!s) return;
-originalState[slotCode] ={...s };
-s.dirty = true;
-renderTsTile(slotCode);
-updateTsProgress();
+if (!origSt[sc]) origSt[sc] ={...s};
+const opt=sel.options[sel.selectedIndex];
+s.sponsorId=opt?.value||'';
+s.sponNm=opt?.textContent||'';
+s.dirty=true;
+renTs(sc);
+updTsProg();
 };
-window.cancelTsEdit = function(slotCode){
-const s = state[slotCode];
-const orig = originalState[slotCode];
-if (s && orig){
- Object.assign(s, orig);
- s.dirty = false;
- delete originalState[slotCode];
+window.onTsArtAdChange=function(sc,sel){
+const s=state[sc];
+if (!s) return;
+if (!origSt[sc]) origSt[sc] ={...s};
+const opt=sel.options[sel.selectedIndex];
+s.artAdId=opt?.value||'';
+s.artAdName=opt?.textContent||'';
+s.dirty=true;
+renTs(sc);
+updTsProg();
+};
+window.onTsNoSponsorChange=function(sc,cb){
+const s=state[sc];
+if (!s) return;
+if (!origSt[sc]) origSt[sc]={...s};
+s.noSponsor=cb.checked;
+if (cb.checked){s.sponsorId='';s.sponNm='';}
+s.dirty=true;
+renTs(sc);
+updTsProg();
+};
+window.initTsEdit=function(sc){
+const s=state[sc];
+if (!s) return;
+origSt[sc] ={...s};
+s.dirty=true;
+renTs(sc);
+updTsProg();
+};
+window.cancelTsEdit=function(sc){
+const s=state[sc];
+const orig=origSt[sc];
+if (s&&orig){
+Object.assign(s,orig);
+s.dirty=false;
+delet e origSt[sc];
 }
-renderTsTile(slotCode);
-updateTsProgress();
+renTs(sc);
+updTsProg();
 };
-function updateTsProgress(){
-const isSlotReady = (code) =>{
- const s = state[code];
- return !!(s?.articleId);
+function updTsProg(){
+const isRdy=(code)=>{
+const s=state[code];
+return !!(s?.artId);
 };
-updateSlotIndicators('ts', 4, isSlotReady);
-let pendingCount = 0;
-for (let i = 1; i <= 4; i++){
- if (state[`ts-${i}`]?.dirty) pendingCount++;
+updSlotInd('ts',4,isRdy);
+let pCnt=0;
+for (let i=1;i <= 4;i++){
+if (state[`ts-${i}`]?.dirty) pCnt++;
 }
-const btn = document.getElementById('ts-submit-btn');
-if (btn) btn.className = 'ppt-submit-btn' + (pendingCount > 0 ? ' active' : '');
+const btn=document.getElementById('ts-submit-btn');
+if (btn) btn.className='psb'+(pCnt > 0?' active':'');
 }
-// BA - BANNER ADS
 function initBaState(){
-const slotEls = document.querySelectorAll('.ba-slot-wrapper');
-slotEls.forEach(el =>{
- const code = el.dataset.slotCode;
- if (!code) return;
- const slotNum = parseInt(code.replace(/\D/g, ''), 10);
- let adName = el.dataset.adTitle||el.dataset.adName||'';
- const adId = el.dataset.adId||'';
- if (adId && !adName){
- const adEl = document.querySelector(`.ads-wrapper[data-ad-id="${adId}"]`);
- adName = adEl?.dataset.adName||adEl?.dataset.adTitle||'';
- }
- state[code] ={
- slotCode: code,
- sectionCode: 'ba',
- slotNum: slotNum,
- pubplanId: el.dataset.pubplanId||'',
- titleadminId: el.dataset.titleadminId||'',
- customerId: el.dataset.customerId||'',
- customerName: el.dataset.customerName||'',
- adId: adId,
- adName: adName,
- dirty: false
- };
+const slotEls=document.querySelectorAllllll('.ba-slot-wrapper');
+slotEls.forEach(el=>{
+const code=el.dataset.sc;
+if (!code) return;
+const slotNum=parseInt(code.replace(/\D/g,''),10);
+let adName=el.dataset.adTitle||el.dataset.adName||'';
+const adId=el.dataset.adId||'';
+if (adId&&!adName){
+const adEl=document.querySelector(`.adw[data-ad-id="${adId}"]`);
+adName=adEl?.dataset.adName||adEl?.dataset.adTitle||'';
+}
+state[code] ={
+sc: code,
+secC: 'ba',
+slotNum: slotNum,
+pubplanId: el.dataset.ppId||'',
+titleadminId: el.dataset.taId||'',
+custId: el.dataset.custId||'',
+custNm: el.dataset.custNm||'',
+adId: adId,
+adName: adName,
+dirty: false
+};
 });
-// Ensure ba-1 through ba-12 exist
-for (let i = 1; i <= 12; i++){
- const code = `ba-${i}`;
- if (!state[code]){
- state[code] ={slotCode: code, sectionCode: 'ba', slotNum: i, customerId: '', customerName: '', adId: '', adName: '', dirty: false };
- }
+for (let i=1;i <= 12;i++){
+const code=`ba-${i}`;
+if (!state[code]){
+state[code] ={sc: code,secC: 'ba',slotNum: i,custId: '',custNm: '',adId: '',adName: '',dirty: false};
+}
 }
 }
 function getBaPickerData(slotNum){
-const wrapperClass = slotNum <= 6 ? '.ba-picker-1-wrapper' : '.ba-picker-2-wrapper';
-const pickerEl = document.querySelector(wrapperClass);
+const wrapperClass=slotNum <= 6?'.bpw1':'.bpw2';
+const pickerEl=document.querySelector(wrapperClass);
 if (!pickerEl) return{};
-const prefix = `ba${slotNum}`;
+const prefix=`ba${slotNum}`;
 return{
- adGet: pickerEl.dataset[`${prefix}AdGet`]||'',
- adGo: pickerEl.dataset[`${prefix}AdGo`]||''
+adGet: pickerEl.dataset[`${prefix}AdGet`]||'',
+adGo: pickerEl.dataset[`${prefix}AdGo`]||''
 };
 }
-function buildBaDrawer(slotCode){
-const s = state[slotCode];
+function buildBaDrawer(sc){
+const s=state[sc];
 if (!s) return '';
-const d = getBaPickerData(s.slotNum);
-const fields = [
-{label: 'Ad Image Link', value: d.adGet ? 'Present' : '—', status: d.adGet ? 'ok' : (s.adId ? 'bad' : 'na') },
-{label: 'Ad Redirect', value: d.adGo ? 'Present' : '—', status: d.adGo ? 'ok' : (s.adId ? 'bad' : 'na') }
+const d=getBaPickerData(s.slotNum);
+const fields=[
+{label: 'Ad Image Link',value: d.adGet?'Present':'—',status: d.adGet?'ok':(s.adId?'bad':'na')},
+{label: 'Ad Redirect',value: d.adGo?'Present':'—',status: d.adGo?'ok':(s.adId?'bad':'na')}
 ];
-const fieldsHtml = fields.map(f => `
- <div class="ppt-drawer-field">
- <span class="ppt-drawer-label">${f.label}</span>
- <span class="ppt-drawer-value">${f.value}</span>
- </div>
- <div class="ppt-drawer-status">${icon(f.status, f.status === 'ok' ? '✓' : f.status === 'bad' ? '✕' : '—')}</div>
+const fieldsHtml=fields.map(f=>`
+<div class="pdr-field">
+<span class="pdr-label">${f.label}</span>
+<span class="pdr-value">${f.value}</span>
+</div>
+<div class="pdr-status">${icon(f.status,f.status==='ok'?'✓':f.status==='bad'?'✕':'—')}</div>
 `).join('');
-return `<div class="ppt-drawer" id="drawer-${slotCode}">
- <div class="ppt-drawer-grid" style="grid-template-columns: 1fr 80px 1fr 80px;">${fieldsHtml}</div>
+return `<div class="pdr" id="drawer-${sc}">
+<div class="pdr-grid" style="grid-template-columns: 1fr 80px 1fr 80px;">${fieldsHtml}</div>
 </div>`;
 }
-function renderBaTile(slotCode){
-const s = state[slotCode];
+function renBa(sc){
+const s=state[sc];
 if (!s) return;
-const isEditing = s.dirty||originalState[slotCode];
-const d = getBaPickerData(s.slotNum);
-// Ad thumbnail
-const adThumb = d.adGet ? 
- `<img src="${d.adGet}" class="ppt-ad-thumb" alt="">` :
- `<div class="ppt-ad-thumb-placeholder">🖼</div>`;
-// Customer column
+const isEd=s.dirty||origSt[sc];
+const d=getBaPickerData(s.slotNum);
+const adThumb=d.adGet?
+`<img src="${d.adGet}" class="ppt-ad-thumb" alt="">` :
+`<div class="ppt-ad-thumb-placeholder">🖼</div>`;
 let custCol;
-if (s.customerId && !isEditing){
- custCol = `<div class="ppt-card-field">
- <span class="ppt-col-label">Customer</span>
- <span class="ppt-col-value">${s.customerName}</span>
- </div>`;
-} else{
- custCol = `<div class="ppt-card-field">
- <span class="ppt-col-label">Customer</span>
- <select class="ppt-dd${s.customerId ? ' has-selection' : ''}" onchange="onBaCustomerChange('${slotCode}',this)">
- ${buildCustomerOptions(s.customerId)}
- </select>
- </div>`;
+if (s.custId&&!isEd){
+custCol=`<div class="ppt-card-field">
+<span class="pcl">Customer</span>
+<span class="pcv">${s.custNm}</span>
+</div>`;
+} else {
+custCol=`<div class="ppt-card-field">
+<span class="pcl">Customer</span>
+<select class="pd${s.custId?' hs':''}" onchange="onBaCustomerChange('${sc}',this)">
+${buildCustomerOptions(s.custId)}
+</select>
+</div>`;
 }
-// Ad column
-// Ad dropdown only shown when editing
-let adCol = '';
-if (isEditing||!s.adId){
- const wrapperClass = s.slotNum <= 6 ? '.ba-picker-1-wrapper' : '.ba-picker-2-wrapper';
- adCol = `<div class="ppt-card-field">
- <span class="ppt-col-label">Ad</span>
- <select class="ppt-dd${s.adId ? ' has-selection' : ''}" onchange="onBaAdChange('${slotCode}',this)"${!s.customerId ? ' disabled' : ''}>
- ${buildAdOptions(s.customerId, s.adId, wrapperClass)}
- </select>
- </div>`;
+let adCol='';
+if (isEd||!s.adId){
+const wrapperClass=s.slotNum <= 6?'.bpw1':'.bpw2';
+adCol=`<div class="ppt-card-field">
+<span class="pcl">Ad</span>
+<select class="pd${s.adId?' hs':''}" onchange="onBaAdChange('${sc}',this)"${!s.custId?' disabled':''}>
+${buildAdOptions(s.custId,s.adId,wrapperClass)}
+</select>
+</div>`;
 }
-const actionLink = isEditing ? 
- `<a class="ppt-cancel-link visible" onclick="cancelBaEdit('${slotCode}')">cancel</a>` :
- (s.adId ? `<a class="ppt-edit-icon" onclick="initBaEdit('${slotCode}')" title="Edit">✎</a>` : '<span style="color:#ccc;">—</span>');
-const chevron = `<span class="ppt-chevron" onclick="toggleDrawer('${slotCode}')">▾</span>`;
-const html = `
- <div class="ppt-tile-wrapper" id="wrapper-${slotCode}">
- <div class="ppt-tile-card${isEditing ? ' has-pending' : ''}" id="tile-${slotCode}">
- <div class="ppt-card-slot">${slotCode.toUpperCase()}</div>
- ${adThumb}
- <div class="ppt-card-content">
- ${custCol}${adCol}
- </div>
- <div class="ppt-card-actions">${actionLink}${chevron}</div>
- </div>
- ${buildBaDrawer(slotCode)}
- </div>`;
-const existing = document.getElementById(`wrapper-${slotCode}`);
+const actLnk=isEd?
+`<a class="pcl visible" onclick="cancelBaEdit('${sc}')">cancel</a>` :
+(s.adId?`<a class="pei" onclick="initBaEdit('${sc}')" title="Edit">✎</a>`:'<span style="color:#ccc;">—</span>');
+const chevron=`<span class="pch" onclick="tD('${sc}')">▾</span>`;
+const html=`
+<div class="ptw" id="wrapper-${sc}">
+<div class="ptc${isEd?' hp':''}" id="tile-${sc}">
+<div class="pcs">${sc.toUpperCase()}</div>
+${adThumb}
+<div class="pcc">
+${custCol}${adCol}
+</div>
+<div class="pca">${actLnk}${chevron}</div>
+</div>
+${buildBaDrawer(sc)}
+</div>`;
+const existing=document.getElementById(`wrapper-${sc}`);
 if (existing){
- const drawerWasOpen = document.getElementById(`drawer-${slotCode}`)?.classList.contains('open');
- existing.outerHTML = html;
- if (drawerWasOpen){
- document.getElementById(`drawer-${slotCode}`)?.classList.add('open');
- document.getElementById(`tile-${slotCode}`)?.querySelector('.ppt-chevron')?.classList.add('open');
- }
-} else{
- const grid = document.getElementById('ba-grid');
- if (grid) grid.insertAdjacentHTML('beforeend', html);
+const drawerWasOpen=document.getElementById(`drawer-${sc}`)?.classList.contains('open');
+existing.outerHTML=html;
+if (drawerWasOpen){
+document.getElementById(`drawer-${sc}`)?.classList.add('open');
+document.getElementById(`tile-${sc}`)?.qS('.pch')?.classList.add('open');
+}
+} else {
+const grid=document.getElementById('ba-grid');
+if (grid) grid.insertAdjacentHTML('beforeend',html);
 }
 }
 function renderAllBa(){
-for (let i = 1; i <= 12; i++) renderBaTile(`ba-${i}`);
-updateBaProgress();
+for (let i=1;i <= 12;i++) renBa(`ba-${i}`);
+updBaProg();
 }
-window.onBaCustomerChange = function(slotCode, sel){
-const s = state[slotCode];
+window.onBaCustomerChange=function(sc,sel){
+const s=state[sc];
 if (!s) return;
-if (!originalState[slotCode]) originalState[slotCode] ={...s };
-const opt = sel.options[sel.selectedIndex];
-s.customerId = opt?.value||'';
-s.customerName = opt?.textContent||'';
-s.adId = '';
-s.adName = '';
-s.dirty = true;
-renderBaTile(slotCode);
-updateBaProgress();
+if (!origSt[sc]) origSt[sc] ={...s};
+const opt=sel.options[sel.selectedIndex];
+s.custId=opt?.value||'';
+s.custNm=opt?.textContent||'';
+s.adId='';
+s.adName='';
+s.dirty=true;
+renBa(sc);
+updBaProg();
 };
-window.onBaAdChange = function(slotCode, sel){
-const s = state[slotCode];
+window.onBaAdChange=function(sc,sel){
+const s=state[sc];
 if (!s) return;
-if (!originalState[slotCode]) originalState[slotCode] ={...s };
-const opt = sel.options[sel.selectedIndex];
-s.adId = opt?.value||'';
-s.adName = opt?.textContent||'';
-s.dirty = true;
-renderBaTile(slotCode);
-updateBaProgress();
+if (!origSt[sc]) origSt[sc] ={...s};
+const opt=sel.options[sel.selectedIndex];
+s.adId=opt?.value||'';
+s.adName=opt?.textContent||'';
+s.dirty=true;
+renBa(sc);
+updBaProg();
 };
-window.initBaEdit = function(slotCode){
-const s = state[slotCode];
+window.initBaEdit=function(sc){
+const s=state[sc];
 if (!s) return;
-originalState[slotCode] ={...s };
-s.dirty = true;
-renderBaTile(slotCode);
-updateBaProgress();
+origSt[sc] ={...s};
+s.dirty=true;
+renBa(sc);
+updBaProg();
 };
-window.cancelBaEdit = function(slotCode){
-const s = state[slotCode];
-const orig = originalState[slotCode];
-if (s && orig){
- Object.assign(s, orig);
- s.dirty = false;
- delete originalState[slotCode];
+window.cancelBaEdit=function(sc){
+const s=state[sc];
+const orig=origSt[sc];
+if (s&&orig){
+Object.assign(s,orig);
+s.dirty=false;
+delet e origSt[sc];
 }
-renderBaTile(slotCode);
-updateBaProgress();
+renBa(sc);
+updBaProg();
 };
-function updateBaProgress(){
-const isSlotReady = (code) =>{
- const s = state[code];
- return !!(s?.adId);
+function updBaProg(){
+const isRdy=(code)=>{
+const s=state[code];
+return !!(s?.adId);
 };
-updateSlotIndicators('ba', 12, isSlotReady);
-let pendingCount = 0;
-for (let i = 1; i <= 12; i++){
- if (state[`ba-${i}`]?.dirty) pendingCount++;
+updSlotInd('ba',12,isRdy);
+let pCnt=0;
+for (let i=1;i <= 12;i++){
+if (state[`ba-${i}`]?.dirty) pCnt++;
 }
-const btn = document.getElementById('ba-submit-btn');
-if (btn) btn.className = 'ppt-submit-btn' + (pendingCount > 0 ? ' active' : '');
+const btn=document.getElementById('ba-submit-btn');
+if (btn) btn.className='psb'+(pCnt > 0?' active':'');
 }
-// TF - THE FIND (TXA & LBP)
-window.switchTfMode = function(mode){
-if (mode === currentTfMode) return;
-// Check for pending changes
-const hasTxaChanges = [1,2,3,4,5].some(i => state[`txa-${i}`]?.dirty);
-const hasLbpChanges = state['lbp-1']?.dirty;
-const hasChanges = (currentTfMode === 'txa' && hasTxaChanges)||(currentTfMode === 'lbp' && hasLbpChanges);
+window.switchTfMode=function(mode){
+if (mode===currentTfMode) return;
+const hasTxaChanges=[1,2,3,4,5].some(i=>state[`txa-${i}`]?.dirty);
+const hasLbpChanges=state['lbp-1']?.dirty;
+const hasChanges=(currentTfMode==='txa'&&hasTxaChanges)||(currentTfMode==='lbp'&&hasLbpChanges);
 if (hasChanges){
- if (!confirm('Switching modes will clear unsaved changes. Continue?')) return;
- // Clear changes
- if (currentTfMode === 'txa'){
- for (let i = 1; i <= 5; i++){
- const code = `txa-${i}`;
- if (state[code]){state[code].dirty = false; state[code].customerId = ''; state[code].customerName = ''; }
- delete originalState[code];
- }
- } else{
- if (state['lbp-1']){state['lbp-1'].dirty = false; state['lbp-1'].customerId = ''; state['lbp-1'].customerName = ''; }
- delete originalState['lbp-1'];
- }
+if (!confirm('Switching modes will clear unsaved changes. Continue?')) return;
+
+if (currentTfMode==='txa'){
+for (let i=1;i <= 5;i++){
+const code=`txa-${i}`;
+if (state[code]){state[code].dirty=false;state[code].custId='';state[code].custNm='';}
+delet e origSt[code];
 }
-currentTfMode = mode;
-// Update toggle buttons
-document.querySelectorAll('.tf-mode-btn').forEach(btn =>{
- btn.classList.toggle('active', btn.dataset.mode === mode);
+} else {
+if (state['lbp-1']){state['lbp-1'].dirty=false;state['lbp-1'].custId='';state['lbp-1'].custNm='';}
+delet e origSt['lbp-1'];
+}
+}
+currentTfMode=mode;
+document.querySelectorAllllll('.tf-mode-btn').forEach(btn=>{
+btn.classList.toggle('active',btn.dataset.mode===mode);
 });
-// Update containers
-document.querySelector('.the-find-txa')?.classList.toggle('is-active', mode === 'txa');
-document.querySelector('.the-find-lbp')?.classList.toggle('is-active', mode === 'lbp');
-// Update slot count
-const countEl = document.getElementById('tf-slot-count');
-if (countEl) countEl.textContent = mode === 'txa' ? '5 slots' : '1 slot';
-updateTfProgress();
+document.querySelector('.the-find-txa')?.classList.toggle('is-active',mode==='txa');
+document.querySelector('.the-find-lbp')?.classList.toggle('is-active',mode==='lbp');
+const countEl=document.getElementById('tf-slot-count');
+if (countEl) countEl.textContent=mode==='txa'?'5 slots':'1 slot';
+updTfProg();
 };
 function initTxaState(){
-const slotEls = document.querySelectorAll('.txa-slot-wrapper');
-slotEls.forEach(el =>{
- const code = el.dataset.slotCode;
- if (!code) return;
- state[code] ={
- slotCode: code,
- sectionCode: 'txa',
- slotNum: parseInt(code.replace(/\D/g, ''), 10),
- customerId: el.dataset.customerId||'',
- customerName: el.dataset.customerName||'',
- dirty: false
- };
+const slotEls=document.querySelectorAllllll('.txa-slot-wrapper');
+slotEls.forEach(el=>{
+const code=el.dataset.sc;
+if (!code) return;
+state[code] ={
+sc: code,
+secC: 'txa',
+slotNum: parseInt(code.replace(/\D/g,''),10),
+custId: el.dataset.custId||'',
+custNm: el.dataset.custNm||'',
+dirty: false
+};
 });
-// Ensure txa-1 through txa-5 exist
-for (let i = 1; i <= 5; i++){
- const code = `txa-${i}`;
- if (!state[code]){
- state[code] ={slotCode: code, sectionCode: 'txa', slotNum: i, customerId: '', customerName: '', dirty: false };
- }
+for (let i=1;i <= 5;i++){
+const code=`txa-${i}`;
+if (!state[code]){
+state[code] ={sc: code,secC: 'txa',slotNum: i,custId: '',custNm: '',dirty: false};
+}
 }
 }
 function getTxaPickerData(slotNum){
-const wrapper = document.querySelector('.txa-picker-wrapper');
+const wrapper=document.querySelector('.txa-picker-wrapper');
 if (!wrapper) return{};
-const prefix = `txa${slotNum}`;
+const prefix=`txa${slotNum}`;
 return{
- logoLink: wrapper.dataset[`${prefix}LogoLink`]||'',
- redirect: wrapper.dataset[`${prefix}Redirect`]||'',
- headline: wrapper.dataset[`${prefix}Headline`]||'',
- body: wrapper.dataset[`${prefix}Body`]||''
+logoLink: wrapper.dataset[`${prefix}LogoLink`]||'',
+redirect: wrapper.dataset[`${prefix}Redirect`]||'',
+headline: wrapper.dataset[`${prefix}Headline`]||'',
+body: wrapper.dataset[`${prefix}Body`]||''
 };
 }
-function buildTxaDrawer(slotCode){
-const s = state[slotCode];
+function buildTxaDrawer(sc){
+const s=state[sc];
 if (!s) return '';
-const d = getTxaPickerData(s.slotNum);
-const fields = [
-{label: 'Logo Link', value: d.logoLink ? 'Present' : '—', status: d.logoLink ? 'ok' : (s.customerId ? 'bad' : 'na') },
-{label: 'Redirect URL', value: d.redirect ? 'Present' : '—', status: d.redirect ? 'ok' : (s.customerId ? 'bad' : 'na') },
-{label: 'Headline', value: d.headline||'—', status: d.headline ? 'ok' : (s.customerId ? 'bad' : 'na') },
-{label: 'Body Text', value: d.body ? 'Present' : '—', status: d.body ? 'ok' : (s.customerId ? 'bad' : 'na') }
+const d=getTxaPickerData(s.slotNum);
+const fields=[
+{label: 'Logo',value: d.logoLink?'Present':'—',status: d.logoLink?'ok':(s.custId?'bad':'na')},
+{label: 'Redirect',value: d.redirect?'Present':'—',status: d.redirect?'ok':(s.custId?'bad':'na')},
+{label: 'Headline',value: d.headline||'—',status: d.headline?'ok':(s.custId?'bad':'na')},
+{label: 'Body Text',value: d.body?'Present':'—',status: d.body?'ok':(s.custId?'bad':'na')}
 ];
-const fieldsHtml = fields.map(f => `
- <div class="ppt-drawer-field">
- <span class="ppt-drawer-label">${f.label}</span>
- <span class="ppt-drawer-value">${f.value}</span>
- </div>
- <div class="ppt-drawer-status">${icon(f.status, f.status === 'ok' ? '✓' : f.status === 'bad' ? '✕' : '—')}</div>
+const fieldsHtml=fields.map(f=>`
+<div class="pdr-field">
+<span class="pdr-label">${f.label}</span>
+<span class="pdr-value">${f.value}</span>
+</div>
+<div class="pdr-status">${icon(f.status,f.status==='ok'?'✓':f.status==='bad'?'✕':'—')}</div>
 `).join('');
-return `<div class="ppt-drawer" id="drawer-${slotCode}">
- <div class="ppt-drawer-grid" style="grid-template-columns: repeat(2, 1fr 80px);">${fieldsHtml}</div>
+return `<div class="pdr" id="drawer-${sc}">
+<div class="pdr-grid" style="grid-template-columns: repeat(2,1fr 80px);">${fieldsHtml}</div>
 </div>`;
 }
-function renderTxaTile(slotCode){
-const s = state[slotCode];
+function renTxa(sc){
+const s=state[sc];
 if (!s) return;
-const isEditing = s.dirty||originalState[slotCode];
-const d = getTxaPickerData(s.slotNum);
-// Logo thumbnail
-const logoThumb = d.logoLink ? 
- `<img src="${d.logoLink}" class="ppt-ad-thumb" alt="">` :
- `<div class="ppt-ad-thumb-placeholder">🖼</div>`;
-// Customer column
+const isEd=s.dirty||origSt[sc];
+const d=getTxaPickerData(s.slotNum);
+const logoThumb=d.logoLink?
+`<img src="${d.logoLink}" class="ppt-ad-thumb" alt="">` :
+`<div class="ppt-ad-thumb-placeholder">🖼</div>`;
 let custCol;
-if (s.customerId && !isEditing){
- custCol = `<div class="ppt-card-field">
- <span class="ppt-col-label">Customer</span>
- <span class="ppt-col-value">${s.customerName}</span>
- </div>`;
-} else{
- custCol = `<div class="ppt-card-field">
- <span class="ppt-col-label">Customer</span>
- <select class="ppt-dd${s.customerId ? ' has-selection' : ''}" onchange="onTxaCustomerChange('${slotCode}',this)">
- ${buildCustomerOptions(s.customerId)}
- </select>
- </div>`;
+if (s.custId&&!isEd){
+custCol=`<div class="ppt-card-field">
+<span class="pcl">Customer</span>
+<span class="pcv">${s.custNm}</span>
+</div>`;
+} else {
+custCol=`<div class="ppt-card-field">
+<span class="pcl">Customer</span>
+<select class="pd${s.custId?' hs':''}" onchange="onTxaCustomerChange('${sc}',this)">
+${buildCustomerOptions(s.custId)}
+</select>
+</div>`;
 }
-const actionLink = isEditing ? 
- `<a class="ppt-cancel-link visible" onclick="cancelTxaEdit('${slotCode}')">cancel</a>` :
- (s.customerId ? `<a class="ppt-edit-icon" onclick="initTxaEdit('${slotCode}')" title="Edit">✎</a>` : '<span style="color:#ccc;">—</span>');
-const chevron = `<span class="ppt-chevron" onclick="toggleDrawer('${slotCode}')">▾</span>`;
-const html = `
- <div class="ppt-tile-wrapper" id="wrapper-${slotCode}">
- <div class="ppt-tile-card tf-card${isEditing ? ' has-pending' : ''}" id="tile-${slotCode}">
- <div class="ppt-card-slot">${slotCode.toUpperCase()}</div>
- ${logoThumb}
- <div class="ppt-card-content">
- ${custCol}
- </div>
- <div class="ppt-card-actions">${actionLink}${chevron}</div>
- </div>
- ${buildTxaDrawer(slotCode)}
- </div>`;
-const existing = document.getElementById(`wrapper-${slotCode}`);
+const actLnk=isEd?
+`<a class="pcl visible" onclick="cancelTxaEdit('${sc}')">cancel</a>` :
+(s.custId?`<a class="pei" onclick="initTxaEdit('${sc}')" title="Edit">✎</a>`:'<span style="color:#ccc;">—</span>');
+const chevron=`<span class="pch" onclick="tD('${sc}')">▾</span>`;
+const html=`
+<div class="ptw" id="wrapper-${sc}">
+<div class="ptc tfc${isEd?' hp':''}" id="tile-${sc}">
+<div class="pcs">${sc.toUpperCase()}</div>
+${logoThumb}
+<div class="pcc">
+${custCol}
+</div>
+<div class="pca">${actLnk}${chevron}</div>
+</div>
+${buildTxaDrawer(sc)}
+</div>`;
+const existing=document.getElementById(`wrapper-${sc}`);
 if (existing){
- const drawerWasOpen = document.getElementById(`drawer-${slotCode}`)?.classList.contains('open');
- existing.outerHTML = html;
- if (drawerWasOpen){
- document.getElementById(`drawer-${slotCode}`)?.classList.add('open');
- document.getElementById(`tile-${slotCode}`)?.querySelector('.ppt-chevron')?.classList.add('open');
- }
-} else{
- const grid = document.getElementById('txa-grid');
- if (grid) grid.insertAdjacentHTML('beforeend', html);
+const drawerWasOpen=document.getElementById(`drawer-${sc}`)?.classList.contains('open');
+existing.outerHTML=html;
+if (drawerWasOpen){
+document.getElementById(`drawer-${sc}`)?.classList.add('open');
+document.getElementById(`tile-${sc}`)?.qS('.pch')?.classList.add('open');
+}
+} else {
+const grid=document.getElementById('txa-grid');
+if (grid) grid.insertAdjacentHTML('beforeend',html);
 }
 }
 function renderAllTxa(){
-for (let i = 1; i <= 5; i++) renderTxaTile(`txa-${i}`);
+for (let i=1;i <= 5;i++) renTxa(`txa-${i}`);
 }
-window.onTxaCustomerChange = function(slotCode, sel){
-const s = state[slotCode];
+window.onTxaCustomerChange=function(sc,sel){
+const s=state[sc];
 if (!s) return;
-if (!originalState[slotCode]) originalState[slotCode] ={...s };
-const opt = sel.options[sel.selectedIndex];
-s.customerId = opt?.value||'';
-s.customerName = opt?.textContent||'';
-s.dirty = true;
-renderTxaTile(slotCode);
-updateTfProgress();
+if (!origSt[sc]) origSt[sc] ={...s};
+const opt=sel.options[sel.selectedIndex];
+s.custId=opt?.value||'';
+s.custNm=opt?.textContent||'';
+s.dirty=true;
+renTxa(sc);
+updTfProg();
 };
-window.initTxaEdit = function(slotCode){
-const s = state[slotCode];
+window.initTxaEdit=function(sc){
+const s=state[sc];
 if (!s) return;
-originalState[slotCode] ={...s };
-s.dirty = true;
-renderTxaTile(slotCode);
-updateTfProgress();
+origSt[sc] ={...s};
+s.dirty=true;
+renTxa(sc);
+updTfProg();
 };
-window.cancelTxaEdit = function(slotCode){
-const s = state[slotCode];
-const orig = originalState[slotCode];
-if (s && orig){
- Object.assign(s, orig);
- s.dirty = false;
- delete originalState[slotCode];
+window.cancelTxaEdit=function(sc){
+const s=state[sc];
+const orig=origSt[sc];
+if (s&&orig){
+Object.assign(s,orig);
+s.dirty=false;
+delet e origSt[sc];
 }
-renderTxaTile(slotCode);
-updateTfProgress();
+renTxa(sc);
+updTfProg();
 };
-// LBP
 function initLbpState(){
-// LBP uses same customer assignment as TXA-1
-const el = document.querySelector('.txa-slot-wrapper[data-slot-code="txa-1"]');
+const el=document.querySelector('.txa-slot-wrapper[data-slot-code="txa-1"]');
 state['lbp-1'] ={
- slotCode: 'lbp-1',
- sectionCode: 'lbp',
- customerId: el?.dataset.customerId||'',
- customerName: el?.dataset.customerName||'',
- dirty: false
+sc: 'lbp-1',
+secC: 'lbp',
+custId: el?.dataset.custId||'',
+custNm: el?.dataset.custNm||'',
+dirty: false
 };
 }
 function getLbpPickerData(){
-const wrapper = document.querySelector('.txa-picker-wrapper');
+const wrapper=document.querySelector('.txa-picker-wrapper');
 if (!wrapper) return{};
 return{
- logoLink: wrapper.dataset.lbpLogoLink||'',
- redirect: wrapper.dataset.lbpRedirect||'',
- service1: wrapper.dataset.lbpService1||'',
- service2: wrapper.dataset.lbpService2||'',
- service3: wrapper.dataset.lbpService3||'',
- service4: wrapper.dataset.lbpService4||'',
- service5: wrapper.dataset.lbpService5||'',
- service6: wrapper.dataset.lbpService6||''
+logoLink: wrapper.dataset.lbpLogoLink||'',
+redirect: wrapper.dataset.lbpRedirect||'',
+service1: wrapper.dataset.lbpService1||'',
+service2: wrapper.dataset.lbpService2||'',
+service3: wrapper.dataset.lbpService3||'',
+service4: wrapper.dataset.lbpService4||'',
+service5: wrapper.dataset.lbpService5||'',
+service6: wrapper.dataset.lbpService6||''
 };
 }
 function buildLbpDrawer(){
-const s = state['lbp-1'];
+const s=state['lbp-1'];
 if (!s) return '';
-const d = getLbpPickerData();
-const fields = [
-{label: 'Logo Link', value: d.logoLink ? 'Present' : '—', status: d.logoLink ? 'ok' : (s.customerId ? 'bad' : 'na') },
-{label: 'Redirect URL', value: d.redirect ? 'Present' : '—', status: d.redirect ? 'ok' : (s.customerId ? 'bad' : 'na') },
-{label: 'Service 1', value: d.service1||'—', status: d.service1 ? 'ok' : 'na' },
-{label: 'Service 2', value: d.service2||'—', status: d.service2 ? 'ok' : 'na' },
-{label: 'Service 3', value: d.service3||'—', status: d.service3 ? 'ok' : 'na' },
-{label: 'Service 4', value: d.service4||'—', status: d.service4 ? 'ok' : 'na' },
-{label: 'Service 5', value: d.service5||'—', status: d.service5 ? 'ok' : 'na' },
-{label: 'Service 6', value: d.service6||'—', status: d.service6 ? 'ok' : 'na' }
+const d=getLbpPickerData();
+const fields=[
+{label: 'Logo',value: d.logoLink?'Present':'—',status: d.logoLink?'ok':(s.custId?'bad':'na')},
+{label: 'Redirect',value: d.redirect?'Present':'—',status: d.redirect?'ok':(s.custId?'bad':'na')},
+{label: 'Service 1',value: d.service1||'—',status: d.service1?'ok':'na'},
+{label: 'Service 2',value: d.service2||'—',status: d.service2?'ok':'na'},
+{label: 'Service 3',value: d.service3||'—',status: d.service3?'ok':'na'},
+{label: 'Service 4',value: d.service4||'—',status: d.service4?'ok':'na'},
+{label: 'Service 5',value: d.service5||'—',status: d.service5?'ok':'na'},
+{label: 'Service 6',value: d.service6||'—',status: d.service6?'ok':'na'}
 ];
-const fieldsHtml = fields.map(f => `
- <div class="ppt-drawer-field">
- <span class="ppt-drawer-label">${f.label}</span>
- <span class="ppt-drawer-value">${f.value}</span>
- </div>
- <div class="ppt-drawer-status">${icon(f.status, f.status === 'ok' ? '✓' : f.status === 'bad' ? '✕' : '—')}</div>
+const fieldsHtml=fields.map(f=>`
+<div class="pdr-field">
+<span class="pdr-label">${f.label}</span>
+<span class="pdr-value">${f.value}</span>
+</div>
+<div class="pdr-status">${icon(f.status,f.status==='ok'?'✓':f.status==='bad'?'✕':'—')}</div>
 `).join('');
-return `<div class="ppt-drawer" id="drawer-lbp-1">
- <div class="ppt-drawer-grid" style="grid-template-columns: repeat(4, 1fr 60px);">${fieldsHtml}</div>
+return `<div class="pdr" id="drawer-lbp-1">
+<div class="pdr-grid" style="grid-template-columns: repeat(4,1fr 60px);">${fieldsHtml}</div>
 </div>`;
 }
-function renderLbpTile(){
-const s = state['lbp-1'];
+function renLbp(){
+const s=state['lbp-1'];
 if (!s) return;
-const isEditing = s.dirty||originalState['lbp-1'];
-const d = getLbpPickerData();
-// Customer column
+const isEd=s.dirty||origSt['lbp-1'];
+const d=getLbpPickerData();
 let custCol;
-if (s.customerId && !isEditing){
- custCol = `<div class="ppt-card-field">
- <span class="ppt-col-label">Featured Business</span>
- <span class="ppt-col-value">${s.customerName}</span>
- </div>`;
-} else{
- custCol = `<div class="ppt-card-field">
- <span class="ppt-col-label">Featured Business</span>
- <select class="ppt-dd${s.customerId ? ' has-selection' : ''}" style="min-width:200px;" onchange="onLbpCustomerChange(this)">
- ${buildCustomerOptions(s.customerId)}
- </select>
- </div>`;
+if (s.custId&&!isEd){
+custCol=`<div class="ppt-card-field">
+<span class="pcl">Featured Business</span>
+<span class="pcv">${s.custNm}</span>
+</div>`;
+} else {
+custCol=`<div class="ppt-card-field">
+<span class="pcl">Featured Business</span>
+<select class="pd${s.custId?' hs':''}" style="min-width:200px;" onchange="onLbpCustomerChange(this)">
+${buildCustomerOptions(s.custId)}
+</select>
+</div>`;
 }
-const actionLink = isEditing ? 
- `<a class="ppt-cancel-link visible" onclick="cancelLbpEdit()">cancel</a>` :
- (s.customerId ? `<a class="ppt-edit-icon" onclick="initLbpEdit()" title="Edit">✎</a>` : '<span style="color:#ccc;">—</span>');
-const chevron = `<span class="ppt-chevron" onclick="toggleDrawer('lbp-1')">▾</span>`;
-const html = `
- <div class="ppt-tile-card tf-card${isEditing ? ' has-pending' : ''}" id="tile-lbp-1">
- <div class="ppt-card-slot">LBP</div>
- <div class="ppt-card-content">
- ${custCol}
- </div>
- <div class="ppt-card-actions">${actionLink}${chevron}</div>
- </div>
- ${buildLbpDrawer()}`;
-const existing = document.getElementById('tile-lbp-1');
-const existingDrawer = document.getElementById('drawer-lbp-1');
+const actLnk=isEd?
+`<a class="pcl visible" onclick="cancelLbpEdit()">cancel</a>` :
+(s.custId?`<a class="pei" onclick="initLbpEdit()" title="Edit">✎</a>`:'<span style="color:#ccc;">—</span>');
+const chevron=`<span class="pch" onclick="tD('lbp-1')">▾</span>`;
+const html=`
+<div class="ptc tfc${isEd?' hp':''}" id="tile-lbp-1">
+<div class="pcs">LBP</div>
+<div class="pcc">
+${custCol}
+</div>
+<div class="pca">${actLnk}${chevron}</div>
+</div>
+${buildLbpDrawer()}`;
+const existing=document.getElementById('tile-lbp-1');
+const existingDrawer=document.getElementById('drawer-lbp-1');
 if (existing){
- const drawerWasOpen = existingDrawer?.classList.contains('open');
- existing.outerHTML = html.split('\n').filter(l => !l.includes('ppt-drawer')).join('\n');
- if (existingDrawer) existingDrawer.remove();
- const newTile = document.getElementById('tile-lbp-1');
- if (newTile){
- newTile.insertAdjacentHTML('afterend', buildLbpDrawer());
- if (drawerWasOpen){
- document.getElementById('drawer-lbp-1')?.classList.add('open');
- newTile.querySelector('.ppt-chevron')?.classList.add('open');
- }
- }
-} else{
- const grid = document.getElementById('lbp-grid');
- if (grid) grid.insertAdjacentHTML('beforeend', html);
+const drawerWasOpen=existingDrawer?.classList.contains('open');
+existing.outerHTML=html.split('\n').filter(l=>!l.includes('pdr')).join('\n');
+if (existingDrawer) existingDrawer.remove();
+const newTile=document.getElementById('tile-lbp-1');
+if (newTile){
+newTile.insertAdjacentHTML('afterend',buildLbpDrawer());
+if (drawerWasOpen){
+document.getElementById('drawer-lbp-1')?.classList.add('open');
+newTile.qS('.pch')?.classList.add('open');
 }
 }
-window.onLbpCustomerChange = function(sel){
-const s = state['lbp-1'];
+} else {
+const grid=document.getElementById('lbp-grid');
+if (grid) grid.insertAdjacentHTML('beforeend',html);
+}
+}
+window.onLbpCustomerChange=function(sel){
+const s=state['lbp-1'];
 if (!s) return;
-if (!originalState['lbp-1']) originalState['lbp-1'] ={...s };
-const opt = sel.options[sel.selectedIndex];
-s.customerId = opt?.value||'';
-s.customerName = opt?.textContent||'';
-s.dirty = true;
-renderLbpTile();
-updateTfProgress();
+if (!origSt['lbp-1']) origSt['lbp-1'] ={...s};
+const opt=sel.options[sel.selectedIndex];
+s.custId=opt?.value||'';
+s.custNm=opt?.textContent||'';
+s.dirty=true;
+renLbp();
+updTfProg();
 };
-window.initLbpEdit = function(){
-const s = state['lbp-1'];
+window.initLbpEdit=function(){
+const s=state['lbp-1'];
 if (!s) return;
-originalState['lbp-1'] ={...s };
-s.dirty = true;
-renderLbpTile();
-updateTfProgress();
+origSt['lbp-1'] ={...s};
+s.dirty=true;
+renLbp();
+updTfProg();
 };
-window.cancelLbpEdit = function(){
-const s = state['lbp-1'];
-const orig = originalState['lbp-1'];
-if (s && orig){
- Object.assign(s, orig);
- s.dirty = false;
- delete originalState['lbp-1'];
+window.cancelLbpEdit=function(){
+const s=state['lbp-1'];
+const orig=origSt['lbp-1'];
+if (s&&orig){
+Object.assign(s,orig);
+s.dirty=false;
+delet e origSt['lbp-1'];
 }
-renderLbpTile();
-updateTfProgress();
+renLbp();
+updTfProg();
 };
-function updateTfProgress(){
-const count = currentTfMode === 'txa' ? 5 : 1;
-const prefix = currentTfMode === 'txa' ? 'txa' : 'lbp';
-const isSlotReady = (code) =>{
- const s = state[code];
- return !!(s?.customerId);
+function updTfProg(){
+const count=currentTfMode==='txa'?5:1;
+const prefix=currentTfMode==='txa'?'txa':'lbp';
+const isRdy=(code)=>{
+const s=state[code];
+return !!(s?.custId);
 };
-updateSlotIndicators('tf', count, (code) =>{
- const idx = parseInt(code.split('-')[1]);
- return isSlotReady(`${prefix}-${idx}`);
+updSlotInd('tf',count,(code)=>{
+const idx=parseInt(code.split('-')[1]);
+return isRdy(`${prefix}-${idx}`);
 });
-let pendingCount = 0;
-if (currentTfMode === 'txa'){
- for (let i = 1; i <= 5; i++){
- if (state[`txa-${i}`]?.dirty) pendingCount++;
- }
-} else{
- if (state['lbp-1']?.dirty) pendingCount++;
+let pCnt=0;
+if (currentTfMode==='txa'){
+for (let i=1;i <= 5;i++){
+if (state[`txa-${i}`]?.dirty) pCnt++;
 }
-const btn = document.getElementById('tf-submit-btn');
-if (btn) btn.className = 'ppt-submit-btn' + (pendingCount > 0 ? ' active' : '');
+} else {
+if (state['lbp-1']?.dirty) pCnt++;
 }
-// SUBMIT SECTION
-window.submitSection = async function(section){
-const btn = document.getElementById(`${section}-submit-btn`);
+const btn=document.getElementById('tf-submit-btn');
+if (btn) btn.className='psb'+(pCnt > 0?' active':'');
+}
+window.submitSection=async function(section){
+const btn=document.getElementById(`${section}-submit-btn`);
 if (!btn||btn.classList.contains('submitting')) return;
 btn.classList.add('submitting');
-btn.textContent = 'Saving...';
-const pubplanId = getPubplanId();
-const payload ={section, pubplanId, slots: [] };
-if (section === 'gr'){
- const s = state['gr-1'];
- if (s?.dirty){
- payload.slots.push({
- slotCode: s.slotCode,
- greetingTitle: s.greetingTitle,
- greetingMessage: s.greetingMessage
- });
- }
-} else if (section === 'fa'){
- for (let i = 1; i <= 4; i++){
- const s = state[`fa-${i}`];
- if (s?.dirty){
- payload.slots.push({
- slotCode: s.slotCode,
- articleId: s.articleId,
- customerId: s.customerId,
- sponsorId: s.sponsorId,
- artAdId: s.artAdId
- });
- }
- }
-} else if (section === 'ts'){
- for (let i = 1; i <= 4; i++){
- const s = state[`ts-${i}`];
- if (s?.dirty){
- payload.slots.push({
- slotCode: s.slotCode,
- articleId: s.articleId,
- sponsorId: s.sponsorId,
- artAdId: s.artAdId
- });
- }
- }
-} else if (section === 'ba'){
- for (let i = 1; i <= 12; i++){
- const s = state[`ba-${i}`];
- if (s?.dirty){
- payload.slots.push({
- slotCode: s.slotCode,
- customerId: s.customerId,
- adId: s.adId
- });
- }
- }
-} else if (section === 'tf'){
- payload.mode = currentTfMode;
- if (currentTfMode === 'txa'){
- for (let i = 1; i <= 5; i++){
- const s = state[`txa-${i}`];
- if (s?.dirty){
- payload.slots.push({
- slotCode: s.slotCode,
- customerId: s.customerId
- });
- }
- }
- } else{
- const s = state['lbp-1'];
- if (s?.dirty){
- payload.slots.push({
- slotCode: 'lbp-1',
- customerId: s.customerId
- });
- }
- }
+btn.textContent='Saving...';
+const pubplanId=getPubplanId();
+const payload ={section,pubplanId,slots: []};
+if (section==='gr'){
+const s=state['gr-1'];
+if (s?.dirty){
+payload.slots.push({
+sc: s.sc,
+grTit: s.grTit,
+grMsg: s.grMsg
+});
+}
+} else if (section==='em'){
+const s=state['em-1'];
+if (s?.dirty){
+payload.slots.push({
+sc: s.sc,
+emSub: s.emSub,
+emPre: s.emPre
+});
+}
+} else if (section==='fa'){
+for (let i=1;i <= 4;i++){
+const s=state[`fa-${i}`];
+if (s?.dirty){
+payload.slots.push({
+sc: s.sc,
+artId: s.artId,
+custId: s.custId,
+sponsorId: s.sponsorId,
+artAdId: s.artAdId,
+noSponsor: s.noSponsor
+});
+}
+}
+} else if (section==='ts'){
+for (let i=1;i <= 4;i++){
+const s=state[`ts-${i}`];
+if (s?.dirty){
+payload.slots.push({
+sc: s.sc,
+artId: s.artId,
+sponsorId: s.sponsorId,
+artAdId: s.artAdId,
+noSponsor: s.noSponsor
+});
+}
+}
+} else if (section==='ba'){
+for (let i=1;i <= 12;i++){
+const s=state[`ba-${i}`];
+if (s?.dirty){
+payload.slots.push({
+sc: s.sc,
+custId: s.custId,
+adId: s.adId
+});
+}
+}
+} else if (section==='tf'){
+payload.mode=currentTfMode;
+if (currentTfMode==='txa'){
+for (let i=1;i <= 5;i++){
+const s=state[`txa-${i}`];
+if (s?.dirty){
+payload.slots.push({
+sc: s.sc,
+custId: s.custId
+});
+}
+}
+} else {
+const s=state['lbp-1'];
+if (s?.dirty){
+payload.slots.push({
+sc: 'lbp-1',
+custId: s.custId
+});
+}
+}
 }
 try{
- const resp = await fetch(WEBHOOK_URLS[section],{
- method: 'POST',
- headers:{'Content-Type': 'application/json' },
- body: JSON.stringify(payload)
- });
- 
- if (resp.ok){
- showToast(`${section.toUpperCase()} changes saved!`);
- // Clear dirty flags
- payload.slots.forEach(slot =>{
- if (state[slot.slotCode]){
- state[slot.slotCode].dirty = false;
- delete originalState[slot.slotCode];
- }
- });
- // Re-render
- if (section === 'gr'){renderGrTile(); updateGrProgress(); }
- else if (section === 'fa'){renderAllFa(); }
- else if (section === 'ts'){renderAllTs(); }
- else if (section === 'ba'){renderAllBa(); }
- else if (section === 'tf'){
- renderAllTxa(); 
- renderLbpTile();
- updateTfProgress();
- }
- } else{
- showToast('Save failed. Please try again.', true);
- }
+const resp=await fetch(WEBHOOK_URLS[section],{
+method: 'POST',
+headers:{'Content-Type': 'application/json'},
+body: JSON.stringify(payload)
+});
+if (resp.ok){
+showToast(`${section.toUpperCase()} changes saved!`);
+
+payload.slots.forEach(slot=>{
+if (state[slot.sc]){
+state[slot.sc].dirty=false;
+delet e origSt[slot.sc];
+}
+});
+
+if (section==='gr'){renGr();updGrProg();}
+else if (section==='em'){renEm();updEmProg();}
+else if (section==='fa'){renderAllFa();}
+else if (section==='ts'){renderAllTs();}
+else if (section==='ba'){renderAllBa();}
+else if (section==='tf'){
+renderAllTxa();
+renLbp();
+updTfProg();
+}
+} else {
+showToast('Save failed. Please try again.',true);
+}
 } catch (e){
- console.error('Submit error:', e);
- showToast('Network error. Please try again.', true);
+showToast('Network error',true);
 }
 btn.classList.remove('submitting');
-btn.textContent = `Save ${section.toUpperCase()} Changes`;
+btn.textContent=`Save ${section.toUpperCase()} Changes`;
 };
-// INIT
 function init(){
-// Display pubplan name
-const nameEl = document.getElementById('pubplan-name-display');
-const dataWrapper = document.querySelector('.pubplan-data-wrapper');
-if (nameEl && dataWrapper){
- nameEl.textContent = dataWrapper.dataset.pubplanName||'';
+const nameEl=document.getElementById('pubplan-name-display');
+const dataWrapper=document.querySelector('.pubplan-data-wrapper');
+if (nameEl&&dataWrapper){
+nameEl.textContent=dataWrapper.dataset.pubplanName||'';
 }
-// Initialize all sections
 initGrState();
+initEmState();
 initFaState();
 initTsState();
 initBaState();
 initTxaState();
 initLbpState();
-// Render all
-renderGrTile();
-updateGrProgress();
+renGr();
+updGrProg();
+renEm();
+updEmProg();
 renderAllFa();
 renderAllTs();
 renderAllBa();
 renderAllTxa();
-renderLbpTile();
-updateTfProgress();
+renLbp();
+updTfProg();
 }
-if (document.readyState === 'loading'){
-document.addEventListener('DOMContentLoaded', init);
-} else{
+if (document.readyState==='loading'){
+document.addEventListener('DOMContentLoaded',init);
+} else {
 init();
 }
 })();
