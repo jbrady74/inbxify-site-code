@@ -14,6 +14,8 @@
   --teal: #1a3a3a;
   --gr-primary: #B8860B;
   --gr-light: #FDF6E3;
+  --em-primary: #0369a1;
+  --em-light: #e0f2fe;
   --fa-primary: #2D5A47;
   --fa-light: #E8F0EC;
   --ts-primary: #5E4A6B;
@@ -55,6 +57,7 @@
 .ppt-section.collapsed .ppt-section-chevron { transform: rotate(-90deg); }
 .ppt-type-chip { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; font-size: 12px; font-weight: 600; font-family: 'DM Mono', monospace; }
 .chip-gr { background: var(--gr-light); color: var(--gr-primary); }
+.chip-em { background: var(--em-light); color: var(--em-primary); }
 .chip-fa { background: var(--fa-light); color: var(--fa-primary); }
 .chip-ts { background: var(--ts-light); color: var(--ts-primary); }
 .chip-ba { background: var(--ba-light); color: var(--ba-primary); }
@@ -95,9 +98,16 @@
   width: 4px; background: var(--fa-primary); border-radius: 2px;
 }
 .ppt-tile-row.gr-row::before { background: var(--gr-primary); }
+.ppt-tile-row.em-row::before { background: var(--em-primary); }
 .ppt-tile-row.ts-row::before { background: var(--ts-primary); }
 .ppt-tile-row.has-pending::before { background: var(--pending-border); }
 .sid-gr { color: var(--gr-primary); }
+.sid-em { color: var(--em-primary); }
+
+/* ═══ CHARACTER COUNTER ═══ */
+.ppt-char-counter { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text-light); margin-top: 4px; text-align: right; }
+.ppt-char-counter.warning { color: #f59e0b; }
+.ppt-char-counter.danger { color: #dc2626; }
 
 /* ═══ TILE ACTIONS ═══ */
 .ppt-actions { display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
@@ -164,11 +174,23 @@
 .cpill-ts { color: var(--ts-primary); }
 
 /* ═══ COLUMN LABELS & VALUES ═══ */
-.ppt-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow: hidden; }
-.ppt-col-label { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0; }
-.ppt-col-value { font-size: 11px; font-family: 'DM Sans', sans-serif; font-weight: 500; color: var(--text-dark); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+.ppt-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ppt-col-label { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ppt-col-value { font-size: 11px; font-family: 'DM Sans', sans-serif; font-weight: 500; color: var(--text-dark); line-height: 1.4; word-wrap: break-word; }
+.ppt-col-value.clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
 .ppt-col-value.sponsor { color: var(--sponsor-purple); }
 .ppt-col-value.sponsor::before { content: '⚑ '; }
+
+/* ═══ CHECKBOX STYLES ═══ */
+.ppt-checkbox-label { font-size: 9px; font-family: 'DM Sans', sans-serif; color: var(--text-light); display: inline-flex; align-items: center; gap: 3px; cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.ppt-checkbox-label input[type="checkbox"] { width: 12px; height: 12px; cursor: pointer; accent-color: var(--teal); }
+
+/* ═══ LOCK COLUMN ═══ */
+.ppt-slot-id-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ppt-lock-col { display: flex; flex-direction: column; align-items: center; }
+.ppt-lock-label { font-size: 9px; font-family: 'DM Sans', sans-serif; color: var(--text-light); display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
+.ppt-lock-label input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--teal); }
+.ppt-locked-label { font-size: 9px; font-family: 'DM Mono', monospace; color: #22c55e; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* ═══ STATUS ICONS ═══ */
 .ppt-status-icons { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
@@ -203,6 +225,15 @@
 .ppt-input:focus { outline: none; border-color: var(--teal); }
 .ppt-textarea { font-size: 11px; font-family: 'DM Sans', sans-serif; padding: 8px 10px; border: 1px solid var(--tile-border); border-radius: 4px; background: #fff; color: var(--text-dark); width: 100%; min-height: 60px; resize: vertical; }
 .ppt-textarea:focus { outline: none; border-color: var(--teal); }
+
+/* ═══ CHARACTER COUNTER ═══ */
+.ppt-char-count { font-size: 10px; font-family: 'DM Mono', monospace; color: #888; margin-top: 4px; display: block; }
+.ppt-char-warn { color: #b7791f; }
+.ppt-char-danger { color: #c53030; font-weight: 600; }
+
+/* ═══ GR FIELDS LAYOUT ═══ */
+.ppt-gr-fields { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.ppt-gr-row { display: flex; gap: 16px; }
 
 /* ═══ SWAP/CANCEL LINKS ═══ */
 .ppt-swap-link { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-light); text-decoration: none; cursor: pointer; }
