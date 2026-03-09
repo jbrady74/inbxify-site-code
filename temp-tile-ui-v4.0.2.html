@@ -1,0 +1,159 @@
+<!-- ============================================================
+  PUBPLAN TILE UI v4.0.2 — HTML EMBED
+  Horizontal tile layout structure
+  v4.0.2: sections start open (no collapsed class)
+============================================================ -->
+
+<div id="pp-tile-root">
+  <div class="ppt-header">
+    <div>
+      <div class="ppt-eyebrow">Publication Plan</div>
+      <div class="ppt-title">Content & Ad Assignments</div>
+      <div class="ppt-pubplan-name" id="pubplan-name-display"></div>
+    </div>
+  </div>
+
+  <!-- ═══ GR — GREETING ═══ -->
+  <div class="ppt-section gr-section" id="section-gr">
+    <div class="ppt-section-bar" onclick="toggleSection('gr')">
+      <div class="ppt-section-bar-left">
+        <span class="ppt-section-chevron">▾</span>
+        <span class="ppt-type-chip chip-gr">GR</span>
+        <span class="ppt-section-title">Greeting</span>
+        <div class="ppt-slot-indicators" id="gr-indicators"></div>
+      </div>
+      <div class="ppt-section-bar-right">
+        <button class="ppt-submit-btn" id="gr-submit-btn" onclick="event.stopPropagation();submitSection('gr')">Save GR Changes</button>
+      </div>
+    </div>
+    <div class="ppt-section-content">
+      <div class="ppt-grid-h" id="gr-grid"></div>
+    </div>
+  </div>
+
+  <!-- ═══ EM — EMAIL ═══ -->
+  <div class="ppt-section em-section" id="section-em">
+    <div class="ppt-section-bar" onclick="toggleSection('em')">
+      <div class="ppt-section-bar-left">
+        <span class="ppt-section-chevron">▾</span>
+        <span class="ppt-type-chip chip-em">EM</span>
+        <span class="ppt-section-title">Email</span>
+        <div class="ppt-slot-indicators" id="em-indicators"></div>
+      </div>
+      <div class="ppt-section-bar-right">
+        <button class="ppt-submit-btn" id="em-submit-btn" onclick="event.stopPropagation();submitSection('em')">Save EM Changes</button>
+      </div>
+    </div>
+    <div class="ppt-section-content">
+      <div class="ppt-grid-h" id="em-grid"></div>
+    </div>
+  </div>
+
+  <!-- ═══ FA — FEATURE ARTICLES ═══ -->
+  <div class="ppt-section fa-section" id="section-fa">
+    <div class="ppt-section-bar" onclick="toggleSection('fa')">
+      <div class="ppt-section-bar-left">
+        <span class="ppt-section-chevron">▾</span>
+        <span class="ppt-type-chip chip-fa">FA</span>
+        <span class="ppt-section-title">Feature Articles</span>
+        <div class="ppt-slot-indicators" id="fa-indicators"></div>
+        <div class="ppt-section-lock" id="fa-section-lock"></div>
+      </div>
+      <div class="ppt-section-bar-right">
+        <button class="ppt-submit-btn" id="fa-submit-btn" onclick="event.stopPropagation();submitSection('fa')">Save FA Changes</button>
+      </div>
+    </div>
+    <div class="ppt-section-content">
+      <div class="ppt-grid-h" id="fa-grid"></div>
+      <div class="ppt-legend">
+        <div class="ppt-legend-item"><div class="ppt-icon ok" style="width:16px;height:16px;font-size:9px;">✓</div> Present/ON</div>
+        <div class="ppt-legend-item"><div class="ppt-icon bad" style="width:16px;height:16px;font-size:9px;">✕</div> Missing/OFF</div>
+        <div class="ppt-legend-item" style="color:#ccc;">— N/A</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TS — THEMED SPOTLIGHTS ═══ -->
+  <div class="ppt-section ts-section" id="section-ts">
+    <div class="ppt-section-bar" onclick="toggleSection('ts')">
+      <div class="ppt-section-bar-left">
+        <span class="ppt-section-chevron">▾</span>
+        <span class="ppt-type-chip chip-ts">TS</span>
+        <span class="ppt-section-title">Themed Spotlights</span>
+        <div class="ppt-slot-indicators" id="ts-indicators"></div>
+        <div class="ppt-section-lock" id="ts-section-lock"></div>
+      </div>
+      <div class="ppt-section-bar-right">
+        <button class="ppt-submit-btn" id="ts-submit-btn" onclick="event.stopPropagation();submitSection('ts')">Save TS Changes</button>
+      </div>
+    </div>
+    <div class="ppt-section-content">
+      <div class="ppt-grid-h" id="ts-grid"></div>
+      <div class="ppt-legend">
+        <div class="ppt-legend-item"><div class="ppt-icon ok" style="width:16px;height:16px;font-size:9px;">✓</div> Present/ON</div>
+        <div class="ppt-legend-item"><div class="ppt-icon bad" style="width:16px;height:16px;font-size:9px;">✕</div> Missing/OFF</div>
+        <div class="ppt-legend-item" style="color:#ccc;">— N/A</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ BA — BANNER ADS ═══ -->
+  <div class="ppt-section ba-section" id="section-ba">
+    <div class="ppt-section-bar" onclick="toggleSection('ba')">
+      <div class="ppt-section-bar-left">
+        <span class="ppt-section-chevron">▾</span>
+        <span class="ppt-type-chip chip-ba">BA</span>
+        <span class="ppt-section-title">Banner Ads</span>
+        <div class="ppt-slot-indicators" id="ba-indicators"></div>
+        <div class="ppt-section-lock" id="ba-section-lock"></div>
+      </div>
+      <div class="ppt-section-bar-right">
+        <button class="ppt-submit-btn" id="ba-submit-btn" onclick="event.stopPropagation();submitSection('ba')">Save BA Changes</button>
+      </div>
+    </div>
+    <div class="ppt-section-content">
+      <div class="ppt-grid-2col" id="ba-grid"></div>
+      <div class="ppt-legend">
+        <div class="ppt-legend-item"><div class="ppt-icon ok" style="width:16px;height:16px;font-size:9px;">✓</div> Present</div>
+        <div class="ppt-legend-item"><div class="ppt-icon bad" style="width:16px;height:16px;font-size:9px;">✕</div> Missing</div>
+        <div class="ppt-legend-item" style="color:#ccc;">— N/A</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TF — THE FIND ═══ -->
+  <div class="ppt-section tf-section" id="section-tf">
+    <div class="ppt-section-bar" onclick="toggleSection('tf')">
+      <div class="ppt-section-bar-left">
+        <span class="ppt-section-chevron">▾</span>
+        <span class="ppt-type-chip chip-tf">TF</span>
+        <span class="ppt-section-title">The Find</span>
+        <div class="ppt-slot-indicators" id="tf-indicators"></div>
+        <div class="ppt-section-lock" id="tf-section-lock"></div>
+      </div>
+      <div class="ppt-section-bar-right">
+        <button class="ppt-submit-btn" id="tf-submit-btn" onclick="event.stopPropagation();submitSection('tf')">Save TF Changes</button>
+      </div>
+    </div>
+    <div class="ppt-section-content">
+      <div class="tf-mode-toggle">
+        <button class="tf-mode-btn" data-mode="lbp" onclick="event.stopPropagation();switchTfMode('lbp')">Featured Business (LBP)</button>
+        <button class="tf-mode-btn active" data-mode="txa" onclick="event.stopPropagation();switchTfMode('txa')">5-Pack Grid (TXA)</button>
+      </div>
+      <div class="the-find-lbp" id="lbp-container">
+        <div class="ppt-grid-2col" id="lbp-grid" style="grid-template-columns:1fr;max-width:600px;"></div>
+      </div>
+      <div class="the-find-txa is-active" id="txa-container">
+        <div class="ppt-grid-2col" id="txa-grid"></div>
+      </div>
+      <div class="ppt-legend">
+        <div class="ppt-legend-item"><div class="ppt-icon ok" style="width:16px;height:16px;font-size:9px;">🖼</div> Logo</div>
+        <div class="ppt-legend-item"><div class="ppt-icon ok" style="width:16px;height:16px;font-size:9px;">🔗</div> Redirect</div>
+        <div class="ppt-legend-item"><div class="ppt-icon ok" style="width:16px;height:16px;font-size:9px;">📝</div> Content</div>
+        <div class="ppt-legend-item" style="color:#ccc;">— N/A</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ppt-toast" id="ppt-toast"></div>
+</div>
