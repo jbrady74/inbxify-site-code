@@ -1,5 +1,5 @@
 // ============================================================
-// PUBPLAN TILE UI — v5.0.0
+// PUBPLAN TILE UI — v5.0.1
 // Clean rebuild from v4.0.31 (ORIGINAL) spec
 // Sections: GR, EM (FA, TS, BA, TF to follow)
 //
@@ -27,14 +27,12 @@ window.toggleSection = function (section) {
   //  CONSTANTS & CONFIG
   // ════════════════════════════════════════════════════════
 
-  const WEBHOOK_URLS = {
-    gr: 'https://hook.us1.make.com/ganq7imi5erisgnlplsmhicog6ixjdwq',
-    em: 'https://hook.us1.make.com/ganq7imi5erisgnlplsmhicog6ixjdwq',
-    fa: 'https://hook.us1.make.com/4cbueud23qmtrkwq396rgw2yhh5yzajb',
-    ts: 'https://hook.us1.make.com/4cbueud23qmtrkwq396rgw2yhh5yzajb',
-    ba: 'https://hook.us1.make.com/gr6i2ang1gpgox8ipotppi26gbjj1f7d',
-    tf: 'https://hook.us1.make.com/4cbueud23qmtrkwq396rgw2yhh5yzajb'
-  };
+  // Webhook URLs: read from window.PP_WEBHOOKS (set in Webflow page head)
+  // This keeps webhook URLs out of the public GitHub repo
+  var WEBHOOK_URLS = window.PP_WEBHOOKS || {};
+  if (!WEBHOOK_URLS.gr) {
+    console.warn('PubPlan: window.PP_WEBHOOKS not found. Add webhook config to page head.');
+  }
 
   // Section anchors for post-save reload
   const SECTION_ANCHORS = {
