@@ -2,14 +2,15 @@
    INBXIFY — Site-Wide Body Code
    Repo: jbrady74/inbxify-site-code
    File: body.js
-   Version: 1.3 — March 2026
+   Version: 1.3.1 — March 2026
+
+CHANGES FROM 1.3:
+- [FIX] Section 1: Wrapped Mobile Nav v2.0 in DOMContentLoaded to fix
+  timing issue — script was running before DOM elements existed
 
 CHANGES FROM 1.2:
-- [REBUILD] Section 1: Mobile Nav v2.0 — complete rewrite. CSS animated
-  hamburger bars, GPU-accelerated slide panel, scroll position preservation,
-  PubPlan event isolation, ARIA accessibility, subscribe/contact popup wiring
-- [REMOVED] Section 9: Duplicate mobile nav handler deleted (consolidated
-  into new Section 1)
+- [REBUILD] Section 1: Mobile Nav v2.0 — complete rewrite
+- [REMOVED] Section 9: Duplicate mobile nav handler deleted
 
 CONTENTS:
 1.  Mobile Nav v2.0 (slide menu)
@@ -51,40 +52,27 @@ CONTENTS:
   });
 })();
 
+
 /* ── 1. MOBILE NAV v2.0 ─────────────────────────── */
-/* Replaces: Sections 1 + 9 from body.js v1.2
-   Pairs with: head.js Section 6 (mobile-nav CSS)
-
-   Features:
-   - CSS animated hamburger → X morph (replaces image)
-   - GPU-accelerated slide-from-right panel
-   - Backdrop scrim (non-dismissing)
-   - Close via hamburger/X toggle ONLY
-   - Scroll position preserved on open/close
-   - Subscribe / Contact popup integration
-   - Isolated from PubPlan event delegation
-   - Staggered link entry animation via CSS
-
+/* Pairs with: head.css Section 6 (mobile-nav CSS)
    DOM contract:
      .mh-menu-tablet   — hamburger trigger (bars injected by this script)
      .mobile-nav-i     — backdrop overlay
-     .slide-menu        — slide panel
-     body.nav-open      — open state class
+     .slide-menu       — slide panel
+     body.nav-open     — open state class
 */
 document.addEventListener('DOMContentLoaded', function () {
   'use strict';
 
-  /* ── References ── */
   var trigger = document.querySelector('.mh-menu-tablet');
   var panel   = document.querySelector('.slide-menu');
-  if (!trigger || !panel) return;       /* Bail on pages without the nav */
+  if (!trigger || !panel) return;
 
   var savedScrollY = 0;
 
-  /* ── Inject CSS hamburger bars (replace image) ── */
   function injectBars() {
-    if (trigger.querySelector('.nav-bar')) return;     /* Already injected */
-    trigger.innerHTML = '';                             /* Remove image child */
+    if (trigger.querySelector('.nav-bar')) return;
+    trigger.innerHTML = '';
     for (var i = 0; i < 3; i++) {
       var bar = document.createElement('span');
       bar.className = 'nav-bar';
@@ -93,7 +81,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  /* ── Open / Close ── */
   function openNav() {
     savedScrollY = window.scrollY;
     document.body.classList.add('nav-open');
@@ -111,18 +98,16 @@ document.addEventListener('DOMContentLoaded', function () {
     trigger.setAttribute('aria-label', 'Open menu');
     panel.setAttribute('aria-hidden', 'true');
 
-    /* Reset stagger animations so they replay on next open */
     panel.querySelectorAll('.w-dyn-item, .nav-slide-divider, .nav-slide-btn, .nav-slide-auth a')
       .forEach(function (el) {
         el.style.animation = 'none';
-        /* Force reflow, then clear so CSS animation can re-trigger */
         void el.offsetHeight;
         el.style.animation = '';
       });
   }
 
   function toggleNav(e) {
-    e.stopPropagation();                               /* Isolate from PubPlan */
+    e.stopPropagation();
     e.preventDefault();
     if (document.body.classList.contains('nav-open')) {
       closeNav();
@@ -131,16 +116,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  /* ── Bind trigger ── */
   trigger.addEventListener('click', toggleNav, false);
 
-  /* Prevent touch delay on mobile */
   trigger.addEventListener('touchend', function (e) {
     e.preventDefault();
     toggleNav(e);
   }, { passive: false });
 
-  /* ── Accessibility — ARIA setup ── */
   trigger.setAttribute('role', 'button');
   trigger.setAttribute('tabindex', '0');
   trigger.setAttribute('aria-expanded', 'false');
@@ -150,7 +132,6 @@ document.addEventListener('DOMContentLoaded', function () {
   panel.setAttribute('role', 'navigation');
   panel.setAttribute('aria-hidden', 'true');
 
-  /* Keyboard: Enter/Space on trigger */
   trigger.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -158,9 +139,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  /* ── Subscribe / Contact button wiring ── */
-  /* If buttons with data-subscribe="true" or data-contact="true" live
-     inside the slide menu, close the nav first then trigger the popup */
   panel.addEventListener('click', function (e) {
     var subscribeBtn = e.target.closest('[data-subscribe="true"]');
     var contactBtn   = e.target.closest('[data-contact="true"]');
@@ -170,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function () {
       closeNav();
       setTimeout(function () {
         if (typeof window.openSubscribePopup === 'function') window.openSubscribePopup();
-      }, 350);                                        /* Wait for panel close animation */
+      }, 350);
       return;
     }
 
@@ -184,7 +162,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  /* ── Close on internal link navigation ── */
   panel.querySelectorAll('a[href]').forEach(function (link) {
     if (link.hasAttribute('data-subscribe') || link.hasAttribute('data-contact')) return;
     link.addEventListener('click', function () {
@@ -192,7 +169,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  /* ── Close on window resize above breakpoint ── */
   var mql = window.matchMedia('(min-width: 992px)');
   function handleResize(e) {
     if (e.matches && document.body.classList.contains('nav-open')) {
@@ -202,13 +178,13 @@ document.addEventListener('DOMContentLoaded', function () {
   if (mql.addEventListener) {
     mql.addEventListener('change', handleResize);
   } else if (mql.addListener) {
-    mql.addListener(handleResize);                    /* Safari <14 fallback */
+    mql.addListener(handleResize);
   }
 
-  /* ── Init ── */
   injectBars();
 
 });
+
 
 /* ── 2. DIRECTORY GRID + THEME ASSIGNMENT ───────── */
 (function(){
@@ -229,7 +205,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 /* ── 3. TAB BUTTON ──────────────────────────────── */
-/* FIX #2: Wrapped in DOMContentLoaded so $ is guaranteed to exist */
 document.addEventListener('DOMContentLoaded', function() {
   if (typeof $ === 'undefined') return;
   $(".tab-button").click(function(e) {
@@ -359,8 +334,6 @@ document.addEventListener("DOMContentLoaded", () => {
       counter.style.display = "block";
       const remaining = Math.max(0, max - input.value.length);
       remainingEl.textContent = `${remaining} characters remaining (~${getWordRange(remaining)} words)`;
-      /* FIX #1 (ref): class names already correct here — "ib-warning" and "ib-danger"
-         match the renamed CSS classes in head.js v1.4 */
       counter.classList.toggle("ib-warning", remaining <= max * 0.2);
       counter.classList.toggle("ib-danger", remaining <= max * 0.05);
     }
@@ -372,8 +345,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 /* ── 8. DYNAMIC FAVICON ─────────────────────────── */
-/* NOTE #7: faviconMap is hardcoded — tracked as multi-tenant hardcode item.
-   Future: replace with CMS-driven lookup keyed on subdomain or publisher slug. */
 (function() {
   const subdomain = window.location.hostname.split('.')[0];
   const faviconMap = {
@@ -388,9 +359,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 })();
 
+
 /* ── 9. MEMBERSCRIPT #45 — SHOW/HIDE PASSWORD ──── */
-/* FIX #3: isPassword flag moved inside each button's closure so multiple
-   toggle buttons on the same page don't share and desync state */
 document.querySelectorAll("[ms-code-password='transform']").forEach(function(button) {
   var isPassword = true;
   button.addEventListener("click", function() {
@@ -548,7 +518,6 @@ document.addEventListener('DOMContentLoaded', function(){
   const pubPhone   = document.getElementById('contactPubPhone');
   const pubEmail   = document.getElementById('contactPubEmail');
 
-  /* FIX #5: Guard the entire module if the contact modal isn't on this page */
   if (!overlay || !modal || !form) return;
 
   function populatePublisher() {
@@ -602,7 +571,6 @@ document.addEventListener('DOMContentLoaded', function(){
     if (!name) { errorDiv.textContent = 'Please enter your name.'; errorDiv.classList.add('active'); return; }
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errorDiv.textContent = 'Please enter a valid email address.'; errorDiv.classList.add('active'); return; }
 
-    /* FIX #6: Optional chaining prevents throw if #contact-phone is absent */
     const phone = (form.querySelector('#contact-phone')?.value || '').trim();
     if (phone && phone.replace(/[^0-9]/g,'').length !== 10) {
       errorDiv.textContent = 'Please enter a 10-digit phone number.'; errorDiv.classList.add('active'); return;
@@ -650,8 +618,6 @@ document.addEventListener('DOMContentLoaded', function(){
   var MIN_VIEW_MS = 500;
   var timers = new Map();
 
-  /* FIX #4: Declare observer variable first so onIntersect's reference
-     to it is explicit and not reliant on var hoisting order */
   var observer;
 
   function fireEvent(el) {
