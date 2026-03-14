@@ -2,42 +2,32 @@
    INBXIFY — Site-Wide Body Code
    Repo: jbrady74/inbxify-site-code
    File: body.js
-   Version: 1.2 — March 2026
+   Version: 1.3 — March 2026
 
-   CHANGES FROM 1.1:
-   - [FIX #1] Section 5: head.js .ib-warn renamed to .ib-warning (no change
-     needed here — body.js was already using "ib-warning" correctly)
-   - [FIX #2] Section 3: Wrapped jQuery tab handler in DOMContentLoaded
-     guard to prevent "$ is not defined" if jQuery loads after this script
-   - [FIX #3] Section 10: Moved isPassword flag inside each button's closure
-     so multiple toggle buttons don't share state
-   - [FIX #4] Section 16: Declared `let observer` before onIntersect so the
-     reference is explicit and not dependent on hoisting order
-   - [FIX #5] Section 15: Added top-level null guard for contact modal
-     elements so the script doesn't throw on pages without the modal
-   - [FIX #6] Section 15: Added optional chaining on #contact-phone
-     querySelector to prevent throw if element is absent
-   - [NOTE #7] Section 8: Favicon map remains hardcoded — tracked as
-     multi-tenant hardcode item for future CMS-driven lookup
+CHANGES FROM 1.2:
+- [REBUILD] Section 1: Mobile Nav v2.0 — complete rewrite. CSS animated
+  hamburger bars, GPU-accelerated slide panel, scroll position preservation,
+  PubPlan event isolation, ARIA accessibility, subscribe/contact popup wiring
+- [REMOVED] Section 9: Duplicate mobile nav handler deleted (consolidated
+  into new Section 1)
 
-   CONTENTS:
-   1.  Mobile Nav (slide menu)
-   2.  Directory Grid + Theme Assignment
-   3.  Tab Button
-   4.  Memberscript #17 — Custom Field as Link
-   5.  Inactivity Timer (20 min logout)
-   6.  Fixed Bottom Popup
-   7.  Character Counter
-   8.  Dynamic Favicon
-   9.  Mobile Nav (body delegate — duplicate handler)
-   10. Memberscript #45 — Show/Hide Password
-   11. Jetboost
-   12. Uploadcare
-   13. Cleave.js Form Formatting
-   14. Subscribe Popup
-   15. Contact Modal
-   16. GA4 Element Visibility Tracking
-   17. Sign In Backdrop
+CONTENTS:
+1.  Mobile Nav v2.0 (slide menu)
+2.  Directory Grid + Theme Assignment
+3.  Tab Button
+4.  Memberscript #17 — Custom Field as Link
+5.  Inactivity Timer (20 min logout)
+6.  Fixed Bottom Popup
+7.  Character Counter
+8.  Dynamic Favicon
+9.  Memberscript #45 — Show/Hide Password
+10. Jetboost
+11. Uploadcare
+12. Cleave.js Form Formatting
+13. Subscribe Popup
+14. Contact Modal
+15. GA4 Element Visibility Tracking
+16. Sign In Backdrop
    ================================================ */
 
 
@@ -61,23 +51,165 @@
   });
 })();
 
+/* ── 1. MOBILE NAV v2.0 ─────────────────────────── */
+/* Replaces: Sections 1 + 9 from body.js v1.2
+   Pairs with: head.js Section 6 (mobile-nav CSS)
 
-/* ── 1. MOBILE NAV ──────────────────────────────── */
-(function(){
-  document.addEventListener('click', function(e) {
-    if (e.target.closest('.mh-menu-tablet')) {
-      document.querySelector('.slide-menu').classList.add('is-open');
-      document.querySelector('.mobile-nav-i').classList.add('is-active');
-      document.body.style.overflow = 'hidden';
+   Features:
+   - CSS animated hamburger → X morph (replaces image)
+   - GPU-accelerated slide-from-right panel
+   - Backdrop scrim (non-dismissing)
+   - Close via hamburger/X toggle ONLY
+   - Scroll position preserved on open/close
+   - Subscribe / Contact popup integration
+   - Isolated from PubPlan event delegation
+   - Staggered link entry animation via CSS
+
+   DOM contract:
+     .mh-menu-tablet   — hamburger trigger (bars injected by this script)
+     .mobile-nav-i     — backdrop overlay
+     .slide-menu        — slide panel
+     body.nav-open      — open state class
+*/
+(function () {
+  'use strict';
+
+  /* ── References ── */
+  var trigger = document.querySelector('.mh-menu-tablet');
+  var panel   = document.querySelector('.slide-menu');
+  if (!trigger || !panel) return;          /* Bail on pages without the nav */
+
+  var savedScrollY = 0;
+
+  /* ── Inject CSS hamburger bars (replace image) ── */
+  function injectBars() {
+    if (trigger.querySelector('.nav-bar')) return;     /* Already injected */
+    trigger.innerHTML = '';                             /* Remove image child */
+    for (var i = 0; i < 3; i++) {
+      var bar = document.createElement('span');
+      bar.className = 'nav-bar';
+      bar.setAttribute('aria-hidden', 'true');
+      trigger.appendChild(bar);
+    }
+  }
+
+  /* ── Open / Close ── */
+  function openNav() {
+    savedScrollY = window.scrollY;
+    document.body.classList.add('nav-open');
+    document.body.style.top = '-' + savedScrollY + 'px';
+    trigger.setAttribute('aria-expanded', 'true');
+    trigger.setAttribute('aria-label', 'Close menu');
+    panel.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeNav() {
+    document.body.classList.remove('nav-open');
+    document.body.style.top = '';
+    window.scrollTo(0, savedScrollY);
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.setAttribute('aria-label', 'Open menu');
+    panel.setAttribute('aria-hidden', 'true');
+
+    /* Reset stagger animations so they replay on next open */
+    panel.querySelectorAll('.w-dyn-item, .nav-slide-divider, .nav-slide-btn, .nav-slide-auth a')
+      .forEach(function (el) {
+        el.style.animation = 'none';
+        /* Force reflow, then clear so CSS animation can re-trigger */
+        void el.offsetHeight;
+        el.style.animation = '';
+      });
+  }
+
+  function toggleNav(e) {
+    e.stopPropagation();                               /* Isolate from PubPlan */
+    e.preventDefault();
+    if (document.body.classList.contains('nav-open')) {
+      closeNav();
+    } else {
+      openNav();
+    }
+  }
+
+  /* ── Bind trigger ── */
+  trigger.addEventListener('click', toggleNav, false);
+
+  /* Prevent touch delay on mobile */
+  trigger.addEventListener('touchend', function (e) {
+    e.preventDefault();
+    toggleNav(e);
+  }, { passive: false });
+
+  /* ── Accessibility — ARIA setup ── */
+  trigger.setAttribute('role', 'button');
+  trigger.setAttribute('tabindex', '0');
+  trigger.setAttribute('aria-expanded', 'false');
+  trigger.setAttribute('aria-label', 'Open menu');
+  trigger.setAttribute('aria-controls', 'slide-menu');
+  panel.setAttribute('id', 'slide-menu');
+  panel.setAttribute('role', 'navigation');
+  panel.setAttribute('aria-hidden', 'true');
+
+  /* Keyboard: Enter/Space on trigger */
+  trigger.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleNav(e);
+    }
+  });
+
+  /* ── Subscribe / Contact button wiring ── */
+  /* If buttons with data-subscribe="true" or data-contact="true" live
+     inside the slide menu, close the nav first then trigger the popup */
+  panel.addEventListener('click', function (e) {
+    var subscribeBtn = e.target.closest('[data-subscribe="true"]');
+    var contactBtn   = e.target.closest('[data-contact="true"]');
+
+    if (subscribeBtn) {
+      e.preventDefault();
+      closeNav();
+      setTimeout(function () {
+        if (typeof window.openSubscribePopup === 'function') window.openSubscribePopup();
+      }, 350);                                        /* Wait for panel close animation */
       return;
     }
-    if (e.target.closest('.bam-closer') || e.target.classList.contains('mobile-nav-i')) {
-      document.querySelector('.slide-menu').classList.remove('is-open');
-      document.querySelector('.mobile-nav-i').classList.remove('is-active');
-      document.body.style.overflow = '';
+
+    if (contactBtn) {
+      e.preventDefault();
+      closeNav();
+      setTimeout(function () {
+        if (typeof window.openContactModal === 'function') window.openContactModal();
+      }, 350);
+      return;
     }
-  }, true);
+  });
+
+  /* ── Close on internal link navigation ── */
+  panel.querySelectorAll('a[href]').forEach(function (link) {
+    if (link.hasAttribute('data-subscribe') || link.hasAttribute('data-contact')) return;
+    link.addEventListener('click', function () {
+      closeNav();
+    });
+  });
+
+  /* ── Close on window resize above breakpoint ── */
+  var mql = window.matchMedia('(min-width: 992px)');
+  function handleResize(e) {
+    if (e.matches && document.body.classList.contains('nav-open')) {
+      closeNav();
+    }
+  }
+  if (mql.addEventListener) {
+    mql.addEventListener('change', handleResize);
+  } else if (mql.addListener) {
+    mql.addListener(handleResize);                    /* Safari <14 fallback */
+  }
+
+  /* ── Init ── */
+  injectBars();
+
 })();
+
 
 
 /* ── 2. DIRECTORY GRID + THEME ASSIGNMENT ───────── */
@@ -258,26 +390,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 })();
 
-
-/* ── 9. MOBILE NAV BODY DELEGATE ────────────────── */
-document.body.addEventListener('click', function(e) {
-  var trigger = e.target.closest('.mh-menu-mobile2, .mh-menu-tablet');
-  var closer = e.target.closest('.bam-closer');
-  var overlay = e.target.classList.contains('mobile-nav-i');
-  if (trigger) {
-    document.querySelector('.slide-menu').classList.add('is-open');
-    document.querySelector('.mobile-nav-i').classList.add('is-active');
-    document.body.style.overflow = 'hidden';
-  }
-  if (closer || overlay) {
-    document.querySelector('.slide-menu').classList.remove('is-open');
-    document.querySelector('.mobile-nav-i').classList.remove('is-active');
-    document.body.style.overflow = '';
-  }
-});
-
-
-/* ── 10. MEMBERSCRIPT #45 — SHOW/HIDE PASSWORD ──── */
+/* ── 9. MEMBERSCRIPT #45 — SHOW/HIDE PASSWORD ──── */
 /* FIX #3: isPassword flag moved inside each button's closure so multiple
    toggle buttons on the same page don't share and desync state */
 document.querySelectorAll("[ms-code-password='transform']").forEach(function(button) {
@@ -294,7 +407,7 @@ document.querySelectorAll("[ms-code-password='transform']").forEach(function(but
 });
 
 
-/* ── 11. JETBOOST ───────────────────────────────── */
+/* ── 10. JETBOOST ───────────────────────────────── */
 window.JETBOOST_SITE_ID = "clkv6ks4h012u0juqgxzeb7n6";
 (function(d) {
   var s = d.createElement("script");
@@ -304,11 +417,11 @@ window.JETBOOST_SITE_ID = "clkv6ks4h012u0juqgxzeb7n6";
 })(document);
 
 
-/* ── 12. UPLOADCARE ─────────────────────────────── */
+/* ── 11. UPLOADCARE ─────────────────────────────── */
 // Loaded via Section 0 library loader above
 
 
-/* ── 13. CLEAVE.JS FORM FORMATTING ─────────────── */
+/* ── 12. CLEAVE.JS FORM FORMATTING ─────────────── */
 document.addEventListener('DOMContentLoaded', function(){
   const elements = document.querySelectorAll('[ms-code-autoformat], [ms-code-autoformat-prefix]');
   for (let element of elements) {
@@ -331,7 +444,7 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 
 
-/* ── 14. SUBSCRIBE POPUP ────────────────────────── */
+/* ── 13. SUBSCRIBE POPUP ────────────────────────── */
 (function() {
   var overlay   = document.getElementById('subscribeOverlay');
   var popup     = document.getElementById('subscribePopup');
@@ -420,7 +533,7 @@ document.addEventListener('DOMContentLoaded', function(){
 })();
 
 
-/* ── 15. CONTACT MODAL ──────────────────────────── */
+/* ── 14. CONTACT MODAL ──────────────────────────── */
 (function() {
   'use strict';
   const WEBHOOK_URL = 'https://hook.us1.make.com/jpwexn5422dumimghplq5874ehlpgybg';
@@ -531,7 +644,7 @@ document.addEventListener('DOMContentLoaded', function(){
 })();
 
 
-/* ── 16. GA4 ELEMENT VISIBILITY TRACKING ────────── */
+/* ── 15. GA4 ELEMENT VISIBILITY TRACKING ────────── */
 (function() {
   'use strict';
   var tracked = new Set();
@@ -606,7 +719,7 @@ document.addEventListener('DOMContentLoaded', function(){
 })();
 
 
-/* ── 17. SIGN IN BACKDROP ───────────────────────── */
+/* ── 16. SIGN IN BACKDROP ───────────────────────── */
 (function () {
   var backdrop = document.getElementById('inbx-backdrop');
 
