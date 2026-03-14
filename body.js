@@ -71,13 +71,13 @@ CONTENTS:
      .slide-menu        — slide panel
      body.nav-open      — open state class
 */
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
   'use strict';
 
   /* ── References ── */
   var trigger = document.querySelector('.mh-menu-tablet');
   var panel   = document.querySelector('.slide-menu');
-  if (!trigger || !panel) return;          /* Bail on pages without the nav */
+  if (!trigger || !panel) return;       /* Bail on pages without the nav */
 
   var savedScrollY = 0;
 
@@ -208,9 +208,7 @@ CONTENTS:
   /* ── Init ── */
   injectBars();
 
-})();
-
-
+});
 
 /* ── 2. DIRECTORY GRID + THEME ASSIGNMENT ───────── */
 (function(){
