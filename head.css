@@ -2,11 +2,14 @@
    INBXIFY — Site-Wide Head Code
    Repo: jbrady74/inbxify-site-code
    File: head.css
-   Version: 1.9 — March 2026
+   Version: 2.0 — March 2026
 
-   CHANGES FROM 1.8:
-   - [REDESIGN] Section 6: Cream/white panel (#FAF9F5), dark text,
-     card-style nav links, text-only subscribe/contact, updated close btn
+   CHANGES FROM 1.9:
+   - [FIX] Section 6: Card spacing uses margin-bottom on links (not gap
+     on w-dyn-items) to handle single-item collection list rendering
+   - [NEW] Section 6: Hover treatments for Subscribe, Contact, Sign In
+   - [FIX] Section 6: Auth section no longer uses margin-top:auto to
+     prevent off-screen push on small viewports
 
    CONTENTS:
    1. Sign In Modal Restyle
@@ -293,18 +296,10 @@
 
 /* ══════════════════════════════════════════════════
    6. MOBILE NAVIGATION CSS
-   Cream panel, card-style links, text-only actions
-
-   DOM contract:
-     .mh-menu-tablet       — hamburger trigger (Webflow owns layout)
-     .inbx-nav-overlay     — backdrop scrim
-     .inbx-nav-panel       — slide panel (cream)
-     .inbx-nav-close       — X close button (injected by JS)
-     body.nav-open         — open state class
    ══════════════════════════════════════════════════ */
 
 
-/* ── HAMBURGER — behavior + bar styling only ────── */
+/* ── HAMBURGER ──────────────────────────────────── */
 
 .mh-menu-tablet {
   cursor: pointer;
@@ -364,7 +359,7 @@
 }
 
 
-/* ── BACKDROP / SCRIM ───────────────────────────── */
+/* ── BACKDROP ───────────────────────────────────── */
 
 .inbx-nav-overlay {
   position: fixed;
@@ -387,7 +382,7 @@ body.nav-open .inbx-nav-overlay {
 }
 
 
-/* ── SLIDE PANEL (cream) ────────────────────────── */
+/* ── SLIDE PANEL ────────────────────────────────── */
 
 .inbx-nav-panel {
   position: fixed;
@@ -427,7 +422,7 @@ body.nav-open {
 }
 
 
-/* ── NAV LINKS (card-style) ─────────────────────── */
+/* ── NAV LINKS (card-style with margin spacing) ── */
 
 .inbx-nav-panel .w-dyn-list {
   padding: 0;
@@ -437,13 +432,13 @@ body.nav-open {
 .inbx-nav-panel .w-dyn-items {
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
 .inbx-nav-panel .w-dyn-item a,
 .inbx-nav-panel a.nav-slide-link {
   display: block;
   padding: 14px 16px;
+  margin-bottom: 12px;
   background: rgba(26, 58, 58, 0.05);
   border-radius: 10px;
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -452,7 +447,12 @@ body.nav-open {
   color: #1A3A3A;
   text-decoration: none;
   letter-spacing: 0.2px;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.inbx-nav-panel .w-dyn-item:last-child a,
+.inbx-nav-panel a.nav-slide-link:last-child {
+  margin-bottom: 0;
 }
 
 .inbx-nav-panel .w-dyn-item a:hover,
@@ -493,30 +493,34 @@ body.nav-open {
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
-  transition: opacity 0.2s ease;
   border-radius: 8px;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-.inbx-nav-panel .nav-slide-actions a:hover {
-  opacity: 0.7;
-}
-
-/* Subscribe link — gold */
 .inbx-nav-panel .nav-slide-actions a[data-subscribe] {
   color: #C4A35A;
 }
 
-/* Contact link — dark teal */
+.inbx-nav-panel .nav-slide-actions a[data-subscribe]:hover {
+  background: rgba(196, 163, 90, 0.1);
+  color: #a8872e;
+}
+
 .inbx-nav-panel .nav-slide-actions a[data-contact] {
   color: #1A3A3A;
 }
 
+.inbx-nav-panel .nav-slide-actions a[data-contact]:hover {
+  background: rgba(26, 58, 58, 0.06);
+  color: #0d1f1f;
+}
 
-/* ── AUTH LINKS (Sign In / Log Out) ─────────────── */
+
+/* ── AUTH LINKS ─────────────────────────────────── */
 
 .inbx-nav-panel .nav-slide-auth {
-  margin-top: auto;
   padding-top: 16px;
+  margin-top: 24px;
   border-top: 1px solid rgba(26, 58, 58, 0.08);
 }
 
@@ -529,31 +533,33 @@ body.nav-open {
   color: rgba(26, 58, 58, 0.5);
   text-decoration: none;
   border-radius: 8px;
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, background 0.2s ease;
 }
 
 .inbx-nav-panel .nav-slide-auth a:hover {
   color: #1A3A3A;
+  background: rgba(26, 58, 58, 0.05);
 }
 
 
-/* ── STAGGERED ENTRY ANIMATION ──────────────────── */
+/* ── STAGGERED ENTRY ────────────────────────────── */
 
-body.nav-open .inbx-nav-panel .w-dyn-item,
+body.nav-open .inbx-nav-panel .w-dyn-item a,
+body.nav-open .inbx-nav-panel a.nav-slide-link,
 body.nav-open .inbx-nav-panel .nav-slide-divider,
 body.nav-open .inbx-nav-panel .nav-slide-actions a,
 body.nav-open .inbx-nav-panel .nav-slide-auth a {
   animation: navSlideIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
-body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(1) { animation-delay: 0.08s; }
-body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(2) { animation-delay: 0.12s; }
-body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(3) { animation-delay: 0.16s; }
-body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(4) { animation-delay: 0.20s; }
-body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(5) { animation-delay: 0.24s; }
-body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(6) { animation-delay: 0.28s; }
-body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(7) { animation-delay: 0.32s; }
-body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(8) { animation-delay: 0.36s; }
+body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(1) a { animation-delay: 0.08s; }
+body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(2) a { animation-delay: 0.12s; }
+body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(3) a { animation-delay: 0.16s; }
+body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(4) a { animation-delay: 0.20s; }
+body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(5) a { animation-delay: 0.24s; }
+body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(6) a { animation-delay: 0.28s; }
+body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(7) a { animation-delay: 0.32s; }
+body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(8) a { animation-delay: 0.36s; }
 
 .inbx-nav-panel .nav-slide-actions a[data-subscribe] { animation-delay: 0.30s; }
 .inbx-nav-panel .nav-slide-actions a[data-contact] { animation-delay: 0.34s; }
@@ -586,6 +592,7 @@ body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(8) { animation-delay: 0.36s;
   .inbx-nav-panel a.nav-slide-link {
     padding: 12px 14px;
     font-size: 15px;
+    margin-bottom: 10px;
   }
 
   .inbx-nav-close {
