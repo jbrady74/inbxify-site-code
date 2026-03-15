@@ -428,6 +428,7 @@ document.addEventListener('DOMContentLoaded', function(){
   var emailError = document.getElementById('emailError');
   var zipError   = document.getElementById('zipError');
   var submitBtn  = document.getElementById('subscribeSubmit');
+  if (!overlay || !popup || !form || !emailInput || !zipInput) { window.openSubscribePopup = function(){}; return; }
 
   function openSubscribePopup() {
     overlay.classList.add('active');
