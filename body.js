@@ -2,15 +2,12 @@
    INBXIFY — Site-Wide Body Code
    Repo: jbrady74/inbxify-site-code
    File: body.js
-   Version: 1.3.1 — March 2026
+   Version: 1.4 — March 2026
 
-CHANGES FROM 1.3:
-- [FIX] Section 1: Wrapped Mobile Nav v2.0 in DOMContentLoaded to fix
-  timing issue — script was running before DOM elements existed
-
-CHANGES FROM 1.2:
-- [REBUILD] Section 1: Mobile Nav v2.0 — complete rewrite
-- [REMOVED] Section 9: Duplicate mobile nav handler deleted
+CHANGES FROM 1.3.1:
+- [FIX] Section 1: New clean class names (inbx-nav-overlay, inbx-nav-panel)
+  to eliminate Webflow compiled CSS conflicts. Old mobile-nav-i and
+  slide-menu elements replaced with fresh divs in Webflow.
 
 CONTENTS:
 1.  Mobile Nav v2.0 (slide menu)
@@ -42,11 +39,9 @@ CONTENTS:
     document.head.appendChild(s);
   }
 
-  // Uploadcare
   window.UPLOADCARE_PUBLIC_KEY = '4534a0ba747a413f13c8';
   loadScript('https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js');
 
-  // Cleave.js + US phone addon
   loadScript('https://cdn.jsdelivr.net/npm/cleave.js@1.6.0', function() {
     loadScript('https://cdnjs.cloudflare.com/ajax/libs/cleave.js/1.6.0/addons/cleave-phone.us.js');
   });
@@ -54,18 +49,17 @@ CONTENTS:
 
 
 /* ── 1. MOBILE NAV v2.0 ─────────────────────────── */
-/* Pairs with: head.css Section 6 (mobile-nav CSS)
-   DOM contract:
-     .mh-menu-tablet   — hamburger trigger (bars injected by this script)
-     .mobile-nav-i     — backdrop overlay
-     .slide-menu       — slide panel
-     body.nav-open     — open state class
+/* DOM contract (NEW clean class names):
+     .mh-menu-tablet       — hamburger trigger (bars injected by this script)
+     .inbx-nav-overlay     — backdrop scrim
+     .inbx-nav-panel       — slide panel
+     body.nav-open         — open state class
 */
 document.addEventListener('DOMContentLoaded', function () {
   'use strict';
 
   var trigger = document.querySelector('.mh-menu-tablet');
-  var panel   = document.querySelector('.slide-menu');
+  var panel   = document.querySelector('.inbx-nav-panel');
   if (!trigger || !panel) return;
 
   var savedScrollY = 0;
@@ -127,8 +121,8 @@ document.addEventListener('DOMContentLoaded', function () {
   trigger.setAttribute('tabindex', '0');
   trigger.setAttribute('aria-expanded', 'false');
   trigger.setAttribute('aria-label', 'Open menu');
-  trigger.setAttribute('aria-controls', 'slide-menu');
-  panel.setAttribute('id', 'slide-menu');
+  trigger.setAttribute('aria-controls', 'inbx-nav-panel');
+  panel.setAttribute('id', 'inbx-nav-panel');
   panel.setAttribute('role', 'navigation');
   panel.setAttribute('aria-hidden', 'true');
 
