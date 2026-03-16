@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #fff;
+    color: #1A1A1A;
+    width: 8.5in;
+    height: 11in;
+    margin: 0 auto;
+    padding: 0.4in 0.55in 0.35in;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+  }
+  .header-left h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: #1A3A3A;
+    line-height: 1.15;
+    margin-bottom: 4px;
+  }
+  .header-left .subtitle {
+    font-size: 12px;
+    color: #888;
+    font-weight: 500;
+  }
+  .header-right {
+    text-align: right;
+    padding-top: 2px;
+  }
+  .header-right .pub-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 15px;
+    color: #1A3A3A;
+  }
+  .header-right .pub-detail {
+    font-size: 10px;
+    color: #999;
+    margin-top: 1px;
+  }
+
+  .divider {
+    height: 3px;
+    background: linear-gradient(90deg, #1A3A3A 0%, #C4A35A 100%);
+    border-radius: 2px;
+    margin-bottom: 18px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #999;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  /* ============================================
+     ROW 1: ENGAGEMENT — HUGE HERO CARDS
+     ============================================ */
+  .engagement-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .eng-card {
+    background: #1A3A3A;
+    border-radius: 14px;
+    padding: 40px 16px 34px;
+    text-align: center;
+  }
+  .eng-card .number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 58px;
+    color: #C4A35A;
+    line-height: 1;
+  }
+  .eng-card .label {
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 10px;
+    font-weight: 600;
+  }
+  .eng-card .context {
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    margin-top: 5px;
+  }
+
+  /* ============================================
+     ROW 2: EMAIL — LARGE CARDS
+     ============================================ */
+  .email-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .email-card {
+    background: #FAFAF7;
+    border: 1px solid #EEEEE8;
+    border-radius: 12px;
+    padding: 32px 16px 26px;
+    text-align: center;
+  }
+  .email-card .number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 42px;
+    color: #1A3A3A;
+    line-height: 1;
+  }
+  .email-card .label {
+    font-size: 11px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 8px;
+    font-weight: 600;
+  }
+  .email-card .context {
+    font-size: 11px;
+    color: #C4A35A;
+    margin-top: 5px;
+    font-weight: 600;
+  }
+
+  /* ============================================
+     COMPARISON STRIP
+     ============================================ */
+  .compare-strip {
+    background: #FAFAF7;
+    border: 1px solid #EEEEE8;
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .compare-label-col {
+    min-width: 170px;
+  }
+  .compare-label-col .title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1A3A3A;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .compare-label-col .cite {
+    font-size: 8px;
+    color: #aaa;
+    margin-top: 2px;
+  }
+  .compare-bars {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .compare-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .compare-bar-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: #666;
+    width: 90px;
+    text-align: right;
+  }
+  .compare-bar-wrap {
+    flex: 1;
+    height: 22px;
+    background: #EEEEE8;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .compare-bar {
+    height: 100%;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+  }
+  .compare-bar span {
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .bar-wln { background: #1A3A3A; }
+  .bar-media { background: #5A8A7A; }
+  .bar-industry { background: #CCCCBB; }
+  .bar-industry span { color: #666; }
+
+  /* ============================================
+     AD PERFORMANCE — TWO COL, COMPACT
+     ============================================ */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .ad-results {
+    background: linear-gradient(135deg, #1A3A3A 0%, #243F3F 100%);
+    border-radius: 12px;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .ad-results h3 {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.45);
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .ad-hero-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 64px;
+    color: #C4A35A;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .ad-hero-label {
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .ad-hero-desc {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.45;
+    max-width: 240px;
+  }
+
+  .track-box {
+    background: #FAFAF7;
+    border: 1px solid #EEEEE8;
+    border-radius: 12px;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .track-box h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #1A3A3A;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  .track-item-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    font-size: 13px;
+    color: #1A3A3A;
+    font-weight: 600;
+  }
+  .track-item-inline:first-of-type {
+    margin-top: 0;
+  }
+  .track-icon-sm {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    background: #1A3A3A;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .track-icon-sm svg { width: 9px; height: 9px; }
+  .track-desc {
+    font-size: 11px;
+    color: #777;
+    margin: 3px 0 0 26px;
+    line-height: 1.45;
+  }
+
+  /* ============================================
+     CTA
+     ============================================ */
+  .cta {
+    margin-top: auto;
+    background: #FAF9F5;
+    border: 2px solid #C4A35A;
+    border-radius: 12px;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .cta-left p {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1A3A3A;
+  }
+  .cta-right { text-align: right; }
+  .cta-right .name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1A3A3A;
+  }
+  .cta-right .detail {
+    font-size: 11px;
+    color: #888;
+    margin-top: 1px;
+  }
+
+  .footer {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 8px;
+    color: #bbb;
+  }
+</style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Your Neighbors Read It.<br>Your Ad Gets Seen.</h1>
+      <div class="subtitle">Wyckoff Living Now — Newsletter Advertising That's Tracked & Proven</div>
+    </div>
+    <div class="header-right">
+      <div class="pub-name">Wyckoff Living Now</div>
+      <div class="pub-detail">Bergen Neighbors Media</div>
+      <div class="pub-detail">Weekly Digital Newsletter</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ROW 1: ENGAGEMENT -->
+  <div class="section-label">Do people really read it? Yes.</div>
+  <div class="engagement-row">
+    <div class="eng-card">
+      <div class="number">4:02</div>
+      <div class="label">Avg. Time on Site</div>
+      <div class="context">Per reader session</div>
+    </div>
+    <div class="eng-card">
+      <div class="number">6.7</div>
+      <div class="label">Pages Per Visit</div>
+      <div class="context">Articles, ads, directory</div>
+    </div>
+    <div class="eng-card">
+      <div class="number">1.7x</div>
+      <div class="label">Return Visits</div>
+      <div class="context">Readers come back weekly</div>
+    </div>
+  </div>
+
+  <!-- ROW 2: EMAIL -->
+  <div class="section-label">Email Performance</div>
+  <div class="email-row">
+    <div class="email-card">
+      <div class="number">6,230</div>
+      <div class="label">Wyckoff Residents</div>
+      <div class="context">Delivered every Sunday</div>
+    </div>
+    <div class="email-card">
+      <div class="number">32%</div>
+      <div class="label">Open Rate</div>
+      <div class="context">~2,000 readers / week</div>
+    </div>
+    <div class="email-card">
+      <div class="number">18%</div>
+      <div class="label">Click-to-Open Rate</div>
+      <div class="context">2.6x media industry avg</div>
+    </div>
+  </div>
+
+  <!-- CTOR COMPARISON -->
+  <div class="compare-strip">
+    <div class="compare-label-col">
+      <div class="title">Click-to-Open Rate</div>
+      <div class="cite">MailerLite 2025 Benchmark Report</div>
+    </div>
+    <div class="compare-bars">
+      <div class="compare-bar-row">
+        <div class="compare-bar-label">Wyckoff Living</div>
+        <div class="compare-bar-wrap"><div class="compare-bar bar-wln" style="width:90%"><span>18.0%</span></div></div>
+      </div>
+      <div class="compare-bar-row">
+        <div class="compare-bar-label">Media Industry</div>
+        <div class="compare-bar-wrap"><div class="compare-bar bar-media" style="width:64%"><span>12.9%</span></div></div>
+      </div>
+      <div class="compare-bar-row">
+        <div class="compare-bar-label">All Industries</div>
+        <div class="compare-bar-wrap"><div class="compare-bar bar-industry" style="width:34%"><span>6.8%</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AD PERFORMANCE -->
+  <div class="section-label">What Your Ad Delivers</div>
+  <div class="two-col">
+    <div class="ad-results">
+      <h3>Real Advertiser Results</h3>
+      <div class="ad-hero-number">4–6</div>
+      <div class="ad-hero-label">Clicks to Your Website</div>
+      <div class="ad-hero-desc">Typical advertiser results per issue — Wyckoff readers clicking directly to your business</div>
+    </div>
+
+    <div class="track-box">
+      <h3>Every Ad Is Individually Tracked</h3>
+      <div class="track-item-inline">
+        <span class="track-icon-sm"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <strong>Verified Ad Views</strong>
+      </div>
+      <p class="track-desc">How many people actually saw your ad on their screen</p>
+      <div class="track-item-inline">
+        <span class="track-icon-sm"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></span>
+        <strong>Click-Throughs</strong>
+      </div>
+      <p class="track-desc">How many readers visited your website from our newsletter</p>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta">
+    <div class="cta-left">
+      <p>Ready to reach your Wyckoff neighbors?</p>
+    </div>
+    <div class="cta-right">
+      <div class="name">Doug Drohan</div>
+      <div class="detail">201-747-4754</div>
+      <div class="detail">doug@wyckoffliving.com</div>
+    </div>
+  </div>
+
+  <div class="footer">Performance data: Google Analytics 4 + Mailchimp | Industry benchmarks: MailerLite 2025 Email Marketing Report | Powered by INBXIFY</div>
+
+</body>
+</html>
