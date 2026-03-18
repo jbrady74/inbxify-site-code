@@ -21,7 +21,7 @@ window.toggleSection = function (section) {
   if (!WEBHOOK_URLS.gr) console.warn('PubPlan: window.PP_WEBHOOKS not found.');
 
   const SECTION_ANCHORS = { gr:'gr-loc', em:'em-loc', fa:'fa-loc', ts:'ts-loc', ba:'ba-loc', tf:'tf-loc' };
-  const GR_LIMITS = { grTit: 50, grMsg: 300 };
+  const GR_LIMITS = { grTit: 50, grMsg: 600 };
   const EM_LIMITS = { emSub: 60, emPre: 100 };
 
   const state = {};
