@@ -2,9 +2,11 @@
    INBXIFY — Site-Wide Body Code
    Repo: jbrady74/inbxify-site-code
    File: body.js
-   Version: 1.10 — March 2026
+   Version: 1.11 — March 2026
 
-CHANGES FROM 1.5:
+CHANGES FROM 1.09:
+- [UPD] Section 1: removed the injector buttons and boxes for mobile nav
+
 - [FIX] Section 13: Wrapped in DOMContentLoaded — footer HTML loads
   after head scripts execute. Without it, all getElementById = null.
 - [FIX] Section 14: Same DOMContentLoaded wrapper.
