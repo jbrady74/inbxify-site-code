@@ -302,13 +302,23 @@
 }
 .mh-menu-tablet img,
 .mh-menu-tablet .hamburger { display: none !important; }
-.mh-menu-tablet .nav-bar {
-  position: absolute; width: 24px; height: 2px;
-  background: #F0EDD8; border-radius: 2px;
+
+.nav-bars-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  pointer-events: none;
 }
-.mh-menu-tablet .nav-bar:nth-child(1) { transform: translateY(-7px); }
-.mh-menu-tablet .nav-bar:nth-child(2) { transform: translateY(0); }
-.mh-menu-tablet .nav-bar:nth-child(3) { transform: translateY(7px); }
+.nav-bar {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: #F0EDD8;
+  border-radius: 2px;
+  pointer-events: none;
+}
 
 .inbx-nav-close {
   position: absolute; top: 20px; right: 20px;
