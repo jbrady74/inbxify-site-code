@@ -67,20 +67,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var savedScrollY = 0;
 
-  function injectCloseBtn() {
-    if (panel.querySelector('.inbx-nav-close')) return;
-    var btn = document.createElement('button');
-    btn.className = 'inbx-nav-close';
-    btn.setAttribute('aria-label', 'Close menu');
-    btn.innerHTML = '<svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>';
-    btn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      e.preventDefault();
-      closeNav();
-    });
-    panel.insertBefore(btn, panel.firstChild);
-  }
-
   function openNav() {
     savedScrollY = window.scrollY;
     document.body.classList.add('nav-open');
@@ -183,8 +169,6 @@ document.addEventListener('DOMContentLoaded', function () {
   } else if (mql.addListener) {
     mql.addListener(handleResize);
   }
-
-  injectCloseBtn();
 
 });
 
