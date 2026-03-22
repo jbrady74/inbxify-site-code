@@ -68,14 +68,17 @@ document.addEventListener('DOMContentLoaded', function () {
   var savedScrollY = 0;
 
   function injectBars() {
-    if (trigger.querySelector('.nav-bar')) return;
+    if (trigger.querySelector('.nav-bars-wrap')) return;
     trigger.innerHTML = '';
+    var wrap = document.createElement('span');
+    wrap.className = 'nav-bars-wrap';
     for (var i = 0; i < 3; i++) {
       var bar = document.createElement('span');
       bar.className = 'nav-bar';
       bar.setAttribute('aria-hidden', 'true');
-      trigger.appendChild(bar);
+      wrap.appendChild(bar);
     }
+    trigger.appendChild(wrap);
   }
 
   function injectCloseBtn() {
