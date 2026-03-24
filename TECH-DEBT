@@ -1,0 +1,82 @@
+# INBXIFY Tech Debt Tracker
+Last updated: March 23, 2026
+
+## Format
+Each item: ID · Description · Location · Proposed fix · Priority (H/M/L)
+
+---
+
+## Active Items
+
+### TD-001 — `ta-wrapper` orphaned element
+- **Location:** T-A page DOM
+- **Issue:** `ta-wrapper` element exists in DOM but is distinct from canonical `ta-item` / `#title-admin-id`. Two competing elements serving similar purposes.
+- **Fix:** Audit T-A page, remove `ta-wrapper` or canonicalize to one element
+- **Priority:** M
+
+### TD-002 — `csp-data` hardcoded sponsor mapping on Article template
+- **Location:** Article template page, custom code embed
+- **Issue:** Sponsor-to-customer mapping is hardcoded in a `csp-data` JSON block rather than reading from Webflow CMS
+- **Fix:** Move mapping to Webflow CMS; read dynamically
+- **Priority:** M
+
+### TD-003 — Dual Publisher ID sources on T-A page
+- **Location:** T-A page
+- **Issue:** Publisher ID is available from two different DOM sources, creating ambiguity about which is canonical
+- **Fix:** Canonicalize to one source; remove the other
+- **Priority:** M
+
+### TD-004 — System 2 hardcoded data sources in Content Manager
+- **Location:** `content-manager-v1.0.js`
+- **Issue:** CUSTOMERS, ARTICLES, ADS, EVENTS, RE arrays read from hidden Webflow collection list wrappers via DOM. If wrappers don't exist on T-A page, arrays are empty.
+- **Fix:** Add hidden collection list wrappers to T-A page for each collection; confirm DOM selectors match
+- **Priority:** H — blocks Content Manager assignment panel from working with real data
+
+### TD-005 — PC / Windows not supported for Screenshot Transcriber
+- **Location:** `ta-page-body-v1.2.x.js` — Screenshot Transcriber UI
+- **Issue:** Paste zone designed around Cmd+V (Mac). Windows Clipboard paste (Ctrl+V) may work via the document paste listener, but has not been tested. The UI copy says "Cmd+V" throughout.
+- **Fix:** Test on Windows/Chrome. If Ctrl+V works (likely — paste event fires on both), update UI copy to "Cmd+V / Ctrl+V". If not, add fallback file upload path for Windows users.
+- **Priority:** M — Jeff is Mac-only today, but publisher clients may be on Windows
+
+### TD-006 — Banner Ad picker split at slot 6/7 boundary
+- **Location:** PubPlan tile UI, Webflow CMS
+- **Issue:** Banner Ad picker is split across two CMS collection lists (BA 1–6 and BA 7–12) due to Webflow CMS 50-item limit. JS handles this but it's a fragile workaround.
+- **Fix:** Investigate Webflow CMS reference field limits; or consolidate if possible
+- **Priority:** L
+
+### TD-007 — TOC tile labels hardcoded in email HTML
+- **Location:** Email HTML templates (`bergen-neighbors/wln/`)
+- **Issue:** Table of Contents tile labels are hardcoded strings in the email HTML rather than pulled from CMS
+- **Fix:** Move to Make.com merge tags or dynamic generation
+- **Priority:** L
+
+### HC-001 — Screenshot Transcriber: titleSlug, taItemId, titleId hardcoded for WLN
+- **Location:** `window.TA_CONFIG` in Webflow T-A page Head custom code
+- **Issue:** These values are set per-publisher in the page head. Not a code hardcode (they're in Webflow, not GitHub) but requires manual update when adding a new publisher T-A page.
+- **Fix:** Auto-read from T-A page CMS item context rather than manual config. Use `data-ta-slug` and related attributes already on DOM elements.
+- **Priority:** M — must fix before second publisher goes live
+
+### HC-002 — Content Manager: Scenario C URL in window.TA_CONFIG
+- **Location:** `window.TA_CONFIG` in Webflow T-A page Head
+- **Issue:** Scenario C webhook URL is shared across all publishers (same Make scenario) but is manually pasted into each T-A page head config block.
+- **Fix:** Move shared webhook URLs to a global config loaded once, separate from per-publisher config
+- **Priority:** L
+
+### HC-003 — Cloudflare Worker ALLOWED_ORIGIN hardcoded to https://inbxify.com
+- **Location:** Cloudflare Worker environment variable
+- **Issue:** If domain changes or staging domain needs access, must manually update the Worker variable
+- **Fix:** Support comma-separated list of allowed origins; or use a wildcard for inbxify.com subdomains
+- **Priority:** L
+
+---
+
+## Resolved Items
+
+*(none yet)*
+
+---
+
+## Notes
+- H = blocks multi-tenant scale or is actively causing bugs
+- M = needs fixing before second publisher goes live  
+- L = nice to have, low risk
