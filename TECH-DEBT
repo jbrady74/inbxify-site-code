@@ -80,3 +80,9 @@ Each item: ID · Description · Location · Proposed fix · Priority (H/M/L)
 - H = blocks multi-tenant scale or is actively causing bugs
 - M = needs fixing before second publisher goes live  
 - L = nice to have, low risk
+
+### TD-010 — Content Manager: Product Type dropdown missing GR, FA Sponsor, TS Sponsor, Customer Record
+- **Location:** `content-manager-v1.0.7.js` COLLECTION_MAP + PRODUCT_TYPES
+- **Issue:** Content Manager product type dropdown is driven by Major NL Sections collection which does not include Greeting/Intro, FA Sponsor Ad, TS Sponsor Ad, or Customer Record product types
+- **Fix:** Add these product types to MNLS with a field/switch that distinguishes them (e.g. "Sponsor" boolean, "Internal" boolean). Update COLLECTION_MAP in JS to include them.
+- **Priority:** M — needed before sponsor ad assignment workflow is built
