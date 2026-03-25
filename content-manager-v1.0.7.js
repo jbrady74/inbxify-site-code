@@ -119,11 +119,11 @@ document.addEventListener('DOMContentLoaded', function () {
     'real estate listings': { collection:'re',       reqCust:false, group:'Other' },
   };
 
-  const PRODUCT_TYPES = Array.from(document.querySelectorAll('[data-item="true"]')).map(el => {
+  const PRODUCT_TYPES = Array.from(document.querySelectorAll('[data-mlns="true"]')).map(el => {
     const label = (el.getAttribute('data-name') || '').trim();
     const id    = el.getAttribute('data-id') || '';
-    const key   = label.toLowerCase();
-    const meta  = COLLECTION_MAP[key] || { collection:'articles', reqCust:false, group:'Other' };
+    const group = (el.getAttribute('data-group') || '').trim().toLowerCase();
+    const meta  = COLLECTION_MAP[group] || COLLECTION_MAP[label.toLowerCase()] || { collection:'articles', reqCust:false, group:'Other' };
     return { id, label, ...meta };
   }).filter(p => p.id && p.label);
 
