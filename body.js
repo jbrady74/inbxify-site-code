@@ -833,7 +833,7 @@ document.addEventListener('DOMContentLoaded', function() {
      If MS shows an error, we can optionally surface it in our UI.
      Listen for MS error events if available.
   */
-  if (window.$memberstackDom) {
+  if (window.$memberstackDom && window.$memberstackDom.onReady) {
     window.$memberstackDom.onReady.then(function(ms) {
       /* Memberstack will handle the form submit natively via data-ms-form="login".
          On success, MS redirects or reloads. On failure, we show the error. */
