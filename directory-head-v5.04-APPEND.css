@@ -1,0 +1,82 @@
+/* ============================================
+   13. MOBILE AD INJECTION — ≤999px
+   Sidebar hidden, ads injected between cards
+   Lead Ad (SBA-1) after card 3, then every 5
+   Label: "Local Partners"
+   ============================================ */
+
+/* Hide sidebar below 999px */
+@media (max-width: 999px) {
+  .sidebar-25 {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    pointer-events: none !important;
+  }
+
+  .content-75 {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Ad section — hidden on desktop */
+.ibx-dir-ad {
+  display: none;
+}
+
+@media (max-width: 999px) {
+  .ibx-dir-ad {
+    display: block;
+    width: 80%;
+    margin: 24px auto;
+    text-align: center;
+  }
+
+  .ibx-dir-ad a {
+    display: block;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f7f5ef;
+    border: 1px solid #e8e4d8;
+    text-decoration: none;
+  }
+
+  .ibx-dir-ad img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .ibx-dir-ad-label {
+    font-family: Lato, sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #b8a080;
+    padding: 6px 0 8px;
+    background: #f7f5ef;
+    border-radius: 0 0 10px 10px;
+  }
+}
+
+/* Tablet — slightly wider */
+@media (max-width: 767px) {
+  .ibx-dir-ad {
+    width: 85%;
+    margin: 20px auto;
+  }
+}
+
+/* Small mobile — near full width */
+@media (max-width: 479px) {
+  .ibx-dir-ad {
+    width: 92%;
+    margin: 16px auto;
+  }
+}
