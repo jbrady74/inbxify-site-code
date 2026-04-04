@@ -300,8 +300,6 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.mh-menu-tablet img,
-.mh-menu-tablet .hamburger { display: none !important; }
 
 .nav-bars-wrap {
   display: flex;
