@@ -1,4 +1,4 @@
-/* archives-ads-v1.0.js
+/* archives-ads-v1.1.js
  * Mobile/tablet ad injection for Archives page
  * v1.0 — April 4, 2026
  *
