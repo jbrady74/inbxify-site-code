@@ -634,23 +634,29 @@ window.toggleSection = function (section) {
     var newCatId = val;
     var newCatNm = opt ? opt.textContent : '';
 
+    // Immediately switch visible panel based on selection
+    currentTfMode = newMode;
+    tfCategoryId = newCatId;
+    tfCategoryNm = newCatNm;
+    updateTfSlotVisibility();
+    sel.classList.toggle('hs', !!val);
+
     var doIt = function() {
-      if (currentTfMode === 'txa') {
+      // Clear old mode's slot data
+      if (newMode === 'txa') {
+        // Switching TO txa — clear LBP
+        if (state['LBP-1']) { state['LBP-1'].dirty = false; state['LBP-1'].custId = ''; state['LBP-1'].custNm = ''; }
+        delete originalState['LBP-1'];
+      } else {
+        // Switching TO lbp — clear TXA
         for (var i = 1; i <= 5; i++) {
           var c = 'TXA-' + i;
           if (state[c]) { state[c].dirty = false; state[c].custId = ''; state[c].custNm = ''; }
           delete originalState[c];
         }
-      } else {
-        if (state['LBP-1']) { state['LBP-1'].dirty = false; state['LBP-1'].custId = ''; state['LBP-1'].custNm = ''; }
-        delete originalState['LBP-1'];
       }
 
-      currentTfMode = newMode;
-      tfCategoryId = newCatId;
-      tfCategoryNm = newCatNm;
       tfCategoryDirty = true;
-      tfCategoryEditing = false;
 
       for (var i = 1; i <= 5; i++) {
         var s = state['TXA-' + i];
@@ -666,13 +672,27 @@ window.toggleSection = function (section) {
         if (state['LBP-1'] && state['LBP-1'].custId) state['LBP-1'].dirty = true;
       }
 
-      renderTfCategory();
       updateTfProgress();
     };
 
+    // If existing saved category and user picks different, confirm first
     if (tfOriginalCategoryId && newCatId !== tfOriginalCategoryId) {
       showInlineConfirm(sel, 'Change The Find category? This will update the saved category.', doIt, function() {
+        // Cancel — revert to original
+        tfCategoryId = tfOriginalCategoryId;
+        tfCategoryNm = '';
+        tfCategoryDirty = false;
+        if (tfOriginalCategoryId) {
+          var catEl = document.querySelector('.products-wrapper[data-id="' + tfOriginalCategoryId + '"]');
+          if (catEl) {
+            tfCategoryNm = catEl.dataset.name || '';
+            currentTfMode = (catEl.dataset.sectionCode === 'lbp') ? 'lbp' : 'txa';
+          }
+        }
         sel.value = tfCategoryId || '';
+        sel.classList.toggle('hs', !!tfCategoryId);
+        updateTfSlotVisibility();
+        updateTfProgress();
       });
     } else {
       doIt();
