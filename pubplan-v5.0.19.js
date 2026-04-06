@@ -619,6 +619,9 @@ window.toggleSection = function (section) {
     if (lbp) lbp.classList.toggle('is-active', hasCat && currentTfMode === 'lbp');
     var ce = document.getElementById('tf-slot-count');
     if (ce) ce.textContent = !hasCat ? '—' : (currentTfMode === 'txa' ? '5 slots' : '1 slot');
+    // Re-render active tile set so tiles are populated after mode switch
+    if (hasCat && currentTfMode === 'txa') renderAllTxa();
+    if (hasCat && currentTfMode === 'lbp') renderLbp();
   }
 
   window.handleTfCategoryChange = function(sel) {
