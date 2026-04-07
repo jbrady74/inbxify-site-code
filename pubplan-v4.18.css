@@ -1,4 +1,4 @@
-/* pubplan-v4.17.css
+/* pubplan-v4.18.css
    CHANGES FROM v4.16:
    - [FIX] --page-bg set to #e2dfca to match Section 819882 background
    CHANGES FROM v4.15:
@@ -95,6 +95,8 @@
 .chip-ts { background: var(--ts-light); color: var(--ts-primary); }
 .chip-ba { background: var(--ba-light); color: var(--ba-primary); }
 .chip-tf { background: var(--tf-light); color: var(--tf-primary); }
+.chip-ev { background: #3A5A5A; color: #fff; }
+.evc { border-left: 3px solid #3A5A5A; }
 
 .ppt-section-title { font-size: 14px; font-weight: 500; color: var(--text-dark); }
 .ppt-section-count { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-light); }
