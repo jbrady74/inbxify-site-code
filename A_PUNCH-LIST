@@ -8,11 +8,40 @@
 
 ##   NEWSLETTER TEMPLATE PAGE
 --  Mobile Masthead - increase height of Masthead
---  Harmonize desogn with Newsletter
+--  Harmonize design with Newsletter
+--  Add a Bookmark Your Newsletter! at the top
 
 ##  ARCHIVES PAGE 
 --  Page loading - optimize - determine why - maybe load 2-3 lazy load?
 --  "Archives" background needs to be different from masthead so that when it is not used (Newsletter page)
+--  Tile proportion
 
 ##  DIRECTORY PAGE
 --  Sticky the local business directory + search - esp on mobile
+
+##  TITLE-ADMIN PAGE - CONTENT HANDLER (110)
+--  File uploads
+
+##  PERFORMANCE COLLECTION; PROCESSING & REPORTING
+
+##  PUBLICATION PLAN PAGE >> INDIVIDUAL PUBPLAN TOOL
+--  Fix how it is accessed from T-A Page
+
+##  SIDEBAR ADS
+--  Injection into ARTICLE PAGE
+
+##  FOOTER
+--  The Publisher Footer needs help
+
+##  TITLE-ADMIN  >>  ADD/EDIT CLIENT PROCESS
+Status:  We built the form that allows data entry.  It appears mostly correct, but needs to be used to confirm.  
+Next Step:  Build the Make scenario - and install the WEBHOOK in the T-A Page Head Code (clientManagerWebhook: '',  // empty for now — wired in v1.1)
+
+##  🅿️ EVENTS PICKER
+--  Make 105  -  Expand the scenario to 4 events
+
+##  GREETINGS
+--  Make 105  -  Add Super Short Greeting 140 characters
+
+##  CONTENT CREATION
+--  Photo credit line in FA/TS
