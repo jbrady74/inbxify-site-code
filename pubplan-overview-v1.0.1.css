@@ -1,0 +1,137 @@
+/* ============================================================
+   pubplan-overview-v1.0.1.css
+   CSS for the compact T-A page overview.
+   v1.0.1: Added TF/LBP spacer, TF empty block
+   ============================================================ */
+
+/* ── Overview container ── */
+.pp-overview { overflow-x: auto; padding-bottom: 12px; }
+.pp-overview::-webkit-scrollbar { height: 6px; }
+.pp-overview::-webkit-scrollbar-track { background: rgba(0,0,0,0.04); border-radius: 3px; }
+.pp-overview::-webkit-scrollbar-thumb { background: rgba(26,58,58,0.2); border-radius: 3px; }
+
+/* ── Issue columns — fixed width, horizontal scroll ── */
+.pp-columns { display: flex; gap: 8px; width: max-content; }
+.pp-col { width: 150px; flex-shrink: 0; }
+
+/* ── Issue header ── */
+.pp-issue-hdr {
+  text-align: center; padding: 8px 6px 6px; margin-bottom: 8px;
+  background: var(--teal, #1a3a3a); border-radius: 5px; color: #fff;
+}
+.pp-issue-name {
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700;
+  letter-spacing: .06em;
+}
+.pp-issue-date { font-size: 9px; color: rgba(240,237,216,.6); margin-top: 1px; }
+.pp-issue-link {
+  display: block; font-family: 'DM Mono', monospace; font-size: 8px;
+  color: var(--gold, #c4a35a); text-decoration: none; margin-top: 3px;
+  letter-spacing: .04em;
+}
+.pp-issue-link:hover { color: #f4a127; text-decoration: underline; }
+
+/* ── Section header ── */
+.pp-section-hdr {
+  font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .08em;
+  text-transform: uppercase; font-weight: 700; padding: 5px 8px;
+  margin-bottom: 3px; border-radius: 3px;
+  display: flex; align-items: center; gap: 5px;
+}
+.pp-section-hdr .pp-sh-bar {
+  width: 3px; height: 12px; border-radius: 1px; flex-shrink: 0;
+}
+.pp-section-hdr.sh-fa { color: #2d6a4f; }
+.pp-section-hdr.sh-fa .pp-sh-bar { background: #2d6a4f; }
+.pp-section-hdr.sh-ts { color: #7b2d8b; }
+.pp-section-hdr.sh-ts .pp-sh-bar { background: #7b2d8b; }
+.pp-section-hdr.sh-ba { color: #b8860b; }
+.pp-section-hdr.sh-ba .pp-sh-bar { background: #b8860b; }
+.pp-section-hdr.sh-tf { color: #8B5CF6; }
+.pp-section-hdr.sh-tf .pp-sh-bar { background: #8B5CF6; }
+.pp-section-hdr.sh-ev { color: #1a5276; }
+.pp-section-hdr.sh-ev .pp-sh-bar { background: #1a5276; }
+.pp-section-hdr.sh-re { color: #8b4513; }
+.pp-section-hdr.sh-re .pp-sh-bar { background: #8b4513; }
+.pp-section-hdr.sh-sb { color: #555; }
+.pp-section-hdr.sh-sb .pp-sh-bar { background: #555; }
+
+/* ── Slot tile ── */
+.pp-slot {
+  padding: 6px 8px; margin-bottom: 3px; border-radius: 4px;
+  background: rgba(255,255,255,0.75); border: 1px solid #d4d0bb;
+  backdrop-filter: blur(4px);
+  cursor: pointer; transition: all .15s;
+  height: 44px; display: flex; flex-direction: column; justify-content: center;
+}
+.pp-slot:hover {
+  border-color: var(--gold, #c4a35a);
+  box-shadow: 0 2px 8px rgba(26,58,58,.08);
+}
+.pp-slot.empty {
+  background: rgba(250,248,240,.4); border-color: rgba(212,208,187,.5);
+}
+.pp-slot.empty:hover { border-color: #d4d0bb; }
+
+/* ── Slot inner ── */
+.pp-slot-top { display: flex; align-items: center; gap: 4px; }
+.pp-slot-num {
+  font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 700;
+  width: 15px; height: 15px; border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: #fff;
+}
+.pp-slot-num.sn-fa { background: #2d6a4f; }
+.pp-slot-num.sn-ts { background: #7b2d8b; }
+.pp-slot-num.sn-ba { background: #b8860b; }
+.pp-slot-num.sn-tf { background: #8B5CF6; }
+.pp-slot-num.sn-ev { background: #1a5276; }
+.pp-slot-num.sn-re { background: #8b4513; }
+.pp-slot-num.sn-sb { background: #555; }
+.pp-slot-num.sn-empty {
+  background: transparent; border: 1px solid #ccc; color: #ccc;
+}
+
+.pp-slot-cat {
+  font-size: 9px; color: #5a6a5a; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;
+}
+.pp-slot-cat.empty-cat { color: #ccc; font-style: italic; font-size: 8px; }
+
+/* ── Status dots ── */
+.pp-dots { display: flex; gap: 2px; flex-shrink: 0; margin-left: auto; }
+.pp-dot { width: 5px; height: 5px; border-radius: 50%; }
+.pp-dot.d-ok { background: #27ae60; }
+.pp-dot.d-bad { background: #c0392b; }
+.pp-dot.d-na { background: #ccc; }
+.pp-dot.d-pending { background: #e8a030; }
+
+/* ── Detail line ── */
+.pp-slot-detail {
+  font-size: 7px; font-family: 'DM Mono', monospace; color: #a0a090;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  margin-top: 1px; padding-left: 19px;
+}
+
+/* ── Section gap ── */
+.pp-section-gap { height: 10px; }
+
+/* ── TF / LBP spacer — fills remaining height when LBP shows 1 tile ── */
+/* 4 missing slots × (44px height + 3px margin) = 188px */
+.pp-tf-lbp-spacer { height: 188px; }
+
+/* ── TF empty block — no category selected ── */
+.pp-tf-empty-block {
+  height: 238px; /* 5 slots worth */
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(250,248,240,.4); border: 1px dashed rgba(212,208,187,.5);
+  border-radius: 4px; margin-bottom: 3px;
+}
+
+/* ── Legend ── */
+.pp-legend {
+  display: flex; gap: 14px; align-items: center; padding: 10px 0;
+  margin-top: 6px; font-family: 'DM Mono', monospace; font-size: 9px;
+  color: #8a8a7a;
+}
+.pp-legend-item { display: flex; align-items: center; gap: 4px; }
