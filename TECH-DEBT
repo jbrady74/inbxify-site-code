@@ -86,3 +86,65 @@ Each item: ID · Description · Location · Proposed fix · Priority (H/M/L)
 - **Issue:** Content Manager product type dropdown is driven by Major NL Sections collection which does not include Greeting/Intro, FA Sponsor Ad, TS Sponsor Ad, or Customer Record product types
 - **Fix:** Add these product types to MNLS with a field/switch that distinguishes them (e.g. "Sponsor" boolean, "Internal" boolean). Update COLLECTION_MAP in JS to include them.
 - **Priority:** M — needed before sponsor ad assignment workflow is built
+
+
+# INBXIFY Tech Debt / Hardcode Tracker — Content Library Update
+## April 10, 2026
+
+Add the following entry to `INBXIFY-tech-debt-tracker.md`:
+
+---
+
+### HC-CL-003: Planning Status Option Hashes
+
+**File:** `content-library-v1.0.9.js`
+**Location:** PubPlan dropdown filter in render function
+**Type:** Hardcoded Webflow Option field hashes
+
+**What's hardcoded:**
+- Planning Status "In Progress" hash: `cbad0e93deea996b0769d71d808d59c5`
+- Planning Status "Locked" hash: `e13edebeb1ba9d07a0f7f000786e0586`
+
+**Why:** Webflow Option fields output their internal hash ID (not the display label) when bound to custom data attributes. The Content Library filters the PubPlan dropdown to only show issues with Planning Status = "In Progress" by comparing against this hash.
+
+**Risk:** Low. Webflow Option hashes are stable — they don't change once created. Same pattern used by PubPlan tile UI for FA/TS option hashes (b7921c0e / 5dfe13a4).
+
+**Resolution path:** If Webflow ever changes how Option fields bind to attributes (outputting labels instead of hashes), update the JS to compare against label strings instead. Alternatively, use a plain text field "Planning Status Label" on Publication Plan and bind that — eliminates the hash dependency entirely.
+
+**CMS field:** Planning Status (Option) on PUBLICATION PLAN collection
+**DOM attribute:** `data-planning-status` on `.pubplan-slot-wrapper`
+
+---
+
+### Previously tracked Content Library items (no hardcodes):
+
+- **Collection type:** Read from `data-content-type` attribute (Product Library CMS "Content Type" Option field). Mapped via `CONTENT_TYPE_MAP` in JS — if new Content Type options are added in CMS, add them to the map.
+- **Section abbreviation:** Read from `data-abbr` attribute (Product Library CMS "Abbreviation" plain text field).
+- **Section color:** Read from `getComputedStyle(el).backgroundColor` (Dynamic Style Setting bound to Header Color on `products-wrapper`).
+
+---
+
+### Content Library File Versions
+
+| File | Current Version | GitHub |
+|------|----------------|--------|
+| Content Library JS | `content-library-v1.0.9.js` | `jbrady74/inbxify-site-code` |
+
+### Content Library Webhook URLs (in TA_CONFIG)
+
+| Section | Webhook |
+|---------|---------|
+| FA, TS, RE, SA | `https://hook.us1.make.com/j9bokdsavg5tv7g3x8kjgi6ttk9ug12a` |
+| TF (TXA) | `https://hook.us1.make.com/986nvmrvpwpnjxrirt32cqkgk9vw20nj` |
+| EV (Events) | `https://hook.us1.make.com/mii1dhqxihwe8n7ynakna6fbrtrtusz1` |
+| BA (Banner Ads) | `https://hook.us1.make.com/oihjq8pa77ccl8n1g6lh7drxma13u6fk` |
+
+### Content Library DOM Dependencies
+
+| Selector | Collection | Key Attributes |
+|----------|-----------|----------------|
+| `.articles-wrapper[data-item]` | Articles | articleId, articleTitle, articleCustomerName, articleCustomerId, articleCategoryCode, type, newsletterId |
+| `.ad-source[data-item]` | Ads | adId, adTitle, adCustomerName, adCustomerId, adCategoryCode, type |
+| `.products-wrapper[data-item]` | Product Library | id, name, group, abbr, contentType |
+| `.customers-wrapper[data-item]` | Customers | id, name |
+| `.pubplan-slot-wrapper` | Publication Plans | pubplanId, pubplanName, pubplanDate, sectionCode, slotCode, articleId, articleTitle, planningStatus |
