@@ -27,14 +27,16 @@
   const DEFAULTS = {
     mountSelector: '#ta-rte-mount',
     mediaWrapperSelector: '.media-wrapper',
-    uploadcareSubdomain: null,        // e.g. 'yoursubdomain' — read from TA_CONFIG
+    uploadcareBase: null,             // e.g. 'https://uyluucdnr2.ucarecd.net' — read from TA_CONFIG
     webhookUrl: null,                  // Make webhook for saving
     articleItemId: null,               // Webflow Article Item ID — {Self} Item ID
     articleTitle: '',                   // Display name for context
     initialHTML: '',                    // Pre-fill body content
     mode: 'edit',                      // 'edit' | 'review' (review = Transcriber output)
+    fullscreen: false,                 // true = render in fullscreen overlay appended to body
     onSave: null,                      // callback(html, articleItemId)
     onCancel: null,                    // callback()
+    onClose: null,                     // callback() — fullscreen close (after cancel confirm if dirty)
     imageWidths: [
       { label: 'Full width (600px)', value: 600 },
       { label: 'Half width (300px)', value: 300 },
@@ -98,10 +100,11 @@
   }
 
   /* ── Build Uploadcare CDN URL with transforms ── */
-  function buildUcUrl(uuid, width, subdomain) {
-    const sub = subdomain || (window.TA_CONFIG && window.TA_CONFIG.uploadcareSubdomain) || '';
-    if (!uuid || !sub) return '';
-    return `https://${sub}.ucarecd.net/${uuid}/-/resize/${width}x/-/format/auto/-/quality/smart/`;
+  function buildUcUrl(uuid, width, base) {
+    const b = base || (window.TA_CONFIG && window.TA_CONFIG.uploadcareBase) || '';
+    if (!uuid || !b) return '';
+    const cleanBase = b.replace(/\/+$/, ''); // strip trailing slash
+    return `${cleanBase}/${uuid}/-/resize/${width}x/-/format/auto/-/quality/smart/`;
   }
 
   /* ── Strip Trix wrapper attributes for clean Webflow HTML ── */
@@ -163,10 +166,32 @@
     }
 
     async init() {
-      this.mount = document.querySelector(this.cfg.mountSelector);
-      if (!this.mount) {
-        console.error('[RTE] Mount element not found:', this.cfg.mountSelector);
-        return;
+      if (this.cfg.fullscreen) {
+        // Create fullscreen overlay appended to body
+        this._fsOverlay = document.createElement('div');
+        this._fsOverlay.id = this.id + '-fs-overlay';
+        this._fsOverlay.className = 'rte-fs-overlay';
+        this._fsOverlay.innerHTML = `<div class="rte-fs-panel"><div class="rte-fs-mount" id="${this.id}-fs-mount"></div></div>`;
+        document.body.appendChild(this._fsOverlay);
+        this.mount = this._fsOverlay.querySelector(`#${this.id}-fs-mount`);
+
+        // Close on overlay click (outside panel)
+        this._fsOverlay.addEventListener('click', (e) => {
+          if (e.target === this._fsOverlay) this.closeFullscreen();
+        });
+
+        // Escape key
+        this._escHandler = (e) => { if (e.key === 'Escape') this.closeFullscreen(); };
+        document.addEventListener('keydown', this._escHandler);
+
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+      } else {
+        this.mount = document.querySelector(this.cfg.mountSelector);
+        if (!this.mount) {
+          console.error('[RTE] Mount element not found:', this.cfg.mountSelector);
+          return;
+        }
       }
 
       // Load Trix
@@ -179,7 +204,7 @@
       // Build UI
       this.render();
 
-      console.log(`[RTE] ta-rte v${VERSION} initialized | ${this.mediaItems.length} MEDIA items loaded`);
+      console.log(`[RTE] ta-rte v${VERSION} initialized${this.cfg.fullscreen ? ' (fullscreen)' : ''} | ${this.mediaItems.length} MEDIA items loaded`);
     }
 
     render() {
@@ -199,6 +224,7 @@
             </div>
             ${this.cfg.articleTitle ? `<span class="rte-article-badge">${esc(this.cfg.articleTitle)}</span>` : ''}
             <span class="rte-version">v${VERSION}</span>
+            ${this.cfg.fullscreen ? `<button class="rte-close-btn" id="${this.id}-close-fs" title="Close editor">\u2715</button>` : ''}
           </div>
 
           <input type="hidden" id="${inputId}" value="">
@@ -248,9 +274,11 @@
           this.updateDirtyState();
         });
 
-        // Bind save/cancel
+        // Bind save/cancel/close
         this.mount.querySelector(`#${this.id}-cancel`).addEventListener('click', () => this.handleCancel());
         this.mount.querySelector(`#${this.id}-save`).addEventListener('click', () => this.handleSave());
+        const closeBtn = this.mount.querySelector(`#${this.id}-close-fs`);
+        if (closeBtn) closeBtn.addEventListener('click', () => this.closeFullscreen());
 
         this.updateCounts();
       });
@@ -367,8 +395,9 @@
 
       const renderItem = (m) => {
         const isSelected = m.id === this.selectedMediaId;
-        const sub = this.cfg.uploadcareSubdomain || (window.TA_CONFIG && window.TA_CONFIG.uploadcareSubdomain) || '';
-        const thumbUrl = sub && m.uuid ? `https://${sub}.ucarecd.net/${m.uuid}/-/resize/200x/-/format/auto/-/quality/smart/` : '';
+        const ucBase = this.cfg.uploadcareBase || (window.TA_CONFIG && window.TA_CONFIG.uploadcareBase) || '';
+        const cleanBase = ucBase.replace(/\/+$/, '');
+        const thumbUrl = cleanBase && m.uuid ? `${cleanBase}/${m.uuid}/-/resize/200x/-/format/auto/-/quality/smart/` : '';
         return `
           <div class="rte-picker-item ${isSelected ? 'selected' : ''}" data-media-id="${esc(m.id)}">
             <div class="rte-picker-thumb" ${thumbUrl ? `style="background-image:url('${thumbUrl}');background-size:cover;background-position:center;"` : ''}>
@@ -445,7 +474,7 @@
       if (!media || !media.uuid) return;
 
       const caption = (this.mount.querySelector(`#${this.id}-caption`) || {}).value || '';
-      const url = buildUcUrl(media.uuid, this.selectedWidth, this.cfg.uploadcareSubdomain);
+      const url = buildUcUrl(media.uuid, this.selectedWidth, this.cfg.uploadcareBase);
 
       if (!url) {
         console.error('[RTE] Cannot build Uploadcare URL — missing subdomain or UUID');
@@ -539,6 +568,11 @@
 
     /* ── Cancel handler ── */
     handleCancel() {
+      if (this.cfg.fullscreen) {
+        this.closeFullscreen();
+        return;
+      }
+
       if (this.dirty) {
         if (!confirm('You have unsaved changes. Discard them?')) return;
       }
@@ -570,6 +604,34 @@
 
     focus() {
       if (this.editorEl) this.editorEl.focus();
+    }
+
+    closeFullscreen() {
+      if (!this.cfg.fullscreen) return;
+      if (this.dirty) {
+        if (!confirm('You have unsaved changes. Close anyway?')) return;
+      }
+      this.destroy();
+      if (this.cfg.onClose) this.cfg.onClose();
+    }
+
+    /* ── Destroy ── */
+    destroy() {
+      if (this._escHandler) {
+        document.removeEventListener('keydown', this._escHandler);
+        this._escHandler = null;
+      }
+      if (this._fsOverlay) {
+        this._fsOverlay.remove();
+        this._fsOverlay = null;
+        document.body.style.overflow = '';
+      }
+      if (this.mount && !this.cfg.fullscreen) {
+        this.mount.innerHTML = '';
+      }
+      this.mount = null;
+      this.editorEl = null;
+      this.trixEditor = null;
     }
 
     /* ── Inject scoped styles ── */
@@ -668,6 +730,16 @@
         .rte-picker-insert-btn { font-size:10px; font-family:'DM Mono',monospace; padding:5px 14px; border-radius:4px; background:${TEAL}; color:${CREAM}; border:none; cursor:pointer; white-space:nowrap; }
         .rte-picker-insert-btn:hover { opacity:0.9; }
         .rte-picker-insert-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+        /* ── Fullscreen overlay ── */
+        .rte-fs-overlay { position:fixed; inset:0; background:rgba(26,58,58,0.7); z-index:10000; display:flex; align-items:flex-start; justify-content:center; padding:24px; overflow-y:auto; }
+        .rte-fs-panel { background:white; border-radius:8px; width:100%; max-width:960px; max-height:calc(100vh - 48px); display:flex; flex-direction:column; overflow:hidden; }
+        .rte-fs-mount { padding:20px; overflow-y:auto; flex:1; }
+        .rte-fs-mount .rte-root { max-width:none; }
+        .rte-fs-mount trix-editor.rte-trix-editor { min-height:50vh !important; }
+        .rte-fs-mount .rte-header { position:sticky; top:0; background:white; z-index:1; padding-bottom:10px; border-bottom:1px solid ${BORDER}; margin-bottom:12px; }
+        .rte-fs-mount .rte-close-btn { width:28px; height:28px; border-radius:50%; border:1.5px solid ${BORDER}; background:white; cursor:pointer; font-size:14px; color:${TEXT_LIGHT}; display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0; margin-left:8px; }
+        .rte-fs-mount .rte-close-btn:hover { border-color:#c0392b; color:#c0392b; }
       `;
       document.head.appendChild(style);
     }
@@ -685,6 +757,9 @@
       const instance = new InbxRTE(config);
       instance.init();
       return instance;
+    },
+    openFullscreen: function (config) {
+      return this.init(Object.assign({}, config, { fullscreen: true }));
     },
     InbxRTE: InbxRTE,
   };
