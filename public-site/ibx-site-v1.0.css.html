@@ -15,9 +15,12 @@
   --ibx-sans:'DM Sans',system-ui,-apple-system,sans-serif;
   --ibx-mono:'DM Mono','SF Mono',monospace;
 }
-.ibx-site{font-family:var(--ibx-sans);color:var(--ibx-text);line-height:1.6;-webkit-font-smoothing:antialiased}
+.ibx-site{font-family:var(--ibx-sans)!important;color:var(--ibx-text);line-height:1.6;-webkit-font-smoothing:antialiased;width:100vw;margin-left:calc(-50vw + 50%);position:relative}
 .ibx-site *,.ibx-site *::before,.ibx-site *::after{box-sizing:border-box;margin:0;padding:0}
 .ibx-site a{color:inherit;text-decoration:none}
+.ibx-site h1,.ibx-site h2,.ibx-site h3{font-family:var(--ibx-serif)!important}
+.ibx-site p,.ibx-site span,.ibx-site div,.ibx-site button,.ibx-site input,.ibx-site textarea,.ibx-site label{font-family:var(--ibx-sans)!important}
+#ibx-page{max-width:none!important;padding:0!important;margin:0!important;width:100%!important}
 
 /* NAV */
 .ibx-nav{position:sticky;top:0;z-index:100;background:rgba(250,248,241,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--ibx-border)}
