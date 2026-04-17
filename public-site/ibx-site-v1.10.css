@@ -1,10 +1,10 @@
-/* INBXIFY Public Site CSS — v1.10 — readability fixes + 1640px content cap
+/* INBXIFY Public Site CSS — v1.10 — readability fixes + width hierarchy
  * v1.10: CTA body text opacity 0.55 → 0.85 (readable on blue)
  *        Footer tagline 0.4 → 0.65, links 0.5 → 0.8, copyright 0.2 → 0.45
  *        Footer col titles 10px → 11px
  *        CTA-to-footer divider (subtle white border-top on footer)
- *        .ibx-inner max-width 1200px → 1640px (Option B: backgrounds full-bleed)
- *        All named -inner containers bumped to 1640px
+ *        Width hierarchy: nav/footer-inner 1440px, content-inner 1220px
+ *        Backgrounds remain full-bleed (Option B)
  * v1.9: Footer background changed from teal to electric blue (all pages)
  *       Footer logo updated to accept img element (not just text+hex span)
  *       CTA section default changed from teal to electric blue
@@ -32,7 +32,7 @@
 .ibx-site p{font-family:var(--ibx-sans)!important;margin:0!important;padding:0!important}
 /* NAV */
 .ibx-nav{position:sticky!important;top:0!important;z-index:100!important;background:rgba(250,248,241,0.92)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--ibx-border)!important;width:100%!important;padding:0!important;margin:0!important}
-.ibx-nav-inner{max-width:100%!important;margin:0!important;padding:0 32px!important;height:72px!important;display:flex!important;align-items:center!important;justify-content:space-between!important}
+.ibx-nav-inner{max-width:1440px!important;margin:0 auto!important;padding:0 32px!important;height:72px!important;display:flex!important;align-items:center!important;justify-content:space-between!important}
 .ibx-nav-logo{display:flex!important;align-items:center!important;gap:10px!important;font-family:var(--ibx-serif)!important;font-weight:900!important;font-size:22px!important;color:var(--ibx-teal)!important;letter-spacing:-0.02em!important;text-decoration:none!important}
 .ibx-nav-logo img{transition:height 0.2s!important}
 .ibx-nav-logo .ibx-hex{color:var(--ibx-blue)!important;font-size:26px!important}
@@ -56,7 +56,7 @@ body.ibx-nav-open .ibx-hamburger span:nth-child(3){transform:translateY(-7px) ro
 body.ibx-nav-open .ibx-mob-overlay{opacity:1!important;visibility:visible!important;pointer-events:auto!important}
 /* SHARED LAYOUT */
 .ibx-section{padding:80px 32px!important;margin:0!important;width:100%!important}
-.ibx-inner{max-width:1640px!important;margin:0 auto!important;padding:0!important}
+.ibx-inner{max-width:1220px!important;margin:0 auto!important;padding:0!important}
 .ibx-label{font-family:var(--ibx-mono)!important;font-size:11px!important;font-weight:500!important;letter-spacing:0.12em!important;text-transform:uppercase!important;color:var(--ibx-blue)!important;margin-bottom:12px!important;display:flex!important;align-items:center!important;gap:8px!important}
 .ibx-label::before{content:''!important;width:24px!important;height:2px!important;background:var(--ibx-blue)!important;border-radius:1px!important;display:block!important}
 .ibx-h2{font-family:var(--ibx-serif)!important;font-size:36px!important;font-weight:700!important;line-height:1.15!important;color:var(--ibx-teal)!important;margin-bottom:48px!important;max-width:600px!important;letter-spacing:-0.01em!important;text-transform:none!important}
@@ -73,7 +73,7 @@ body.ibx-nav-open .ibx-mob-overlay{opacity:1!important;visibility:visible!import
 /* HERO */
 .ibx-hero{background:var(--ibx-cream)!important;padding:80px 32px 64px!important;overflow:hidden!important;position:relative!important;width:100%!important;margin:0!important}
 .ibx-hero::before{content:''!important;position:absolute!important;top:-200px!important;right:-200px!important;width:600px!important;height:600px!important;background:radial-gradient(circle,rgba(91,127,255,0.06) 0%,transparent 70%)!important;pointer-events:none!important}
-.ibx-hero-inner{max-width:1640px!important;margin:0 auto!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:64px!important;align-items:center!important}
+.ibx-hero-inner{max-width:1220px!important;margin:0 auto!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:64px!important;align-items:center!important}
 .ibx-hero h1{font-family:var(--ibx-serif)!important;font-size:48px!important;font-weight:900!important;line-height:1.1!important;color:var(--ibx-teal)!important;margin-bottom:24px!important;letter-spacing:-0.02em!important;text-transform:none!important}
 .ibx-hero h1 em{font-style:normal!important;color:var(--ibx-blue)!important}
 .ibx-hero-sub{font-family:var(--ibx-sans)!important;font-size:17px!important;line-height:1.7!important;color:var(--ibx-text-mid)!important;margin-bottom:32px!important;max-width:500px!important}
@@ -98,7 +98,7 @@ body.ibx-nav-open .ibx-mob-overlay{opacity:1!important;visibility:visible!import
 .ibx-photo-overlay-sub{font-family:var(--ibx-mono)!important;font-size:10px!important;color:rgba(255,255,255,0.6)!important;margin-top:2px!important}
 /* TRUST BAR */
 .ibx-trust{background:var(--ibx-white)!important;border-bottom:1px solid var(--ibx-border-light)!important;padding:24px 32px!important;width:100%!important}
-.ibx-trust-inner{max-width:1640px!important;margin:0 auto!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:48px!important}
+.ibx-trust-inner{max-width:1220px!important;margin:0 auto!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:48px!important}
 .ibx-trust-text{font-family:var(--ibx-mono)!important;font-size:11px!important;color:var(--ibx-text-tiny)!important;letter-spacing:0.06em!important;text-transform:uppercase!important}
 .ibx-trust-logos{display:flex!important;align-items:center!important;gap:32px!important;opacity:0.3!important}
 .ibx-trust-logo{font-family:var(--ibx-serif)!important;font-size:16px!important;font-weight:700!important;color:var(--ibx-teal)!important}
@@ -113,7 +113,7 @@ body.ibx-nav-open .ibx-mob-overlay{opacity:1!important;visibility:visible!import
 /* STATS */
 .ibx-stats{background:var(--ibx-teal)!important;padding:48px 32px!important;position:relative!important;overflow:hidden!important;width:100%!important;margin:0!important}
 .ibx-stats::before{content:'\2B21'!important;position:absolute!important;top:-30px!important;right:60px!important;font-size:200px!important;color:rgba(255,255,255,0.02)!important;pointer-events:none!important}
-.ibx-stats-inner{max-width:1640px!important;margin:0 auto!important;display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:32px!important;text-align:center!important}
+.ibx-stats-inner{max-width:1220px!important;margin:0 auto!important;display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:32px!important;text-align:center!important}
 .ibx-stat-num{font-family:var(--ibx-serif)!important;font-size:44px!important;font-weight:900!important;color:var(--ibx-gold)!important;line-height:1!important;text-transform:none!important}
 .ibx-stat-label{font-family:var(--ibx-mono)!important;font-size:11px!important;color:rgba(255,255,255,0.45)!important;text-transform:uppercase!important;letter-spacing:0.08em!important;margin-top:8px!important}
 /* STEPS */
@@ -217,7 +217,7 @@ textarea.ibx-form-input{min-height:90px!important;resize:vertical!important;line
 .ibx-section-dark{background:var(--ibx-teal)!important}
 /* FOOTER */
 .ibx-footer{background:var(--ibx-blue)!important;border-top:1px solid rgba(255,255,255,0.15)!important;padding:48px 32px 32px!important;width:100%!important;margin:0!important}
-.ibx-footer-inner{max-width:1640px!important;margin:0 auto!important;display:grid!important;grid-template-columns:2fr 1fr 1fr!important;gap:48px!important}
+.ibx-footer-inner{max-width:1440px!important;margin:0 auto!important;display:grid!important;grid-template-columns:2fr 1fr 1fr!important;gap:48px!important}
 .ibx-footer-logo{display:flex!important;align-items:center!important;gap:8px!important;font-family:var(--ibx-serif)!important;font-weight:900!important;font-size:20px!important;color:#fff!important;margin-bottom:12px!important}
 .ibx-footer-logo img{height:22px!important;width:auto!important;display:block!important}
 .ibx-footer-logo span{color:var(--ibx-gold)!important}
