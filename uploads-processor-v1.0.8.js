@@ -336,14 +336,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const el = document.getElementById('cm-breadcrumb');
     if (!el) return;
     const folders = {
-      'pdf-queue':  { label:'Pre-processing Folder',      id:window.TA_CONFIG?.workingFolderId||'',   filter:'status = AWAITING_DECISION' },
-      'ready':      { label:'Ready for Assignment Folder', id:window.TA_CONFIG?.processedFolderId||'', filter:'status = DONE' },
-      'assigned':   { label:'Ready for Assignment Folder', id:window.TA_CONFIG?.processedFolderId||'', filter:'status = ASSIGNED' },
-      'archived':   { label:'Ready for Assignment Folder', id:window.TA_CONFIG?.processedFolderId||'', filter:'status = ARCHIVED' },
-      'hidden':     { label:'Pre-processing Folder',      id:window.TA_CONFIG?.workingFolderId||'',   filter:'status = HIDDEN' },
+      'pdf-queue': { label:'Pre-processing Folder',       id:window.TA_CONFIG?.workingFolderId||'',   filter:'status = PDF_PENDING' },
+      'ready':     { label:'Ready for Assignment Folder', id:window.TA_CONFIG?.processedFolderId||'', filter:'status = READY_TO_ASSIGN' },
+      'assigned':  { label:'Assigned Folder',             id:window.TA_CONFIG?.assignedFolderId||'',  filter:'status = ASSIGNED' },
+      'archived':  { label:'Archives',                     id:window.TA_CONFIG?.archiveFolderId||'',   filter:'status = ARCHIVED' },
+      'hidden':    { label:'Hidden Folder',                id:window.TA_CONFIG?.hiddenFolderId||'',    filter:'status = HIDDEN' },
     };
     const folder = folders[TAB];
-    if (!folder || !folder.id) { el.innerHTML = ''; return; }
+    if (!folder) { el.innerHTML = ''; return; }
+    // If folder id not yet configured in TA_CONFIG, show label without link
+    if (!folder.id) {
+      el.innerHTML = `<div class="cm-breadcrumb"><span class="cm-bc-icon">\u{1F4C1}</span><span class="cm-bc-link" style="text-decoration:none;color:#999">${esc(folder.label)} (not configured)</span><span class="cm-bc-filter">\u00B7 filtered: ${esc(folder.filter)}</span></div>`;
+      return;
+    }
     const driveUrl = 'https://drive.google.com/drive/folders/' + folder.id;
     el.innerHTML = `<div class="cm-breadcrumb"><span class="cm-bc-icon">\u{1F4C1}</span><a href="${driveUrl}" target="_blank" class="cm-bc-link">${esc(folder.label)}</a><span class="cm-bc-arrow">\u2197</span><span class="cm-bc-filter">\u00B7 filtered: ${esc(folder.filter)}</span></div>`;
   }
