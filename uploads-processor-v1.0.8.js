@@ -161,6 +161,27 @@ document.addEventListener('DOMContentLoaded', function () {
   const chg     = v => v ? ' changed' : '';
   const colLabel = col => COLLECTION_LABELS[col] || 'item';
 
+  const MIME_LABELS = {
+    'image/jpeg':'JPEG','image/jpg':'JPEG','image/png':'PNG','image/webp':'WEBP',
+    'image/gif':'GIF','image/svg+xml':'SVG',
+    'application/pdf':'PDF','text/html':'HTML','text/plain':'TXT',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'DOCX',
+    'application/msword':'DOC',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'XLSX',
+    'application/vnd.ms-excel':'XLS',
+    'application/zip':'ZIP',
+    'application/vnd.google-apps.document':'G-DOC',
+    'application/vnd.google-apps.presentation':'G-SLIDES',
+    'application/vnd.google-apps.spreadsheet':'G-SHEET',
+  };
+  function mimeLabel(mime) {
+    if (!mime) return '\u2014';
+    if (MIME_LABELS[mime]) return MIME_LABELS[mime];
+    // Fallback: take the bit after the slash, uppercase, truncate
+    const after = mime.split('/').pop() || mime;
+    return after.length > 10 ? after.substring(0,10).toUpperCase() : after.toUpperCase();
+  }
+
   function getCMSItems(col, custId) {
     let items = col==='articles'?readArticles():col==='ads'?readAds():col==='events'?readEvents():col==='re'?readRE():[];
     if (custId && custId!=='__none__') items = items.filter(i => !i.customerId || i.customerId===custId);
@@ -361,17 +382,20 @@ document.addEventListener('DOMContentLoaded', function () {
       const isAssigned = f.assigned || f.status==='ASSIGNED';
       const isArchived = f.status==='ARCHIVED';
       const isHidden = f.status==='HIDDEN';
-      const isPdf = f.status==='AWAITING_DECISION';
+      const isPdf = f.status==='PDF_PENDING';
       const badge = isAssigned?'assigned':isArchived?'archived':isHidden?'hidden':isPdf?'decision':'ready';
       const label = isAssigned?'Assigned':isArchived?'Archived':isHidden?'Hidden':isPdf?'PDF Queue':'Ready';
-      const uc = f.uuid ? `<span style="color:#1a3a3a">UC:${f.uuid.substring(0,8)}\u2026</span>` : '';
+      const typeLabel = mimeLabel(f.mime);
+      const ucIndicator = f.uuid ? `<span style="color:#27ae60" title="Uploadcare UUID: ${esc(f.uuid)}">UC \u2713</span>` : `<span style="color:#999" title="No Uploadcare UUID">UC \u2014</span>`;
+      const sizeLabel = f.size ? fmtSize(f.size) : `<span style="color:#999">size \u2014</span>`;
+      const metaRow = `<span>${typeLabel}</span> <span>${sizeLabel}</span> ${f.arrived?`<span>${f.arrived.substring(0,10)}</span>`:''} ${ucIndicator}`;
       const disabled = isAssigned || isArchived || isHidden || (isPdf && TAB !== 'pdf-queue');
       if (tab && tab.selectable && !disabled) {
         const previewBtn = f.fileId ? `<button class="cm-preview-btn" data-cm-preview="${esc(f.fileId)}" title="Preview">\u{1F441}</button>` : '';
-        return `<div class="cm-frow ${f.selected?'sel':''}" data-cm-fid="${f.id}"><div class="cm-frow-main"><input type="checkbox" class="cm-fcheck" ${f.selected?'checked':''}><span class="cm-ficon">${icon}</span><div class="cm-finfo"><div class="cm-fname">${esc(f.name)}</div><div class="cm-fmeta">${f.size?`<span>${fmtSize(f.size)}</span>`:''} ${f.arrived?`<span>${f.arrived.substring(0,10)}</span>`:''} ${uc}</div></div><div class="cm-fright">${previewBtn}<span class="cm-fbadge ${badge}">${label}</span></div></div></div>`;
+        return `<div class="cm-frow ${f.selected?'sel':''}" data-cm-fid="${f.id}"><div class="cm-frow-main"><input type="checkbox" class="cm-fcheck" ${f.selected?'checked':''}><span class="cm-ficon">${icon}</span><div class="cm-finfo"><div class="cm-fname">${esc(f.name)}</div><div class="cm-fmeta">${metaRow}</div></div><div class="cm-fright">${previewBtn}<span class="cm-fbadge ${badge}">${label}</span></div></div></div>`;
       }
       const previewBtnRO = f.fileId ? `<button class="cm-preview-btn" data-cm-preview="${esc(f.fileId)}" title="Preview">\u{1F441}</button>` : '';
-      return `<div class="cm-frow ${isAssigned?'assigned':''}"><div class="cm-frow-main no-select"><span class="cm-ficon">${icon}</span><div class="cm-finfo"><div class="cm-fname">${esc(f.name)}</div><div class="cm-fmeta">${f.size?`<span>${fmtSize(f.size)}</span>`:''} ${f.arrived?`<span>${f.arrived.substring(0,10)}</span>`:''} ${uc}</div></div><div class="cm-fright">${previewBtnRO}<span class="cm-fbadge ${badge}">${label}</span></div></div></div>`;
+      return `<div class="cm-frow ${isAssigned?'assigned':''}"><div class="cm-frow-main no-select"><span class="cm-ficon">${icon}</span><div class="cm-finfo"><div class="cm-fname">${esc(f.name)}</div><div class="cm-fmeta">${metaRow}</div></div><div class="cm-fright">${previewBtnRO}<span class="cm-fbadge ${badge}">${label}</span></div></div></div>`;
     }).join('');
   }
 
