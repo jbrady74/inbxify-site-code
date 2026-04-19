@@ -90,6 +90,95 @@ Network ad sales across publishers, 30–40% revenue share. Activate at 3+ live 
 
 ---
 
+# ENHANCEMENTS BACKLOG — DOCX Article Body Processing
+
+## E-TXC-001 — Migrate DOCX → Claude processing to server-side Make scenario
+
+**Status:** BACKLOG
+**Priority:** LOW (revisit when pain emerges)
+**Added:** April 19, 2026
+
+### Context
+
+The Transcriber's DOCX → HTML → Claude → structured subcomponents flow was
+built browser-side in v1.x to match the existing screenshot-Transcriber
+pattern. Browser calls Mammoth Worker, then anthropicProxy, then populates
+the review panel. Save goes through Scenario E as with screenshots.
+
+This works fine at WLN scale but has known limitations at higher volume
+and multi-publisher scale.
+
+### Migrate when any of these becomes true
+
+- **Any publisher is processing 20+ DOCX articles per month.** At that
+  volume, browser-side starts feeling slow enough that users want to walk
+  away mid-process.
+- **Batch processing requested.** "Process these 10 DOCX files in one
+  click" is not feasible browser-side without tab-pinning workarounds.
+  Server-side handles it natively.
+- **User reports a lost conversion.** Browser-side loses state if the tab
+  closes mid-Claude-call. If this bites anyone once, migrate.
+- **Multi-tenant URL exposure becomes a concern.** Publisher #5's browser
+  sees the anthropicProxy URL and Mammoth Worker URL. Not a security
+  issue today, but a consolidation/governance concern later.
+- **Publisher count exceeds 5.** The cognitive load of different browser
+  behavior across different publishers' machines (slow wifi, old Chrome,
+  etc.) tips server-side.
+
+### What the migration looks like
+
+Build a new Scenario (tentatively F3 or extend Scenario E) that:
+
+1. **Trigger:** webhook POST from UI with `{fileId, titleSlug, action: 'processArticleBodyDocx'}`
+2. **Module 1:** Data Store lookup by titleSlug
+3. **Module 2:** Google Drive download by fileId
+4. **Module 3:** HTTP POST to Mammoth Worker → get HTML
+5. **Module 4:** HTTP POST to anthropicProxy with adapted prompt → get structured XML
+6. **Module 5:** Parse XML into structured fields
+7. **Module 6:** Webhook Response with full structured fields (title, subtitle, teaser, summary, body, etc.)
+8. UI receives response, populates review panel (same UI as today — only the
+   processing backend changes)
+
+The review/save flow does NOT change. User still reviews output in the
+Transcriber review panel, still saves via Scenario E to create a Draft
+Article. Only the "how does the processed output get to the UI" step moves.
+
+### What's preserved in the migration
+
+- Transcriber review panel (no UI change)
+- Scenario E save flow (no change)
+- Claude prompt (same prompt, same XML output format)
+- User experience of "review before save"
+
+### What changes
+
+- Browser no longer calls Mammoth Worker or anthropicProxy directly
+- Browser calls a single Make webhook, receives structured fields
+- UI loading state changes from "Mammoth → Claude" to "Processing…"
+- Loses ability to show Mammoth-specific vs Claude-specific progress
+
+### Migration cost estimate
+
+- New Make scenario: 2-3 hours
+- UI refactor (replace two fetch calls with one): 1 hour
+- Testing: 1 hour
+- **Total: ~4-5 hours of focused work**
+
+### Related tech debt
+
+- TD-XXX: anthropicProxy URL exposed in browser via window.TA_CONFIG.
+  Acceptable today (Transcriber already exposes it). Not acceptable when
+  migration complete — proxy URL should live in Make scenario config only.
+
+### Do NOT migrate if
+
+- Volume remains under 20 DOCX/month per publisher
+- No complaints about browser-side UX
+- No multi-batch use cases emerging
+
+Premature migration to server-side trades today's simplicity for tomorrow's
+scalability. At current scale, simplicity wins.
+
 ## Notes
 - H = core workflow blocker
 - M = needed before scale / second publisher
