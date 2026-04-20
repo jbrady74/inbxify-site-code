@@ -148,3 +148,9 @@ Add the following entry to `INBXIFY-tech-debt-tracker.md`:
 | `.products-wrapper[data-item]` | Product Library | id, name, group, abbr, contentType |
 | `.customers-wrapper[data-item]` | Customers | id, name |
 | `.pubplan-slot-wrapper` | Publication Plans | pubplanId, pubplanName, pubplanDate, sectionCode, slotCode, articleId, articleTitle, planningStatus |
+
+
+
+TD-XXX — Option field label vs ID (flagged at triggerSave). Waiting on Session 2 resolution — see Open Items #1.
+TD-XXX — Save stubbed. Currently console.log only. Scenario F route pending Session 2.
+File rename: studio-v1.0.x.js → ta-studio-v1.1.x.js. Old files stay in GitHub as archive.
