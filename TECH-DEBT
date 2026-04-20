@@ -301,3 +301,9 @@ Priority reflects **cost of NOT fixing.** "Quick fix available" is not priority 
 - **April 20, 2026** — Rebuilt tracker with proper IDs, sectioning, and context. Added Studio Phase 2 Session 1 items (TD-101, TD-102, TD-103, TD-104, RN-101, HC-105). Resolved HC-004 (option ID consolidation). Added File Versions + Make.com Scenario URLs + DOM Selectors reference blocks.
 - **April 10, 2026** — Added Content Library hardcodes (HC-CL-003).
 - **March 23, 2026** — Initial tracker established with TD-001 through TD-010, HC-001 through HC-003.
+
+
+
+
+NEW STUFF NOT ORGANIZED
+TD-108 (new): redirect-link and audio-url fields removed from Scenario G Route 2 Update Item in Session 3. These are URL-typed fields that Webflow's validator rejects when receiving empty strings. To restore: either wire ifempty(..., erase) fallback, or don't send them unless actually changing. Low priority — neither field is in active use per Jeff.
