@@ -110,15 +110,15 @@
     // ── Shell markup ──
     mount.innerHTML =
       '<div class="std-root">' +
-        '<div class="std-hdr">' +
-          '<div class="std-hdr-left">' +
-            '<div class="std-hdr-icon">\u29BE</div>' +
+        '<div class="ix-hdr">' +
+          '<div class="ix-hdr-left">' +
+            '<div class="ix-hdr-icon">\u29BE</div>' +
             '<div>' +
-              '<h3>TA Studio</h3>' +
-              '<div class="std-hdr-sub">Pick an Article \u2192 edit inline \u2192 save to Webflow</div>' +
+              '<h3>Studio</h3>' +
+              '<div class="ix-hdr-sub">Pick an Article \u2192 edit inline \u2192 save to Webflow</div>' +
             '</div>' +
           '</div>' +
-          '<span class="std-hdr-badge">v1.1.0</span>' +
+          '<span class="ix-badge">v1.1.0</span>' +
         '</div>' +
         '<div class="std-subtabs">' +
           '<button class="std-subtab" data-std-panel="input">' +
@@ -844,13 +844,17 @@
       var save = root.querySelector('[data-asm-save]');
       if (save) save.addEventListener('click', function () { triggerSave(); });
 
-      // Article body launcher (Phase 5 wiring — if InbxEditBody exists,
-      // use it; otherwise the button stays disabled).
+      // Article body launcher — defer InbxEditBody availability check
+      // to click time. It's registered globally by uploads-processor
+      // and may not exist yet when Studio renders.
       var bodyBtn = root.querySelector('[data-asm-body-launch]');
-      if (bodyBtn && typeof window.InbxEditBody === 'function') {
-        bodyBtn.removeAttribute('disabled');
-        bodyBtn.textContent = '\u270E Open body editor';
+      if (bodyBtn) {
         bodyBtn.addEventListener('click', function () {
+          if (typeof window.InbxEditBody !== 'function') {
+            console.error('[TA-STUDIO] window.InbxEditBody not available. Is uploads-processor loaded on this page?');
+            alert('Body editor is not loaded. Make sure uploads-processor-v1.0.8.js is loaded on this page.');
+            return;
+          }
           window.InbxEditBody(a.id, a.name);
         });
       }
@@ -984,9 +988,9 @@
       } else {
         h += '<div class="asm-body-preview empty">No body content</div>';
       }
-      var bodyBtnLabel = (typeof window.InbxEditBody === 'function') ? '\u270E Open body editor' : 'Body editor not available';
-      var bodyBtnAttrs = (typeof window.InbxEditBody === 'function') ? ' data-asm-body-launch' : ' disabled';
-      h += '<button class="asm-body-launch"' + bodyBtnAttrs + '>' + bodyBtnLabel + '</button>';
+      // Always render button enabled; click handler checks for InbxEditBody
+      // availability at click time (it may load after Studio mounts).
+      h += '<button class="asm-body-launch" data-asm-body-launch>\u270E Open body editor</button>';
       h += '</div>';
 
       // Customer / Product / MNLS pickers
