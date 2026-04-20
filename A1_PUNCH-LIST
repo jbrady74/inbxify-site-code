@@ -52,3 +52,7 @@ Next Step:  Build the Make scenario - and install the WEBHOOK in the T-A Page He
 
 ##  CONTENT CREATION
 --  Photo credit line in FA/TS
+
+TD-114 — Scenario G Route 2 error branch should forward Webflow's actual validation error text via Webhook Response module, replacing the generic "Scenario failed to complete."
+TD-115 — Field-level error highlighting (depends on TD-114). Studio parses the Webflow error detail, adds a .has-field-error class to the offending .asm-sc[data-asm-field-wrap], CSS styles it red, class clears on next edit of that field.
+PARK-001 — Tab layout consistency audit (logged earlier).
