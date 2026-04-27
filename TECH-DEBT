@@ -306,4 +306,46 @@ Priority reflects **cost of NOT fixing.** "Quick fix available" is not priority 
 
 
 NEW STUFF NOT ORGANIZED
-TD-108 (new): redirect-link and audio-url fields removed from Scenario G Route 2 Update Item in Session 3. These are URL-typed fields that Webflow's validator rejects when receiving empty strings. To restore: either wire ifempty(..., erase) fallback, or don't send them unless actually changing. Low priority — neither field is in active use per Jeff.
+TD-108 (new): redirect-link and audio-url fields removed from Scenario G Route 2 Update Item in Session 3. These are URL-typed fields that Webflow's validator rejects when receiving empty strings. To restore: either wire ifempty(..., erase) fallback, or don't send them unless actually changing.
+Low priority — neither field is in active use per Jeff.
+
+
+NEW STUFF FROM OG-1
+Tech debt log (final)
+Closed in this session
+
+TD-OG-08: og:title vs og:site_name source consistency
+TD-OG-12: TITLES template OG implementation
+TD-OG-15: Hero Image / Title Logo OG image strategy (resolved: dedicated 1200×630 Hero Image at Title onboarding)
+
+Deferred — high priority
+
+TD-OG-17 (MEDIUM): Audit and standardize all formatDate timezone parameters across Make.com scenarios. Scope: Scenario 103 (PUBPLAN slug formatting), email templates, anything date-related. Est. 30-45 min.
+TD-OG-23 (HIGH — blocks MEDIA migration completion): Re-audit OG image bindings across NEWSLETTERS / TITLES / ARTICLES when Studio Phase 4+ MEDIA migration ships. Main image, archive-page-image, and main-image-for-og may all migrate to MEDIA-derived sources. Three template head blocks need re-pointing. Est. 30-45 min when triggered.
+TD-OG-26 (HIGH): Image pipeline auto-populates main-image-for-og with canonical transform on ARTICLES. DONE for new articles via current pipeline. Backfill scenario for any future-orphaned articles only as needed.
+TD-OG-27 (HIGH — fix immediately): Verify NEWSLETTERS and TITLES templates have Webflow Page Settings → Open Graph Settings fields empty. DONE as part of this session. Apply rule to all future templates as architectural standard.
+TD-ONBOARD-01 (HIGH): Formalize Title onboarding checklist. Required at startup per Title: Title Logo (square ~512×512), Hero Image (1200×630 landscape), vanity-domain with https://, OG Description Default (160 char), Latest Issue URL. Document this as part of onboarding spec.
+
+Deferred — medium priority
+
+TD-OG-01: Per-newsletter og-image-override field. Allow editors to override the auto-derived ARCHIVE Page Image for specific issues.
+TD-OG-02: Schema.org / JSON-LD structured data. Biggest remaining SEO lever after OG.
+TD-OG-03: Canonical URLs on articles. Prevent newsletter/article/archive duplicate-content split in Google indexing.
+TD-OG-09: ARTICLES dedicated short-description field for og:description (currently using Article Teaser Summary which is dual-purposed).
+TD-OG-13: Vanity-domain field standardization across Titles. Format consistency (always with protocol).
+TD-OG-14: Per-Title facebook-page-id field on TITLE-ADMIN + fb:pages meta tag binding. Build when first publisher requests Facebook Page-attributed engagement metrics.
+TD-OG-18: EVENTS template OG. Community shares event URLs. Est. 10-15 min.
+TD-OG-19: REAL ESTATE template OG. Agent shares listings. Est. 10-15 min.
+TD-OG-20: DIRECTORY template OG (customer detail pages). Advertiser brand polish. Est. 10-15 min.
+
+Deferred — low priority
+
+TD-OG-06: Backfill historical newsletters with og-title (issues before 110). Only if pre-110 issues get re-shared.
+TD-OG-07: Per-issue og-title manual override field on NEWSLETTERS.
+TD-OG-16: Vanity domain URL display in share previews. LinkedIn/Facebook show inbxify.com instead of wyckoffliving.com. Resolution requires hosting vanity domain as Webflow custom domain (Webflow plan domain limits apply). Cosmetic-only, defer indefinitely.
+TD-OG-21: ARCHIVES template OG. Rarely shared. Defer indefinitely; build only on specific request.
+TD-OG-22: Site-wide OG default review. Replace INBXIFY blue wordmark with richer brand image at some point.
+TD-OG-24 (paired with TD-OG-23): After MEDIA migration audit, formalize "lead image" source-of-truth across CMS. Today the same image may exist in Main image (native), ARCHIVE Page Image (native), MEDIA component-role assignments. Consolidate into single canonical path.
+TD-OG-25: Add dedicated 1.91:1 OG image field to ARTICLES if scale_crop/smart_faces ever fails persistently. Currently working — defer.
+TD-OG-28 (LOW — documentation): Create internal "Webflow OG architecture rules" doc. Custom code only, never Page Settings. Uploadcare transforms. Multi-tenant binding patterns. Add to onboarding spec.
+TD-OG-29 (LOW — optimization): Per-template OG crop modes. Currently smart_faces universal. Could optimize per content type if visible misframing on specific templates.
