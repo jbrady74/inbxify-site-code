@@ -1,0 +1,72 @@
+/* article-ads-v1.4.css
+ * Mobile/tablet inline ad styles for Article pages
+ * v1.4 — May 2, 2026
+ *
+ * Changes from v1.3:
+ *   - Breakpoint 999px → 991px
+ *   - All rules use !important to defeat bleeding RTE overrides
+ *   - No .article-body-rte compound selectors needed (ads injected outside RTE)
+ *
+ * DEPLOY:
+ *   1. Upload to GitHub jbrady74/inbxify-site-code
+ *   2. Swap HEAD reference from article-ads-v1.3.css to v1.4
+ */
+
+.ibx-art-ad {
+  display: none !important;
+}
+
+@media (max-width: 991px) {
+  .ibx-art-ad {
+    display: block !important;
+    width: 100% !important;
+    margin: 11px 0 !important;
+    text-align: center !important;
+  }
+
+  .ibx-art-ad-label {
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 8px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    color: #b8a080 !important;
+    margin-bottom: 6px !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  .ibx-art-ad a {
+    display: block !important;
+    width: 50% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    text-decoration: none !important;
+    background: #ffffff !important;
+    border: 1px solid #e0ddd0 !important;
+  }
+
+  .ibx-art-ad img {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .ibx-art-ad a {
+    width: 60% !important;
+  }
+}
+
+@media (max-width: 479px) {
+  .ibx-art-ad a {
+    width: 70% !important;
+  }
+}
