@@ -1,0 +1,70 @@
+/* article-ads-v1.3.css
+ * Mobile/tablet inline ad styles for Article pages
+ * v1.3 — May 2, 2026
+ *
+ * Changes from v1.2:
+ *   - Responsive width by breakpoint (subordinate to article images)
+ *   - 768-999px: 50%, 480-767px: 60%, ≤479px: 70%
+ *   - LOCAL PARTNER label: DM Sans 8px
+ *   - Margin reduced to 11px (55% of 24px)
+ *   - Removed fixed height / width:auto approach
+ *
+ * DEPLOY:
+ *   1. Upload to GitHub jbrady74/inbxify-site-code
+ *   2. Swap HEAD reference from article-ads-v1.2.css to v1.3
+ */
+
+.ibx-art-ad {
+  display: none;
+}
+
+@media (max-width: 999px) {
+  .ibx-art-ad {
+    display: block;
+    width: 100%;
+    margin: 11px 0;
+    text-align: center;
+  }
+
+  .ibx-art-ad-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #b8a080;
+    margin-bottom: 6px;
+  }
+
+  .ibx-art-ad a {
+    display: block;
+    width: 50%;
+    max-width: 100%;
+    margin: 0 auto;
+    border-radius: 6px;
+    overflow: hidden;
+    text-decoration: none;
+    background: #ffffff;
+    border: 1px solid #e0ddd0;
+  }
+
+  .ibx-art-ad img {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .ibx-art-ad a {
+    width: 60%;
+  }
+}
+
+@media (max-width: 479px) {
+  .ibx-art-ad a {
+    width: 70%;
+  }
+}
