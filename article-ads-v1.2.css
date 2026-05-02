@@ -1,0 +1,75 @@
+/* article-ads-v1.2.css
+ * Mobile/tablet inline ad styles for Article pages
+ * v1.2 — May 2, 2026
+ *
+ * Replaces the old .mobile-ad-section / .mobile-ad-pair / .mobile-ad
+ * CSS block that was inline in the Article page code.
+ *
+ * DEPLOY:
+ *   1. Upload to GitHub jbrady74/inbxify-site-code
+ *   2. Add to Article page HEAD:
+ *      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jbrady74/inbxify-site-code@main/article-ads-v1.2.css">
+ *   3. DELETE the old mobile-ad-* CSS block from Article page custom code
+ */
+
+/* Hidden by default — JS creates these, so they only exist on mobile.
+   But guard with media query in case JS runs before CSS hides them. */
+.ibx-art-ad {
+  display: none;
+}
+
+@media (max-width: 999px) {
+  .ibx-art-ad {
+    display: block;
+    width: 100%;
+    margin: 24px 0;
+    text-align: center;
+  }
+
+  .ibx-art-ad-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #b8a080;
+    margin-bottom: 8px;
+  }
+
+  .ibx-art-ad a {
+    display: block;
+    width: 60%;
+    max-width: 100%;
+    margin: 0 auto;
+    border-radius: 6px;
+    overflow: hidden;
+    text-decoration: none;
+    background: #ffffff;
+    border: 1px solid #e0ddd0;
+  }
+
+  .ibx-art-ad img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}
+
+/* Tighten width slightly on small phones */
+@media (max-width: 479px) {
+  .ibx-art-ad a {
+    width: 100%;
+  }
+}
+
+/* Override RTE image rules that blow out ad size */
+@media (max-width: 999px) {
+  .ibx-art-ad img {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+}
