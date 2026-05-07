@@ -183,3 +183,82 @@ scalability. At current scale, simplicity wins.
 - H = core workflow blocker
 - M = needed before scale / second publisher
 - L = nice to have
+
+
+NEW BACKLOG ENTRIES — May 7, 2026
+BL-001 — Universal Make scenario-level error contract
+Status: BACKLOG
+Priority: LOW (revisit at multi-publisher scale)
+Added: May 7, 2026
+Source: Studio 15.5 punch list, item 1d
+Context
+Discussed during May 7 punch list interview as a possible architectural fix for the optimistic-success bug ("Draft Article Created" fires before Make actually finishes). Three options weighed:
+
+HTTP-only error coverage (cheap, misses scenario-level failures)
+Make scenario-level contract — every Webhook Response sends {status: ok|error, message, payload}, every scenario has an error-router branch
+Both, with priority to scenario-level
+
+Initial recommendation was option 3 at ~12–24 engaged hours (8–12 scenarios × 1.5–2 hr each).
+Why deferred
+The Punch List Workstream Master v1.0 (May 7, 2026) replaced this with a trust-but-verify approach: frontend reads back the Webflow record after Make claims success, fails closed if read fails. This achieves the same honesty goal without rewriting every Make scenario's error contract.
+The trust-but-verify path is sufficient for the single-user-Jeff phase. Universal scenario-level error contract becomes more attractive when:
+
+Multiple publishers operating concurrently — read-back latency starts to compound
+Make scenario count exceeds ~15 — adding error branches at scenario authoring time becomes cheaper than retrofitting
+A specific pattern of "Make says success, read-back times out" emerges — suggests the read isn't fast enough as the only verification mechanism
+
+Migration cost estimate
+
+Per-scenario error contract: 1.5–2 hours each
+8–12 scenarios currently in production: 12–24 hours
+Frontend protocol bump (treat response.status === 'error' as failure regardless of HTTP): 1–2 hours
+Documentation of the contract for future scenarios: 1 hour
+Total: ~14–27 hours of focused work
+
+Do NOT migrate if
+
+Single-user operation continues
+Trust-but-verify pattern from Punch List Workstream A is meeting truth-signal needs
+No Make scenario authoring patterns demonstrate the cost of structured error responses being prohibitive at write-time
+
+
+BL-002 — RTE cursor instability — monitor on v1.1.12
+Status: BACKLOG · MONITOR
+Priority: LOW (active monitoring)
+Added: May 7, 2026
+Source: Studio 15.5 punch list, items 5 + 14
+Symptoms reported (pre-v1.1.12)
+
+Cursor-left key navigates back to previous page — leaving the T-A page entirely. Reproduced in Chrome. Suggests browser-level back-navigation hijack — contenteditable not capturing arrow keys, browser interprets as Backspace-on-history.
+Cursor movements close the RTE or other editing functions — no clear pattern for repro. Symptom-shape varies: sometimes RTE collapses but underlying form stays, sometimes the modal closes entirely.
+
+Why monitoring (not chunked)
+Symptoms reported as "less jerky" since ta-rte-v1.1.12.js shipped. Jeff explicitly chose "defer or mark as something we will wait and see" during the May 7 interview. May be self-resolved by v1.1.12's various fixes.
+Trigger to repro / fix
+If symptoms recur on v1.1.12 or later, capture:
+
+Browser + version (Chrome confirmed; need to test Safari/Firefox)
+Specific keystroke sequence that triggers the bug
+Which RTE — Studio fullscreen InbxRTE or Transcriber inline
+Screen recording if at all possible
+State of the RTE before/after (was it focused? was a selection active? was the cursor in an attachment caption?)
+
+Likely fix paths if it recurs
+
+For symptom 1: preventDefault on arrow keys at RTE element boundary; ensure the contenteditable's keydown handler is registered before any document-level handlers that watch for back-navigation gestures.
+For symptom 2: trace what's emitting the close event. Possible culprits: bubbling click events from contenteditable children that match modal-close selectors; focus events triggering an outer Webflow tab handler.
+
+Estimated cost if forced to fix
+
+Diagnose with repro: 1–2 hours
+Fix + smoke: 1–2 hours
+Total: ~2–4 hours
+
+
+NOTES ON OPERATING ENVIRONMENT
+Both items above sit in a regime where single-user operation by Jeff is the constraint. When that constraint changes — additional publishers come online, scale increases, multi-tenant complexity surfaces new failure modes — these items get reweighed. Today they sit on the right side of the cost/benefit line; tomorrow they may not.
+
+ITEMS DELIBERATELY NOT ADDED HERE
+
+Item 4 — Scenario G Route 1 (no notes / no symptom) — disregarded entirely during May 7 interview. No backlog entry.
+All other 14 items from the punch list — captured as chunks in the Punch List Workstream Master v1.0, not as backlog entries.
