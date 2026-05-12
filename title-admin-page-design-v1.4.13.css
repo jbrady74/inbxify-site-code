@@ -1745,10 +1745,10 @@ section.publisher-wrapper a[href*="wyckoffliving"]:hover {
   background: transparent !important;
   padding: 0 !important;
   margin: 0 !important;
-  /* v1.4.13: parent must allow children to shrink for overflow-x: auto on .w-tab-menu to engage. */
-  min-width: 0 !important;
-  max-width: 100% !important;
-  overflow: hidden !important;
+  /* v1.4.13.1: removed min-width/max-width/overflow constraints here —
+     they clipped the tab CONTENT panel below the strip, which is also
+     inside .dashboard-tabs.w-tabs. The overflow control belongs on
+     .w-tab-menu alone (the strip itself), not the whole tab system. */
 }
 /* Tab strip — horizontal row, scrollable */
 .vertical-tabs.w-tab-menu,
