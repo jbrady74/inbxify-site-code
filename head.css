@@ -2,7 +2,20 @@
    INBXIFY — Site-Wide Head Code
    Repo: jbrady74/inbxify-site-code
    File: head.css
-   Version: 2.2 — March 2026
+   Version: 2.3 — May 2026
+
+   CHANGES FROM 2.2:
+   - [NEW] Section 8: Article Body — Inline Image Sizing & Alignment.
+     Targets <figure class="rte-inserted-image" data-img-size="..."
+     data-img-align="..."> emitted by ta-rte v1.1.15+ and rendered
+     through the article template's Webflow HTML Embed bound to the
+     post-body-html Plain Text field (Path B render swap).
+
+     Designer-level .article-body-rte img blanket rule remains in
+     place as fallback for bare/legacy figures (pre-v1.1.15 saves +
+     un-migrated articles) — those render at the default ~90% center
+     from the Designer rule, which is acceptable for legacy content
+     until Phase 4 migration normalizes them.
 
    CHANGES FROM 2.0:
    - [NEW] Section 7: Sign In Modal CSS — matches subscribe/contact
@@ -16,6 +29,7 @@
    5. Character Counter CSS
    6. Mobile Navigation CSS
    7. Sign In Modal CSS (new footer modal)
+   8. Article Body — Inline Image Sizing & Alignment
    ================================================ */
 
 
@@ -593,4 +607,81 @@ body.nav-open .inbx-nav-panel .w-dyn-item:nth-child(8) a { animation-delay: 0.36
   .signin-modal__header { padding: 24px 20px 16px; }
   .signin-modal__title { font-size: 20px; }
   .signin-modal__body { padding: 20px 20px 24px; }
+}
+
+
+/* ── 8. ARTICLE BODY — INLINE IMAGE SIZING & ALIGNMENT ─
+
+   Applied to figures emitted by ta-rte v1.1.15+ and rendered through the
+   article template's Webflow HTML Embed (bound to post-body-html). The
+   Embed renders the saved HTML verbatim, so figure.rte-inserted-image
+   wrappers and data-img-size / data-img-align attributes arrive intact.
+
+   The Designer-level .article-body-rte img blanket rule uses !important
+   on six properties, so all rules here use !important to win at the
+   specificity-at-!important comparison. Selectors include the parent
+   .article-body-rte to keep this scoped and predictable.
+
+   Bare figures (legacy / pre-v1.1.15 / un-migrated) fall through to the
+   Designer rule and render at the default ~90% center — acceptable
+   until Phase 4 migration normalizes them.
+*/
+
+/* Wrapper: spacing only — width comes from data-img-size, alignment
+   from data-img-align */
+.article-body-rte figure.rte-inserted-image {
+  display: block !important;
+  margin-top: 1.5em !important;
+  margin-bottom: 1.5em !important;
+}
+
+/* Width by data-img-size */
+.article-body-rte figure.rte-inserted-image[data-img-size="small"]  { max-width: 33%  !important; }
+.article-body-rte figure.rte-inserted-image[data-img-size="medium"] { max-width: 50%  !important; }
+.article-body-rte figure.rte-inserted-image[data-img-size="large"]  { max-width: 75%  !important; }
+.article-body-rte figure.rte-inserted-image[data-img-size="full"]   { max-width: 100% !important; }
+
+/* Alignment by data-img-align */
+.article-body-rte figure.rte-inserted-image[data-img-align="left"] {
+  margin-left: 0    !important;
+  margin-right: auto !important;
+}
+.article-body-rte figure.rte-inserted-image[data-img-align="center"] {
+  margin-left:  auto !important;
+  margin-right: auto !important;
+}
+.article-body-rte figure.rte-inserted-image[data-img-align="right"] {
+  margin-left:  auto !important;
+  margin-right: 0    !important;
+}
+
+/* Image inside the wrapper: fill the figure, override Designer
+   blanket (max-width:90%; width:auto; margin:20px auto). Higher
+   specificity at !important wins. */
+.article-body-rte figure.rte-inserted-image img {
+  display:   block  !important;
+  width:     100%   !important;
+  max-width: 100%   !important;
+  height:    auto   !important;
+  margin:    0      !important;
+}
+
+/* Hide the empty Trix-emitted figcaption that sits as a sibling of
+   the inner figure (Trix wraps every attachment in an outer figure
+   + figcaption; the outer figcaption is usually empty because the
+   real caption lives inside rte-inserted-image). */
+.article-body-rte figure > figcaption.attachment__caption:empty {
+  display: none !important;
+}
+
+/* Trix uses <div> for paragraphs (not <p>). Provide paragraph-like
+   spacing for direct text divs inside the rendered body. Excludes
+   figures and known wrapper divs. */
+.article-body-rte > div,
+.article-body-rte .w-embed > div {
+  margin-bottom: 1em;
+}
+.article-body-rte figure,
+.article-body-rte figure div {
+  margin-bottom: 0;
 }
