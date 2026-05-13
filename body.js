@@ -2,7 +2,27 @@
    INBXIFY — Site-Wide Body Code
    Repo: jbrady74/inbxify-site-code
    File: body.js
-   Version: 1.12 — March 2026
+   Version: 1.13 — May 2026
+
+CHANGES FROM 1.12:
+- [NEW] Section 18: Article Body HTML Embed — Un-escape post-body-html.
+  Webflow HTML-escapes Plain Text CMS field bindings inside HTML Embeds
+  (XSS-prevention behavior). Without this pass, the post-body-html
+  field content renders as visible <div> / <em> / <figure> tags as
+  text on the live article page. This section finds the article-body
+  Code Embed by its dual classes (.article-body-rte.w-embed), reads
+  the escaped HTML out of textContent, and assigns it to innerHTML —
+  which parses it as HTML and replaces the text nodes with real DOM.
+
+  Idempotent via data-html-unescaped sentinel. No-op on pages without
+  the embed.
+
+  Companion changes in head-v2.3.css (Section 8 — figure sizing/align
+  rules keyed on data-img-size / data-img-align attributes). Path B
+  render swap (Rich Text → Plain Text + JS innerHTML) — replaces
+  Webflow Rich Text widget rendering for new articles with
+  post-body-html populated; legacy articles still render via the
+  existing Rich Text widget via conditional visibility.
 
 CHANGES FROM 1.11:
 - [FIX] Section 17: Added null check on $memberstackDom.onReady
@@ -43,6 +63,7 @@ CONTENTS:
 15. GA4 Element Visibility Tracking
 16. Sign In Backdrop
 17. Sign In Modal
+18. Article Body HTML Embed — Un-escape post-body-html
    ================================================ */
 
 
@@ -904,3 +925,58 @@ document.addEventListener('DOMContentLoaded', function() {
     }).catch(function() { /* MS not loaded yet, form still works when it loads */ });
   }
 });
+
+
+/* ── 18. ARTICLE BODY HTML EMBED — UN-ESCAPE POST-BODY-HTML ─
+
+   Webflow escapes Plain Text CMS field bindings inside HTML Embeds
+   as an XSS-prevention behavior. Without this pass, post-body-html
+   renders on the live article page as visible <div> / <em> /
+   <figure> tags shown as text.
+
+   The article template has a Code Embed bound to {{post-body-html}}.
+   Webflow renders that embed as:
+     <div class="article-body-rte w-embed">
+       &lt;div&gt;&lt;em&gt;...escaped HTML as text...&lt;/em&gt;&lt;/div&gt;
+     </div>
+
+   This section:
+     1. Finds elements with both classes .article-body-rte AND .w-embed
+     2. Reads textContent (browser auto-unescapes HTML entities into
+        the raw HTML string)
+     3. Assigns to innerHTML (parses the string as HTML and replaces
+        the text nodes with real DOM)
+     4. Marks element with data-html-unescaped="true" for idempotency
+
+   Companion: head.css v2.3 Section 8 defines the figure sizing/align
+   CSS rules that are activated once the figure.rte-inserted-image
+   wrappers materialize into the DOM.
+
+   No-op on pages without the article body embed.
+*/
+(function () {
+  'use strict';
+
+  function unescapeArticleBodyEmbed() {
+    var embeds = document.querySelectorAll('.article-body-rte.w-embed');
+    if (!embeds.length) return;
+
+    embeds.forEach(function (el) {
+      // Idempotency guard — don't reprocess
+      if (el.dataset.htmlUnescaped === 'true') return;
+
+      var html = el.textContent;
+      if (html && html.trim()) {
+        el.innerHTML = html;
+        el.dataset.htmlUnescaped = 'true';
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', unescapeArticleBodyEmbed);
+  } else {
+    // Script may load after DOMContentLoaded if deferred
+    unescapeArticleBodyEmbed();
+  }
+})();
