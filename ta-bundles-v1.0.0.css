@@ -1,0 +1,332 @@
+/* ============================================================
+   ta-bundles-v1.0.0.css
+   ============================================================
+   INBXIFY · Bundles Workspace · Cut 1 (read-only)
+
+   Paired with ta-bundles-v1.0.0.js. Loads INTO the Studio Inputs
+   panel; styles its own #bdl-root subtree only.
+
+   Token discipline (per Platform Roadmap v1.3 §10):
+     • Electric blue #5B7FFF — primary
+     • Gold #C4A35A         — accent
+     • Cream #FAF8F1        — warm container
+     • Teal #1A3A3A         — NOT USED here (docx-only token)
+     • DM Sans + DM Mono    — typography
+     • Status colors        — neutral pill conventions
+
+   Class namespace: bdl-* (Bundles Workspace), no global selectors.
+   ──────────────────────────────────────────────────────────── */
+
+#bdl-root {
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  color: #1A293B;
+  margin-top: 16px;
+}
+
+.bdl-root-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Banner ──────────────────────────────────────────────── */
+
+.bdl-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(91, 127, 255, 0.06), rgba(91, 127, 255, 0.02));
+  border: 1px solid rgba(91, 127, 255, 0.18);
+  border-radius: 8px;
+}
+
+.bdl-banner-counts {
+  font-size: 14px;
+  letter-spacing: 0.01em;
+}
+
+.bdl-banner-counts strong {
+  font-weight: 600;
+  color: #5B7FFF;
+  font-size: 16px;
+  margin-right: 2px;
+}
+
+.bdl-banner-sep {
+  margin: 0 10px;
+  color: #C4B5A0;
+}
+
+.bdl-banner-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #6B7280;
+}
+
+.bdl-banner-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.bdl-banner-refresh {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: #5B7FFF;
+  font-style: italic;
+}
+
+/* Refresh button reuses ix-btn but tightens for banner row */
+.bdl-refresh-btn {
+  min-width: 28px;
+  padding: 4px 8px;
+}
+
+/* ── Section labels ──────────────────────────────────────── */
+
+.bdl-section-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6B7280;
+  font-weight: 600;
+  margin: 0 0 8px 4px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* ── Bundle list ─────────────────────────────────────────── */
+
+.bdl-bundles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bdl-card {
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: #FFFFFF;
+  overflow: hidden;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.bdl-card:hover {
+  border-color: rgba(91, 127, 255, 0.35);
+}
+
+.bdl-card.is-expanded {
+  border-color: rgba(91, 127, 255, 0.4);
+  box-shadow: 0 1px 3px rgba(91, 127, 255, 0.08);
+}
+
+/* Left-border status accent */
+.bdl-card--status-pending        { border-left: 3px solid #E0B4B4; }
+.bdl-card--status-partial        { border-left: 3px solid #C4A35A; }
+.bdl-card--status-fully_assigned { border-left: 3px solid #86C9A4; }
+
+.bdl-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bdl-card-header:hover {
+  background: #FAF8F1;
+}
+
+.bdl-caret {
+  font-size: 12px;
+  color: #6B7280;
+  width: 12px;
+  display: inline-block;
+  text-align: center;
+}
+
+.bdl-card-label {
+  flex: 1;
+  font-weight: 600;
+  font-size: 14px;
+  color: #1A293B;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bdl-card-count {
+  font-size: 12px;
+  color: #6B7280;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.02em;
+}
+
+.bdl-card-body {
+  border-top: 1px solid #F1F3F5;
+  background: #FAFAFA;
+  padding: 6px 0;
+}
+
+/* ── File rows ───────────────────────────────────────────── */
+
+.bdl-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 36px;  /* indent under caret column */
+  font-size: 13px;
+  border-bottom: 1px solid transparent;
+}
+
+.bdl-row:hover {
+  background: #FFFFFF;
+}
+
+.bdl-row-mime {
+  flex: 0 0 18px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.bdl-row-filename {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #1A293B;
+}
+
+.bdl-row-size {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: #6B7280;
+  font-family: 'DM Mono', monospace;
+}
+
+.bdl-row-target {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: #4B5563;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bdl-row-target-more {
+  color: #5B7FFF;
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+/* ── Loose tray ──────────────────────────────────────────── */
+
+.bdl-loose {
+  border: 1px dashed #D1D5DB;
+  border-radius: 8px;
+  background: #FFFFFF;
+  padding: 4px 0;
+}
+
+.bdl-loose .bdl-row {
+  padding-left: 14px;
+}
+
+/* ── Status pills ────────────────────────────────────────── */
+
+.bdl-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 999px;
+  font-family: 'DM Mono', monospace;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.bdl-pill--pending {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.bdl-pill--partial {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.bdl-pill--fully_assigned {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.bdl-pill--awaiting {
+  background: #EDE9FE;
+  color: #5B21B6;
+}
+
+/* ── States (loading, error, empty) ──────────────────────── */
+
+.bdl-state {
+  padding: 24px 16px;
+  text-align: center;
+  background: #FAF8F1;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+}
+
+.bdl-state--loading {
+  color: #6B7280;
+  font-style: italic;
+}
+
+.bdl-state--error {
+  background: #FEF2F2;
+  border-color: #FECACA;
+}
+
+.bdl-state--empty {
+  color: #6B7280;
+}
+
+.bdl-state-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1A293B;
+  margin-bottom: 6px;
+}
+
+.bdl-state-msg {
+  font-size: 13px;
+  color: #6B7280;
+  margin-bottom: 12px;
+}
+
+.bdl-empty-section {
+  padding: 18px;
+  background: #FAFAFA;
+  border: 1px dashed #E5E7EB;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #6B7280;
+  text-align: center;
+}
+
+/* ── Responsive — narrow Studio frames ───────────────────── */
+
+@media (max-width: 700px) {
+  .bdl-card-header {
+    flex-wrap: wrap;
+  }
+  .bdl-row {
+    flex-wrap: wrap;
+  }
+  .bdl-row-target {
+    max-width: 100%;
+  }
+}
