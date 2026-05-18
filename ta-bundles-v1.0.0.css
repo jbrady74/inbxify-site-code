@@ -1,25 +1,46 @@
 /* ============================================================
-   ta-bundles-v1.0.0.css
+   ta-bundles-v1.1.0.css
    ============================================================
-   INBXIFY · Bundles Workspace · Cut 1 (read-only)
+   INBXIFY · Bundles Workspace · Cut 2 ship 1 of 3
+   (Selection + cascade shell)
 
-   Paired with ta-bundles-v1.0.0.js. Loads INTO the Studio Inputs
-   panel; styles its own #bdl-root subtree only.
+   Paired with ta-bundles-v1.1.0.js. Complete replacement of
+   ta-bundles-v1.0.0.css — remove the old <link> from the head.
 
-   Token discipline (per Platform Roadmap v1.3 §10):
-     • Electric blue #5B7FFF — primary
-     • Gold #C4A35A         — accent
-     • Cream #FAF8F1        — warm container
-     • Teal #1A3A3A         — NOT USED here (docx-only token)
-     • DM Sans + DM Mono    — typography
-     • Status colors        — neutral pill conventions
+   ─── v1.1.0 changelog ───
+   • Banner REMOVED entirely (.bdl-banner / .bdl-banner-counts /
+     .bdl-banner-meta / .bdl-banner-time / .bdl-banner-refresh /
+     .bdl-banner-sep — all gone). Replaced with a refresh icon
+     button inline-right with the first section label.
+   • File rows now host a leading checkbox + an is-selected state.
+   • New: section-label-row (label + optional refresh icon).
+   • New: bdl-refresh-icon (positioned next to the section label).
+   • New: cascade-anchor (sticky bottom container for action bar
+     + cascade panel).
+   • New: action-bar (two primary buttons + Clear link + count).
+   • New: cascade panel (header / body / steps / footer) — Option B
+     layout (mode pre-set from action bar; cascade runs Step 1
+     Asset Type → Step 2 Picker-or-Info → Save).
+   • New: bdl-create-info (info pane for create-mode Step 2).
+   • New: bdl-picker-empty (no-matches state for the picker list).
 
-   Class namespace: bdl-* (Bundles Workspace), no global selectors.
+   ─── Class namespace ───
+   bdl-* for Bundles-local styles. ix-* primitives (chips, picker,
+   revert) come from ix-form-controls-v1.0.0.css. ix-btn-* primary
+   buttons come from ix-buttons-v1.0.4.css. Neither is restyled here.
+
+   ─── Token strategy ───
+   Use ix CSS variables (from title-admin-page-design v1.4.x) with
+   raw-value fallbacks for defensive loading. Hex values match the
+   tokens at the time of writing (2026-05-18) so behavior is stable
+   even if title-admin-page-design changes downstream — the
+   fallback colors stay correct visually.
+
    ──────────────────────────────────────────────────────────── */
 
 #bdl-root {
-  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
-  color: #1A293B;
+  font-family: var(--ix-font-body, 'DM Sans', system-ui, -apple-system, sans-serif);
+  color: var(--ix-text-dark, #1A293B);
   margin-top: 16px;
 }
 
@@ -29,75 +50,59 @@
   gap: 16px;
 }
 
-/* ── Banner ──────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   SECTION LABEL ROW
+   Was a banner in v1.0.0. Now: label on the left, optional
+   refresh icon button on the right of the FIRST section only.
+   ═══════════════════════════════════════════════════════════ */
 
-.bdl-banner {
+.bdl-section-label-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, rgba(91, 127, 255, 0.06), rgba(91, 127, 255, 0.02));
-  border: 1px solid rgba(91, 127, 255, 0.18);
-  border-radius: 8px;
+  margin: 0 0 8px 4px;
+  min-height: 28px;
 }
-
-.bdl-banner-counts {
-  font-size: 14px;
-  letter-spacing: 0.01em;
-}
-
-.bdl-banner-counts strong {
-  font-weight: 600;
-  color: #5B7FFF;
-  font-size: 16px;
-  margin-right: 2px;
-}
-
-.bdl-banner-sep {
-  margin: 0 10px;
-  color: #C4B5A0;
-}
-
-.bdl-banner-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-  color: #6B7280;
-}
-
-.bdl-banner-time {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.02em;
-}
-
-.bdl-banner-refresh {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  color: #5B7FFF;
-  font-style: italic;
-}
-
-/* Refresh button reuses ix-btn but tightens for banner row */
-.bdl-refresh-btn {
-  min-width: 28px;
-  padding: 4px 8px;
-}
-
-/* ── Section labels ──────────────────────────────────────── */
 
 .bdl-section-label {
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #6B7280;
+  color: var(--ix-text-mid, #6B7280);
   font-weight: 600;
-  margin: 0 0 8px 4px;
-  font-family: 'DM Mono', monospace;
+  font-family: var(--ix-font-mono, 'DM Mono', monospace);
 }
 
-/* ── Bundle list ─────────────────────────────────────────── */
+/* Plain .bdl-section-label (no row container) — legacy use; preserves
+   v1.0.0's behavior for the second section label that has no refresh icon. */
+.bdl-section > .bdl-section-label {
+  display: block;
+  margin: 0 0 8px 4px;
+}
+
+.bdl-refresh-icon {
+  /* Sized down a touch vs default ix-btn--icon */
+  min-width: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  color: var(--ix-text-mid, #6B7280) !important;
+}
+.bdl-refresh-icon:hover:not(:disabled) {
+  color: var(--ix-blue, #5B7FFF) !important;
+}
+.bdl-refresh-icon.is-spinning {
+  pointer-events: none;
+  color: var(--ix-blue, #5B7FFF) !important;
+  animation: bdl-spin 0.8s linear infinite;
+}
+@keyframes bdl-spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════════════════
+   BUNDLE LIST
+   ═══════════════════════════════════════════════════════════ */
 
 .bdl-bundles {
   display: flex;
@@ -106,9 +111,9 @@
 }
 
 .bdl-card {
-  border: 1px solid #E5E7EB;
+  border: 1px solid var(--ix-border, #E5E7EB);
   border-radius: 8px;
-  background: #FFFFFF;
+  background: var(--ix-white, #FFFFFF);
   overflow: hidden;
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
@@ -118,11 +123,11 @@
 }
 
 .bdl-card.is-expanded {
-  border-color: rgba(91, 127, 255, 0.4);
+  border-color: rgba(91, 127, 255, 0.40);
   box-shadow: 0 1px 3px rgba(91, 127, 255, 0.08);
 }
 
-/* Left-border status accent */
+/* Left-border status accent (unchanged from v1.0.0) */
 .bdl-card--status-pending        { border-left: 3px solid #E0B4B4; }
 .bdl-card--status-partial        { border-left: 3px solid #C4A35A; }
 .bdl-card--status-fully_assigned { border-left: 3px solid #86C9A4; }
@@ -137,12 +142,12 @@
 }
 
 .bdl-card-header:hover {
-  background: #FAF8F1;
+  background: var(--ix-cream, #FAF8F1);
 }
 
 .bdl-caret {
   font-size: 12px;
-  color: #6B7280;
+  color: var(--ix-text-mid, #6B7280);
   width: 12px;
   display: inline-block;
   text-align: center;
@@ -152,7 +157,7 @@
   flex: 1;
   font-weight: 600;
   font-size: 14px;
-  color: #1A293B;
+  color: var(--ix-text-dark, #1A293B);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -160,8 +165,8 @@
 
 .bdl-card-count {
   font-size: 12px;
-  color: #6B7280;
-  font-family: 'DM Mono', monospace;
+  color: var(--ix-text-mid, #6B7280);
+  font-family: var(--ix-font-mono, 'DM Mono', monospace);
   letter-spacing: 0.02em;
 }
 
@@ -171,19 +176,41 @@
   padding: 6px 0;
 }
 
-/* ── File rows ───────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   FILE ROWS
+   v1.0.0 had padding 8px 14px 8px 36px to indent under caret.
+   v1.1.0 uses 12px left + leading checkbox so the row reads as
+   a checkable line item, not an indented detail.
+   ═══════════════════════════════════════════════════════════ */
 
 .bdl-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 14px 8px 36px;  /* indent under caret column */
+  padding: 8px 14px 8px 12px;
   font-size: 13px;
   border-bottom: 1px solid transparent;
+  transition: background-color 100ms ease;
 }
 
 .bdl-row:hover {
-  background: #FFFFFF;
+  background: var(--ix-white, #FFFFFF);
+}
+
+.bdl-row.is-selected {
+  background: rgba(91, 127, 255, 0.08);
+}
+.bdl-row.is-selected:hover {
+  background: rgba(91, 127, 255, 0.10);
+}
+
+.bdl-row-check {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--ix-blue, #5B7FFF);
+  cursor: pointer;
 }
 
 .bdl-row-mime {
@@ -197,14 +224,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #1A293B;
+  color: var(--ix-text-dark, #1A293B);
 }
 
 .bdl-row-size {
   flex: 0 0 auto;
   font-size: 11px;
-  color: #6B7280;
-  font-family: 'DM Mono', monospace;
+  color: var(--ix-text-mid, #6B7280);
+  font-family: var(--ix-font-mono, 'DM Mono', monospace);
 }
 
 .bdl-row-target {
@@ -218,25 +245,29 @@
 }
 
 .bdl-row-target-more {
-  color: #5B7FFF;
+  color: var(--ix-blue, #5B7FFF);
   font-weight: 500;
   margin-left: 2px;
 }
 
-/* ── Loose tray ──────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   LOOSE TRAY
+   ═══════════════════════════════════════════════════════════ */
 
 .bdl-loose {
   border: 1px dashed #D1D5DB;
   border-radius: 8px;
-  background: #FFFFFF;
+  background: var(--ix-white, #FFFFFF);
   padding: 4px 0;
 }
 
 .bdl-loose .bdl-row {
-  padding-left: 14px;
+  padding-left: 12px;
 }
 
-/* ── Status pills ────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   STATUS PILLS (unchanged from v1.0.0)
+   ═══════════════════════════════════════════════════════════ */
 
 .bdl-pill {
   display: inline-block;
@@ -245,88 +276,307 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   border-radius: 999px;
-  font-family: 'DM Mono', monospace;
+  font-family: var(--ix-font-mono, 'DM Mono', monospace);
   text-transform: uppercase;
   white-space: nowrap;
 }
+.bdl-pill--pending          { background: #FEE2E2; color: #991B1B; }
+.bdl-pill--partial          { background: #FEF3C7; color: #92400E; }
+.bdl-pill--fully_assigned   { background: #D1FAE5; color: #065F46; }
+.bdl-pill--awaiting         { background: #EDE9FE; color: #5B21B6; }
 
-.bdl-pill--pending {
-  background: #FEE2E2;
-  color: #991B1B;
-}
-
-.bdl-pill--partial {
-  background: #FEF3C7;
-  color: #92400E;
-}
-
-.bdl-pill--fully_assigned {
-  background: #D1FAE5;
-  color: #065F46;
-}
-
-.bdl-pill--awaiting {
-  background: #EDE9FE;
-  color: #5B21B6;
-}
-
-/* ── States (loading, error, empty) ──────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   STATES — loading / error / empty (unchanged from v1.0.0)
+   ═══════════════════════════════════════════════════════════ */
 
 .bdl-state {
   padding: 24px 16px;
   text-align: center;
-  background: #FAF8F1;
-  border: 1px solid #E5E7EB;
+  background: var(--ix-cream, #FAF8F1);
+  border: 1px solid var(--ix-border, #E5E7EB);
   border-radius: 8px;
 }
-
 .bdl-state--loading {
-  color: #6B7280;
+  color: var(--ix-text-mid, #6B7280);
   font-style: italic;
 }
-
 .bdl-state--error {
   background: #FEF2F2;
   border-color: #FECACA;
 }
-
 .bdl-state--empty {
-  color: #6B7280;
+  color: var(--ix-text-mid, #6B7280);
 }
-
 .bdl-state-title {
   font-weight: 600;
   font-size: 14px;
-  color: #1A293B;
+  color: var(--ix-text-dark, #1A293B);
   margin-bottom: 6px;
 }
-
 .bdl-state-msg {
   font-size: 13px;
-  color: #6B7280;
+  color: var(--ix-text-mid, #6B7280);
   margin-bottom: 12px;
 }
 
 .bdl-empty-section {
   padding: 18px;
   background: #FAFAFA;
-  border: 1px dashed #E5E7EB;
+  border: 1px dashed var(--ix-border, #E5E7EB);
   border-radius: 8px;
   font-size: 13px;
-  color: #6B7280;
+  color: var(--ix-text-mid, #6B7280);
   text-align: center;
 }
 
-/* ── Responsive — narrow Studio frames ───────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   CASCADE ANCHOR — sticky-bottom mount point for action bar
+                    + cascade panel
+   Mounted as the LAST child inside #bdl-root.
+   ═══════════════════════════════════════════════════════════ */
+
+#bdl-cascade-anchor {
+  /* Until selection happens, this is an empty container with no visual. */
+  position: sticky;
+  bottom: 12px;
+  z-index: 30;
+  /* margin-top auto pushes the anchor to the bottom of the flex column */
+  margin-top: 8px;
+}
+
+#bdl-cascade-anchor.is-active {
+  /* Active state — has a child. The child draws its own background. */
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ACTION BAR — Option B (two buttons + Clear)
+   ═══════════════════════════════════════════════════════════ */
+
+.bdl-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--ix-white, #FFFFFF);
+  border: 1px solid rgba(91, 127, 255, 0.22);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(91, 127, 255, 0.12);
+}
+
+.bdl-action-bar-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ix-text-dark, #1A293B);
+}
+.bdl-action-bar-count strong {
+  color: var(--ix-blue, #5B7FFF);
+}
+
+.bdl-action-bar-spacer {
+  flex: 1;
+}
+
+/* The Clear link uses .ix-revert (defined in ix-form-controls).
+   No additional override needed here. */
+
+/* ═══════════════════════════════════════════════════════════
+   CASCADE PANEL
+   ═══════════════════════════════════════════════════════════ */
+
+.bdl-cascade {
+  background: var(--ix-white, #FFFFFF);
+  border: 1px solid rgba(91, 127, 255, 0.22);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(91, 127, 255, 0.14);
+  overflow: hidden;
+}
+
+/* Cascade header */
+.bdl-cascade-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid #F1F3F5;
+  background: rgba(91, 127, 255, 0.06);
+}
+
+.bdl-cascade-mode-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  font-family: var(--ix-font-mono, 'DM Mono', monospace);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  color: #FFFFFF;
+  white-space: nowrap;
+}
+.bdl-cascade-mode-tag--attach { background: var(--ix-blue, #5B7FFF); }
+.bdl-cascade-mode-tag--create { background: var(--ix-gold, #C4A35A); }
+
+.bdl-cascade-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ix-text-dark, #1A293B);
+}
+.bdl-cascade-count strong {
+  color: var(--ix-blue, #5B7FFF);
+}
+
+/* The mode-switch link uses .ix-revert; align it to the far right */
+.bdl-cascade-header > .ix-revert {
+  margin-left: auto;
+}
+
+/* Cascade body */
+.bdl-cascade-body {
+  padding: 18px 20px 12px;
+}
+
+/* Cascade step container */
+.bdl-cstep {
+  margin-bottom: 18px;
+  opacity: 1;
+  transition: opacity 200ms ease;
+}
+.bdl-cstep:last-child {
+  margin-bottom: 0;
+}
+.bdl-cstep--inactive {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.bdl-cstep-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.bdl-cstep-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ix-gold, #C4A35A);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ix-font-mono, 'DM Mono', monospace);
+  flex: 0 0 auto;
+}
+.bdl-cstep-num--pending {
+  background: #C7CDE8;
+}
+.bdl-cstep.is-active .bdl-cstep-num {
+  background: var(--ix-blue, #5B7FFF);
+}
+.bdl-cstep.is-set .bdl-cstep-num {
+  background: var(--ix-gold, #C4A35A);
+}
+.bdl-cstep.is-active.is-set .bdl-cstep-num {
+  /* When the step is both active and set, prefer the "set" gold */
+  background: var(--ix-gold, #C4A35A);
+}
+
+.bdl-cstep-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ix-text-dark, #1A293B);
+}
+.bdl-cstep-label--muted {
+  color: var(--ix-text-mid, #6B7280);
+  font-weight: 500;
+}
+
+/* The per-step Change link uses .ix-revert; push it to far right */
+.bdl-cstep-head > .ix-revert {
+  margin-left: auto;
+}
+
+/* Create-mode info pane (Step 2 for create flow) */
+.bdl-create-info {
+  margin-left: 28px;
+  max-width: 480px;
+  padding: 14px 16px;
+  background: var(--ix-cream, #FAF8F1);
+  border: 1px dashed var(--ix-gold, #C4A35A);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--ix-text-dark, #1A293B);
+  line-height: 1.5;
+}
+.bdl-create-info strong {
+  color: var(--ix-gold, #C4A35A);
+}
+
+/* Picker empty state (when no matches found) */
+.bdl-picker-empty {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ix-text-mid, #6B7280);
+  font-family: var(--ix-font-body, 'DM Sans', sans-serif);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CASCADE FOOTER
+   ═══════════════════════════════════════════════════════════ */
+
+.bdl-cascade-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-top: 1px solid #F1F3F5;
+  background: #FCFCFD;
+}
+
+.bdl-cascade-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.bdl-cascade-status {
+  font-size: 12px;
+  color: var(--ix-text-mid, #6B7280);
+  font-family: var(--ix-font-mono, 'DM Mono', monospace);
+}
+.bdl-cascade-status.is-stub-confirmed {
+  color: #065F46;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE — narrow Studio frames
+   ═══════════════════════════════════════════════════════════ */
 
 @media (max-width: 700px) {
-  .bdl-card-header {
+  .bdl-card-header { flex-wrap: wrap; }
+  .bdl-row         { flex-wrap: wrap; }
+  .bdl-row-target  { max-width: 100%; }
+
+  .bdl-action-bar {
     flex-wrap: wrap;
+    gap: 8px 12px;
   }
-  .bdl-row {
-    flex-wrap: wrap;
-  }
-  .bdl-row-target {
-    max-width: 100%;
-  }
+  .bdl-action-bar-spacer { display: none; }
+  .bdl-action-bar [data-bdl-open-cascade] { flex: 1 1 140px; }
+
+  .bdl-cascade-header { flex-wrap: wrap; }
+  .bdl-cascade-header > .ix-revert { margin-left: 0; }
+
+  .bdl-create-info { margin-left: 0; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   END · ta-bundles-v1.1.0.css
+   ═══════════════════════════════════════════════════════════ */
