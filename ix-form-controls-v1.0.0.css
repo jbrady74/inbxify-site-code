@@ -1,0 +1,432 @@
+/* ============================================================
+   ix-form-controls-v1.0.0.css
+   INBXIFY — Canonical form-control design system
+   Single source of truth for chips, pickers (combobox-style
+   inputs), and revert/cancel link affordances across T-A.
+
+   PARALLEL TO ix-buttons and ix-modals. Same philosophy: one
+   module owns one visual domain, consumed additively, migrate
+   legacy at leisure.
+
+   ════════════════════════════════════════════════════════════
+   THREE PRIMITIVES
+   ════════════════════════════════════════════════════════════
+     ix-chip              Single-select / multi-select chip
+                          (Asset Type selector, Attach/Create
+                          toggle, filter pills with state, etc.)
+     ix-picker            Combobox: text input with a positioned
+                          dropdown list of selectable options
+                          (Step 3 asset picker, future surfaces
+                          like customer pickers, article pickers,
+                          tag pickers, etc.)
+     ix-revert            Small text-link affordance for
+                          reverting an edit. Used at two scopes:
+                            • per-control "Change" link
+                            • flow-level "Cancel" link
+                          Visually identical; semantics differ.
+
+   ════════════════════════════════════════════════════════════
+   STATE MODIFIER — THE EDITING-STATE PATTERN
+   ════════════════════════════════════════════════════════════
+     ix-chip--changed         Chip has been selected in an
+                              editing state; selection persists
+                              as operator moves around making
+                              other edits. Distinctive border
+                              flags the field for "will save".
+     ix-picker-input--changed Picker has a value chosen but not
+                              yet committed. Same visual
+                              treatment as chip--changed.
+
+   The "changed" terminology matches existing design tokens
+   (--ix-changed-border, --ix-changed-shadow in
+   title-admin-page-design v1.4.x).
+
+   ════════════════════════════════════════════════════════════
+   USAGE
+   ════════════════════════════════════════════════════════════
+     Chips (single-select group):
+       <div class="ix-chip-group">
+         <button class="ix-chip">Article</button>
+         <button class="ix-chip ix-chip--changed">Ad</button>
+         <button class="ix-chip">Event</button>
+       </div>
+
+     Picker (combobox):
+       <div class="ix-picker">
+         <input class="ix-picker-input ix-picker-input--changed"
+                value="WLN 2026-05-22 — Banner: Local HVAC Co."
+                aria-label="Pick an existing Ad">
+         <div class="ix-picker-list" hidden>
+           <div class="ix-picker-option">…</div>
+         </div>
+       </div>
+
+     Revert link (per-control or flow-level):
+       <button class="ix-revert">Change</button>
+       <button class="ix-revert">Cancel</button>
+
+   ════════════════════════════════════════════════════════════
+   LOAD ORDER (Webflow <head>)
+   ════════════════════════════════════════════════════════════
+     1. webflow.css
+     2. title-admin-page-design-v1.4.x.css   (design tokens)
+     3. ta-studio-components-v1.0.x.css      (component CSS)
+     4. ix-buttons-v1.0.4.css
+     5. ix-modals-v1.0.2.css
+     6. ix-form-controls-v1.0.0.css          ← THIS FILE
+     7. ix-lightbox-v1.0.0.js  (script — order below CSS bundle)
+     8. (page-specific overrides)
+
+   This file MUST load after design tokens and component CSS
+   so it wins the cascade via source order in addition to its
+   built-in armor.
+
+   ════════════════════════════════════════════════════════════
+   CHROME-CASCADE ARMOR PATTERN (every selector uses this)
+   ════════════════════════════════════════════════════════════
+     1. Bumped specificity — element-qualified + dual-class +
+        descendant selectors listed so single-class chrome
+        resets lose.
+     2. !important on all visual properties (background, color,
+        border, box-shadow).
+     3. Dual background-color + background-image where state
+        styling matters, so a chrome reset that nukes the
+        shorthand `background` leaves background-image alive.
+
+   ════════════════════════════════════════════════════════════
+   FIRST CONSUMER
+   ════════════════════════════════════════════════════════════
+     ta-bundles-v1.1.0.js (Bundles Cut 2 cascade)
+       • Step 1 Asset Type    → ix-chip group
+       • Step 2 Attach/Create → ix-chip group
+       • Step 3 Asset picker  → ix-picker
+       • Per-step Change      → ix-revert
+       • Cascade Cancel       → ix-revert
+
+   PLANNED CONSUMERS (no migration in this version; primitives
+   are available for adoption)
+     • T-A page tile editor (BA / FA / TS / TXA tiles —
+       retires the bespoke has-pending pattern)
+     • PubPlan tile dropdowns (Phase 4+)
+     • Content Manager filter dropdowns (Directory rebuild)
+     • Client Manager forms (50-field customer schema)
+     • ASF (Article Submission Form) editable fields
+
+   Authored 2026-05-18 as part of Bundles Cut 2 / Scenario K JS
+   build. Promoted from the cascade-local pattern that shipped
+   in bundles-cascade-mockup v0.4.
+
+   ──────────────────────────────────────────────────────────── */
+
+
+/* ════════════════════════════════════════════════════════════
+   IX-CHIP — single-select / multi-select toggleable label
+   ════════════════════════════════════════════════════════════ */
+
+.ix-chip,
+.t-a button.ix-chip,
+.t-a div.ix-chip {
+  /* Reset Webflow / browser defaults */
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  /* Layout */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  /* Sizing */
+  padding: 8px 14px !important;
+  min-height: 32px !important;
+  line-height: 1.2 !important;
+  /* Type */
+  font-family: var(--ix-font-body, 'DM Sans', system-ui, sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  text-transform: none !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  /* Border + shape */
+  border: 1.5px solid var(--ix-border-input, #ddd9c8) !important;
+  border-radius: var(--ix-radius-sm, 8px) !important;
+  /* Surface */
+  background-color: var(--ix-white, #FFFFFF) !important;
+  background-image: none !important;
+  color: var(--ix-text-dark, #1e2a3a) !important;
+  /* Behavior */
+  cursor: pointer !important;
+  user-select: none !important;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s !important;
+}
+
+/* Hover (only when not changed and not disabled) */
+.ix-chip:hover:not(:disabled):not(.ix-chip--changed),
+.t-a .ix-chip:hover:not(:disabled):not(.ix-chip--changed) {
+  background-color: var(--ix-cream, #FAF9F5) !important;
+  border-color: var(--ix-text-light, #8a8e9a) !important;
+}
+
+/* Focus-visible (a11y) */
+.ix-chip:focus-visible,
+.t-a .ix-chip:focus-visible {
+  outline: none !important;
+  box-shadow: var(--ix-shadow-gold, 0 0 0 3px rgba(196,163,90,0.20)) !important;
+}
+
+/* Disabled */
+.ix-chip:disabled,
+.ix-chip[disabled],
+.t-a .ix-chip:disabled,
+.t-a .ix-chip[disabled] {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+/* ── CHIP — CHANGED STATE ──────────────────────────────────
+   The editing-state pattern: selection persists, distinctive
+   border tells the operator this field will be saved.
+   ──────────────────────────────────────────────────────── */
+
+.ix-chip.ix-chip--changed,
+.t-a button.ix-chip--changed,
+.t-a div.ix-chip--changed {
+  background-color: var(--ix-gold-glow, rgba(196,163,90,0.12)) !important;
+  background-image: none !important;
+  border: 2px solid var(--ix-changed-border, #C4A35A) !important;
+  /* Compensate the +0.5px border so the chip doesn't shift */
+  padding: 7px 13px !important;
+  color: var(--ix-text-dark, #1e2a3a) !important;
+  font-weight: 600 !important;
+}
+
+.ix-chip.ix-chip--changed:hover:not(:disabled),
+.t-a .ix-chip--changed:hover:not(:disabled) {
+  background-color: var(--ix-gold-shadow, rgba(196,163,90,0.20)) !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   IX-PICKER — text input + positioned dropdown list (combobox)
+   ════════════════════════════════════════════════════════════ */
+
+.ix-picker {
+  position: relative !important;
+  display: block !important;
+  max-width: 480px !important;
+}
+
+.ix-picker-input,
+.t-a input.ix-picker-input {
+  /* Reset Webflow input chrome */
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  /* Layout */
+  display: block !important;
+  width: 100% !important;
+  padding: 9px 12px !important;
+  min-height: 36px !important;
+  line-height: 1.3 !important;
+  /* Type */
+  font-family: var(--ix-font-body, 'DM Sans', system-ui, sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.01em !important;
+  /* Border + shape */
+  border: 1.5px solid var(--ix-border-input, #ddd9c8) !important;
+  border-radius: var(--ix-radius-sm, 8px) !important;
+  /* Surface */
+  background-color: var(--ix-white, #FFFFFF) !important;
+  background-image: none !important;
+  color: var(--ix-text-dark, #1e2a3a) !important;
+  /* Behavior */
+  cursor: text !important;
+  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s !important;
+}
+
+.ix-picker-input::placeholder,
+.t-a .ix-picker-input::placeholder {
+  color: var(--ix-text-light, #8a8e9a) !important;
+}
+
+/* Focus — neutral state */
+.ix-picker-input:focus:not(.ix-picker-input--changed),
+.t-a .ix-picker-input:focus:not(.ix-picker-input--changed) {
+  outline: none !important;
+  border-color: var(--ix-blue, #5b7fff) !important;
+  box-shadow: 0 0 0 3px var(--ix-blue-shadow, rgba(91,127,255,0.20)) !important;
+}
+
+/* Disabled */
+.ix-picker-input:disabled,
+.ix-picker-input[disabled],
+.t-a .ix-picker-input:disabled,
+.t-a .ix-picker-input[disabled] {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  background-color: var(--ix-cream, #FAF9F5) !important;
+}
+
+/* ── PICKER-INPUT — CHANGED STATE ──────────────────────────
+   Same visual logic as chip--changed: gold-glow surface,
+   2px gold border. Distinctive at a glance.
+   ──────────────────────────────────────────────────────── */
+
+.ix-picker-input.ix-picker-input--changed,
+.t-a input.ix-picker-input--changed {
+  background-color: var(--ix-gold-glow, rgba(196,163,90,0.12)) !important;
+  background-image: none !important;
+  border: 2px solid var(--ix-changed-border, #C4A35A) !important;
+  /* Compensate the +0.5px border so the input doesn't shift */
+  padding: 8px 11px !important;
+  font-weight: 600 !important;
+  color: var(--ix-text-dark, #1e2a3a) !important;
+}
+
+.ix-picker-input--changed:focus,
+.t-a .ix-picker-input--changed:focus {
+  outline: none !important;
+  box-shadow: var(--ix-shadow-gold, 0 0 0 3px rgba(196,163,90,0.20)) !important;
+}
+
+/* ── PICKER LIST + OPTIONS ────────────────────────────────
+   Positioned dropdown that appears beneath the input. Hidden
+   by default via the `hidden` attribute OR an inline display
+   override controlled by JS. Consumers should toggle the
+   `hidden` attribute, not class names, to follow native a11y.
+   ──────────────────────────────────────────────────────── */
+
+.ix-picker-list,
+.t-a .ix-picker-list {
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: var(--ix-z-dropdown, 5000) !important;
+  max-height: 280px !important;
+  overflow-y: auto !important;
+  margin: 0 !important;
+  padding: 4px 0 !important;
+  background-color: var(--ix-white, #FFFFFF) !important;
+  border: 1px solid var(--ix-border, #e4e0d4) !important;
+  border-radius: var(--ix-radius-sm, 8px) !important;
+  box-shadow: var(--ix-shadow-md, 0 4px 24px rgba(91,127,255,0.06)) !important;
+}
+
+.ix-picker-list[hidden],
+.t-a .ix-picker-list[hidden] {
+  display: none !important;
+}
+
+.ix-picker-option,
+.t-a .ix-picker-option {
+  display: block !important;
+  padding: 9px 12px !important;
+  font-family: var(--ix-font-body, 'DM Sans', system-ui, sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  color: var(--ix-text-dark, #1e2a3a) !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--ix-border-soft, #eee9dc) !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  width: 100% !important;
+  transition: background-color 0.1s !important;
+}
+
+.ix-picker-option:last-child,
+.t-a .ix-picker-option:last-child {
+  border-bottom: 0 !important;
+}
+
+.ix-picker-option:hover,
+.ix-picker-option:focus-visible,
+.t-a .ix-picker-option:hover,
+.t-a .ix-picker-option:focus-visible {
+  background-color: var(--ix-cream, #FAF9F5) !important;
+  outline: none !important;
+}
+
+.ix-picker-option-meta,
+.t-a .ix-picker-option-meta {
+  display: block !important;
+  margin-top: 2px !important;
+  font-family: var(--ix-font-mono, 'DM Mono', monospace) !important;
+  font-size: 11px !important;
+  color: var(--ix-text-light, #8a8e9a) !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   IX-CHIP-GROUP — wrapper for chip rows
+   Only adds layout; no visual treatment. Optional helper.
+   ════════════════════════════════════════════════════════════ */
+
+.ix-chip-group,
+.t-a .ix-chip-group {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   IX-REVERT — small text-link cancel/revert action
+   Used at two scopes:
+     • Per-control revert (e.g., "Change" link beside a step
+       label that has a saved selection)
+     • Flow-level cancel (e.g., "Cancel" link in a cascade
+       footer to abandon the whole flow)
+   Visually identical at both scopes.
+   ════════════════════════════════════════════════════════════ */
+
+.ix-revert,
+.t-a button.ix-revert,
+.t-a a.ix-revert {
+  /* Reset */
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  /* Layout */
+  display: inline-block !important;
+  padding: 2px 4px !important;
+  /* Type */
+  font-family: var(--ix-font-body, 'DM Sans', system-ui, sans-serif) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  text-decoration: underline !important;
+  text-underline-offset: 2px !important;
+  color: var(--ix-text-mid, #5a6478) !important;
+  /* Behavior */
+  cursor: pointer !important;
+  transition: color 0.15s !important;
+}
+
+.ix-revert:hover:not(:disabled),
+.t-a .ix-revert:hover:not(:disabled) {
+  color: var(--ix-text-dark, #1e2a3a) !important;
+}
+
+.ix-revert:focus-visible,
+.t-a .ix-revert:focus-visible {
+  outline: none !important;
+  color: var(--ix-text-dark, #1e2a3a) !important;
+  text-decoration-thickness: 2px !important;
+}
+
+.ix-revert:disabled,
+.ix-revert[disabled],
+.t-a .ix-revert:disabled,
+.t-a .ix-revert[disabled] {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  text-decoration: underline !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   END · ix-form-controls-v1.0.0.css
+   ════════════════════════════════════════════════════════════ */
