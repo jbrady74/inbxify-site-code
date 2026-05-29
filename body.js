@@ -2,14 +2,7 @@
    INBXIFY — Site-Wide Body Code
    Repo: jbrady74/inbxify-site-code
    File: body.js
-   Version: 1.14 — May 2026
-
-CHANGES FROM 1.13:
-- [NEW] Section 19: Splash Arrival Fade-In. When ?splashed=1 is present
-  (reader arrived from splash.inbxify.com), fades the page up from teal
-  #142e2e to match the splash exit. Gated to splash arrivals only;
-  700ms safety reveal; strips the param on load. Needs companion CSS
-  in site head (see Section 19 comment).
+   Version: 1.13 — May 2026
 
 CHANGES FROM 1.12:
 - [NEW] Section 18: Article Body HTML Embed — Un-escape post-body-html.
@@ -986,55 +979,4 @@ document.addEventListener('DOMContentLoaded', function() {
     // Script may load after DOMContentLoaded if deferred
     unescapeArticleBodyEmbed();
   }
-})();
-
-
-/* ── 19. SPLASH ARRIVAL FADE-IN ─────────────────────
-   When a reader arrives from splash.inbxify.com, the destination URL
-   carries ?splashed=1 (or &splashed=1). The splash exits over teal
-   (#142e2e); this fades the newsletter/article page UP from the same
-   teal so the hand-off is seamless instead of a hard snap.
-
-   Companion CSS (site head / head-v2.x.css):
-     html.splash-arrival, html.splash-arrival body { background:#142e2e !important; }
-     html.splash-arrival body { opacity:0; }
-     html.splash-arrival.splash-reveal body { opacity:1; transition:opacity .45s ease; }
-
-   Mechanics:
-   - Runs as early as possible (top of body.js, NOT inside DOMContentLoaded)
-     so html.splash-arrival is set before the body paints.
-   - Only fires when splashed=1 is present — normal loads/refreshes are
-     untouched (no flag = no hide, page shows instantly).
-   - Strips the param via history.replaceState so a refresh doesn't re-fade.
-   - SAFETY: a hard fallback reveals the page after 700ms no matter what,
-     so a script hiccup can never leave the page invisible.
-*/
-(function () {
-  'use strict';
-  var qs = window.location.search;
-  if (qs.indexOf('splashed=1') === -1) return;   // normal load — do nothing
-
-  var html = document.documentElement;
-  html.classList.add('splash-arrival');           // hides body via CSS (opacity 0)
-
-  function reveal() {
-    html.classList.add('splash-reveal');           // triggers the fade-up
-  }
-
-  // Strip splashed=1 cleanly so refresh won't re-trigger
-  try {
-    var clean = qs.replace(/[?&]splashed=1/, '');
-    if (clean === '?') clean = '';
-    history.replaceState(null, '', window.location.pathname + clean + window.location.hash);
-  } catch (e) {}
-
-  // Reveal on DOM ready (content is there to fade up)
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', reveal);
-  } else {
-    reveal();
-  }
-
-  // SAFETY NET: never leave the page hidden, whatever happens
-  setTimeout(reveal, 700);
 })();
