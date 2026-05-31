@@ -1,0 +1,251 @@
+/* ============================================================
+   ta-asset-manager-v0.1.0.css
+   INBXIFY TA Studio — Asset Manager
+   Companion script: ta-asset-manager-v0.1.0.js
+
+   v0.1.0 — SCAFFOLD. Studio design system (teal/gold/cream,
+            DM Sans / Fraunces). Overlay shell mirrors .asf-overlay.
+            Left render pane (iframe) + right params sidebar with
+            subtle per-MEDIA Name + ID captions.
+   ============================================================ */
+
+.ta-asset-manager {
+  --teal:#1a3a3a;
+  --teal-light:#244a4a;
+  --gold:#c4a35a;
+  --gold-deep:#a98639;
+  --cream-bg:#faf9f5;
+  --canvas:#ffffff;
+  --tile-border:#e8e4d8;
+  --text-dark:#1a3a3a;
+  --text-mid:#5a6a5a;
+  --text-light:#8a8a7a;
+  --text-tiny:#a0a090;
+  --row-bg:#fafaf6;
+  --mono:'SFMono-Regular',ui-monospace,Menlo,Consolas,monospace;
+
+  font-family:'DM Sans',system-ui,-apple-system,sans-serif;
+  color:var(--text-dark);
+  -webkit-font-smoothing:antialiased;
+}
+.ta-asset-manager *,
+.ta-asset-manager *::before,
+.ta-asset-manager *::after { box-sizing:border-box; }
+
+/* ── Overlay shell (mirrors .asf-overlay) ── */
+.am-overlay {
+  position:fixed;
+  inset:0;
+  background:var(--teal);
+  z-index:10000;
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+.am-panel {
+  width:100%;
+  max-width:1400px;
+  background:var(--cream-bg);
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+.am-shell { display:flex; flex-direction:column; flex:1; }
+
+/* ── Header ── */
+.am-header {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  padding:24px 32px 20px;
+  border-bottom:1px solid var(--tile-border);
+  background:var(--canvas);
+}
+.am-eyebrow {
+  display:block;
+  font-size:11px;
+  letter-spacing:0.12em;
+  font-weight:600;
+  color:var(--gold-deep);
+  margin-bottom:6px;
+}
+.am-title {
+  font-family:'Fraunces',Georgia,serif;
+  font-size:30px;
+  font-weight:600;
+  color:var(--teal);
+  line-height:1.1;
+  margin:0;
+}
+.am-header-r { display:flex; gap:10px; flex-shrink:0; }
+
+/* ── Body: render pane (left) + sidebar (right) ── */
+.am-body {
+  display:flex;
+  flex:1;
+  min-height:0;
+  gap:0;
+}
+.am-render {
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  background:#eceae0;
+  min-width:0;
+}
+.am-render--empty {
+  align-items:center;
+  justify-content:center;
+  padding:60px;
+}
+.am-render-note {
+  max-width:360px;
+  text-align:center;
+  color:var(--text-light);
+  font-size:14px;
+  line-height:1.5;
+}
+.am-render-bar {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 16px;
+  background:var(--canvas);
+  border-bottom:1px solid var(--tile-border);
+  font-size:12px;
+}
+.am-render-dot {
+  width:8px; height:8px; border-radius:50%;
+  background:var(--gold);
+  flex-shrink:0;
+}
+.am-render-url {
+  color:var(--text-mid);
+  font-family:var(--mono);
+  font-size:11px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  flex:1;
+}
+.am-render-open {
+  color:var(--gold-deep);
+  font-weight:600;
+  text-decoration:none;
+  flex-shrink:0;
+}
+.am-render-open:hover { text-decoration:underline; }
+.am-iframe {
+  flex:1;
+  width:100%;
+  border:0;
+  background:#fff;
+}
+
+/* ── Sidebar ── */
+.am-sidebar {
+  flex:0 0 360px;
+  background:var(--canvas);
+  border-left:1px solid var(--tile-border);
+  padding:24px;
+  overflow-y:auto;
+}
+.am-sb-section { margin-bottom:28px; }
+.am-sb-h {
+  font-size:12px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  font-weight:700;
+  color:var(--teal);
+  margin:0 0 12px;
+  padding-bottom:8px;
+  border-bottom:2px solid var(--teal);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.am-sb-count {
+  font-size:11px;
+  background:var(--teal);
+  color:#fff;
+  border-radius:10px;
+  padding:1px 8px;
+  font-weight:600;
+}
+.am-sb-rows { display:flex; flex-direction:column; }
+.am-sb-row {
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:7px 0;
+  border-bottom:1px solid #f0eee4;
+  font-size:13px;
+}
+.am-sb-label { color:var(--text-light); flex-shrink:0; }
+.am-sb-value { color:var(--text-dark); text-align:right; font-weight:500; }
+.am-sb-value.mono { font-family:var(--mono); font-size:11px; color:var(--text-mid); }
+
+/* ── Media list — subtle Name + ID captions ── */
+.am-media-list { display:flex; flex-direction:column; gap:10px; }
+.am-media-item {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  padding:8px;
+  background:var(--row-bg);
+  border:1px solid var(--tile-border);
+  border-radius:8px;
+}
+.am-media-thumb {
+  width:48px; height:48px;
+  border-radius:6px;
+  object-fit:cover;
+  flex-shrink:0;
+  background:#e4e1d4;
+}
+.am-media-thumb--none {
+  display:block;
+}
+.am-media-meta {
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  min-width:0;
+}
+.am-media-role {
+  font-size:11px;
+  font-weight:600;
+  color:var(--gold-deep);
+  letter-spacing:0.04em;
+}
+.am-media-name {
+  font-size:12px;
+  color:var(--text-dark);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+/* subtle, muted, small — testing affordance, not a focal element */
+.am-media-id {
+  font-size:10px;
+  color:var(--text-tiny);
+  font-family:var(--mono);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.am-media-empty,
+.am-media-list .am-media-empty {
+  font-size:13px;
+  color:var(--text-light);
+  padding:8px 0;
+}
+
+/* ── Responsive: stack on narrow ── */
+@media (max-width:900px) {
+  .am-body { flex-direction:column; }
+  .am-sidebar { flex:1 1 auto; border-left:0; border-top:1px solid var(--tile-border); }
+  .am-render { min-height:50vh; }
+}
