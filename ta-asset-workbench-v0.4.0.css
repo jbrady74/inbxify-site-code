@@ -1,0 +1,275 @@
+/* ============================================================
+   ta-asset-workbench-v0.4.0.css
+   INBXIFY TA Studio — Asset Workbench
+   Companion script: ta-asset-workbench-v0.4.0.js
+
+   v0.3.3 — No style changes (filename parity w/ JS preview-proxy fix). v0.3.2 — All-asset-type support (no new styles; reuses awb- system).
+            v0.2.0 — Read-webhook hydration + loading state + real URL
+            pattern. v0.1.0 — SCAFFOLD. Studio design system (teal/gold/cream,
+            DM Sans / Fraunces). Overlay shell mirrors .asf-overlay.
+            Left render pane (iframe) + right params sidebar with
+            subtle per-MEDIA Name + ID captions.
+   ============================================================ */
+
+.ta-asset-workbench {
+  --teal:#1a3a3a;
+  --teal-light:#244a4a;
+  --gold:#c4a35a;
+  --gold-deep:#a98639;
+  --cream-bg:#faf9f5;
+  --canvas:#ffffff;
+  --tile-border:#e8e4d8;
+  --text-dark:#1a3a3a;
+  --text-mid:#5a6a5a;
+  --text-light:#8a8a7a;
+  --text-tiny:#a0a090;
+  --row-bg:#fafaf6;
+  --mono:'SFMono-Regular',ui-monospace,Menlo,Consolas,monospace;
+
+  font-family:'DM Sans',system-ui,-apple-system,sans-serif;
+  color:var(--text-dark);
+  -webkit-font-smoothing:antialiased;
+}
+.ta-asset-workbench *,
+.ta-asset-workbench *::before,
+.ta-asset-workbench *::after { box-sizing:border-box; }
+
+/* ── Overlay shell (mirrors .asf-overlay) ── */
+.awb-overlay {
+  position:fixed;
+  inset:0;
+  background:var(--teal);
+  z-index:10000;
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+.awb-panel {
+  width:100%;
+  max-width:1400px;
+  background:var(--cream-bg);
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+.awb-shell { display:flex; flex-direction:column; flex:1; }
+
+/* ── Header ── */
+.awb-header {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  padding:24px 32px 20px;
+  border-bottom:1px solid var(--tile-border);
+  background:var(--canvas);
+}
+.awb-eyebrow {
+  display:block;
+  font-size:11px;
+  letter-spacing:0.12em;
+  font-weight:600;
+  color:var(--gold-deep);
+  margin-bottom:6px;
+}
+.awb-title {
+  font-family:'Fraunces',Georgia,serif;
+  font-size:30px;
+  font-weight:600;
+  color:var(--teal);
+  line-height:1.1;
+  margin:0;
+}
+.awb-header-r { display:flex; gap:10px; flex-shrink:0; }
+
+/* ── Body: render pane (left) + sidebar (right) ── */
+.awb-body {
+  display:flex;
+  flex:1;
+  min-height:0;
+  gap:0;
+}
+.awb-render {
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  background:#eceae0;
+  min-width:0;
+}
+.awb-render--empty {
+  align-items:center;
+  justify-content:center;
+  padding:60px;
+}
+.awb-render-note {
+  max-width:360px;
+  text-align:center;
+  color:var(--text-light);
+  font-size:14px;
+  line-height:1.5;
+}
+.awb-render-bar {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 16px;
+  background:var(--canvas);
+  border-bottom:1px solid var(--tile-border);
+  font-size:12px;
+}
+.awb-render-dot {
+  width:8px; height:8px; border-radius:50%;
+  background:var(--gold);
+  flex-shrink:0;
+}
+.awb-render-url {
+  color:var(--text-mid);
+  font-family:var(--mono);
+  font-size:11px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  flex:1;
+}
+.awb-render-open {
+  color:var(--gold-deep);
+  font-weight:600;
+  text-decoration:none;
+  flex-shrink:0;
+}
+.awb-render-open:hover { text-decoration:underline; }
+.awb-iframe {
+  flex:1;
+  width:100%;
+  border:0;
+  background:#fff;
+}
+
+/* ── Sidebar ── */
+.awb-sidebar {
+  flex:0 0 360px;
+  background:var(--canvas);
+  border-left:1px solid var(--tile-border);
+  padding:24px;
+  overflow-y:auto;
+}
+.awb-sb-section { margin-bottom:28px; }
+.awb-sb-h {
+  font-size:12px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  font-weight:700;
+  color:var(--teal);
+  margin:0 0 12px;
+  padding-bottom:8px;
+  border-bottom:2px solid var(--teal);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.awb-sb-count {
+  font-size:11px;
+  background:var(--teal);
+  color:#fff;
+  border-radius:10px;
+  padding:1px 8px;
+  font-weight:600;
+}
+.awb-sb-rows { display:flex; flex-direction:column; }
+.awb-sb-row {
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:7px 0;
+  border-bottom:1px solid #f0eee4;
+  font-size:13px;
+}
+.awb-sb-label { color:var(--text-light); flex-shrink:0; }
+.awb-sb-value { color:var(--text-dark); text-align:right; font-weight:500; }
+.awb-sb-value.mono { font-family:var(--mono); font-size:11px; color:var(--text-mid); }
+
+/* ── Media list — subtle Name + ID captions ── */
+.awb-media-list { display:flex; flex-direction:column; gap:10px; }
+.awb-media-item {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  padding:8px;
+  background:var(--row-bg);
+  border:1px solid var(--tile-border);
+  border-radius:8px;
+}
+.awb-media-thumb {
+  width:48px; height:48px;
+  border-radius:6px;
+  object-fit:cover;
+  flex-shrink:0;
+  background:#e4e1d4;
+}
+.awb-media-thumb--none {
+  display:block;
+}
+.awb-media-meta {
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  min-width:0;
+}
+.awb-media-role {
+  font-size:11px;
+  font-weight:600;
+  color:var(--gold-deep);
+  letter-spacing:0.04em;
+}
+.awb-media-name {
+  font-size:12px;
+  color:var(--text-dark);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+/* subtle, muted, small — testing affordance, not a focal element */
+.awb-media-id {
+  font-size:10px;
+  color:var(--text-tiny);
+  font-family:var(--mono);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.awb-media-empty,
+.awb-media-list .awb-media-empty {
+  font-size:13px;
+  color:var(--text-light);
+  padding:8px 0;
+}
+
+
+/* ── Loading state ── */
+.awb-loading {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  min-height:60vh;
+  color:var(--text-light);
+  font-size:14px;
+}
+.awb-spinner {
+  width:32px; height:32px;
+  border:3px solid var(--tile-border);
+  border-top-color:var(--gold);
+  border-radius:50%;
+  animation:awb-spin 0.8s linear infinite;
+}
+@keyframes awb-spin { to { transform:rotate(360deg); } }
+
+/* ── Responsive: stack on narrow ── */
+@media (max-width:900px) {
+  .awb-body { flex-direction:column; }
+  .awb-sidebar { flex:1 1 auto; border-left:0; border-top:1px solid var(--tile-border); }
+  .awb-render { min-height:50vh; }
+}
