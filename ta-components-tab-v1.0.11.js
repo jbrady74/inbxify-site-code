@@ -336,8 +336,14 @@
 
       // Card actions
       var card = t.closest && t.closest('[data-cmp-card]');
+      // v1.0.11: attach panel is a sibling of the row, not a child.
+      // Catch clicks inside .cmp-row-panel and resolve the mediaId from data-cmp-panel.
+      if (!card) {
+        var panel = t.closest && t.closest('[data-cmp-panel]');
+        if (panel) card = { getAttribute: function() { return panel.getAttribute('data-cmp-panel'); } };
+      }
       if (card) {
-        var cardId = card.getAttribute('data-cmp-card');
+        var cardId = card.getAttribute('data-cmp-card') || card.getAttribute('data-cmp-panel');
 
         // Expand preview (lightbox)
         if (t.closest('[data-cmp-card-action="expand-preview"]')) {
@@ -388,8 +394,8 @@
           cancelInlineEdit(); return;
         }
 
-        // Guard: don't toggle selection when clicking inside inline-edit
-        if (t.closest('.cmp-inline-edit')) return;
+        // Guard: don't toggle selection when clicking inside inline-edit or attach panel
+        if (t.closest('.cmp-inline-edit') || t.closest('.cmp-attach-panel')) return;
 
         // Default: toggle selection
         toggleSelection(cardId);
