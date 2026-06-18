@@ -316,7 +316,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 /* ── 5. INACTIVITY TIMER (20 min) ───────────────── */
-const INACTIVITY_LIMIT = 1200000;
+const INACTIVITY_LIMIT = 12000000;
 const STORAGE_KEY = 'lastActivityTime';
 
 function getLastActivityTime() {
