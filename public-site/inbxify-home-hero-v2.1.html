@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<!-- File: inbxify-home-hero-v2.1.html | Full hero: navy band, left copy + right cover->phone animation.
+     v2.1 change: four-tile fan-out replaced by single iPhone showing one Cedar Hollow NOW newsletter.
+     Sequence: cover holds full-size (setup beat) -> shrinks up-left (THE PRINT ISSUE) -> gold arrow -> phone resolves in -> closing line.
+     Cycle: plays on load after START_DELAY, then 2 more times (8s rest from end of each), then freezes. First cover-hold longer than replays. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INBXIFY Hero v2.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500;1,9..144,600&family=DM+Sans:wght@400;500;600;700&family=Archivo:wght@600;700;800;900&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ibx-blue:#5b7fff; --ibx-blue-soft:#7d97ff; --ibx-gold:#C4A35A; --ibx-yellow:#f4e2a8;
+    --ibx-navy:#0F1839; --ibx-navy2:#16234d; --ibx-cream:#FAF9F5; --ibx-text:#1a3a3a;
+    --ch-green:#1f4d3a; --ch-green-deep:#163a2c; --ch-paper:#fdfdfb; --ch-ink:#1a3a3a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:transparent}
+  .hero{position:relative;overflow:hidden;background:radial-gradient(130% 90% at 78% -5%,var(--ibx-navy2) 0%,var(--ibx-navy) 58%);font-family:'DM Sans',system-ui,sans-serif}
+  .inner{max-width:1220px;margin:0 auto;padding:84px 40px 92px;display:grid;grid-template-columns:1.02fr 1fr;gap:48px;align-items:stretch;position:relative;z-index:2}
+
+  /* bauhaus accents */
+  .bh{position:absolute;inset:0;z-index:0;pointer-events:none}
+  .bh .ring{position:absolute;border-radius:50%;border:1px solid rgba(196,163,90,.22)}
+  .bh .r1{width:360px;height:360px;top:-70px;right:-90px}
+  .bh .r2{width:230px;height:230px;top:-5px;right:5px;border-color:rgba(91,127,255,.28)}
+  .bh .dot{position:absolute;top:120px;right:235px;width:14px;height:14px;border-radius:50%;background:var(--ibx-gold);opacity:.85}
+
+  /* LEFT */
+  .copy{display:flex;flex-direction:column;height:100%;padding:20px 0 46px}
+  .eyebrow{display:flex;align-items:center;gap:12px;color:var(--ibx-gold);font-size:13px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;margin:0 0 20px}
+  .eyebrow:before{content:"";width:34px;height:1px;background:var(--ibx-gold);opacity:.7}
+  h1.title{font-family:'Fraunces',serif;font-weight:500;color:#fff;font-size:64px;line-height:1.04;letter-spacing:-.01em;margin:0}
+  h1.title em{font-style:italic;font-weight:400;color:var(--ibx-blue-soft)}
+  .sub{color:#aeb6d4;font-size:18px;line-height:1.6;max-width:520px;margin:34px 0 0}
+  .sub b{color:#fff;font-weight:600}
+  .cta{display:flex;gap:14px;flex-wrap:wrap;margin:44px 0 0}
+  .btn{font-family:'DM Sans';font-size:16px;font-weight:600;padding:15px 30px;border-radius:12px;cursor:pointer;border:1px solid transparent;text-decoration:none;display:inline-block;transition:transform .15s,box-shadow .15s,background .15s}
+  .btn.primary{background:var(--ibx-blue);color:#fff;box-shadow:0 10px 28px rgba(91,127,255,.38)}
+  .btn.primary:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(91,127,255,.5)}
+  .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.28)}
+  .btn.ghost:hover{background:rgba(255,255,255,.06)}
+  .live{color:#8c95b8;font-size:15px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:auto;padding-top:40px}
+  .live .dotsep{width:5px;height:5px;border-radius:50%;background:var(--ibx-gold);display:inline-block}
+
+  /* RIGHT — animation stage */
+  .stageWrap{position:relative}
+  .stage{position:relative;width:100%;height:760px}
+  .sRing{position:absolute;border:1px solid rgba(196,163,90,.16);border-radius:50%;z-index:1}
+
+  /* magazine cover */
+  .cover{position:absolute;aspect-ratio:.773;border-radius:9px;overflow:hidden;
+    box-shadow:0 36px 70px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);
+    transition:all 1.15s cubic-bezier(.22,1,.36,1);z-index:6;background:var(--ch-green)}
+  .cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+  /* caption under the shrunk cover */
+  .covcap{position:absolute;z-index:7;opacity:0;transition:opacity .5s ease;
+    font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ibx-gold);white-space:nowrap}
+
+  /* connecting arrow */
+  .svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
+  .svg path.ln{fill:none;stroke:var(--ibx-gold);stroke-linecap:round;stroke-linejoin:round}
+  .svg path.hd{fill:var(--ibx-gold);stroke:none}
+
+  /* PHONE */
+  .phoneWrap{position:absolute;z-index:8;opacity:0;transform:translateY(24px) scale(.94);
+    transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1)}
+  .phone{position:relative;width:300px;height:618px;border-radius:46px;
+    background:linear-gradient(155deg,#2a2a2e,#0e0e10);padding:11px;
+    box-shadow:0 44px 80px rgba(0,0,0,.55),0 0 0 2px rgba(255,255,255,.05),inset 0 0 2px rgba(255,255,255,.2)}
+  .phone:before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
+    width:112px;height:26px;background:#0e0e10;border-radius:0 0 16px 16px;z-index:5}
+  .screen{position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden;background:#fff}
+  .scroll{position:absolute;inset:0;overflow:hidden}
+
+  .mailbar{background:#f3f4f6;border-bottom:1px solid #e3e4e7;padding:28px 13px 8px;display:flex;align-items:center;gap:8px}
+  .mailbar .av{width:24px;height:24px;border-radius:50%;background:var(--ch-green);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .mailbar .meta{flex:1;min-width:0}
+  .mailbar .from{font-size:11px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mailbar .subj{font-size:9.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mailbar .time{font-size:8.5px;color:#9ca3af}
+
+  .email{background:var(--ch-paper)}
+  .masthead{background:var(--ch-green);padding:24px 16px 20px;text-align:center;position:relative;overflow:hidden}
+  .masthead .ghost{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:'Archivo',sans-serif;font-weight:900;font-size:100px;color:rgba(255,255,255,.03);letter-spacing:-.04em;pointer-events:none}
+  .masthead .kick{position:relative;z-index:1;color:var(--ibx-gold);font-size:8px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;margin-bottom:11px}
+  .wm{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;line-height:.86}
+  .wm .ch{font-family:'Oswald',sans-serif;font-weight:700;color:#fff;text-transform:uppercase;font-size:31px;letter-spacing:.01em;white-space:nowrap;line-height:1}
+  .wm .now{font-family:'Fraunces',serif;font-style:italic;font-weight:600;color:var(--ibx-gold);font-size:38px;margin-top:1px;text-shadow:0 2px 0 rgba(0,0,0,.22)}
+  .wm .rule{width:140px;height:2px;background:var(--ibx-gold);margin:13px auto 0;position:relative}
+  .wm .rule:before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:8px;height:8px;background:var(--ch-green);border:2px solid var(--ibx-gold);border-radius:50%}
+  .tag{position:relative;z-index:1;color:#cfe0d4;font-size:10px;letter-spacing:.05em;margin-top:12px}
+  .issueline{background:var(--ch-green-deep);display:flex;align-items:center;justify-content:center;gap:9px;padding:8px 12px;color:#cfe0d4;font-size:9px;font-weight:600;letter-spacing:.06em}
+  .issueline b{color:var(--ibx-gold);font-weight:700}
+  .issueline .sep{width:3px;height:3px;border-radius:50%;background:var(--ibx-gold);opacity:.7}
+  .lead{padding:18px 16px 6px}
+  .lead .ed{font-family:'Fraunces',serif;font-style:italic;font-weight:600;color:var(--ch-green);font-size:18px;line-height:1.16;text-align:center;margin-bottom:12px}
+  .lead .heroimg{width:100%;height:128px;border-radius:8px;overflow:hidden;box-shadow:0 8px 20px rgba(31,77,58,.16)}
+  .lead .heroimg img{width:100%;height:100%;object-fit:cover;object-position:center 68%;display:block}
+  .pub{display:flex;gap:11px;align-items:flex-start;padding:15px 16px 18px}
+  .pub .pic{width:46px;height:46px;border-radius:50%;flex:0 0 46px;border:2px solid var(--ibx-gold);background:linear-gradient(135deg,#3f6f5a,#244a3a);overflow:hidden;position:relative}
+  .pub .pic svg{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:40px;height:40px}
+  .pub .msg{font-family:'Fraunces',serif;font-style:italic;color:var(--ch-ink);font-size:12px;line-height:1.4}
+  .pub .by{font-style:normal;font-family:'DM Sans';font-size:9.5px;color:#7a8580;margin-top:6px;font-weight:600}
+  .wx{display:flex;justify-content:space-around;align-items:center;background:var(--ibx-cream);border-top:1px solid #ece8dd;border-bottom:1px solid #ece8dd;padding:9px 12px}
+  .wx .d{display:flex;align-items:center;gap:5px}
+  .wx .ic{font-size:13px}
+  .wx .day{font-size:7px;font-weight:700;letter-spacing:.08em;color:var(--ch-green);text-transform:uppercase}
+  .wx .t{font-size:11px;font-weight:700;color:var(--ch-ink)}
+  .wx .t span{color:#9aa39c;font-weight:500}
+  .fp{background:var(--ch-paper);padding:16px 16px 6px}
+  .fp .lab{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:10px}
+  .fp .lab span{color:#a39a82;font-size:8px;font-weight:700;letter-spacing:.18em}
+  .fp .lab i{height:1px;width:24px;background:#ddd5c4}
+  .ad{border:1px solid #e9e3d4;border-radius:9px;overflow:hidden;box-shadow:0 8px 20px rgba(31,77,58,.10)}
+  .ad .img{height:96px;background:linear-gradient(135deg,#6f8f57,#3f5e34);position:relative}
+  .ad .img:after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.32),transparent 55%)}
+  .ad .body{background:#fff;padding:12px 13px;display:flex;align-items:center;gap:11px}
+  .ad .logo{width:40px;height:40px;border-radius:8px;flex:0 0 40px;background:var(--ch-green);display:flex;align-items:center;justify-content:center;color:var(--ibx-gold);font-family:'Archivo';font-weight:900;font-size:16px}
+  .ad .txt{flex:1;min-width:0}
+  .ad .txt .bn{font-family:'Archivo',sans-serif;font-weight:800;font-size:12.5px;color:var(--ch-ink)}
+  .ad .txt .tl{font-size:10px;color:#6b7280;margin-top:2px}
+  .ad .cta{font-size:9.5px;font-weight:700;color:var(--ch-green);border:1.5px solid var(--ibx-gold);border-radius:18px;padding:6px 11px;white-space:nowrap}
+  .towns{margin-top:14px;background:var(--ch-green-deep);text-align:center;padding:12px 10px;color:#fff;font-size:8px;font-weight:700;letter-spacing:.08em}
+  .towns span{color:var(--ibx-gold);margin:0 4px;opacity:.75}
+
+  /* closing line */
+  .close{position:absolute;left:0;right:0;top:664px;text-align:center;z-index:9;opacity:0;transform:translateY(8px);transition:opacity .6s,transform .6s}
+  .close .ct{font-family:'Fraunces',serif;font-style:italic;font-size:18px;color:var(--ibx-yellow);line-height:1.3}
+  .close .cs{display:block;font-size:12.5px;letter-spacing:.04em;color:#aab4d6;margin-top:7px}
+
+  @media(max-width:900px){
+    .inner{grid-template-columns:1fr;gap:30px;padding:54px 24px 64px}
+    h1.title{font-size:46px}
+    .stage{height:720px;display:flex;flex-direction:column;align-items:center}
+    .bh .r1,.bh .r2,.bh .dot{display:none}
+  }
+</style></head>
+<body>
+<section class="hero">
+  <div class="bh"><span class="ring r1"></span><span class="ring r2"></span><span class="dot"></span></div>
+  <div class="inner">
+    <!-- LEFT -->
+    <div class="copy">
+      <div class="eyebrow">For local print publishers</div>
+      <h1 class="title">Fill the silence <em>between</em> your print issues.</h1>
+      <p class="sub">INBXIFY turns the quiet weeks between issues into a <b>new revenue stream</b>. You reuse the content you already create and sell fresh ad slots in a newsletter that reaches your community more often than print alone.</p>
+      <div class="cta">
+        <a class="btn primary" href="#contact">Let's talk</a>
+        <a class="btn ghost" href="/how-it-works">See how it works</a>
+      </div>
+      <div class="live">Now live with Bergen Neighbors Media <span class="dotsep"></span> Wyckoff Living NOW</div>
+    </div>
+    <!-- RIGHT -->
+    <div class="stageWrap">
+      <div class="stage" id="stage">
+        <div class="sRing" style="width:220px;height:220px;top:-20px;right:-30px"></div>
+        <svg class="svg" id="svg"></svg>
+
+        <div class="cover" id="cover" style="left:50%;top:20px;height:560px;margin-left:-216px;transform:rotate(-2deg)">
+          <img src="https://uyluucdnr2.ucarecd.net/875b0fcf-d3d9-4d27-b039-07293762b0e5/magazinecover.png" alt="Cedar Hollow Magazine cover">
+        </div>
+        <div class="covcap" id="covcap">The print issue</div>
+
+        <div class="phoneWrap" id="phoneWrap">
+          <div class="phone"><div class="screen"><div class="scroll">
+            <div class="mailbar">
+              <div class="av">CH</div>
+              <div class="meta"><div class="from">Cedar Hollow NOW</div><div class="subj">Summer on the river — your weekend read</div></div>
+              <div class="time">5:05 PM</div>
+            </div>
+            <div class="email">
+              <div class="masthead">
+                <div class="ghost">CH</div>
+                <div class="kick">From the magazine, every week</div>
+                <div class="wm"><span class="ch">Cedar Hollow</span><span class="now">NOW</span><span class="rule"></span></div>
+                <div class="tag">People, Stories &amp; Life from Around Town</div>
+              </div>
+              <div class="issueline"><span>ISSUE <b>14</b></span><span class="sep"></span><span>FRIDAY, JUN 28 <b>2026</b></span></div>
+              <div class="lead"><div class="ed">Summer Comes to the River</div><div class="heroimg"><img src="https://uyluucdnr2.ucarecd.net/875b0fcf-d3d9-4d27-b039-07293762b0e5/magazinecover.png" alt="Summer on the Cedar Hollow river"></div></div>
+              <div class="pub">
+                <div class="pic"><svg viewBox="0 0 46 46"><circle cx="23" cy="17" r="9" fill="rgba(255,255,255,.55)"/><path d="M6 46c0-10 8-15 17-15s17 5 17 15z" fill="rgba(255,255,255,.55)"/></svg></div>
+                <div><div class="msg">The dam trail is green again and the band shell schedule just dropped. Here is your guide to a slow Cedar Hollow weekend.</div><div class="by">Margaret Ellison, Publisher</div></div>
+              </div>
+              <div class="wx">
+                <div class="d"><span class="ic">☀️</span><div><div class="day">Sun</div><div class="t">82°<span> 61°</span></div></div></div>
+                <div class="d"><span class="ic">⛅</span><div><div class="day">Mon</div><div class="t">85°<span> 64°</span></div></div></div>
+                <div class="d"><span class="ic">☀️</span><div><div class="day">Tue</div><div class="t">87°<span> 66°</span></div></div></div>
+              </div>
+              <div class="fp">
+                <div class="lab"><i></i><span>FEATURED LOCAL PARTNER</span><i></i></div>
+                <div class="ad">
+                  <div class="img"></div>
+                  <div class="body"><div class="logo">R</div><div class="txt"><div class="bn">Riverside Hardware</div><div class="tl">On Main since 1962 · garden &amp; grill ready</div></div><div class="cta">Visit →</div></div>
+                </div>
+              </div>
+              <div class="towns">CEDAR HOLLOW<span>|</span>BRIARTON<span>|</span>MILLBROOK<span>|</span>NORWICH<span>|</span>ASHGROVE</div>
+            </div>
+          </div></div></div>
+        </div>
+
+        <div class="close" id="close"><span class="ct">One print issue. A newsletter every week.</span><span class="cs">Net-new ad inventory between every run.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  var stage=document.getElementById('stage'),svg=document.getElementById('svg'),cov=document.getElementById('cover'),
+      covcap=document.getElementById('covcap'),phoneWrap=document.getElementById('phoneWrap'),close=document.getElementById('close');
+
+  var START_DELAY=2600;     // ms after load before first play
+  var HOLD_FIRST=1800;      // cover-hold beat, first play
+  var HOLD_REPLAY=1300;     // cover-hold beat, replays
+  var REST=8000;            // ms to hold finished frame before next play
+  var TOTAL_PLAYS=3;        // play once + 2 replays, then freeze
+  var playCount=0;
+
+  function sizeSvg(){var r=stage.getBoundingClientRect();svg.setAttribute('viewBox','0 0 '+r.width+' '+r.height);svg.setAttribute('width',r.width);svg.setAttribute('height',r.height);}
+  function headAt(x,y,ang){var hl=9,s=.46;var b1x=x-Math.cos(ang-s)*hl,b1y=y-Math.sin(ang-s)*hl,b2x=x-Math.cos(ang+s)*hl,b2y=y-Math.sin(ang+s)*hl;var p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d','M'+b1x+' '+b1y+' L'+x+' '+y+' L'+b2x+' '+b2y+' Z');p.setAttribute('class','hd');p.setAttribute('opacity','0');return p;}
+
+  function reset(){
+    svg.innerHTML='';
+    cov.style.transition='none';
+    cov.style.height='560px';cov.style.top='20px';cov.style.left='50%';cov.style.marginLeft='-216px';cov.style.transform='rotate(-2deg)';
+    covcap.style.transition='none';covcap.style.opacity='0';
+    phoneWrap.style.transition='none';phoneWrap.style.opacity='0';phoneWrap.style.transform='translateY(24px) scale(.94)';
+    close.style.transition='none';close.style.opacity='0';close.style.transform='translateY(8px)';
+    void stage.offsetWidth;
+  }
+
+  function play(){
+    reset();sizeSvg();
+    var sr=stage.getBoundingClientRect();
+    var hold=(playCount===0)?HOLD_FIRST:HOLD_REPLAY;
+
+    // 0) cover holds full-size for the setup beat, THEN shrinks
+    setTimeout(function(){
+      var mh=150, mw=Math.round(mh*.773);
+      var coverLeft=46, coverTop=40;
+      cov.style.transition='all 1.15s cubic-bezier(.22,1,.36,1)';
+      cov.style.height=mh+'px';cov.style.top=coverTop+'px';cov.style.left=coverLeft+'px';cov.style.marginLeft='0';cov.style.transform='rotate(-3deg)';
+
+      var phoneW=300, phoneH=618;
+      phoneWrap.style.left=(sr.width-phoneW-12)+'px';
+      phoneWrap.style.top='8px';
+
+      // caption under shrunk cover
+      setTimeout(function(){
+        var cr=cov.getBoundingClientRect();
+        covcap.style.left=(cr.left-sr.left)+'px';
+        covcap.style.top=(cr.bottom-sr.top+10)+'px';
+        covcap.style.opacity='1';
+      },700);
+
+      // arrow + phone
+      setTimeout(function(){
+        var cr=cov.getBoundingClientRect();
+        var pr=phoneWrap.getBoundingClientRect();
+        var ox=cr.right-sr.left-6, oy=cr.top-sr.top+cr.height*0.5;
+        var tx=pr.left-sr.left-6, ty=pr.top-sr.top+pr.height*0.30;
+        var midx=(ox+tx)/2;
+        var dd='M'+ox+' '+oy+' C'+midx+' '+oy+' '+midx+' '+ty+' '+tx+' '+ty;
+        var p=document.createElementNS('http://www.w3.org/2000/svg','path');
+        p.setAttribute('d',dd);p.setAttribute('class','ln');p.setAttribute('stroke-width','1.4');p.setAttribute('opacity','.55');
+        svg.appendChild(p);var L=p.getTotalLength();p.setAttribute('stroke-dasharray',L);p.setAttribute('stroke-dashoffset',L);
+        var hd=headAt(tx,ty,0);svg.appendChild(hd);
+        requestAnimationFrame(function(){p.style.transition='stroke-dashoffset .7s ease';p.style.strokeDashoffset='0';});
+        setTimeout(function(){hd.style.transition='opacity .25s';hd.style.opacity='.8';},640);
+        setTimeout(function(){
+          phoneWrap.style.transition='opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1)';
+          phoneWrap.style.opacity='1';phoneWrap.style.transform='translateY(0) scale(1)';
+        },560);
+      },1300);
+
+      // closing line, then schedule next play (REST measured from here)
+      setTimeout(function(){
+        close.style.transition='opacity .6s,transform .6s';close.style.opacity='1';close.style.transform='translateY(0)';
+        playCount++;
+        if(playCount<TOTAL_PLAYS){ setTimeout(play, REST); }
+      },2500);
+    },hold);
+  }
+
+  function showEndState(){
+    reset();
+    var sr=stage.getBoundingClientRect();
+    var mh=150;cov.style.height=mh+'px';cov.style.top='40px';cov.style.left='46px';cov.style.marginLeft='0';cov.style.transform='rotate(-3deg)';
+    phoneWrap.style.left=(sr.width-312)+'px';phoneWrap.style.top='8px';
+    phoneWrap.style.opacity='1';phoneWrap.style.transform='none';covcap.style.opacity='1';close.style.opacity='1';close.style.transform='none';
+  }
+
+  window.addEventListener('resize',sizeSvg);
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    showEndState();
+  } else {
+    window.addEventListener('load',function(){ setTimeout(play, START_DELAY); });
+  }
+
+  /* auto-height to parent (matches hiw-loop pattern) */
+  function postH(){try{parent.postMessage({type:'ibx-hero-height',height:Math.ceil(document.querySelector('.hero').getBoundingClientRect().height)},'*');}catch(e){}}
+  window.addEventListener('load',postH);window.addEventListener('resize',postH);setTimeout(postH,300);setTimeout(postH,1200);
+})();
+</script>
+</body></html>
