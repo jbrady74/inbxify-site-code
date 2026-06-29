@@ -1,0 +1,101 @@
+<style>
+  /* Hero: center text + widen subhead. Scoped to .ibx-page-hero, overrides loader CSS. */
+  .ibx-page-hero .ibx-inner{ text-align:center !important; }
+  .ibx-page-hero .ibx-label{ display:inline-flex !important; justify-content:center !important; }
+  .ibx-page-hero h1{ margin-left:auto !important; margin-right:auto !important; }
+  .ibx-page-hero p{
+    max-width:720px !important;
+    margin-left:auto !important;
+    margin-right:auto !important;
+  }
+
+  /* ---- PAGE BAUHAUS (corner-anchored elements, tuned for cream bg) ---- */
+  .ibx-page-hero{ position:relative !important; overflow:hidden !important; }
+  .ibx-page-hero .ibx-inner{ position:relative !important; z-index:2 !important; }
+  .ibx-bauhaus{ position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  .ibx-bauhaus .b{ position:absolute; }
+  .ibx-bauhaus .b-rings{ top:-90px; right:-70px; width:360px; height:360px; }
+  .ibx-bauhaus .b-rings .ring{ position:absolute; border-radius:50%; border:2.5px solid var(--ibx-blue); }
+  .ibx-bauhaus .b-rings .r1{ inset:0; opacity:.28; }
+  .ibx-bauhaus .b-rings .r2{ inset:48px; opacity:.20; }
+  .ibx-bauhaus .b-rings .r3{ inset:96px; border-color:var(--ibx-gold); opacity:.45; }
+  .ibx-bauhaus .b-quarter{ top:0; right:0; width:120px; height:120px; background:var(--ibx-gold); opacity:.22; border-bottom-left-radius:120px; }
+  .ibx-bauhaus .b-dot{ top:80px; right:300px; width:22px; height:22px; border-radius:50%; background:var(--ibx-gold); opacity:.7; }
+  .ibx-bauhaus .b-bl{ bottom:60px; left:0; width:130px; height:130px; border:2.5px solid var(--ibx-blue); border-radius:50%; opacity:.22; }
+  .ibx-bauhaus .b-bl-dot{ bottom:118px; left:42px; width:28px; height:28px; border-radius:50%; background:var(--ibx-gold); opacity:.4; }
+  .ibx-bauhaus .b-line{ top:-20px; right:140px; width:300px; height:2px; background:var(--ibx-blue); opacity:.16; transform:rotate(45deg); transform-origin:right center; }
+
+  /* ---- DIAGRAM PANEL (light-blue + blue graph grid, option E) ---- */
+  .ibx-page-hero .ibx-hiw-loop{
+    position:relative; z-index:2;
+    background-color:var(--ibx-blue-light);
+    background-image:
+      linear-gradient(rgba(91,127,255,.10) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(91,127,255,.10) 1px, transparent 1px);
+    background-size:32px 32px;
+    border:1px solid var(--ibx-border-light);
+    border-radius:20px;
+    box-shadow:0 20px 50px rgba(20,30,60,.06);
+    padding:16px;
+  }
+
+  @media(max-width:760px){
+    .ibx-bauhaus .b-line{ display:none; }
+    .ibx-bauhaus .b-rings{ width:240px; height:240px; top:-60px; right:-50px; }
+    .ibx-bauhaus .b-rings .r2{ inset:32px; }
+    .ibx-bauhaus .b-rings .r3{ inset:64px; }
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/gh/jbrady74/inbxify-site-code@main/public-site/ibx-css-loader-v1.8.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/jbrady74/inbxify-site-code@main/public-site/ibx-inline-editor-v1.0.js?v=1.0"></script>
+<div class="ibx-site">
+<section class="ibx-page-hero"><div class="ibx-bauhaus" aria-hidden="true"><div class="b b-rings"><span class="ring r1"></span><span class="ring r2"></span><span class="ring r3"></span></div><div class="b b-quarter"></div><div class="b b-dot"></div><div class="b b-bl"></div><div class="b b-bl-dot"></div><div class="b b-line"></div></div><div class="ibx-inner" style="position:relative;z-index:2">
+  <div class="ibx-label" data-field-id="hiw-label">How It Works</div>
+  <h1 data-field-id="hiw-hero-h1">Every issue you print becomes a second product</h1>
+  <p data-field-id="hiw-hero-sub">You keep publishing your print title exactly as you do now. We build the newsletter from it, send it to local inboxes, and you sell the new ad inventory.</p>
+  <div class="ibx-hiw-loop" style="max-width:1100px;margin:32px auto 0">
+    <iframe
+      id="ibx-loop-frame"
+      src="https://rawcdn.githack.com/jbrady74/inbxify-site-code/main/hiw-animated-loop-v2.2.html"
+      style="width:100%; border:0; display:block;"
+      scrolling="no"
+      title="The Recurring Loop"></iframe>
+  </div>
+</div></section>
+<section class="ibx-section" style="background:var(--ibx-white)!important"><div class="ibx-inner">
+  <div class="ibx-label" data-field-id="hiw-steps-label">Four Steps</div>
+  <h2 class="ibx-h2" data-field-id="hiw-steps-h2">From zero to revenue</h2>
+  <div class="ibx-hiw-step"><div class="ibx-hiw-num">01</div><div class="ibx-hiw-body"><h3 data-field-id="home-st1-title">We build your newsletter</h3><p data-field-id="home-st1-desc">INBXIFY stands up your complete newsletter infrastructure — email templates, web presence, ad inventory, subscriber management, and analytics. Your brand, your market, our platform.</p></div></div>
+  <div class="ibx-hiw-step"><div class="ibx-hiw-num">02</div><div class="ibx-hiw-body"><h3 data-field-id="home-st2-title">Verified subscribers, day one</h3><p data-field-id="home-st2-desc">No cold start. You get immediate access to a verified, permission-based hyperlocal subscriber list for your market. No minimum commitments, no list-building phase.</p></div></div>
+  <div class="ibx-hiw-step"><div class="ibx-hiw-num">03</div><div class="ibx-hiw-body"><h3 data-field-id="home-st3-title">Ad products go live</h3><p data-field-id="home-st3-desc">Feature articles, sponsor placements, banner ads, directory listings, event promotions, real estate cards — a full advertising product suite ready for your sales team to sell from day one.</p></div></div>
+  <div class="ibx-hiw-step"><div class="ibx-hiw-num">04</div><div class="ibx-hiw-body"><h3 data-field-id="home-st4-title">Revenue flows to you</h3><p data-field-id="home-st4-desc">You sell the ads. You own the relationships. INBXIFY handles the infrastructure, delivery, and analytics. Incremental digital revenue layered on top of your existing print business.</p></div></div>
+</div></section>
+<section class="ibx-section" style="background:var(--ibx-cream-dark)!important"><div class="ibx-inner">
+  <div class="ibx-label" data-field-id="hiw-eng-label">Engagement Model</div>
+  <h2 class="ibx-h2" data-field-id="hiw-eng-h2">The commitment structure</h2>
+  <div class="ibx-eng-grid">
+    <div class="ibx-eng-card"><div class="ibx-eng-phase" style="background:var(--ibx-blue)!important;color:#fff!important">Phase 1</div><h3 data-field-id="hiw-ph1-title">Subsidized Launch</h3><div class="ibx-eng-duration" data-field-id="hiw-ph1-duration">12–16 weeks</div><p data-field-id="hiw-ph1-desc">INBXIFY builds your complete newsletter infrastructure during this phase. Templates are designed, subscriber lists are provisioned, ad products are configured, and your web presence goes live. You focus on content pipeline and advertiser conversations. Reduced rate during build-out.</p></div>
+    <div class="ibx-eng-card"><div class="ibx-eng-phase" style="background:var(--ibx-gold)!important;color:var(--ibx-teal)!important">Phase 2</div><h3 data-field-id="hiw-ph2-title">Standard Commitment</h3><div class="ibx-eng-duration" data-field-id="hiw-ph2-duration">6 months</div><p data-field-id="hiw-ph2-desc">Full-service newsletter operations. Weekly (or bi-weekly) issues delivered to your subscribers with your content and your advertisers' placements. Analytics, ad tracking, subscriber management, and infrastructure maintenance all included. You sell ads and create content.</p></div>
+  </div>
+</div></section>
+<section class="ibx-section" style="background:var(--ibx-white)!important"><div class="ibx-inner">
+  <div class="ibx-label" data-field-id="hiw-inc-label">What You Get</div>
+  <h2 class="ibx-h2" data-field-id="hiw-inc-h2">Everything included in your INBXIFY service</h2>
+  <div class="ibx-includes">
+    <div class="ibx-include"><div class="ibx-include-icon">📧</div><h3 data-field-id="hiw-inc1-title">Email Templates</h3><p data-field-id="hiw-inc1-desc">Custom-designed, mobile-responsive newsletter templates built to your brand. Tested across all major email clients.</p></div>
+    <div class="ibx-include"><div class="ibx-include-icon">👥</div><h3 data-field-id="hiw-inc2-title">Verified Subscribers</h3><p data-field-id="hiw-inc2-desc">Immediate access to a permission-based hyperlocal subscriber list in your market. No cold start.</p></div>
+    <div class="ibx-include"><div class="ibx-include-icon">🏪</div><h3 data-field-id="hiw-inc3-title">Multiple Ad Products</h3><p data-field-id="hiw-inc3-desc">Feature articles, sponsor placements, banners, directory listings, events, real estate — a complete advertising portfolio ready from day one.</p></div>
+    <div class="ibx-include"><div class="ibx-include-icon">🌐</div><h3 data-field-id="hiw-inc4-title">Web Presence</h3><p data-field-id="hiw-inc4-desc">Newsletter archive pages, business directory, event listings, and article pages — all SEO-optimized and branded to your title.</p></div>
+    <div class="ibx-include"><div class="ibx-include-icon">📊</div><h3 data-field-id="hiw-inc5-title">Analytics &amp; Tracking</h3><p data-field-id="hiw-inc5-desc">Open rates, click-through tracking, ad performance, subscriber growth — real data to support your ad sales conversations.</p></div>
+    <div class="ibx-include"><div class="ibx-include-icon">🔧</div><h3 data-field-id="hiw-inc6-title">Ongoing Infrastructure</h3><p data-field-id="hiw-inc6-desc">Delivery, CMS management, template updates, subscriber list hygiene, and technical maintenance — all handled for you.</p></div>
+  </div>
+</div></section>
+</div>
+<script>
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'ibx-loop-height') {
+      var f = document.getElementById('ibx-loop-frame');
+      if (f) f.style.height = e.data.height + 'px';
+    }
+  });
+</script>
