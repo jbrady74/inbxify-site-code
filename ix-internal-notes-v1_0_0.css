@@ -1,0 +1,136 @@
+/* ============================================================
+   ix-internal-notes-v1_0_0.css
+   INBXIFY — Internal Notes panel (SHARED, cross-surface)
+
+   PURPOSE
+   A small, visually consistent "Internal Notes" box that any Studio /
+   admin surface can render (usually at the bottom of a sidebar) to
+   record the EFFECTIVE CODE BASE driving that page — JS file, CSS
+   file, backing Make scenario(s), companion edit surface — so the
+   operator can identify the live stack at a glance, forever, on
+   every page, in the same visual language.
+
+   DESIGN LANGUAGE (Studio-internal)
+   Dashed outline + teal INTERNAL pill + gold left bar = "this is
+   operator-facing metadata, not product UI." Teal #1A3A3A / gold
+   #C4A35A / cream #FDFCF8 per the Studio token set. DM Sans labels,
+   system mono for filenames/IDs.
+
+   MARKUP PATTERN (each surface renders its own; no JS dependency)
+   ─────────────────────────────────────────────────────────────
+   <section class="ix-int-notes">
+     <div class="ix-int-notes-head">
+       <span class="ix-int-notes-badge">Internal</span>
+       <span class="ix-int-notes-title">Code Base</span>
+     </div>
+     <div class="ix-int-notes-rows">
+       <div class="ix-int-notes-row">
+         <span class="ix-int-notes-k">Surface</span>
+         <span class="ix-int-notes-v">Asset Workbench</span>
+       </div>
+       <div class="ix-int-notes-row">
+         <span class="ix-int-notes-k">JS</span>
+         <span class="ix-int-notes-v mono">ta-asset-workbench-v0.8.1.js</span>
+       </div>
+       <!-- ...more rows: CSS / Read / Edit / Shared... -->
+     </div>
+     <div class="ix-int-notes-foot">operator reference · not shown to publishers</div>
+   </section>
+   ─────────────────────────────────────────────────────────────
+
+   ADOPTION RULE
+   Row keys are free-form but keep this vocabulary where it applies,
+   in this order, so every page scans the same:
+     Surface · JS · CSS · Read · Write · Edit · Worker · Shared
+   Values that are filenames, scenario numbers, webhook keys, or IDs
+   get class "mono".
+
+   LOADING
+   Add alongside the surface's own stylesheet (Webflow head or a
+   surface's self-load routine). Standalone; no dependencies; safe to
+   load on any page — all rules are scoped under .ix-int-notes.
+   ============================================================ */
+
+.ix-int-notes {
+  --ixn-teal: #1a3a3a;
+  --ixn-gold: #c4a35a;
+  --ixn-fill: #fdfcf8;
+  --ixn-line: #e3dfd3;
+  --ixn-key:  #8a8a7a;
+  --ixn-val:  #4a5a4a;
+  --ixn-mono: 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
+
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  background: var(--ixn-fill);
+  border: 1px dashed var(--ixn-line);
+  border-left: 3px solid var(--ixn-gold);
+  border-radius: 6px;
+  padding: 12px 14px 10px;
+  margin-top: 8px;
+}
+.ix-int-notes,
+.ix-int-notes * { box-sizing: border-box; }
+
+.ix-int-notes-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.ix-int-notes-badge {
+  background: var(--ixn-teal);
+  color: #faf9f5;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 7px 2px;
+  border-radius: 3px;
+  line-height: 1;
+}
+.ix-int-notes-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ixn-key);
+}
+
+.ix-int-notes-rows { display: flex; flex-direction: column; }
+.ix-int-notes-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 3px 0;
+  border-bottom: 1px dotted var(--ixn-line);
+}
+.ix-int-notes-row:last-child { border-bottom: none; }
+
+.ix-int-notes-k {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ixn-key);
+  flex-shrink: 0;
+}
+.ix-int-notes-v {
+  font-size: 11px;
+  color: var(--ixn-val);
+  text-align: right;
+  word-break: break-all;
+}
+.ix-int-notes-v.mono {
+  font-family: var(--ixn-mono);
+  font-size: 10px;
+  letter-spacing: -0.01em;
+}
+
+.ix-int-notes-foot {
+  margin-top: 8px;
+  font-size: 8.5px;
+  font-style: italic;
+  color: var(--ixn-key);
+  letter-spacing: 0.03em;
+}
