@@ -1,0 +1,171 @@
+/* ============================================================
+   ix-ai-badge-v1.0.0.css
+   INBXIFY · ix component series — AI PROVENANCE BADGE
+   ============================================================
+
+   PURPOSE
+   A single, reusable marker that says "an AI engine put this value
+   here." Platform-wide: the ASF uses it today on AI-filled article
+   fields; Canvas, the Generator, Ad Reformat and any future surface
+   that writes machine-derived values should use this same badge so
+   the signal means one thing everywhere.
+
+   IT IS PROVENANCE, NOT A WARNING.
+   The badge answers "where did this come from?" — not "something is
+   wrong." Values typed by an operator, and values taken VERBATIM
+   from a publisher's own upload metadata table, carry NO badge:
+   those are human words. Only engine-derived values are marked.
+
+   MARKUP
+     <span class="ix-ai-badge" title="Filled by AI"
+           role="img" aria-label="Filled by AI">
+       <svg class="ix-ai-badge__glyph" viewBox="0 0 16 16"
+            aria-hidden="true">
+         <path class="ix-ai-star ix-ai-star--lg" d="…"/>
+         <path class="ix-ai-star ix-ai-star--md" d="…"/>
+         <path class="ix-ai-star ix-ai-star--sm" d="…"/>
+       </svg>
+     </span>
+
+   The three <path> nodes are the 3-star glyph; each pulses on its
+   own offset so the badge reads as a slow shimmer rather than a
+   blink. Consumers should emit all three paths — the CSS handles
+   sizing, colour and timing.
+
+   VARIANTS
+     .ix-ai-badge--sm    12px — dense rows, table cells
+     (default)           14px — field labels
+     .ix-ai-badge--lg    18px — panel headers, empty states
+     .ix-ai-badge--static  no animation (print, reduced-motion,
+                           long lists where motion would be noise)
+     .ix-ai-badge--label   adds the text "AI" beside the glyph
+
+   COLOUR
+   Light blue ↔ orange, per Jeff (2026-07-22). This pair sits
+   OUTSIDE the corporate palette on purpose: it must never be
+   mistaken for brand chrome (blue #5b7fff / gold #C4A35A) or for
+   the gold edit-state border, which already means "unsaved change."
+   AI provenance is its own signal with its own colours.
+
+   ACCESSIBILITY
+   Animation is disabled automatically under
+   prefers-reduced-motion. The badge is decorative-with-meaning, so
+   consumers MUST supply role="img" + aria-label (or a title) —
+   colour alone is never the only carrier of the message.
+   ============================================================ */
+
+:root {
+  /* AI provenance pair — deliberately outside the brand palette */
+  --ix-ai-blue:        #5FC8F5;   /* light blue  */
+  --ix-ai-blue-deep:   #2BA3D9;
+  --ix-ai-orange:      #F5943F;   /* orange      */
+  --ix-ai-orange-deep: #E0761C;
+
+  --ix-ai-badge-size:  14px;
+  --ix-ai-pulse-dur:   2.8s;      /* slow: many badges can be on screen at once */
+}
+
+.ix-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  vertical-align: middle;
+  line-height: 0;
+  flex: none;
+  cursor: help;
+  user-select: none;
+}
+
+.ix-ai-badge__glyph {
+  width:  var(--ix-ai-badge-size);
+  height: var(--ix-ai-badge-size);
+  overflow: visible;
+  display: block;
+}
+
+/* ── The three stars ──────────────────────────────────────────
+   Each star cross-fades between the two AI colours and breathes
+   in scale. Staggered delays make the trio shimmer in sequence
+   instead of flashing as one block. */
+.ix-ai-star {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation:
+    ix-ai-hue   var(--ix-ai-pulse-dur) ease-in-out infinite,
+    ix-ai-pulse var(--ix-ai-pulse-dur) ease-in-out infinite;
+}
+.ix-ai-star--lg { animation-delay: 0s,      0s; }
+.ix-ai-star--md { animation-delay: -0.55s, -0.55s; }
+.ix-ai-star--sm { animation-delay: -1.10s, -1.10s; }
+
+@keyframes ix-ai-hue {
+  0%,
+  100% { fill: var(--ix-ai-blue); }
+  45%  { fill: var(--ix-ai-orange); }
+  70%  { fill: var(--ix-ai-orange-deep); }
+}
+
+@keyframes ix-ai-pulse {
+  0%,
+  100% { transform: scale(1);    opacity: .82; }
+  45%  { transform: scale(1.16); opacity: 1;   }
+}
+
+/* ── Size variants ───────────────────────────────────────────── */
+.ix-ai-badge--sm { --ix-ai-badge-size: 12px; }
+.ix-ai-badge--lg { --ix-ai-badge-size: 18px; }
+
+/* ── Optional "AI" text label ────────────────────────────────── */
+.ix-ai-badge--label::after {
+  content: 'AI';
+  font-family: var(--mono, 'DM Mono', monospace);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  line-height: 1;
+  color: var(--ix-ai-blue-deep);
+}
+
+/* ── Static variant — no motion ──────────────────────────────── */
+.ix-ai-badge--static .ix-ai-star {
+  animation: none;
+  fill: var(--ix-ai-blue);
+}
+.ix-ai-badge--static .ix-ai-star--md { fill: var(--ix-ai-orange); }
+
+/* ── Reduced motion — respect the OS setting ─────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ix-ai-star {
+    animation: none;
+    fill: var(--ix-ai-blue);
+  }
+  .ix-ai-star--md { fill: var(--ix-ai-orange); }
+}
+
+/* ── Dark surfaces ───────────────────────────────────────────────
+   On the dark-teal Studio panels the deep tones lose contrast, so
+   lift both ends of the pair. */
+.ix-on-dark .ix-ai-badge,
+.asf-meta-panel .ix-ai-badge,
+.asf-raw-panel  .ix-ai-badge {
+  --ix-ai-blue:        #7FD8FF;
+  --ix-ai-orange:      #FFAE63;
+  --ix-ai-orange-deep: #F5943F;
+}
+.ix-on-dark .ix-ai-badge--label::after,
+.asf-meta-panel .ix-ai-badge--label::after {
+  color: #7FD8FF;
+}
+
+/* ── Tooltip-ish affordance when paired with a field label ─────
+   Consumers put the badge inside .asf-field-label (or any label);
+   this keeps it optically aligned with cap-height rather than
+   sitting on the baseline. */
+label > .ix-ai-badge,
+.asf-field-label > .ix-ai-badge,
+.asf-field-label-row > .ix-ai-badge {
+  position: relative;
+  top: -1px;
+  margin-left: 6px;
+}
