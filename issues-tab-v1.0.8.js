@@ -229,7 +229,7 @@
   // Scenario 107 "Change Publishing Status: NL Next-To-Go" (hook id
   // 2657755). PLACEHOLDER — Jeff: replace with the real hook.us1.make.com
   // URL from the Make scenario's webhook module before this ships.
-  var MAKE_PROMOTE_NEXT_URL = 'https://hook.us1.make.com/REPLACE_WITH_HOOK_2657755_URL';
+  var MAKE_PROMOTE_NEXT_URL = 'https://hook.us1.make.com/j8snz84j4psvvjuvrb4sh7947i7ojvh1';
 
   // ── Path constants (HC-015 / HC-016) ──
   // Live Webflow template paths confirmed v1.0.3.
