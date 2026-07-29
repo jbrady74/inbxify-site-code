@@ -590,9 +590,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Header
     h += '<div class="ix-hdr"><div class="ix-hdr-left">';
-    h += '<div class="cm-ic">&#x1F465;</div>';
-    h += '<div><div class="cm-ti">Clients</div>';
-    h += '<div class="cm-su">ADVERTISERS &middot; CONTRIBUTORS &middot; SPONSORS</div></div>';
+    h += '<div class="ix-hdr-icon">&#x1F465;</div>';
+    h += '<div><h3>Clients</h3>';
+    h += '<div class="ix-hdr-sub">ADVERTISERS &middot; CONTRIBUTORS &middot; SPONSORS</div></div>';
     h += '</div>';
     h += '<button class="cm-add-btn" onclick="cmAddClient()">+ Add Client</button>';
     h += '</div>';
@@ -1468,9 +1468,6 @@ document.addEventListener('DOMContentLoaded', function () {
          uses the shared .ix-hdr family (title-admin-page-design
          v1.4.20 s3). Re-adding local overrides here re-forks the
          header - don't. */
-      '.cm-ic{width:34px;height:34px;background:#1a3a3a;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#c4a35a}',
-      '.cm-ti{font-size:18px;font-weight:700;color:#1a3a3a}',
-      '.cm-su{font-size:10px;font-family:"DM Mono",monospace;color:#8a8a7a;letter-spacing:.04em;text-transform:uppercase;margin-top:1px}',
       '.cm-add-btn{font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.04em;padding:6px 14px;border-radius:3px;border:1.5px solid #1a3a3a;background:#fff;color:#1a3a3a;cursor:pointer;transition:all .15s}',
       '.cm-add-btn:hover{background:#1a3a3a;color:#f0edd8}',
 

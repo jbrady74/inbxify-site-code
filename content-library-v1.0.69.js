@@ -566,8 +566,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /* ── v1.0.34 redesign ── */
     /* Tab row + inline search on one line */
-    '.cl-tabrow{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:36px}',
-    '.cl-tabrow .cl-mtabs.std-subtabs{margin-bottom:0;flex:0 0 auto;border-bottom:1px solid #e4e0d4}',
+    /* v1.0.69: the cream rail bands the WHOLE row (tabs + filters +
+       search), not just the shrink-to-fit tab strip. .cl-mtabs keeps
+       flex:0 0 auto so search still sits right of the tabs; its own
+       background goes transparent so the row's band shows through. */
+    '.cl-tabrow{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:36px;background-color:#FAF9F5 !important;padding:0 20px;border-bottom:1px solid #ece8dc}',
+    '.cl-tabrow .cl-mtabs.std-subtabs{margin-bottom:0;flex:0 0 auto;border-bottom:none !important;background-color:transparent !important;padding:0}',
     /* v1.0.43: fixed-width centered tabs (fits "Real Estate") */
     '.cl-mtab.ix-btn--tab{width:118px;text-align:center;margin-right:0 !important;padding-left:0 !important;padding-right:0 !important;justify-content:center}',
     /* count chip inside ix-btn--tab — subtle, inherits tab color */
