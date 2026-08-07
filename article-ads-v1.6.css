@@ -1,0 +1,111 @@
+/* article-ads-v1.6.css
+ * Mobile/tablet inline ad styles for Article pages
+ * v1.6 — August 7, 2026
+ *
+ * Changes from v1.5:
+ *   - CORRECTED FALSE PREMISE. v1.4/v1.5 header claimed "ads injected
+ *     outside RTE — no .article-body-rte compound selectors needed."
+ *     That is wrong. article-ads JS insertAfter() places ad blocks in
+ *     refEl.parentNode; for paragraphs that parent IS .article-body-rte.
+ *     Only the photo-essay branch and the short-article overflow branch
+ *     land outside. So RTE typography has been overriding ad styling.
+ *
+ *   - Every rule now ships twice: bare selector (ads outside the RTE)
+ *     and .article-body-rte-compound selector (ads inside the RTE).
+ *     Compound scores 2 classes and beats .article-body-rte div / img /
+ *     a at 1 class + 1 element. !important alone was never enough —
+ *     specificity decides between two !important rules.
+ *
+ *   - Header version now matches filename. v1.5 said "v1.4" internally,
+ *     v1.4 said "v1.3". Two revisions of drift, corrected here.
+ *
+ * COMPANION: article-rte-head-v1.2.0.css in the Articles template head.
+ * That file armors .article-body-rte typography with !important on every
+ * property. This file is the sanctioned exception carved out of it.
+ * If either file moves, re-check this specificity relationship.
+ *
+ * KNOWN, NOT FIXED HERE: article-ads JS returns early when
+ * window.innerWidth > 1080 at load, so a desktop session resized down
+ * never injects. Refresh required. JS-side fix.
+ *
+ * DEPLOY:
+ *   1. Commit to GitHub jbrady74/inbxify-site-code
+ *   2. Swap Articles template head <link> v1.5 → v1.6
+ *   3. New filename — no jsDelivr purge needed
+ */
+
+.ibx-art-ad,
+.article-body-rte .ibx-art-ad {
+  display: none !important;
+}
+
+@media (max-width: 1080px) {
+
+  .ibx-art-ad,
+  .article-body-rte .ibx-art-ad {
+    display: block !important;
+    width: 100% !important;
+    margin: 11px 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
+    font-size: initial !important;
+    line-height: normal !important;
+  }
+
+  .ibx-art-ad-label,
+  .article-body-rte .ibx-art-ad-label {
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 8px !important;
+    font-weight: 600 !important;
+    font-style: normal !important;
+    line-height: 1.2 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    color: #b8a080 !important;
+    margin: 0 0 6px !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  .ibx-art-ad a,
+  .article-body-rte .ibx-art-ad a {
+    display: block !important;
+    width: 50% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    text-decoration: none !important;
+    background: #ffffff !important;
+    border: 1px solid #e0ddd0 !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+  }
+
+  .ibx-art-ad img,
+  .article-body-rte .ibx-art-ad img {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .ibx-art-ad a,
+  .article-body-rte .ibx-art-ad a {
+    width: 60% !important;
+  }
+}
+
+@media (max-width: 479px) {
+  .ibx-art-ad a,
+  .article-body-rte .ibx-art-ad a {
+    width: 70% !important;
+  }
+}
