@@ -1,0 +1,48 @@
+<!-- templates/ix/email-ba-banner-v1.html -->
+<!--
+  BA - Banner ad.  600px shell.
+  Ported from 206 v0.4, which rendered correctly in production.
+
+  Changes from v0.4:
+    - partner label raised from rgba(0,0,0,0.3) 9px Arial to #6b6450
+      10px semibold - it was effectively invisible, and it is the only
+      marker telling a reader an advertiser is present
+    - label wording fixed to one phrase (was five variants across the issue)
+    - label moved to centre, above the creative
+    - font stacks match the rest of the system
+    - house state renders nothing rather than an empty frame
+
+  Tokens: adImage adLink adName rubric
+  Flags:  sold
+-->
+<tr>
+<td style="padding:0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+         style="background-color:#e2dfca;">
+    {{#sold}}
+    <tr>
+      <td style="padding:14px 20px 16px;" class="mobile-padding">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td align="center" style="padding:0 0 7px;">
+              <span style="font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                           font-size:10px;font-weight:600;letter-spacing:1.8px;
+                           text-transform:uppercase;color:#6b6450;">Featured Local Partner</span>
+            </td>
+          </tr>
+          <tr>
+            <td align="center">
+              <a href="{{adLink}}" target="_blank" style="display:block;">
+                <img src="{{adImage}}" alt="{{adName}}" width="520" class="mobile-full"
+                     style="display:block;width:100%;max-width:520px;height:auto;
+                            border:0;border-radius:4px;">
+              </a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    {{/sold}}
+  </table>
+</td>
+</tr>
