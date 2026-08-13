@@ -1,0 +1,23 @@
+<!-- templates/ix/email-divider-rule-v1.html -->
+<!--
+  Divider - a rule between blocks.  600px shell.
+
+  v0.4 used a 2px gradient (#c48a3a -> #eac76e -> #c48a3a). Gradients
+  do not render in Outlook, which falls back to no background at all,
+  so the rule vanished there. Flat gold renders everywhere.
+
+  mso-line-height-rule:exactly stops Outlook inflating a 1px row to
+  the font's line height.
+
+  Tokens: none
+-->
+<tr>
+  <td style="background-color:#0d1f1f;padding:18px 26px;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      <tr>
+        <td height="1" style="height:1px;line-height:1px;font-size:0;
+                   background-color:#c4a35a;mso-line-height-rule:exactly;">&nbsp;</td>
+      </tr>
+    </table>
+  </td>
+</tr>
