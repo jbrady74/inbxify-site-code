@@ -1,0 +1,184 @@
+<!-- templates/ix/email-fa-centered-v2.html -->
+<!--
+  FA-1 · Centered.  700px.
+  Structure: Option C (photo leads, Air Mail order).
+  Typography + byline: Option B.
+  Photo: square, Uploadcare smart_faces crop.
+
+  Order: franchise mark · sponsor line · photo · credit · rubric ·
+         headline · subhead · hairline · byline · teaser · Read On · sponsor creative
+
+  Tokens consumed:
+    franchiseArt franchiseName sponsorName sponsorAd photo photoCredit
+    rubric headline subhead author authorTitle authorBusiness teaser link
+  Flags:
+    hasFranchise sponsored hasPhoto hasAuthor
+-->
+<tr>
+<td style="padding:0 0 16px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+       style="background-color:#ffffff;">
+
+  <!-- FRANCHISE MARK -->
+  {{#hasFranchise}}
+  <tr>
+    <td align="center" style="padding:18px 20px 0;" class="mobile-padding">
+      {{#franchiseArt}}
+      <img src="{{franchiseArt}}" alt="{{franchiseName}}" height="34"
+           style="display:block;height:34px;width:auto;border:0;margin:0 auto;">
+      {{/franchiseArt}}
+      {{^franchiseArt}}
+      <span style="display:inline-block;background-color:#1a3a3a;color:#f4f0e4;
+                   font-family:'Jost',Arial,sans-serif;font-size:12px;font-weight:600;
+                   padding:6px 14px;border-radius:3px;">{{franchiseName}}</span>
+      {{/franchiseArt}}
+    </td>
+  </tr>
+  {{/hasFranchise}}
+
+  <!-- SPONSOR LINE -->
+  {{#sponsored}}
+  <tr>
+    <td align="center" style="padding:10px 20px 0;" class="mobile-padding">
+      <span style="font-family:'Jost',Arial,sans-serif;font-size:10px;font-weight:600;
+                   letter-spacing:1.6px;text-transform:uppercase;color:#6b6450;">Sponsored by:</span>
+      <span style="font-family:'Jost',Arial,sans-serif;font-size:11px;font-weight:700;
+                   letter-spacing:0.8px;text-transform:uppercase;color:#1a3a3a;
+                   padding-left:6px;">{{sponsorName}}</span>
+      <span style="display:inline-block;font-family:'Jost',Arial,sans-serif;font-size:9px;
+                   font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#57503f;
+                   background:#efe9d8;border:1px solid #c9bfa4;padding:2px 7px;
+                   margin-left:10px;border-radius:2px;">Sponsored</span>
+    </td>
+  </tr>
+  {{/sponsored}}
+
+  <!-- PHOTO — leads, square, face-aware crop -->
+  {{#hasPhoto}}
+  <tr>
+    <td align="center" style="padding:18px 26px 0;" class="mobile-padding">
+      <a href="{{link}}" target="_blank" style="display:block;">
+        <img src="{{photo}}" alt="{{headline}}" width="568" class="mobile-full"
+             style="display:block;width:100%;max-width:568px;height:auto;border:0;">
+      </a>
+    </td>
+  </tr>
+  {{#showPhotoCredit}}
+  {{#photoCredit}}
+  <tr>
+    <td align="right" style="padding:5px 26px 0;" class="mobile-padding">
+      <span style="font-family:'Jost',Arial,sans-serif;font-size:8px;font-weight:600;
+                   letter-spacing:1.3px;text-transform:uppercase;color:#8a8574;">Photos by: {{photoCredit}}</span>
+    </td>
+  </tr>
+  {{/photoCredit}}
+  {{/showPhotoCredit}}
+  {{/hasPhoto}}
+
+  <!-- RUBRIC -->
+  {{#rubric}}
+  <tr>
+    <td align="center" style="padding:20px 24px 0;" class="mobile-padding">
+      <p style="margin:0;font-family:'Jost',Arial,sans-serif;font-size:12px;font-weight:700;
+                letter-spacing:3.4px;text-transform:uppercase;color:#cc5500;">{{rubric}}</p>
+    </td>
+  </tr>
+  {{/rubric}}
+
+  <!-- HEADLINE -->
+  <tr>
+    <td align="center" style="padding:12px 26px 0;" class="mobile-padding">
+      <h2 class="fa-title" style="margin:0;font-family:'Playfair Display',Georgia,serif;
+                 font-size:38px;font-weight:700;line-height:1.08;color:#1a3a3a;
+                 letter-spacing:-0.5px;">
+        <a href="{{link}}" target="_blank" style="color:#1a3a3a;text-decoration:none;">{{headline}}</a>
+      </h2>
+    </td>
+  </tr>
+
+  <!-- SUBHEAD -->
+  {{#subhead}}
+  <tr>
+    <td align="center" style="padding:14px 44px 0;" class="mobile-padding">
+      <p style="margin:0;font-family:'Lora',Georgia,serif;font-size:19px;font-style:italic;
+                font-weight:400;line-height:1.32;color:#6b6450;">{{subhead}}</p>
+    </td>
+  </tr>
+  {{/subhead}}
+
+  <!-- HAIRLINE -->
+  <tr>
+    <td align="center" style="padding:20px 0 0;font-size:0;line-height:0;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center"><tr>
+        <td style="width:64px;height:1px;background-color:#c4a35a;font-size:0;line-height:0;">&nbsp;</td>
+      </tr></table>
+    </td>
+  </tr>
+
+  <!-- BYLINE -->
+  {{#hasAuthor}}
+  <tr>
+    <td align="center" style="padding:18px 20px 0;" class="mobile-padding">
+      <p style="margin:0;font-family:'Jost',Arial,sans-serif;font-size:8px;font-weight:600;
+                letter-spacing:1.8px;text-transform:uppercase;color:#8a8574;">Written by</p>
+      <p style="margin:4px 0 0;font-family:'Playfair Display',Georgia,serif;font-size:16px;
+                font-weight:700;color:#1a1a1a;">{{author}}</p>
+      {{#authorTitle}}
+      <p style="margin:2px 0 0;font-family:'Jost',Arial,sans-serif;font-size:10px;
+                letter-spacing:0.6px;color:#6b6450;">{{authorTitle}}</p>
+      {{/authorTitle}}
+      {{#hasCoAuthor}}
+      <p style="margin:8px 0 0;font-family:'Playfair Display',Georgia,serif;font-size:14px;
+                font-weight:700;color:#1a1a1a;">{{coAuthor}}</p>
+      {{#coAuthorTitle}}
+      <p style="margin:2px 0 0;font-family:'Jost',Arial,sans-serif;font-size:10px;
+                letter-spacing:0.6px;color:#6b6450;">{{coAuthorTitle}}</p>
+      {{/coAuthorTitle}}
+      {{/hasCoAuthor}}
+      {{#authorBusiness}}
+      <p style="margin:2px 0 0;font-family:'Jost',Arial,sans-serif;font-size:10px;font-weight:700;
+                letter-spacing:1.6px;text-transform:uppercase;color:#1a3a3a;">{{authorBusiness}}</p>
+      {{/authorBusiness}}
+    </td>
+  </tr>
+  {{/hasAuthor}}
+
+  <!-- TEASER -->
+  <tr>
+    <td style="padding:20px 42px 0;" class="mobile-padding">
+      <p class="fa-excerpt" style="margin:0;font-family:'Lora',Georgia,serif;font-size:16px;
+                line-height:1.75;color:#333333;text-align:justify;">{{teaser}}</p>
+    </td>
+  </tr>
+
+  <!-- READ ON -->
+  <tr>
+    <td align="center" style="padding:24px 20px 28px;">
+      <a href="{{link}}" target="_blank"
+         style="display:inline-block;background-color:#f4a127;color:#142e2e;
+                font-family:'Jost',Arial,sans-serif;font-size:11px;font-weight:700;
+                letter-spacing:1.6px;text-transform:uppercase;padding:12px 34px;
+                border-radius:20px;">{{ctaText}}</a>
+    </td>
+  </tr>
+
+  <!-- SPONSOR CREATIVE -->
+  {{#sponsored}}
+  {{#sponsorAd}}
+  <tr>
+    <td align="center" style="padding:0 0 4px;">
+      <span style="display:block;font-family:'Jost',Arial,sans-serif;font-size:8px;
+                   font-weight:600;letter-spacing:1.4px;text-transform:uppercase;
+                   color:#cc5500;padding:6px 0 6px;">Sponsored by:</span>
+      <a href="{{link}}" target="_blank" style="display:block;">
+        <img src="{{sponsorAd}}" alt="{{sponsorName}}" width="600" class="mobile-full"
+             style="display:block;width:100%;height:auto;border:0;">
+      </a>
+    </td>
+  </tr>
+  {{/sponsorAd}}
+  {{/sponsored}}
+
+</table>
+</td>
+</tr>
