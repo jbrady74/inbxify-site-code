@@ -1,0 +1,96 @@
+<!-- templates/ix/email-ev-list-v1.html -->
+<!--
+  EV List - two or more selected events.  600px shell.
+
+  A date rail down the left makes this read as a calendar rather than a
+  card stack, which is what keeps it from colliding with the Find in the
+  same issue. No images, no per-row buttons, tight rows.
+
+  Rail is fixed at 54px. Day is zero-padded upstream so the column never
+  shifts. Time ranges and multi-day runs live in the meta line.
+
+  Every row title links to that event's own URL through splash. Only the
+  foot button goes to the events page.
+
+  Tokens: eyebrow rubric allEventsLink allEventsText
+  Cards:  dtMonth dtDay title meta link
+  Loop flags supplied by the renderer: first last
+-->
+<tr>
+<td style="padding:0 0 18px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+       style="background-color:#f4f0e4;">
+
+  <!-- HEADER -->
+  <tr>
+    <td align="center" style="background-color:#1a3a3a;padding:13px 24px 15px;" class="mobile-padding">
+      {{#eyebrow}}
+      <p style="margin:0;font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+                color:#c4a35a;">{{eyebrow}}</p>
+      {{/eyebrow}}
+      <p style="margin:5px 0 0;font-family:'Playfair Display','Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+                font-size:23px;font-weight:600;color:#f4f0e4;line-height:1.2;">{{rubric}}</p>
+    </td>
+  </tr>
+
+  {{#each cards}}
+  <tr>
+    <td style="padding:16px 20px;" class="mobile-padding">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td width="54" valign="top" style="width:54px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="54"
+                   style="width:54px;background-color:#1a3a3a;">
+              <tr><td align="center" style="padding:5px 0 1px;">
+                <span style="font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                             font-size:8px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;
+                             color:#c4a35a;">{{.dtMonth}}</span>
+              </td></tr>
+              <tr><td align="center" style="padding:0 0 6px;">
+                <span style="font-family:'Playfair Display','Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+                             font-size:24px;font-weight:600;color:#f4f0e4;line-height:1;">{{.dtDay}}</span>
+              </td></tr>
+            </table>
+          </td>
+          <td valign="top" style="padding-left:15px;">
+            <p style="margin:0;font-family:'Playfair Display','Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+                      font-size:19px;font-weight:600;color:#1a3a3a;line-height:1.22;">
+              <a href="{{&.link}}" target="_blank" style="color:#1a3a3a;text-decoration:none;">{{.title}}</a>
+            </p>
+            <p style="margin:5px 0 0;font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                      font-size:10px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;
+                      color:#8a8574;">{{.meta}}</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  {{^last}}
+  <tr>
+    <td style="padding:0 20px;" class="mobile-padding">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td style="border-top:1px solid #e0d9c4;font-size:0;line-height:1px;
+                     mso-line-height-rule:exactly;height:1px;">&nbsp;</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  {{/last}}
+  {{/each}}
+
+  <!-- FOOT -->
+  <tr>
+    <td align="center" style="background-color:#e8e2d0;padding:15px 22px 16px;">
+      <a href="{{&allEventsLink}}" target="_blank"
+         style="display:inline-block;border:1px solid #1a3a3a;color:#1a3a3a;
+                font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                font-size:10px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;
+                padding:9px 24px;border-radius:16px;text-decoration:none;">{{allEventsText}} &rarr;</a>
+    </td>
+  </tr>
+
+</table>
+</td>
+</tr>

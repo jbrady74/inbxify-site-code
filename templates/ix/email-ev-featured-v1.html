@@ -1,0 +1,170 @@
+<!-- templates/ix/email-ev-featured-v1.html -->
+<!--
+  EV Featured - one selected event.  600px shell.
+
+  Two states from one file. With a photo the hero opens the block and
+  the body sits on cream. Without one the header goes teal and the date
+  stamp grows to carry the weight the hero was carrying.
+
+  The date stamp is a fixed-width column. Time ranges and multi-day runs
+  live in the meta line, never in the stamp — a range in the stamp breaks
+  the column the moment a run crosses a month.
+
+  Tokens: eyebrow dtMonth dtDay dtDow title metaLine teaser photo link
+          ctaText sponsorName
+  Flags:  hasPhoto hasSponsor hasTeaser
+
+  metaLine is composed upstream from the DT: fields. Three shapes:
+    "4:00 PM · Venue"                start only
+    "4:00 - 7:00 PM · Venue"         start and end
+    "Through Sep 8 · Venue"          multi-day
+-->
+<tr>
+<td style="padding:0 0 18px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+       style="background-color:#f4f0e4;">
+
+  {{#hasPhoto}}
+  <!-- PHOTO STATE -->
+  <tr>
+    <td align="center" style="background-color:#1a3a3a;padding:11px 22px 12px;">
+      <p style="margin:0;font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+                color:#c4a35a;">{{eyebrow}}</p>
+    </td>
+  </tr>
+  <tr>
+    <td style="font-size:0;line-height:0;">
+      <a href="{{&link}}" target="_blank" style="display:block;">
+        <img src="{{photo}}" alt="{{title}}" width="600" class="mobile-full"
+             style="display:block;width:100%;max-width:600px;height:auto;border:0;">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:20px 24px 22px;" class="mobile-padding">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td width="66" valign="top" style="width:66px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="66"
+                   style="width:66px;background-color:#1a3a3a;">
+              <tr><td align="center" style="padding:7px 0 2px;">
+                <span style="font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                             font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+                             color:#c4a35a;">{{dtMonth}}</span>
+              </td></tr>
+              <tr><td align="center" style="padding:0 0 3px;">
+                <span style="font-family:'Playfair Display','Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+                             font-size:30px;font-weight:600;color:#f4f0e4;line-height:1;">{{dtDay}}</span>
+              </td></tr>
+              <tr><td align="center" style="padding:0 0 8px;">
+                <span style="font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                             font-size:8px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;
+                             color:#9fb3b0;">{{dtDow}}</span>
+              </td></tr>
+            </table>
+          </td>
+          <td valign="top" style="padding-left:18px;">
+            <p style="margin:0;font-family:'Playfair Display','Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+                      font-size:26px;font-weight:600;color:#1a3a3a;line-height:1.18;">
+              <a href="{{&link}}" target="_blank" style="color:#1a3a3a;text-decoration:none;">{{title}}</a>
+            </p>
+            <p style="margin:8px 0 0;font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                      font-size:10px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;
+                      color:#cc5500;">{{metaLine}}</p>
+          </td>
+        </tr>
+      </table>
+      {{#hasTeaser}}
+      <p style="margin:16px 0 0;font-family:'Lora','Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+                font-size:15px;line-height:1.62;color:#3a3630;">{{teaser}}</p>
+      {{/hasTeaser}}
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+             style="margin-top:18px;">
+        <tr><td align="center">
+          <a href="{{&link}}" target="_blank"
+             style="display:inline-block;background-color:#1a3a3a;color:#f4f0e4;
+                    font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                    font-size:10px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;
+                    padding:11px 30px;border-radius:18px;text-decoration:none;">{{ctaText}} &rarr;</a>
+        </td></tr>
+      </table>
+    </td>
+  </tr>
+  {{/hasPhoto}}
+
+  {{^hasPhoto}}
+  <!-- NO-PHOTO STATE -->
+  <tr>
+    <td style="background-color:#1a3a3a;padding:20px 24px 22px;" class="mobile-padding">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td width="78" valign="top" style="width:78px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="78"
+                   style="width:78px;border:1px solid #3d5a58;">
+              <tr><td align="center" style="padding:9px 0 3px;">
+                <span style="font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                             font-size:9px;font-weight:700;letter-spacing:2.4px;text-transform:uppercase;
+                             color:#c4a35a;">{{dtMonth}}</span>
+              </td></tr>
+              <tr><td align="center" style="padding:0 0 4px;">
+                <span style="font-family:'Playfair Display','Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+                             font-size:40px;font-weight:600;color:#f4f0e4;line-height:1;">{{dtDay}}</span>
+              </td></tr>
+              <tr><td align="center" style="padding:0 0 10px;">
+                <span style="font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                             font-size:8px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;
+                             color:#9fb3b0;">{{dtDow}}</span>
+              </td></tr>
+            </table>
+          </td>
+          <td valign="top" style="padding-left:20px;">
+            <p style="margin:0;font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                      font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+                      color:#c4a35a;">{{eyebrow}}</p>
+            <p style="margin:9px 0 0;font-family:'Playfair Display','Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+                      font-size:26px;font-weight:600;color:#f4f0e4;line-height:1.18;">
+              <a href="{{&link}}" target="_blank" style="color:#f4f0e4;text-decoration:none;">{{title}}</a>
+            </p>
+            <p style="margin:9px 0 0;font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                      font-size:10px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;
+                      color:#c4a35a;">{{metaLine}}</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:20px 24px 22px;" class="mobile-padding">
+      {{#hasTeaser}}
+      <p style="margin:0;font-family:'Lora','Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+                font-size:15px;line-height:1.62;color:#3a3630;">{{teaser}}</p>
+      {{/hasTeaser}}
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+             style="margin-top:18px;">
+        <tr><td align="center">
+          <a href="{{&link}}" target="_blank"
+             style="display:inline-block;background-color:#1a3a3a;color:#f4f0e4;
+                    font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                    font-size:10px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;
+                    padding:11px 30px;border-radius:18px;text-decoration:none;">{{ctaText}} &rarr;</a>
+        </td></tr>
+      </table>
+    </td>
+  </tr>
+  {{/hasPhoto}}
+
+  {{#hasSponsor}}
+  <tr>
+    <td align="center" style="background-color:#e8e2d0;padding:9px 22px;">
+      <span style="font-family:'Jost','Avenir Next',Avenir,'Segoe UI',Arial,sans-serif;
+                   font-size:9px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;
+                   color:#6b6355;">Presented by
+        <span style="color:#1a3a3a;">{{sponsorName}}</span></span>
+    </td>
+  </tr>
+  {{/hasSponsor}}
+
+</table>
+</td>
+</tr>
