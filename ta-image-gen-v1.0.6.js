@@ -1,0 +1,797 @@
+/* ta-image-gen-v1.0.6.js
+   ============================================================
+   ── v1.0.6 — Prompt quality. No behaviour change outside the
+      drafter's system prompt. (Aug 18) ──
+   Three live failures, one cause: the v1.0.0 rule "Describe scene,
+   setting, mood, lighting, composition" is a checklist, and the model
+   filled every slot with its stock-photography default. Rewritten as
+   a no-people default plus explicit bans on vitality adjectives,
+   stock staging and cliche lighting. See the comment block above
+   SYSTEM_PROMPT for the full reasoning and the v1.0.0 text.
+   The safety gate is unchanged. Nothing else in this file is touched.
+   ============================================================
+   ta-image-gen-v1.0.3.js
+   ============================================================
+   ── v1.0.3 — Publisher notes feed the image prompt (July 22) ──
+   The upload metadata table's Notes cell is often the only place
+   anyone states what the picture should show. Live examples:
+     "Image of someone drinking water in the heat of summer"
+        → a direct image brief, and previously invisible to this
+          module, which drafted from the article body alone.
+     "use before and after photos. run copy along the bottom as
+      these spread out across two pages"
+        → NOT an image brief: before/after is a two-image layout and
+          the rest is page production.
+
+   So notes are read (from ta-asf's parsed S.sourceMetadata, no new
+   plumbing) and passed to the prompt drafter as a client brief —
+   with explicit instructions to use only text describing SUBJECT
+   MATTER and to ignore layout/production directions entirely
+   ("run copy along the bottom", "corner banner", "spread across two
+   pages", resolution caveats, placement notes). If the notes carry
+   no usable image guidance the model ignores them silently and
+   drafts from the body exactly as v1.0.2 did.
+
+   VISIBILITY: Jeff asked to always see the prompt before generating,
+   with notes-derived text called out if possible. The prompt lives in
+   a plain <textarea> (deliberately uncontrolled, so typing works), and
+   a textarea cannot render coloured or bold spans — converting it to a
+   contenteditable would break that. So the notes are surfaced as their
+   own gold-railed block directly ABOVE the prompt box, matching the
+   ASF Source-metadata panel treatment. You see exactly what the model
+   was given, and the prompt itself stays fully editable.
+
+   New JSON key "usedNotes" reports whether the notes shaped the draft.
+
+   INBXIFY · ASF main-image generation (Flux 2 Pro)
+
+   Companion module — does NOT edit ta-asf. It self-wires to the
+   existing "✨ Generate" button (data-asf-action="generate-main")
+   by intercepting the click in the capture phase, the same way
+   ta-generate is a standalone consumer of the Anthropic proxy.
+
+   ── FLOW ──
+   1. Click "✨ Generate" on the main-image zone (Article, create or edit).
+   2. Claude reads the article body via the existing Anthropic proxy
+      (window.TA_CONFIG.anthropicProxy) and drafts a tight image prompt
+      + a safety gate. If the gate says "don't generate" (named real
+      person, sensitive event), we surface the reason and stop.
+   3. Modal shows the drafted prompt, EDITABLE, with the gold
+      dirty/selected border (--ipp-edit-dirty-border) once the operator
+      changes it, plus a Cancel link that reverts to the drafted text.
+   4. "Generate image" → POST { prompt, width, height } to the fluxgen
+      Worker → returns a permanent Uploadcare UUID + URL.
+   5. The returned UUID + URL is handed to Scenario L (Generate Media)
+      via window.TA_CONFIG.makeGenerateMedia, which CREATES the MEDIA row
+      (component-role = Image, status = Attached) and ATTACHES it to the
+      asset's main-image slot in one pass, then returns { ok:true }.
+      Scenario B (conditioner) is NOT involved — generated images are
+      already conditioned by the Worker.
+
+   ── CONFIG (TA_CONFIG) ──
+     anthropicProxy   (already present — used by ta-rte / ta-generate)
+     fluxGen          the Worker URL:
+                      fluxGen: 'https://fluxgen.jeff-2cd.workers.dev'
+     makeGenerateMedia  NEW — the Scenario L webhook URL.
+                      makeGenerateMedia: 'https://hook.us1.make.com/...'
+
+   ── DEPENDENCY ──
+     Reads window.InbxASF._internal (already exposed by ta-asf) for the
+     live tenant config, article id, toast, render and hydrateMedia.
+     No ASF file edit required. If InbxASF is absent or makeConditioner
+     is unset, the module degrades gracefully: it still generates the
+     image and hands back the Uploadcare URL so the operator can attach
+     it manually via the Replace button.
+
+   ── HARDCODING ──
+     HC-IMG-001  fluxGen Worker URL read from TA_CONFIG.fluxGen
+     HC-IMG-002  model 'flux-2-pro' (Worker-side; client sends none)
+     HC-IMG-003  default 1024×1024 square (main-image zone guidance)
+     HC-IMG-004  prompt model 'claude-haiku-4-5' (matches ta-generate)
+     HC-IMG-005  dirty/selected border token --ipp-edit-dirty-border
+     (component-role intentionally NOT written — see TD-IMG-ROLE)
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var VERSION = '1.0.6';
+  var PROMPT_MODEL = 'claude-haiku-4-5';     // HC-IMG-004
+  var DEFAULT_W = 1024, DEFAULT_H = 1024;     // HC-IMG-003
+
+  function cfg() { return window.TA_CONFIG || {}; }
+  function proxyUrl() { return cfg().anthropicProxy || ''; }
+  function fluxUrl()  { return cfg().fluxGen || ''; }   // HC-IMG-001
+  function log() { if (cfg().debug) try { console.log.apply(console, ['[img-gen v' + VERSION + ']'].concat([].slice.call(arguments))); } catch (e) {} }
+
+  /* ── Prompt-drafting via the Anthropic proxy ──
+     Mirrors ta-generate: build the full Messages request client-side,
+     POST to the transparent proxy. Returns { generate, prompt, reason }. */
+  /* ── v1.0.6 — the prompt-QUALITY rules. ──
+     The v1.0.0 guidance was six lines and its first rule was a
+     checklist: "Describe scene, setting, mood, lighting, composition."
+     A checklist gets filled, and Haiku fills every slot with its
+     default, which is advertising photography. That single line is
+     what produced all three live failures:
+       · "mood" → vitality adjectives → Flux returns bodybuilders,
+         including for a woman in her seventies
+       · empty frame → generic staging → a couple holding hands on a
+         real-estate tour that named no people at all
+       · "lighting" → golden hour, every single time
+     Flux 2 Pro's BFL endpoint accepts NO negative prompt, so every
+     ban has to live here. There is no second line of defence in the
+     Worker.
+
+     The safety gate is v1.0.0's, verbatim and unchanged. The
+     PUBLISHER NOTES block is v1.0.3's, unchanged except for one added
+     line binding notes-requested people to the same figure rules.
+
+     v1.0.0 prompt preserved for A/B if these rules over-correct:
+       'You write image-generation prompts for a LOCAL COMMUNITY NEWSLETTER.',
+       'You are given the HTML body of one article. Produce a single complementary',
+       'hero image prompt for a text-to-image model (Flux). Rules:',
+       '- Describe scene, setting, mood, lighting, composition. Photographic by default.',
+       '- NEVER depict real, named, identifiable people. NO text, logos, watermarks, signage.',
+       '- Keep it concise: one paragraph, ~25-45 words, details ordered by priority.',
+       '- If the article centers on a SPECIFIC real named person, a tragedy, crime,',
+       '  death, medical detail, or other sensitive event where a generated image',
+       '  would be inappropriate, DO NOT write a prompt.'                              */
+  var SYSTEM_PROMPT = [
+    'You write image-generation prompts for a LOCAL COMMUNITY NEWSLETTER.',
+    'You are given the HTML body of one article. Produce ONE hero image prompt',
+    'for Flux. The result is a plain editorial photograph, not advertising.',
+    '',
+    'DEFAULT TO NO PEOPLE.',
+    '- Prefer the place, the object, the work, the season, the empty room.',
+    '  A bakery counter before opening. A porch in October. Tools on a bench.',
+    '  A folding table of zucchini outside a firehouse.',
+    '- Include a figure ONLY when the article is meaningless without one.',
+    '  Then keep them small in frame, from behind or in profile, mid-distance',
+    '  or further, occupied with a task. Never a portrait. Never a face.',
+    '',
+    'IF A FIGURE IS UNAVOIDABLE:',
+    '- Ordinary body, ordinary clothes, ordinary posture. Say "ordinary".',
+    '- NEVER use vitality words: energetic, vibrant, active, radiant, lively,',
+    '  glowing, fit, youthful, spry. Flux reads these as fitness photography',
+    '  and returns bodybuilders, including for people in their seventies.',
+    '- Never describe physique, muscles, tone, or build in any way.',
+    '- NEVER depict real, named, identifiable people.',
+    '',
+    'BANNED STAGING. Never write any of these:',
+    '- couples holding hands, arms around shoulders, walking and laughing',
+    '- handshakes, high-fives, thumbs up, arms folded confidently',
+    '- pointing at a laptop, gathered around a screen, laughing at nothing',
+    '- "diverse group", "happy family", "smiling professional", "candid moment"',
+    '',
+    'BANNED LIGHTING. Never write any of these:',
+    '- golden hour, golden glow, warm golden light, sun-drenched, sunkissed',
+    '- lens flare, god rays, bokeh, dreamy haze, ethereal, cinematic',
+    'State lighting ONLY when the ARTICLE establishes a time or condition:',
+    'an evening meeting, a snowstorm, a Saturday morning market. If the',
+    'article does not establish one, say NOTHING about light. Flux will',
+    'choose something ordinary, which is what this needs.',
+    '',
+    'BUILD FROM ONE CONCRETE THING IN THE ARTICLE.',
+    '- Pull a specific noun: the actual street, trade, crop, building, event.',
+    '- Specific beats generic. "A folding table of zucchini at a firehouse',
+    '  fundraiser", not "a community gathering".',
+    '- No text, logos, watermarks, signage, or lettering anywhere in the image.',
+    '',
+    'FORM: one paragraph, 20-40 words, plain declarative noun phrases.',
+    'No stacked adjectives. No "capturing the spirit of". Do not pad to reach',
+    'the word count. Short and concrete wins.',
+    '',
+    '- If the article centers on a SPECIFIC real named person, a tragedy, crime,',
+    '  death, medical detail, or other sensitive event where a generated image',
+    '  would be inappropriate, DO NOT write a prompt.',
+    '',
+    'PUBLISHER NOTES (when present):',
+    '- The request may include a PUBLISHER NOTES section: free text the publisher',
+    '  typed into their upload metadata table. Treat it as the closest thing you',
+    '  have to a client brief for the image, and honour it over your own reading',
+    '  of the body when the two disagree about subject matter.',
+    '- Notes are a MIXED BAG. They routinely blend an image brief with print',
+    '  production and layout instructions. Use ONLY the parts that describe what',
+    '  the picture should SHOW — subject, setting, season, action.',
+    '- IGNORE production/layout directions entirely. Examples of text to ignore:',
+    '  "run copy along the bottom", "spread across two pages", "corner banner",',
+    '  "put headshot by his byline", "if the photo resolution is good enough",',
+    '  page counts, column widths, placement, cropping and file-format notes.',
+    '  These describe the printed page, not the image, and must never appear as',
+    '  content in the prompt.',
+    '- Notes asking for a person DO override the no-people default, but every',
+    '  figure rule above still applies: no face, no portrait, no vitality words.',
+    '- Example: notes reading "use before and after photos. run copy along the',
+    '  bottom as these spread out across two pages" contain NO usable image',
+    '  brief for a single hero image (before/after is a layout of two images,',
+    '  and the rest is page layout) — so ignore them and draft from the body.',
+    '- Example: notes reading "Image of someone drinking water in the heat of',
+    '  summer" ARE a direct image brief — build the prompt around exactly that.',
+    '- If the notes contain no usable image guidance, silently ignore them and',
+    '  draft from the article body as normal. Never mention the notes, never',
+    '  apologise for them, never let layout words leak into the prompt.',
+    '- Report whether the notes shaped your prompt in "usedNotes".',
+    '',
+    'Respond with ONLY a JSON object, no markdown, no preamble:',
+    '{"generate": true|false, "prompt": "<prompt or empty>", "reason": "<if false, why>", "usedNotes": true|false}'
+  ].join('\n');
+
+  // v1.0.3 — Publisher notes from the upload metadata table.
+  // ta-asf v1.5.27+ parses the html-clean Worker's sidecar into
+  // S.sourceMetadata ({pairs:[{key,label,value}], map:{…}}). The Notes
+  // cell is the publisher's own brief — often the only place anyone
+  // says what the picture should show. Read-only; absent on uploads
+  // with no table, in which case everything behaves exactly as v1.0.2.
+  function publisherNotes() {
+    try {
+      var I = window.InbxASF && window.InbxASF._internal;
+      var meta = I && I.state && I.state.sourceMetadata;
+      if (!meta) return '';
+      if (meta.map && meta.map.notes) return String(meta.map.notes).trim();
+      if (Array.isArray(meta.pairs)) {
+        for (var i = 0; i < meta.pairs.length; i++) {
+          if (meta.pairs[i] && meta.pairs[i].key === 'notes') {
+            return String(meta.pairs[i].value || '').trim();
+          }
+        }
+      }
+    } catch (e) {}
+    return '';
+  }
+
+  /* v1.0.4 — the exact user message sent to the prompt drafter.
+     ignoreNotes drops the publisher notes block, which is the escape
+     hatch when the NOTES are what got the request refused (e.g. notes
+     asking for a photograph of a named person) while the article body
+     is perfectly generatable on its own. */
+  function buildUserContent(bodyHtml, ignoreNotes) {
+    var body  = String(bodyHtml || '').trim();
+    var notes = ignoreNotes ? '' : publisherNotes();
+    return notes
+      ? ('PUBLISHER NOTES (from the upload metadata table \u2014 use only the parts\n' +
+         'that describe what the image should SHOW; ignore layout/production text):\n\n' +
+         notes + '\n\n---\n\nARTICLE BODY (HTML):\n\n' + body)
+      : ('ARTICLE BODY (HTML):\n\n' + body);
+  }
+
+  function draftPrompt(bodyHtml, opts) {
+    var proxy = proxyUrl();
+    if (!proxy) return Promise.reject(new Error('anthropicProxy not configured in TA_CONFIG'));
+    var body = String(bodyHtml || '').trim();
+    if (!body) return Promise.reject(new Error('No article body to read — add a body first.'));
+
+    // v1.0.4 — built by a named helper so the modal can SHOW the operator
+    // exactly what was sent. Previously this string existed only inside
+    // the request and was invisible when the drafter declined.
+    var userContent = buildUserContent(body, opts && opts.ignoreNotes);
+
+    var req = {
+      model: PROMPT_MODEL,
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userContent }]
+    };
+
+    return fetch(proxy, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req)
+    }).then(function (r) {
+      if (!r.ok) return r.text().then(function (t) { throw new Error('Proxy HTTP ' + r.status + ': ' + t.slice(0, 200)); });
+      return r.json();
+    }).then(function (data) {
+      var text = '';
+      if (data && Array.isArray(data.content)) {
+        text = data.content.filter(function (b) { return b && b.type === 'text'; })
+                           .map(function (b) { return b.text; }).join('\n');
+      }
+      var clean = text.replace(/```json|```/g, '').trim();
+      var parsed;
+      try { parsed = JSON.parse(clean); }
+      catch (e) { throw new Error('Could not parse prompt response.'); }
+      if (!parsed || typeof parsed.generate !== 'boolean') throw new Error('Malformed prompt response.');
+      return parsed;
+    });
+  }
+
+  /* ── Worker call ── */
+  function generateImage(prompt) {
+    var url = fluxUrl();
+    if (!url) return Promise.reject(new Error('fluxGen Worker URL not configured in TA_CONFIG.'));
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: prompt, width: DEFAULT_W, height: DEFAULT_H })
+    }).then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok || !j || !j.url) {
+          throw new Error((j && j.error ? j.error : 'Worker HTTP ' + r.status) +
+                          (j && j.stage ? ' [' + j.stage + ']' : ''));
+        }
+        return j;   // { url, uuid, model, width, height, seconds }
+      });
+    });
+  }
+
+  /* ── Attach via Scenario L — Generate Media ──
+     Architectural rule (Jeff): Scenario B is a CONDITIONER only — it
+     does not assign assets. Generated images are ALREADY conditioned
+     (the fluxgen Worker did the Uploadcare upload), so they bypass B
+     Architectural rule (Jeff): generation and assignment stay separate.
+     Scenario L CREATES + PUBLISHES the MEDIA row only (status Available)
+     and returns its mediaId. It does NOT assign. The module then hands
+     that MEDIA item to the ASF's OWN setMainImageFromMedia — the exact
+     path used when picking an existing library image — so the ASF marks
+     the slot dirty and ASSIGNS it on Save. No assignment logic here, no
+     behind-the-back article write, no Scenario B.
+
+     Endpoint: TA_CONFIG.makeGenerateMedia  (Scenario L webhook)
+     Contract: { action:'createGeneratedMedia', uploadcareUrl, ... } →
+               creates MEDIA (Media Type=image, status=Available, NO
+               component-role — see TD-IMG-ROLE), publishes it, returns
+               { ok:true, mediaId, imageUrl, name }.
+
+     Returns to caller: { ok, media:{ mediaId, imageUrl, name } } so the
+     click handler can call setMainImageFromMedia and let the ASF finish. */
+  function createMedia(j, prompt) {
+    var asf = window.InbxASF;
+    var I   = asf && asf._internal;
+    if (!I || !I.cfg || !I.state) {
+      return Promise.resolve({ fallback: true, url: j.url });   // graceful: manual Replace
+    }
+    var CFG = I.cfg, S = I.state;
+    var tenant = CFG.tenant;
+    var url = (tenant.makeGenerateMedia && tenant.makeGenerateMedia())
+              || (window.TA_CONFIG && window.TA_CONFIG.makeGenerateMedia)
+              || '';
+    if (!url) return Promise.resolve({ fallback: true, url: j.url });
+
+    // Per convention (TD-IMG-ROLE): Available MEDIA does NOT carry a
+    // Component Role. Role is a TYPE/usage sub-classifier assigned at
+    // ATTACH time, not at creation — and for a plain image it would only
+    // duplicate Media Type = image. So we do NOT send componentRole here.
+    // Scenario L's Create-MEDIA module leaves Component Role empty;
+    // Media Type = image is the real classifier.
+    var fname = 'flux-' + String(j.uuid).slice(0, 8) + '.jpg';
+    var payload = {
+      action:           'createGeneratedMedia',
+      uploadcareUuid:   j.uuid,
+      uploadcareUrl:    j.url,
+      originalFilename: fname,
+      mimeType:         'image/jpeg',
+      width:            j.width || 1024,
+      height:           j.height || 1024,
+      titleSlug:        tenant.titleSlug(),
+      taItemId:         tenant.taItemId(),
+      imageSource:      'ai-flux-2-pro',        // provenance
+      generationPrompt: prompt,                 // provenance
+      source:           'image-gen-v' + VERSION
+    };
+    return fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) {
+      if (!r.ok) throw new Error('Scenario L HTTP ' + r.status);
+      return r.text();
+    }).then(function (body) {
+      var p = null;
+      try { p = JSON.parse(body); } catch (e) {}
+      if (!p || p.ok !== true || !p.mediaId) {
+        throw new Error('Scenario L did not confirm (createGeneratedMedia route).');
+      }
+      return {
+        ok: true,
+        media: {
+          mediaId:  p.mediaId,
+          imageUrl: p.imageUrl || j.url,
+          name:     p.name || fname
+        }
+      };
+    });
+  }
+
+  // Hand the new MEDIA to the ASF's own main-image setter, exactly as if
+  // the operator had picked it from the library. The ASF marks it dirty
+  // and assigns it on Save — assignment stays the ASF's job.
+  function handToAsf(media) {
+    var I = window.InbxASF && window.InbxASF._internal;
+    var fn = I && (I.setMainImageFromMedia || (I.api && I.api.setMainImageFromMedia));
+    if (typeof fn === 'function') { fn(media); return true; }
+    // Fallback: write state directly the way setMainImageFromMedia does,
+    // then re-render — covers the case where it isn't exposed on _internal.
+    if (I && I.state) {
+      var S = I.state;
+      if (!S.article) S.article = {};
+      if (!S.dirtyFields) S.dirtyFields = {};
+      if (!S.originalValues) S.originalValues = {};
+      var prior = S.originalValues.mainImageSrc || '';
+      S.article.mainImageSrc     = media.imageUrl;
+      S.article.mainImageMediaId = media.mediaId || '';
+      if (!S.article.mainImageAlt && media.name) S.article.mainImageAlt = media.name;
+      if (!Array.isArray(S.media)) S.media = [];
+      S.media = S.media.filter(function (m) { return m.role !== 'main-image'; });
+      S.media.push({ mediaId: media.mediaId, imageUrl: media.imageUrl, name: media.name, role: 'main-image' });
+      S.dirtyFields.mainImageSrc     = { from: prior, to: media.imageUrl };
+      S.dirtyFields.mainImageMediaId = { from: '', to: media.mediaId || '' };
+      try { I.render(); } catch (e) {}
+      return true;
+    }
+    return false;
+  }
+
+  /* ── Modal UI ── */
+  var modalEl = null, state = null;
+
+  // v1.0.3 — Show the publisher's Notes verbatim above the prompt box.
+  // Jeff asked for notes-derived text to be visually distinguished; a
+  // <textarea> can only hold plain text, and converting it to a
+  // contenteditable would break the uncontrolled-input typing fix. So
+  // the notes are shown as their own gold-railed block instead — same
+  // treatment they get in the ASF Source-metadata panel, so the two
+  // surfaces read as one system. You can see exactly what the model was
+  // given, and edit the resulting prompt freely.
+  function notesBlock() {
+    var n = publisherNotes();
+    if (!n) return '';
+    var off = state && state.ignoreNotes;
+    return '<div class="ixig-notes' + (off ? ' is-off' : '') + '">' +
+             '<span class="ixig-notes-h">Publisher notes \u00b7 ' +
+               (off ? 'IGNORED for this draft' : 'fed to the prompt') + '</span>' +
+             '<div class="ixig-notes-b">' + esc(n) + '</div>' +
+           '</div>';
+  }
+
+  /* v1.0.4 — collapsed view of everything handed to the drafter. Jeff
+     asked to see the prompt; when the drafter DECLINES there is no
+     drafted prompt to show, so show the inputs instead. Without this the
+     refusal was unactionable: no way to tell whether the notes, the
+     body, or the system rules caused it. */
+  function sentBlock() {
+    var s = state; if (!s) return '';
+    try { return sentBlockInner(s); }
+    catch (e) {
+      // v1.0.5 — the disclosure panel is a convenience. If it cannot be
+      // built it degrades to nothing; it does not take the modal with it.
+      try { console.error('[img-gen v' + VERSION + '] sentBlock failed', e); } catch (e2) {}
+      return '';
+    }
+  }
+
+  function sentBlockInner(s) {
+    // v1.0.5 — SYSTEM_PROMPT is ALREADY a joined string (see its
+    // definition: the array is .join('\\n')-ed inline). v1.0.4 called
+    // .join on it again, which threw TypeError inside render(). Because
+    // render() runs BEFORE generateImage() in the generate handler, the
+    // throw escaped the click handler, the fetch never fired, and the
+    // button sat on "Generating..." forever.
+    var sys  = String(SYSTEM_PROMPT);
+    var user = buildUserContent(s.bodyHtml || '', s.ignoreNotes);
+    if (user.length > 4000) user = user.slice(0, 4000) + '\n\n\u2026 [body truncated for display]';
+    return '<details class="ixig-dbg">' +
+             '<summary>What was sent to the drafter</summary>' +
+             '<div class="ixig-dbg-h">SYSTEM INSTRUCTIONS</div>' +
+             '<pre class="ixig-dbg-p">' + esc(sys) + '</pre>' +
+             '<div class="ixig-dbg-h">MESSAGE</div>' +
+             '<pre class="ixig-dbg-p">' + esc(user) + '</pre>' +
+           '</details>';
+  }
+
+  function styleTag() {
+    if (document.getElementById('ix-imggen-styles')) return;
+    var s = document.createElement('style');
+    s.id = 'ix-imggen-styles';
+    s.textContent = [
+      '.ixig-backdrop{position:fixed;inset:0;background:rgba(26,58,58,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px}',
+      '.ixig-modal{background:#FAF9F5;border-radius:14px;max-width:560px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.28);font-family:"DM Sans",system-ui,sans-serif;overflow:hidden}',
+      '.ixig-head{padding:18px 22px;border-bottom:1px solid #e7e4da;display:flex;align-items:center;gap:10px}',
+      '.ixig-head b{font-size:16px;color:#1A3A3A;font-weight:600}',
+      '.ixig-body{padding:20px 22px}',
+      '.ixig-label{display:block;font-size:12px;font-weight:600;color:#1A3A3A;margin:0 0 6px}',
+      '.ixig-ta{width:100%;min-height:96px;resize:vertical;border:2px solid #e0ddd2;border-radius:9px;padding:11px 13px;font:14px/1.5 "DM Sans",sans-serif;color:#243;background:#fff;box-sizing:border-box}',
+      '.ixig-ta:focus{outline:none;border-color:#5B7FFF}',
+      '.ixig-ta.dirty{border-color:var(--ipp-edit-dirty-border,#C4A35A) !important}',   /* HC-IMG-005 */
+      '.ixig-sub{font-size:12px;color:#7a7766;margin:8px 2px 0}',
+      /* v1.0.3 — publisher-notes provenance. The prompt lives in a plain
+         <textarea>, which cannot render coloured/bold spans, so the notes
+         are surfaced ABOVE it instead of highlighted inside it. */
+      '.ixig-notes{margin:0 0 10px;padding:9px 11px;background:rgba(196,163,90,.12);border:1px solid rgba(196,163,90,.32);border-left:3px solid #C4A35A;border-radius:7px}',
+      '.ixig-notes-h{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a6d2f;margin:0 0 4px}',
+      '.ixig-notes-b{font-size:12px;line-height:1.5;color:#5c4a22;white-space:pre-wrap;word-break:break-word}',
+      '.ixig-preview{margin-top:14px;border-radius:10px;overflow:hidden;background:#eee;aspect-ratio:1/1;display:none}',
+      '.ixig-preview img{width:100%;height:100%;object-fit:cover;display:block}',
+      '.ixig-foot{padding:14px 22px;border-top:1px solid #e7e4da;display:flex;align-items:center;justify-content:space-between;gap:12px}',
+      '.ixig-cancel{background:none;border:none;color:#7a7766;font-size:13px;text-decoration:underline;cursor:pointer;padding:6px}',
+      '.ixig-cancel:hover{color:#1A3A3A}',
+      '.ixig-btn{background:#C4A35A;color:#1A3A3A;border:none;border-radius:9px;padding:11px 20px;font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}',
+      '.ixig-btn:disabled{opacity:.55;cursor:default}',
+      '.ixig-btn.secondary{background:#5B7FFF;color:#fff}',
+      '.ixig-spin{width:15px;height:15px;border:2px solid rgba(26,58,58,.3);border-top-color:#1A3A3A;border-radius:50%;animation:ixigspin .7s linear infinite}',
+      '@keyframes ixigspin{to{transform:rotate(360deg)}}',
+      '.ixig-err{color:#b3261e;font-size:13px;margin-top:10px}',
+      // v1.0.4 — refusal banner. Amber, not red: nothing failed and
+      // nothing was lost, the operator simply has to steer.
+      '.ixig-warn{margin:0 0 12px;padding:11px 13px;background:rgba(196,163,90,.14);border:1px solid rgba(196,163,90,.42);border-left:3px solid #C4A35A;border-radius:7px}',
+      '.ixig-warn-h{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a6d2f;margin:0 0 5px}',
+      '.ixig-warn-b{font-size:13px;line-height:1.5;color:#4a3c1c;margin:0 0 6px}',
+      '.ixig-warn-f{font-size:12px;line-height:1.5;color:#6b5c33}',
+      '.ixig-notes.is-off{opacity:.55}',
+      '.ixig-notes.is-off .ixig-notes-b{text-decoration:line-through}',
+      '.ixig-foot-spacer{flex:1}',
+      // v1.0.4 — the inputs, on demand. Collapsed so it never competes
+      // with the prompt box, but always one click away.
+      '.ixig-dbg{margin:12px 0 0;border-top:1px solid #e7e4da;padding-top:10px}',
+      '.ixig-dbg summary{cursor:pointer;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#6b6558;list-style:none}',
+      '.ixig-dbg summary::-webkit-details-marker{display:none}',
+      '.ixig-dbg summary:before{content:"\\25B8 ";color:#9a927f}',
+      '.ixig-dbg[open] summary:before{content:"\\25BE "}',
+      '.ixig-dbg-h{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a8372;margin:10px 0 3px}',
+      '.ixig-dbg-p{margin:0;padding:8px 10px;background:#FDFCF8;border:1px solid #e7e4da;border-radius:6px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;line-height:1.45;color:#3d3a33;white-space:pre-wrap;word-break:break-word;max-height:200px;overflow:auto}',
+      '.ixig-x{margin-left:auto;background:none;border:none;font-size:20px;color:#7a7766;cursor:pointer;line-height:1}'
+    ].join('\n');
+    document.head.appendChild(s);
+  }
+
+  function close() {
+    if (modalEl) { modalEl.remove(); modalEl = null; }
+    state = null;
+    document.removeEventListener('keydown', onKey, true);
+  }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+
+  function render() {
+    if (!modalEl || !state) return;
+    var s = state;
+    var dirty = s.prompt !== s.drafted;
+    var busy = s.phase === 'drafting' || s.phase === 'generating';
+
+    var inner;
+    if (s.phase === 'drafting') {
+      inner = '<div class="ixig-body"><div class="ixig-sub">Reading the article and drafting an image prompt…</div></div>';
+    } else {
+      /* v1.0.4 — a declined draft now lands in the SAME editable surface
+         as a successful one. It used to render the refusal text and a
+         Close button and nothing else, so the operator could not see the
+         prompt, could not edit it, and could not retry: the only move
+         was to give up. The refusal is now a banner over a working form. */
+      var warn = (s.phase === 'blocked')
+        ? '<div class="ixig-warn">' +
+            '<span class="ixig-warn-h">The drafter declined to write a prompt</span>' +
+            '<div class="ixig-warn-b">' + esc(s.reason || 'This article isn\u2019t a good fit for a generated image.') + '</div>' +
+            '<div class="ixig-warn-f">Write your own prompt below, or redraft without the publisher notes. ' +
+              'Nothing has been generated and nothing has been saved.</div>' +
+          '</div>'
+        : '';
+      var lbl = (s.phase === 'blocked' && !s.prompt)
+        ? 'Image prompt \u00b7 write your own'
+        : ('Image prompt' + (dirty ? ' \u00b7 edited' : ''));
+      inner =
+        '<div class="ixig-body">' +
+          warn +
+          notesBlock() +
+          '<label class="ixig-label" for="ixig-prompt">' + lbl + '</label>' +
+          '<textarea id="ixig-prompt" class="ixig-ta' + (dirty ? ' dirty' : '') + '"' +
+            ' placeholder="Describe the image you want. No real or named people, no text in the image."' +
+            (busy ? ' disabled' : '') + '>' + esc(s.prompt) + '</textarea>' +
+          '<div class="ixig-sub">Flux 2 Pro \u00b7 1024\u00d71024 \u00b7 ~12\u201315s \u00b7 no real people, no text</div>' +
+          '<div class="ixig-preview"' + (s.resultUrl ? ' style="display:block"' : '') + '>' +
+            (s.resultUrl ? '<img src="' + esc(s.resultUrl) + '" alt="Generated preview">' : '') +
+          '</div>' +
+          (s.error ? '<div class="ixig-err">' + esc(s.error) + '</div>' : '') +
+          sentBlock() +
+        '</div>';
+    }
+
+    var foot;
+    if (s.resultUrl && s.phase === 'done') {
+      foot = '<div class="ixig-foot">' +
+               '<button type="button" class="ixig-cancel" data-ixig="regen">Discard &amp; redraw</button>' +
+               '<button type="button" class="ixig-btn" data-ixig="use">Use as main image</button>' +
+             '</div>';
+    } else {
+      // v1.0.4 — offer a redraft with the notes dropped whenever notes
+      // exist and are currently in play. This is the one-click answer to
+      // "the notes asked for a photo of a named person".
+      var redraft = (publisherNotes() && !s.ignoreNotes && !busy)
+        ? '<button type="button" class="ixig-cancel" data-ixig="renotes">Draft again without notes</button>'
+        : '';
+      foot = '<div class="ixig-foot">' +
+               '<button type="button" class="ixig-cancel" data-ixig="cancel">' + (dirty ? 'Revert prompt' : 'Cancel') + '</button>' +
+               redraft +
+               '<div class="ixig-foot-spacer"></div>' +
+               '<button type="button" class="ixig-btn"' + (busy ? ' disabled' : '') + ' data-ixig="generate">' +
+                 (s.phase === 'generating' ? '<span class="ixig-spin"></span>Generating…' : '\u2728 Generate image') +
+               '</button>' +
+             '</div>';
+    }
+
+    modalEl.querySelector('.ixig-modal').innerHTML =
+      '<div class="ixig-head"><span>\u2728</span><b>Generate main image</b>' +
+        '<button type="button" class="ixig-x" data-ixig="close">\u00d7</button></div>' +
+      inner + foot;
+
+    var ta = modalEl.querySelector('#ixig-prompt');
+    if (ta && !busy) {
+      // Do NOT re-render on input — re-rendering rebuilds the textarea
+      // and kills typing (one char at a time). Just store the value and
+      // update the dirty affordances in place. The textarea is an
+      // uncontrolled input; the browser owns its text while typing.
+      ta.addEventListener('input', function () {
+        s.prompt = ta.value;
+        var isDirty = s.prompt !== s.drafted;
+        ta.classList.toggle('dirty', isDirty);
+        // Update the Cancel/Revert label + the "· edited" hint without
+        // a full re-render.
+        var cancelBtn = modalEl.querySelector('[data-ixig="cancel"]');
+        if (cancelBtn) cancelBtn.textContent = isDirty ? 'Revert prompt' : 'Cancel';
+        var lbl = modalEl.querySelector('.ixig-label');
+        if (lbl) lbl.textContent = 'Image prompt' + (isDirty ? ' \u00b7 edited' : '');
+      });
+      // Restore focus once after a (re)render that wasn't caused by typing
+      // — e.g. arriving from the drafting phase — so the operator can type
+      // immediately. Guarded so we only autofocus when the field is empty
+      // of a selection.
+      if (s._focusOnRender) { s._focusOnRender = false; try { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } catch (e) {} }
+    }
+  }
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  /* v1.0.5 — render() is now called through this wherever a throw
+     would strand an in-flight or about-to-fly request. The modal is a
+     diagnostic surface; a fault in the diagnostics must never break the
+     thing being diagnosed. */
+  function safeRender() {
+    try { render(); }
+    catch (e) {
+      try { console.error('[img-gen v' + VERSION + '] render failed', e); } catch (e2) {}
+    }
+  }
+
+  function onModalClick(e) {
+    var t = e.target.closest('[data-ixig]'); if (!t) {
+      if (e.target.classList && e.target.classList.contains('ixig-backdrop')) close();
+      return;
+    }
+    var act = t.getAttribute('data-ixig');
+    var s = state; if (!s) return;
+    if (act === 'close') return close();
+    if (act === 'cancel') {
+      // v1.0.4 — after a refusal there is no drafted prompt to revert TO,
+      // so Cancel must close rather than silently wiping what the
+      // operator just typed back to an empty string.
+      if (s.phase === 'blocked' && !s.drafted) { close(); return; }
+      if (s.prompt !== s.drafted) { s.prompt = s.drafted; s._focusOnRender = true; render(); }   // revert
+      else close();
+      return;
+    }
+    if (act === 'regen') { s.resultUrl = ''; s.phase = 'ready'; s.error = ''; render(); return; }
+    // v1.0.4 — redraft with the publisher notes dropped.
+    if (act === 'renotes') { s.ignoreNotes = true; runDraft(); return; }
+    if (act === 'generate') {
+      // Read the LIVE textarea value so the final state is captured even
+      // if the last input event hasn't flushed.
+      var taLive = modalEl.querySelector('#ixig-prompt');
+      if (taLive) s.prompt = taLive.value;
+      if (!s.prompt.trim()) { s.error = 'Prompt is empty.'; render(); return; }
+      s.phase = 'generating'; s.error = '';
+      // v1.0.5 — render() must not be able to strand the operation. A
+      // throw in the pre-flight render used to abort the handler before
+      // the fetch was issued, leaving the modal stuck on "Generating...".
+      // The request now goes out regardless; a render fault is logged,
+      // not fatal.
+      safeRender();
+      generateImage(s.prompt).then(function (j) {
+        s.result = j; s.resultUrl = j.url; s.phase = 'done'; safeRender();
+      }).catch(function (err) {
+        s.phase = 'ready'; s.error = (err && err.message) || 'Generation failed.'; safeRender();
+      });
+      return;
+    }
+    if (act === 'use') {
+      var btn = t; btn.disabled = true; btn.innerHTML = '<span class="ixig-spin"></span>Adding…';
+      createMedia(s.result, s.prompt).then(function (res) {
+        if (res && res.fallback) {
+          asfToast('Image generated. Scenario L not wired — copy the URL and use Replace.', 'info');
+          close();
+          return;
+        }
+        // Hand the new Available MEDIA to the ASF's own main-image setter.
+        // The slot goes dirty; the operator's Save assigns it (ASF's job).
+        var ok = handToAsf(res.media);
+        if (ok) {
+          asfToast('Image added to the main-image slot — Save to assign it.', 'success');
+        } else {
+          asfToast('MEDIA created. Pick it from the library to attach.', 'info');
+        }
+        close();
+      }).catch(function (err) {
+        s.error = 'Could not add image: ' + ((err && err.message) || 'unknown'); s.phase = 'done'; render();
+      });
+      return;
+    }
+  }
+
+  function asfToast(msg, kind) {
+    var I = window.InbxASF && window.InbxASF._internal;
+    if (I && typeof I.toast === 'function') return I.toast(msg, kind);
+    log(kind, msg);
+  }
+
+  function open(bodyHtml) {
+    styleTag();
+    // v1.0.4 — bodyHtml is kept so the draft can be re-run (with or
+    // without the notes) without reopening the modal.
+    state = { phase: 'drafting', drafted: '', prompt: '', resultUrl: '', result: null,
+              error: '', reason: '', bodyHtml: String(bodyHtml || ''), ignoreNotes: false };
+    modalEl = document.createElement('div');
+    modalEl.className = 'ixig-backdrop';
+    modalEl.innerHTML = '<div class="ixig-modal"></div>';
+    modalEl.addEventListener('click', onModalClick);
+    document.body.appendChild(modalEl);
+    document.addEventListener('keydown', onKey, true);
+    render();
+
+    runDraft();
+  }
+
+  /* v1.0.4 — extracted from open() so "Draft again without notes" can
+     re-enter it. A refusal now sets phase 'blocked' but leaves the whole
+     editable surface live underneath. */
+  function runDraft() {
+    var s = state; if (!s) return;
+    s.phase = 'drafting'; s.error = ''; s.reason = '';
+    render();
+    draftPrompt(s.bodyHtml, { ignoreNotes: s.ignoreNotes }).then(function (out) {
+      if (!state) return;   // closed mid-flight
+      if (!out.generate) {
+        state.phase   = 'blocked';
+        state.reason  = out.reason || '';
+        state.drafted = '';
+        state.prompt  = '';
+        state._focusOnRender = true;
+        render();
+        return;
+      }
+      state.drafted = out.prompt || '';
+      state.prompt  = state.drafted;
+      state.phase   = 'ready';
+      state._focusOnRender = true;
+      render();
+    }).catch(function (err) {
+      if (!state) return;
+      state.phase = 'ready'; state.drafted = ''; state.prompt = '';
+      state.error = (err && err.message) || 'Could not draft a prompt.';
+      state._focusOnRender = true;
+      render();
+    });
+  }
+
+  /* ── Self-wire to the existing generate-main button ──
+     Capture-phase listener intercepts BEFORE the ASF delegated click
+     router shows its "coming soon" toast. We read the body from the
+     ASF bridge if present, else from the live state hook. */
+  function getBodyHtml() {
+    var I = window.InbxASF && window.InbxASF._internal;
+    if (I && I.state && I.state.article && I.state.article.bodyHtml) {
+      return I.state.article.bodyHtml;
+    }
+    // Fallback: read from the live Trix editor if mounted
+    var trix = document.querySelector('trix-editor');
+    if (trix && trix.innerHTML) return trix.innerHTML;
+    return '';
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-asf-action="generate-main"]');
+    if (!btn) return;
+    e.stopPropagation();   // pre-empt the ASF stub toast
+    e.preventDefault();
+    open(getBodyHtml());
+  }, true);  // capture phase
+
+  window.InbxImageGen = { open: open, version: VERSION };
+  log('ready');
+})();
