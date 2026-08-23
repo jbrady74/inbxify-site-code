@@ -1,0 +1,292 @@
+/* ════════════════════════════════════════════════════════════════
+   ta-cadence-board-v0.1.1.css
+   INBXIFY T-A — Cadence Board · SKELETON
+   Companion: ta-cadence-board-v0.1.1.js (matched pair — load both)
+
+   House tokens: teal #1A3A3A, gold #C4A35A, cream #FAF9F5 / #FDFCF8.
+   Salmon #ec7259 is the "needs you now" accent from the mockup
+   series and is reserved here — declared, not yet spent, so the
+   first real use lands on an established token rather than a new one.
+
+   Column widths express D-CB-1. Components and Assets are fixed-ish
+   creation lanes; Issues is the flex lane, which is what makes Focus
+   (D-CB-21) a width change rather than a layout swap.
+
+   TD note: every ix- token in this file is declared under :root
+   below rather than as a bare var() fallback, deliberately — see
+   TD-241, which records that the ix palette currently exists only as
+   fallbacks with no root block. This file does not add to that debt.
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ixcb-teal:    #1A3A3A;
+  --ixcb-gold:    #C4A35A;
+  --ixcb-cream:   #FAF9F5;
+  --ixcb-cream-2: #FDFCF8;
+  --ixcb-line:    #e7e4da;
+  --ixcb-line-2:  #ded9cc;
+  --ixcb-ink:     #3d3a33;
+  --ixcb-mute:    #8a8372;
+  --ixcb-blue:    #5B7FFF;
+  --ixcb-salmon:  #ec7259;   /* reserved — "needs you now" */
+  --ixcb-rail:    44px;
+}
+
+.ixcb-root {
+  font-family: "DM Sans", system-ui, sans-serif;
+  color: var(--ixcb-ink);
+  background: var(--ixcb-cream);
+  border: 1px solid var(--ixcb-line);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: min(80vh, 860px);
+}
+
+/* ── App bar ── */
+.ixcb-appbar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 11px 16px;
+  background: var(--ixcb-cream-2);
+  border-bottom: 1px solid var(--ixcb-line);
+  flex: 0 0 auto;
+}
+.ixcb-brand {
+  font-size: 14px; font-weight: 600; color: var(--ixcb-teal); letter-spacing: .01em;
+}
+.ixcb-scopes { display: flex; align-items: center; gap: 7px; }
+.ixcb-scope {
+  font-family: "DM Mono", ui-monospace, monospace;
+  font-size: 10px; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--ixcb-mute);
+}
+.ixcb-scope-arrow { color: var(--ixcb-line-2); font-size: 12px; }
+.ixcb-appbar-sp { flex: 1; }
+.ixcb-err { font-size: 12px; color: #b3261e; max-width: 46ch; }
+
+.ixcb-ghost {
+  background: none; border: 1px solid var(--ixcb-line-2); border-radius: 7px;
+  padding: 6px 12px; font: 12.5px "DM Sans", sans-serif; color: #6b6558;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+}
+.ixcb-ghost:hover:not(:disabled) { border-color: #c9c5b6; color: var(--ixcb-teal); }
+.ixcb-ghost:disabled { opacity: .55; cursor: default; }
+
+/* Focus is a state, not a mode — so the button reads as a toggle,
+   gold when in force, matching the platform's dirty/in-force rail. */
+.ixcb-focus {
+  background: none; border: 2px solid var(--ixcb-line-2); border-radius: 7px;
+  padding: 5px 14px; font: 600 12.5px "DM Sans", sans-serif;
+  color: #6b6558; cursor: pointer;
+}
+.ixcb-focus:hover { border-color: #c9c5b6; color: var(--ixcb-teal); }
+.ixcb-focus.is-on {
+  border-color: var(--ixcb-gold);
+  background: rgba(196,163,90,.14);
+  color: var(--ixcb-teal);
+}
+
+/* ── Legacy / New switch ──
+   Co-tenancy with the Studio pane. The pill is injected ABOVE the
+   legacy tools and is the only thing an operator who has never seen
+   the board will notice; the return control lives in the board's own
+   app bar. Both are quiet — this is a preview, not a promotion. */
+.ixcb-legacy-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin: 0 0 14px;
+  background: rgba(196,163,90,.14);
+  border: 1px solid rgba(196,163,90,.42);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font: 600 12px "DM Sans", sans-serif;
+  color: #6b5c33;
+  cursor: pointer;
+}
+.ixcb-legacy-pill:hover { background: rgba(196,163,90,.22); color: var(--ixcb-teal); }
+
+.ixcb-swap {
+  background: none; border: 1px solid var(--ixcb-line-2); border-radius: 7px;
+  padding: 6px 12px; font: 12.5px "DM Sans", sans-serif; color: #6b6558;
+  cursor: pointer; white-space: nowrap;
+}
+.ixcb-swap:hover { border-color: #c9c5b6; color: var(--ixcb-teal); }
+
+/* Zero-result diagnosis — a drifted DOM contract must not look like
+   "no work to do". Amber, because nothing failed; something moved. */
+.ixcb-empty.is-diag {
+  border-style: solid;
+  border-color: rgba(196,163,90,.42);
+  background: rgba(196,163,90,.10);
+  color: #6b5c33; text-align: left;
+}
+.ixcb-empty.is-diag b { display: block; margin-bottom: 5px; color: #8a6d2f; }
+
+/* ── Columns ── */
+.ixcb-cols {
+  flex: 1; display: flex; min-height: 0; align-items: stretch;
+}
+.ixcb-col {
+  display: flex; flex-direction: column; min-width: 0; min-height: 0;
+  border-right: 1px solid var(--ixcb-line);
+  background: #fff;
+  transition: flex-basis .16s ease, flex-grow .16s ease;
+}
+.ixcb-col:last-child { border-right: none; }
+.ixcb-col--components { flex: 1 1 26%; }
+.ixcb-col--assets     { flex: 1 1 30%; }
+/* Issues is the flex lane. Focus is therefore a width change on an
+   existing layout, never a second surface (D-CB-3). */
+.ixcb-col--issues     { flex: 2 1 44%; background: var(--ixcb-cream-2); }
+
+.ixcb-col.is-collapsed {
+  flex: 0 0 var(--ixcb-rail);
+  background: var(--ixcb-cream-2);
+  cursor: pointer;
+}
+.ixcb-cols.is-focus .ixcb-col--issues { flex: 1 1 100%; }
+
+/* Issue scope is the one thing the operator must never misread, so
+   the scoped lane carries a persistent 3px gold spine. */
+.ixcb-col.is-scoped:not(.is-collapsed) { box-shadow: inset 3px 0 0 var(--ixcb-gold); }
+
+/* ── Rail ── */
+.ixcb-rail {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between;
+  padding: 12px 0; gap: 10px;
+}
+.ixcb-rail:hover { background: rgba(196,163,90,.08); }
+.ixcb-rail-lbl {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font-family: "DM Mono", ui-monospace, monospace;
+  font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ixcb-mute); white-space: nowrap;
+}
+.ixcb-rail-caret { font-size: 15px; color: var(--ixcb-line-2); }
+
+/* ── Column head ── */
+.ixcb-colhead {
+  flex: 0 0 auto; padding: 13px 15px 11px;
+  border-bottom: 1px solid var(--ixcb-line);
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 10px;
+}
+.ixcb-colhead-l { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.ixcb-coltitle {
+  font-size: 13.5px; font-weight: 600; color: var(--ixcb-teal);
+  white-space: nowrap;
+}
+.ixcb-count {
+  font-family: "DM Mono", ui-monospace, monospace;
+  font-size: 11px; color: var(--ixcb-mute);
+}
+.ixcb-collapse {
+  background: none; border: none; font-size: 16px; line-height: 1;
+  color: var(--ixcb-line-2); cursor: pointer; padding: 0 3px;
+}
+.ixcb-collapse:hover { color: var(--ixcb-teal); }
+.ixcb-colhint {
+  grid-column: 1 / -1;
+  font-size: 11px; color: var(--ixcb-mute);
+}
+
+.ixcb-colbody { flex: 1; overflow: auto; padding: 13px 15px; min-height: 0; }
+
+/* ── Component tiles ── */
+.ixcb-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.ixcb-tile {
+  border: 1px solid var(--ixcb-line); border-radius: 9px; overflow: hidden;
+  background: #fff; cursor: pointer;
+}
+.ixcb-tile:hover { border-color: var(--ixcb-gold); }
+.ixcb-thumb { aspect-ratio: 1/1; background: #f0eee7; }
+.ixcb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ixcb-thumb.is-none { background: repeating-linear-gradient(45deg,#f4f2ec,#f4f2ec 6px,#eeebe2 6px,#eeebe2 12px); }
+.ixcb-tile-b { padding: 6px 8px; }
+.ixcb-tile-n {
+  display: block; font-size: 11px; line-height: 1.35; color: var(--ixcb-ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── Asset rows ── */
+.ixcb-rows { display: flex; flex-direction: column; gap: 6px; }
+.ixcb-row {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 10px; background: #fff;
+  border: 1px solid var(--ixcb-line); border-radius: 8px; cursor: pointer;
+}
+.ixcb-row:hover { border-color: var(--ixcb-gold); }
+.ixcb-row-n {
+  font-size: 12.5px; color: var(--ixcb-ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ixcb-kind {
+  flex: 0 0 auto;
+  font-family: "DM Mono", ui-monospace, monospace;
+  font-size: 9px; letter-spacing: .07em; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 4px;
+  background: #f0eee7; color: #6b6558;
+}
+.ixcb-kind--article { background: rgba(26,58,58,.10);  color: var(--ixcb-teal); }
+.ixcb-kind--ad      { background: rgba(196,163,90,.20); color: #7d6524; }
+.ixcb-kind--event   { background: rgba(91,127,255,.14); color: #3f57b0; }
+.ixcb-kind--listing { background: rgba(236,114,89,.15); color: #a24a35; }
+
+/* ── Plans ── */
+.ixcb-plans { display: flex; flex-direction: column; gap: 10px; }
+.ixcb-plan {
+  background: #fff; border: 1px solid var(--ixcb-line);
+  border-radius: 10px; padding: 12px 14px;
+}
+.ixcb-plan:hover { border-color: var(--ixcb-gold); }
+.ixcb-plan-h { display: flex; align-items: center; gap: 9px; }
+.ixcb-plan-n { font-size: 13.5px; font-weight: 600; color: var(--ixcb-teal); }
+.ixcb-next {
+  font-family: "DM Mono", ui-monospace, monospace;
+  font-size: 8.5px; letter-spacing: .1em;
+  background: var(--ixcb-gold); color: var(--ixcb-teal);
+  padding: 2px 6px; border-radius: 4px;
+}
+.ixcb-plan-s { font-size: 11.5px; color: var(--ixcb-mute); margin-top: 3px; }
+.ixcb-plan-m {
+  display: flex; align-items: center; gap: 14px;
+  margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--ixcb-line);
+}
+.ixcb-fill { font-size: 11.5px; color: #6b6558; }
+.ixcb-print {
+  font-size: 11.5px; color: var(--ixcb-blue); text-decoration: none;
+  margin-left: auto; white-space: nowrap;
+}
+.ixcb-print:hover { text-decoration: underline; }
+
+/* ── States ── */
+.ixcb-empty {
+  padding: 26px 14px; text-align: center;
+  color: #9a927f; font-size: 12.5px; line-height: 1.6;
+  border: 1px dashed var(--ixcb-line-2); border-radius: 10px; background: #fff;
+}
+.ixcb-loading {
+  display: flex; align-items: center; gap: 9px;
+  padding: 22px 4px; font-size: 12.5px; color: var(--ixcb-mute);
+}
+.ixcb-spin {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(26,58,58,.25); border-top-color: var(--ixcb-teal);
+  border-radius: 50%; animation: ixcbspin .7s linear infinite;
+  display: inline-block;
+}
+@keyframes ixcbspin { to { transform: rotate(360deg); } }
+
+/* D-CVS-12 — desktop-only surface. Column width is a hard budget and
+   no row may wrap; below this width the board is not the right tool
+   and says so rather than degrading quietly. */
+@media (max-width: 900px) {
+  .ixcb-cols { display: block; }
+  .ixcb-root::before {
+    content: "The Cadence Board is a desktop surface.";
+    display: block; padding: 12px 16px;
+    background: rgba(196,163,90,.14);
+    border-bottom: 1px solid var(--ixcb-line);
+    font-size: 12.5px; color: #6b5c33;
+  }
+}
