@@ -1,0 +1,395 @@
+/* ════════════════════════════════════════════════════════════════
+   ta-cadence-board-v0.2.2.css
+   INBXIFY T-A — Cadence Board
+   Companion: ta-cadence-board-v0.2.2.js (matched pair — load both)
+
+   ── v0.2.2 — THE MOCKUP'S IDENTITY ──
+   v0.1.x was correct and characterless. This is the mockup v0.7 skin
+   applied to the live surface: dark bar, Fraunces headings, floating
+   panels on cream, dark issue headers, and salmon spent once.
+
+   ── v0.2.2 — BACKGROUNDS FORCED ──
+   The T-A page carries a wildcard:
+       section.publisher-wrapper * { background-color: … !important;
+                                     background-image: none !important }
+   at specificity (0,1,1). It strips the background off every injected
+   element. v0.2.1's teal app bar and teal plan headers were wiped, so
+   white text rendered on white and the chrome was drawn but invisible.
+
+   EVERY load-bearing background below is now !important on a
+   root-scoped selector — (0,2,0) beats the wildcard's (0,1,1) even
+   with !important on both sides. Same page constraint that killed
+   position:sticky here (TD-229). Do not remove these without testing
+   on the live T-A page; a local preview will not reproduce it.
+
+   THREE RULES THIS FILE HOLDS TO
+   1. Salmon #ec7259 means "needs you now" and NOTHING else. It is on
+      the NEXT badge and the empty-plan spine. It is not a hover, not
+      a border, not an accent. A colour that appears everywhere tells
+      you nothing.
+   2. Every state class is namespaced (ixcb-on, ixcb-shut …) and the
+      contrast-critical ones are root-scoped with !important. v0.1.4
+      shipped a white-on-white chip because it used the generic
+      `is-on`, which another stylesheet on this page owns. See also
+      content-library v1.0.57 and TD-241.
+   3. Nothing wraps to a second line (D-CVS-12). Column width is a
+      hard budget; long values ellipsis rather than reflow.
+   ════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --ixcb-teal:    #1A3A3A;
+  --ixcb-teal-2:  #14302f;
+  --ixcb-teal-3:  #0e2423;
+  --ixcb-gold:    #C4A35A;
+  --ixcb-salmon:  #ec7259;   /* "needs you now" — spent once, on purpose */
+  --ixcb-cream:   #FAF9F5;
+  --ixcb-cream-2: #FDFCF8;
+  --ixcb-line:    #e7e4da;
+  --ixcb-line-2:  #ded9cc;
+  --ixcb-ink:     #3d3a33;
+  --ixcb-mute:    #8a8372;
+  --ixcb-blue:    #5B7FFF;
+  --ixcb-rail:    46px;
+  --ixcb-serif:   "Fraunces", Georgia, serif;
+  --ixcb-mono:    "DM Mono", ui-monospace, monospace;
+}
+
+.ixcb-root {
+  font-family: "DM Sans", system-ui, sans-serif;
+  color: var(--ixcb-ink);
+  background: var(--ixcb-cream) !important;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: min(82vh, 900px);
+}
+
+/* ══ App bar ══
+   Dark, full-bleed, and the first thing the eye lands on. It also
+   names the tenant — at thirty titles that stops being decoration and
+   becomes the answer to "whose board am I in". */
+/* Root-scoped + !important: this is the bar the wildcard erased. */
+.ixcb-root .ixcb-appbar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 20px;
+  background: var(--ixcb-teal) !important;
+  background-image: none !important;
+  flex: 0 0 auto;
+}
+.ixcb-brand {
+  font: 600 18px/1 var(--ixcb-serif);
+  color: #fff; letter-spacing: -.01em; white-space: nowrap;
+}
+.ixcb-tenant {
+  font: 500 10.5px/1 var(--ixcb-mono);
+  letter-spacing: .13em; color: rgba(255,255,255,.52);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 24ch;
+}
+.ixcb-scopes { display: flex; align-items: center; gap: 8px; margin-left: 6px; }
+.ixcb-scope {
+  font: 500 9.5px/1 var(--ixcb-mono); letter-spacing: .15em;
+  text-transform: uppercase; color: rgba(255,255,255,.40);
+}
+.ixcb-scope-arrow { color: rgba(255,255,255,.26); font-size: 11px; }
+.ixcb-appbar-sp { flex: 1; }
+.ixcb-err { font-size: 12px; color: #ffb4ad; max-width: 42ch; }
+
+.ixcb-root .ixcb-ghost, .ixcb-root .ixcb-swap {
+  background: rgba(255,255,255,.10) !important; border: 1px solid rgba(255,255,255,.22);
+  border-radius: 999px; padding: 6px 14px;
+  font: 500 12.5px "DM Sans", sans-serif; color: rgba(255,255,255,.82);
+  cursor: pointer; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 7px;
+}
+.ixcb-ghost:hover:not(:disabled), .ixcb-swap:hover {
+  background: rgba(255,255,255,.15); color: #fff;
+}
+.ixcb-ghost:disabled { opacity: .5; cursor: default; }
+
+.ixcb-focus {
+  background: none; border: 1px solid rgba(255,255,255,.30); border-radius: 999px;
+  padding: 6px 16px; font: 600 12.5px "DM Sans", sans-serif;
+  color: rgba(255,255,255,.85); cursor: pointer; white-space: nowrap;
+}
+.ixcb-focus:hover { border-color: rgba(255,255,255,.55); color: #fff; }
+.ixcb-root .ixcb-focus.ixcb-on {
+  background: var(--ixcb-gold) !important;
+  border-color: var(--ixcb-gold) !important;
+  color: var(--ixcb-teal) !important;
+}
+.ixcb-ver {
+  font: 500 10px/1 var(--ixcb-mono); color: rgba(255,255,255,.34);
+  border: 1px solid rgba(255,255,255,.18); border-radius: 5px; padding: 4px 7px;
+}
+
+/* ══ Columns as floating cards ══
+   The gaps do the separating, so the hairline dividers come out. Three
+   objects on a surface reads as a workspace; three compartments in a
+   box reads as a form. */
+.ixcb-root .ixcb-cols {
+  flex: 1; display: flex; gap: 12px; padding: 12px;
+  min-height: 0; align-items: stretch;
+  background: var(--ixcb-cream) !important;
+}
+.ixcb-col {
+  display: flex; flex-direction: column; min-width: 0; min-height: 0;
+  background: #fff !important; border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(26,58,58,.06), 0 6px 18px rgba(26,58,58,.05);
+  overflow: hidden;
+  transition: flex-basis .18s ease, flex-grow .18s ease;
+}
+.ixcb-col--components { flex: 1 1 26%; }
+.ixcb-col--assets     { flex: 1 1 30%; }
+.ixcb-root .ixcb-col--issues { flex: 2 1 44%; background: var(--ixcb-cream-2) !important; }
+.ixcb-col.ixcb-shut { flex: 0 0 var(--ixcb-rail); cursor: pointer; background: #fff; }
+.ixcb-cols.ixcb-focused .ixcb-col--issues { flex: 1 1 100%; }
+
+/* Issue scope is the one thing that must never be misread. */
+.ixcb-col.ixcb-scoped:not(.ixcb-shut) { box-shadow: inset 3px 0 0 var(--ixcb-gold), 0 6px 18px rgba(26,58,58,.05); }
+
+/* ══ Rail ══ */
+.ixcb-rail {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between;
+  padding: 14px 0; gap: 10px;
+}
+.ixcb-rail:hover { background: rgba(196,163,90,.10); }
+.ixcb-rail-lbl {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font: 500 11px var(--ixcb-mono); letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ixcb-mute); white-space: nowrap;
+}
+.ixcb-rail-caret { font-size: 15px; color: var(--ixcb-line-2); }
+
+/* ══ Column head ══ */
+.ixcb-colhead {
+  flex: 0 0 auto; padding: 15px 16px 12px;
+  display: grid; grid-template-columns: 1fr auto; gap: 3px 8px;
+}
+.ixcb-colhead-l { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.ixcb-colhead-r { display: flex; align-items: center; gap: 1px; }
+.ixcb-coltitle {
+  font: 600 21px/1.05 var(--ixcb-serif); color: var(--ixcb-teal);
+  letter-spacing: -.015em; white-space: nowrap;
+}
+.ixcb-root .ixcb-count {
+  font: 500 10.5px/1 var(--ixcb-mono); color: var(--ixcb-mute);
+  background: var(--ixcb-cream) !important; border-radius: 999px; padding: 4px 8px;
+}
+.ixcb-colhint {
+  grid-column: 1 / -1;
+  font: 12px "DM Sans", sans-serif; color: var(--ixcb-mute);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ixcb-collapse {
+  background: none; border: none; font-size: 16px; line-height: 1;
+  color: var(--ixcb-line-2); cursor: pointer; padding: 0 2px 0 6px;
+}
+.ixcb-collapse:hover { color: var(--ixcb-teal); }
+
+/* ══ Control icons ══ */
+.ixcb-ic {
+  background: none; border: none; cursor: pointer;
+  padding: 4px; border-radius: 6px; line-height: 0;
+  color: var(--ixcb-mute); position: relative;
+}
+.ixcb-ic svg {
+  width: 13px; height: 13px; display: block;
+  fill: none; stroke: currentColor; stroke-width: 1.4;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.ixcb-ic:hover { color: var(--ixcb-teal); background: rgba(26,58,58,.07); }
+.ixcb-root .ixcb-ic.ixcb-opened { color: var(--ixcb-teal); background: rgba(26,58,58,.12); }
+/* A control still filtering while collapsed makes a lane look broken. */
+.ixcb-root .ixcb-ic.ixcb-inforce { color: var(--ixcb-gold); }
+.ixcb-root .ixcb-ic.ixcb-inforce::after {
+  content: ""; position: absolute; top: 2px; right: 2px;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--ixcb-gold);
+}
+
+.ixcb-colbody { flex: 1; overflow: auto; padding: 0 16px 16px; min-height: 0; }
+
+/* ══ Control panel ══ */
+.ixcb-root .ixcb-ctrls {
+  position: sticky; top: 0; z-index: 3;
+  margin: 0 -16px 12px; padding: 9px 16px 11px;
+  background: var(--ixcb-cream-2) !important;
+  border-bottom: 1px solid var(--ixcb-line);
+}
+.ixcb-search { position: relative; }
+.ixcb-root .ixcb-q {
+  width: 100%; border: 1.5px solid var(--ixcb-line-2); border-radius: 8px;
+  padding: 4px 26px 4px 10px;
+  font: 12.5px/1.45 "DM Sans", sans-serif; color: var(--ixcb-ink);
+  background: #fff !important;
+}
+.ixcb-q:focus { outline: none; border-color: var(--ixcb-blue); }
+.ixcb-root .ixcb-q.ixcb-has { border-color: var(--ixcb-gold) !important; }
+.ixcb-qx {
+  position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
+  background: none; border: none; font-size: 15px; line-height: 1;
+  color: var(--ixcb-mute); cursor: pointer; padding: 0 3px;
+}
+.ixcb-qx:hover { color: var(--ixcb-teal); }
+
+.ixcb-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.ixcb-root .ixcb-chip {
+  background: #fff; border: 1px solid var(--ixcb-line-2); border-radius: 999px;
+  padding: 3px 10px; color: #6b6558;
+  font: 500 11px "DM Sans", sans-serif; cursor: pointer; white-space: nowrap;
+}
+.ixcb-root .ixcb-chip:hover { border-color: #c9c5b6; color: var(--ixcb-teal); }
+/* Rule 2. Never generic, never polite. */
+.ixcb-root .ixcb-chip.ixcb-on {
+  background: var(--ixcb-teal) !important;
+  border-color: var(--ixcb-teal) !important;
+  color: #fff !important;
+}
+.ixcb-root .ixcb-chip.ixcb-on:hover { background: var(--ixcb-teal-2) !important; color: #fff !important; }
+
+/* ══ Component tiles ══ */
+.ixcb-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 11px; }
+.ixcb-tile {
+  border: 1px solid var(--ixcb-line); border-radius: 10px; overflow: hidden;
+  background: #fff; cursor: pointer; transition: border-color .12s, transform .12s;
+}
+.ixcb-tile:hover { border-color: var(--ixcb-gold); transform: translateY(-1px); }
+.ixcb-thumb { aspect-ratio: 1/1; background: #f0eee7; }
+.ixcb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ixcb-thumb.ixcb-nothumb {
+  background: repeating-linear-gradient(45deg,#f4f2ec,#f4f2ec 6px,#eeebe2 6px,#eeebe2 12px);
+}
+.ixcb-tile-b { padding: 7px 9px; }
+.ixcb-tile-n {
+  display: block; font-size: 11px; line-height: 1.35; color: var(--ixcb-ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ══ Asset rows ══ */
+.ixcb-rows { display: flex; flex-direction: column; gap: 6px; }
+.ixcb-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 11px; background: #fff;
+  border: 1px solid var(--ixcb-line); border-radius: 9px; cursor: pointer;
+}
+.ixcb-row:hover { border-color: var(--ixcb-gold); background: var(--ixcb-cream-2); }
+.ixcb-row:active { transform: translateY(1px); }
+/* Rows are role=button — the focus ring is the only affordance a
+   keyboard operator gets, so it must not be subtle. */
+.ixcb-row:focus-visible { outline: 2px solid var(--ixcb-blue); outline-offset: 1px; }
+.ixcb-row-n {
+  font-size: 12.5px; color: var(--ixcb-ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Mono type codes, mockup-style: they read as a system, not as labels. */
+.ixcb-root .ixcb-kind {
+  flex: 0 0 auto;
+  font: 500 9px var(--ixcb-mono); letter-spacing: .09em; text-transform: uppercase;
+  padding: 3px 7px; border-radius: 5px; background: #f0eee7; color: #6b6558;
+}
+.ixcb-root .ixcb-kind--article { background: rgba(26,58,58,.10) !important;  color: var(--ixcb-teal); }
+.ixcb-kind--ad      { background: rgba(196,163,90,.22); color: #7d6524; }
+.ixcb-kind--event   { background: rgba(91,127,255,.14); color: #3f57b0; }
+.ixcb-kind--re      { background: rgba(236,114,89,.14); color: #a24a35; }
+
+/* ══ Plan cards ══
+   The mockup's strongest move: a dark header block with the plan
+   number set large in the display face. Kept vertical per preference —
+   only the skin is ported, not the horizontal arrangement. */
+.ixcb-plans { display: flex; flex-direction: column; gap: 11px; }
+.ixcb-root .ixcb-plan {
+  background: #fff !important; border-radius: 11px; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(26,58,58,.07);
+  border-left: 3px solid var(--ixcb-line-2);
+  transition: transform .12s, box-shadow .12s;
+}
+.ixcb-plan:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(26,58,58,.10); }
+/* One spine colour, one meaning. NEXT is the only plan that "needs
+   you now", so it is the only one that gets salmon. */
+.ixcb-plan.ixcb-next-plan { border-left-color: var(--ixcb-salmon); }
+
+/* The mockup's strongest move, and the one the wildcard erased. */
+.ixcb-root .ixcb-plan-hd {
+  background: var(--ixcb-teal) !important;
+  background-image: none !important;
+  padding: 13px 15px 11px;
+}
+.ixcb-plan-id { display: flex; align-items: center; gap: 9px; }
+.ixcb-plan-n {
+  font: 600 20px/1.05 var(--ixcb-serif); color: #fff;
+  letter-spacing: -.015em; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+/* Rule 1. Salmon appears here and on an empty spine. Nowhere else. */
+.ixcb-root .ixcb-next {
+  flex: 0 0 auto;
+  font: 500 8.5px var(--ixcb-mono); letter-spacing: .14em;
+  background: var(--ixcb-salmon) !important; color: #fff !important;
+  padding: 3px 7px; border-radius: 4px;
+}
+.ixcb-plan-s {
+  margin-top: 4px;
+  font: 400 10.5px var(--ixcb-mono); letter-spacing: .07em;
+  color: rgba(255,255,255,.55); white-space: nowrap;
+}
+
+.ixcb-plan-b { padding: 11px 15px 13px; }
+.ixcb-plan-m { display: flex; align-items: center; gap: 12px; }
+.ixcb-fill { font: 12px "DM Sans", sans-serif; color: #6b6558; white-space: nowrap; }
+.ixcb-fill b { color: var(--ixcb-teal); font-weight: 600; }
+.ixcb-print {
+  font-size: 11.5px; color: var(--ixcb-blue); text-decoration: none;
+  margin-left: auto; white-space: nowrap;
+}
+.ixcb-print:hover { text-decoration: underline; }
+
+/* ══ States ══ */
+.ixcb-empty {
+  padding: 30px 16px; text-align: center;
+  color: #9a927f; font-size: 12.5px; line-height: 1.65;
+  border: 1px dashed var(--ixcb-line-2); border-radius: 11px; background: var(--ixcb-cream-2);
+}
+/* A drifted DOM contract must not look like "no work to do". */
+.ixcb-empty.ixcb-diag {
+  border-style: solid; border-color: rgba(196,163,90,.45);
+  background: rgba(196,163,90,.10); color: #6b5c33; text-align: left;
+}
+.ixcb-empty.ixcb-diag b { display: block; margin-bottom: 5px; color: #8a6d2f; }
+.ixcb-loading {
+  display: flex; align-items: center; gap: 9px;
+  padding: 24px 4px; font-size: 12.5px; color: var(--ixcb-mute);
+}
+.ixcb-spin {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.28); border-top-color: #fff;
+  border-radius: 50%; animation: ixcbspin .7s linear infinite; display: inline-block;
+}
+.ixcb-colbody .ixcb-spin { border-color: rgba(26,58,58,.22); border-top-color: var(--ixcb-teal); }
+@keyframes ixcbspin { to { transform: rotate(360deg); } }
+
+/* ══ Legacy switch pill ══ */
+.ixcb-legacy-pill {
+  display: inline-flex; align-items: center; gap: 6px; margin: 0 0 14px;
+  background: rgba(196,163,90,.14); border: 1px solid rgba(196,163,90,.42);
+  border-radius: 999px; padding: 6px 15px;
+  font: 600 12px "DM Sans", sans-serif; color: #6b5c33; cursor: pointer;
+}
+.ixcb-legacy-pill:hover { background: rgba(196,163,90,.24); color: var(--ixcb-teal); }
+
+:focus-visible { outline: 2px solid var(--ixcb-blue); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* D-CVS-12 — desktop-only. Below this the board is the wrong tool and
+   says so rather than degrading quietly. */
+@media (max-width: 900px) {
+  .ixcb-cols { display: block; }
+  .ixcb-root::before {
+    content: "The Cadence Board is a desktop surface.";
+    display: block; padding: 12px 18px;
+    background: rgba(196,163,90,.16);
+    font: 12.5px "DM Sans", sans-serif; color: #6b5c33;
+  }
+}
