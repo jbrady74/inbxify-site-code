@@ -1,0 +1,1482 @@
+/* ============================================================
+   ta-cadence-board-v0.6.25.css
+   INBXIFY T-A — Cadence Board · LAYOUT ONLY
+   Companion: ta-cadence-board-v0.6.29.js — INDEPENDENTLY VERSIONED.
+   These two are NOT a matched pair and have not been since 0.6.12.
+   A JS bump does not oblige a CSS bump or the reverse. The old
+   "matched pair" line was false for two versions; the mirror-image
+   claim in the JS header is owed the same correction.
+
+   CONTRAST AUDITED. Every colour pair in this file has been run
+   through contrast-audit.py against ix-tokens. Tint-on-tint chip
+   pairs failed at 2.62:1 (Ad) and 3.50:1 (RE) and were darkened;
+   --ix-warn was fixed in ix-tokens v1.0.1 rather than here, because
+   it failed in four consumers. Re-run the audit after ANY colour
+   change in this file.
+
+   REQUIRES ix-tokens-v1.0.4.css or later. v0.6.13 consumes
+   --ix-ok-light, which does not exist before v1.0.4. Without the
+   token file, 25 --ix-* tokens
+   resolve to nothing, declarations are dropped as invalid, and text
+   inherits its parent's colour. That is the mechanism behind the
+   recurring white-on-white failures — not a colour choice.
+
+   ════════════════════════════════════════════════════════════
+   WHAT THIS FILE IS ALLOWED TO CONTAIN
+   ════════════════════════════════════════════════════════════
+   Layout, and only layout: the three-column flex, the 44px collapse
+   rails, tile and row geometry, plan-card structure.
+
+   IT MUST NOT CONTAIN button styling, chip styling, input styling,
+   heading type, badges, spines, or a wildcard reset. Every one of
+   those belongs to the ix series and is consumed by class:
+
+     ix-surface-scope   wildcard defence          ix-tokens
+     ix-btn--ghost      Studio / Refresh          ix-buttons
+     ix-btn--pill       Focus, sort, type chips   ix-buttons
+     ix-btn--icon       lane control icons        ix-buttons
+     ix-picker-input    search box                ix-form-controls
+     ix-section-title   column headings           ix-tokens
+     ix-count           count pill                ix-tokens
+     ix-needs-you       salmon NEXT badge         ix-tokens
+     ix-spine--now      salmon rail               ix-tokens
+     ix-on-dark         text inversion on teal    ix-tokens
+
+   v0.2.x carried private copies of all of the above and spent four
+   consecutive versions re-deriving a wildcard defence that ix-header
+   had already documented and solved. If a rule here starts to look
+   like a colour or a button, it belongs in ix instead — put it there
+   so every T-A surface gets it, not just this tab.
+
+   ════════════════════════════════════════════════════════════
+   LOAD ORDER (Webflow head)
+   ════════════════════════════════════════════════════════════
+     1. ix-tokens-v1.0.4.css            ← defines every --ix-* token
+     2. title-admin-page-design-v1.4.x.css
+     3. ta-studio-components-v1.0.x.css
+     4. ix-buttons / ix-modals / ix-form-controls / ix-header
+     5. THIS FILE                        ← last
+
+   ════════════════════════════════════════════════════════════
+   v0.6.22 — THE ROW READS AS GROUPS
+   ════════════════════════════════════════════════════════════
+   One row of eight controls at even spacing gave no clue which
+   label owned which field, so it read as a single run of chrome.
+   A thin rule now separates the four groups — where to start, how
+   many issues, how many editions, when it sends — and each label
+   sits tight against the control it names.
+
+   The label/control pairing is done with a smaller gap INSIDE a
+   group than between groups. Grouping by proximity does the work;
+   the rule only confirms it.
+
+   ── v0.6.21 — THE GATE IS A ROW, NOT A STACK ──
+   ════════════════════════════════════════════════════════════
+   The setup gate rendered as six full-width controls stacked down
+   the page. Cause: ix-form-controls declares
+
+     .ix-picker-input { display: block !important; width: 100% !important }
+
+   which is correct for a stacked form and wrong for an inline row.
+   v0.6.20 set the font and padding on those controls and never
+   touched the width, so every one of them claimed the full line and
+   flex-wrap dutifully stacked them.
+
+   Beating a (0,1,0) !important needs (0,2,0) !important, which the
+   scoped selectors below already carry. Width is now auto and each
+   control is flex:0 0 auto, so the row reads left to right the way
+   the mockup does.
+
+   THE LESSON, not just the fix: consuming an ix class means
+   inheriting every declaration in it, including the ones that do not
+   suit. Check what the primitive already asserts before assuming a
+   font-size override is the whole job.
+
+   ── v0.6.20 — GOLD BAR SETTLED, MOCKUP MEASUREMENTS ──
+   ════════════════════════════════════════════════════════════
+   Layout for the whole Overview surface, and layout only. Every
+   region of mockup v0.9 is present: Next bar, cover + setup gate,
+   Editions strip, manifest, orphan panel, lane rail.
+
+   READ-ONLY IS DISABLED, NOT ABSENT. Controls that cannot act yet
+   render greyed by their own :disabled state, which ix-buttons and
+   ix-form-controls already carry. Nothing here fakes a disabled look
+   and nothing is omitted. The chips are
+   ix-btn--pill, the heading is ix-section-title, the four next-step
+   tones read from ix tokens. Nothing here re-derives a button, a
+   colour or a type scale.
+
+   THE ACTIVE-CHIP CLASS IS NAMESPACED. `is-ixcb-on`, not `is-on` —
+   another stylesheet on the T-A page owns the generic state names
+   and wins. Every state class on this page is namespaced for that
+   reason; do not "simplify" this back.
+
+   TABLE COLUMNS ARE FIXED, NOT AUTO. table-layout:fixed with an
+   explicit width per column, because auto layout lets one long
+   headline crush Pg and Img to nothing. Title is the only column
+   allowed to be generous; it truncates rather than wrapping to a
+   second line.
+
+   ════════════════════════════════════════════════════════════
+   v0.6.13 — THE SUCCESS TOAST HAD NO COLOUR
+   ════════════════════════════════════════════════════════════
+   v0.6.14 of the JS introduced a tone on the app-bar message and
+   appends `ixcb-err-ok` when it succeeded. This file had no rule
+   for that class, so a success inherited `.ixcb-err` — the
+   lightened RED tuned for failures. "Placed in WLN-120A" rendered
+   in the same colour as "Could not confirm the save."
+
+   The whole point of the v0.6.14 toast queue was that two
+   different messages read as two different messages. The one
+   signal that distinguished them was the one with nothing behind
+   it.
+
+   Both colours now come from ix-tokens v1.0.4 rather than being
+   local hexes here. The old comment on .ixcb-err named that as
+   its own retire path — "if a second surface ever needs it,
+   promote it to --ix-danger-light" — and the success case is
+   that second need.
+
+   NOT FIXED HERE, still true: S.error carries both errors and
+   confirmations in one slot, so a success can still replace a
+   warning once the hold expires. Flagged in v0.6.10. Colouring
+   them apart makes the collision legible; it does not end it.
+   ============================================================ */
+
+/* Height is a FALLBACK ONLY. fitHeight() in the companion JS
+   overwrites all three inline on mount and resize, because a vh value
+   is measured from the viewport and this board starts ~400px down the
+   page — the vh height overshoots by exactly that offset and pushes
+   the board's own footer below the fold. That is what made the
+   selection tray unreachable for three versions. Do not "simplify"
+   this back to a pure CSS height. */
+.ixcb-root[data-ixcb-root] {
+  font-family: var(--ix-font-body);
+  color: var(--ix-text-dark);
+  border-radius: var(--ix-radius);
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: min(82vh, 900px) !important;
+  min-height: min(82vh, 900px) !important;
+  max-height: min(82vh, 900px) !important;
+}
+
+/* ══ App bar ══
+   Only the teal fill and the flex live here. ix-on-dark handles the
+   text colour, ix-btn handles every control inside it. */
+.ixcb-root .ixcb-appbar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 20px;
+  background-color: var(--ix-teal) !important;
+  flex: 0 0 auto;
+}
+.ixcb-brand {
+  font: 600 18px/1 var(--ix-font-display);
+  letter-spacing: -.01em; white-space: nowrap;
+}
+.ixcb-tenant {
+  font: 500 10.5px/1 var(--ix-font-mono);
+  letter-spacing: .13em; color: rgba(255,255,255,.52) !important;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 24ch;
+}
+/* ══ Mode switcher ══
+   One recessed track, three segments, the live one filled. Reads as
+   a set of choices rather than a button whose label changes.
+
+   NOT SALMON. The mockup filled the active segment with #ec7259, but
+   ix-tokens now reserves salmon for "needs you now" — a thing waiting
+   on the operator. A mode you selected is not waiting on you, and if
+   salmon also means "current tab" it stops meaning anything on the
+   NEXT badge two columns away. Gold is the platform's in-force accent
+   and carries the same weight on this dark bar. Say the word if you
+   want the mockup's salmon back and I will relax the token rule
+   deliberately rather than by accident. */
+.ixcb-root .ixcb-segs {
+  display: flex; align-items: center; gap: 2px;
+  background-color: rgba(255,255,255,.07) !important;
+  border-radius: var(--ix-radius-pill);
+  padding: 3px;
+}
+.ixcb-root .ixcb-seg {
+  background-color: transparent !important;
+  border: none; cursor: pointer;
+  border-radius: var(--ix-radius-pill);
+  padding: 5px 15px;
+  font: 600 12px var(--ix-font-body);
+  color: rgba(255,255,255,.62) !important;
+  white-space: nowrap;
+  transition: background-color var(--ix-ease), color var(--ix-ease);
+}
+.ixcb-root .ixcb-seg:hover { color: var(--ix-white) !important; }
+.ixcb-root .ixcb-seg.ixcb-seg-on {
+  background-color: var(--ix-gold) !important;
+  color: #16302F !important;              /* 8.9:1 on gold — measured */
+}
+.ixcb-root .ixcb-seg:focus-visible { outline: 2px solid var(--ix-white); outline-offset: 1px; }
+.ixcb-appbar-sp { flex: 1; }
+/* Error text ON the dark bar. ix-danger is tuned for light surfaces
+   and fails contrast on teal, so this is a local lightened variant.
+   If a second surface ever needs it, promote it to --ix-danger-light. */
+.ixcb-err {
+  font-size: 12px; color: var(--ix-danger-light) !important; max-width: 42ch;
+}
+/* Success in the same slot. Two class names, so (0,2,0) — it beats
+   .ixcb-err on specificity rather than on source order, and cannot
+   be broken by someone reordering this file. Same luminance as the
+   danger colour by design: a success must not shout louder than a
+   failure, only differ in hue. */
+.ixcb-err.ixcb-err-ok {
+  color: var(--ix-ok-light) !important;
+}
+.ixcb-ver {
+  font: 500 10px/1 var(--ix-font-mono); color: rgba(255,255,255,.34) !important;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: var(--ix-radius-sharp); padding: 4px 7px;
+}
+.ixcb-root .ixcb-appbar .ix-btn.ixcb-onbar:hover {
+  background-color: rgba(255,255,255,.18) !important;
+  color: var(--ix-white) !important;
+}
+
+/* ══ Columns ══ */
+.ixcb-root .ixcb-cols {
+  flex: 1; display: flex; gap: 12px; padding: 12px;
+  min-height: 0; align-items: stretch;
+  background-color: var(--ix-cream) !important;
+}
+.ixcb-root .ixcb-col {
+  display: flex; flex-direction: column; min-width: 0; min-height: 0;
+  overflow: hidden;
+  background-color: var(--ix-surface) !important;
+  border-radius: var(--ix-radius);
+  box-shadow: var(--ix-shadow-sm);
+  overflow: hidden;
+  transition: flex-basis var(--ix-ease), flex-grow var(--ix-ease);
+}
+.ixcb-col--components { flex: 1 1 26%; }
+.ixcb-col--assets     { flex: 1 1 30%; }
+.ixcb-root .ixcb-col--issues { flex: 2 1 44%; background-color: var(--ix-cream-warm) !important; }
+.ixcb-col.ixcb-shut   { flex: 0 0 46px; cursor: pointer; }
+.ixcb-cols.ixcb-focused .ixcb-col--issues { flex: 1 1 100%; }
+/* Issue scope — the one thing that must never be misread. */
+.ixcb-col.ixcb-scoped:not(.ixcb-shut) { box-shadow: inset 3px 0 0 var(--ix-gold), var(--ix-shadow-sm); }
+
+/* ══ Rail ══ */
+.ixcb-rail {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between;
+  padding: 14px 0; gap: 10px;
+}
+.ixcb-root .ixcb-rail:hover { background-color: var(--ix-gold-glow) !important; }
+.ixcb-rail-lbl {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font: 500 var(--ix-text-tiny)/1 var(--ix-font-mono); letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ix-text-light); white-space: nowrap;
+}
+.ixcb-rail-caret { font-size: 15px; color: var(--ix-border-input); }
+
+/* ══ Column head ══ */
+/* One row now — the description line is gone, so the grid does not
+   need a second track. */
+.ixcb-colhead {
+  flex: 0 0 auto; padding: 14px 14px 12px;
+  display: flex; align-items: center; gap: 9px;
+}
+.ixcb-colhead-l { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.ixcb-colhead-r { display: flex; align-items: center; gap: 5px; margin-left: auto; }
+.ixcb-colhint {
+  grid-column: 1 / -1;
+  font-size: 12px; color: var(--ix-text-light);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ixcb-root .ixcb-collapse {
+  background-color: transparent !important; border: none; font-size: 16px; line-height: 1;
+  color: var(--ix-border-input); cursor: pointer; padding: 0 2px 0 6px;
+}
+.ixcb-collapse:hover { color: var(--ix-teal); }
+
+/* Lane icons are ix-btn--icon. Only the glyph geometry is ours, and
+   the gold in-force dot — a control still filtering while collapsed
+   makes a lane look broken, so it announces itself. */
+.ixcb-ic { position: relative; }
+.ixcb-ic svg {
+  width: 13px; height: 13px; display: block;
+  fill: none; stroke: currentColor; stroke-width: 1.4;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.ixcb-root .ixcb-ic.ixcb-inforce { color: var(--ix-gold) !important; }
+.ixcb-root .ixcb-ic.ixcb-inforce::after {
+  content: ""; position: absolute; top: 2px; right: 2px;
+  width: 4px; height: 4px; border-radius: 50%;
+  background-color: var(--ix-gold) !important;
+}
+
+/* flex:1 1 0 + min-height:0 is what actually makes a flex child
+   scroll; flex:1 alone leaves it sized to content. */
+.ixcb-colbody { flex: 1 1 0; overflow-y: auto; overflow-x: hidden;
+  padding: 0 16px 16px; min-height: 0; }
+
+/* ══ Control panel ══ */
+.ixcb-root .ixcb-ctrls {
+  position: sticky; top: 0; z-index: 3;
+  margin: 0 -16px 12px; padding: 9px 16px 11px;
+  background-color: var(--ix-cream-warm) !important;
+  border-bottom: 1px solid var(--ix-border-soft);
+}
+.ixcb-search { position: relative; }
+.ixcb-root .ixcb-search .ix-picker-input { width: 100%; padding-right: 26px; }
+.ixcb-root .ixcb-qx {
+  position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
+  background-color: transparent !important; border: none; font-size: 15px; line-height: 1;
+  color: var(--ix-text-light); cursor: pointer; padding: 0 3px; z-index: 2;
+}
+.ixcb-qx:hover { color: var(--ix-teal); }
+.ixcb-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+
+/* In-force bar (v0.6.4). Shown when a filter is active and its panel
+   is shut. Gold because it is a pending/in-force state, matching the
+   editing-state accent — not salmon, which means "waiting on you". */
+.ixcb-root .ixcb-inforce-bar {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 -16px 12px; padding: 7px 16px;
+  background-color: var(--ix-gold-glow) !important;
+  border-bottom: 1px solid var(--ix-gold);
+  font-size: 11.5px; color: var(--ix-warn);
+}
+.ixcb-inforce-bar span {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ixcb-inforce-bar .ix-revert { margin-left: auto; flex: 0 0 auto; }
+
+/* ══ Components — flat list, arrival-gated (D-CVS-6) ══
+   The tile grid is gone. A .docx is the commonest thing a publisher
+   sends and a 104px thumbnail rendered it as a blank square. */
+
+/* Row-1 dropdown (v0.6.4). Names its current value, so the operator
+   reads the state instead of inferring it from which chip is lit. */
+.ixcb-root .ixcb-drop{
+  display: inline-flex; align-items: center; gap: 5px;
+  background-color: var(--ix-surface) !important;
+  border: 1px solid var(--ix-border-input);
+  border-radius: var(--ix-radius-pill); padding: 5px 11px;
+  font: 500 11.5px var(--ix-font-body); color: var(--ix-text-mid);
+  cursor: pointer; white-space: nowrap;
+}
+.ixcb-root .ixcb-drop:hover{ border-color: var(--ix-gold); color: var(--ix-teal); }
+.ixcb-drop-c{ font-size: 9px; color: var(--ix-text-light); }
+.ixcb-menu button.ixcb-menu-on{
+  background-color: var(--ix-teal) !important; color: #FFFFFF !important; font-weight: 600;
+}
+
+.ixcb-root .ixcb-new{
+  background-color: var(--ix-gold) !important; border: none;
+  border-radius: var(--ix-radius-pill); padding: 5px 12px; margin-right: 4px;
+  font: 600 11.5px var(--ix-font-body); color: #16302F !important; cursor: pointer; white-space: nowrap;
+}
+.ixcb-root .ixcb-statusrow{ padding-top: 8px; padding-bottom: 9px; }
+
+/* Arrival group. Sticky header so you always know which drop you are
+   scrolled into. Newest open, older shut — the grouping IS the
+   filter, so there is nothing to set and nothing to clear. */
+.ixcb-g{ margin: 0 0 3px; }
+.ixcb-root .ixcb-g-h{
+  width: calc(100% + 24px); margin: 0 -12px; padding: 9px 12px;
+  display: flex; align-items: center; gap: 9px;
+  background-color: var(--ix-cream-warm) !important;
+  border: none; border-bottom: 1px solid var(--ix-border-soft);
+  cursor: pointer; text-align: left; position: sticky; top: 0; z-index: 2;
+}
+.ixcb-root .ixcb-g-h:hover{ background-color: var(--ix-cream-deep) !important; }
+.ixcb-g-c{ font-size: 10px; color: var(--ix-text-light); width: 9px; transition: transform var(--ix-ease); }
+.ixcb-g.ixcb-shut .ixcb-g-c{ transform: rotate(-90deg); }
+.ixcb-g-d{ font: 600 12px var(--ix-font-body); color: var(--ix-teal); white-space: nowrap; }
+.ixcb-root .ixcb-g-n{
+  margin-left: auto; font: 500 10px var(--ix-font-mono); color: var(--ix-text-mid);
+  background-color: var(--ix-cream) !important; border-radius: var(--ix-radius-pill); padding: 3px 8px;
+}
+.ixcb-g-b{ padding: 8px 0 4px; }
+.ixcb-g.ixcb-shut .ixcb-g-b{ display: none; }
+
+/* Row */
+.ixcb-root .ixcb-r{
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  background-color: var(--ix-surface) !important;
+  border: 1px solid var(--ix-border-soft); border-radius: var(--ix-radius-sm);
+  margin: 0 0 5px; cursor: pointer;
+}
+.ixcb-root .ixcb-r:hover{ background-color: var(--ix-cream-warm) !important; border-color: var(--ix-gold); }
+/* SELECTED — gold, and gold means nothing else on this lane. The
+   solid gold left rail overrides the bundle's violet one, so a
+   selected bundle is unambiguous too. */
+.ixcb-root .ixcb-r-sel,
+.ixcb-root .ixcb-r-fold.ixcb-r-sel{
+  background-color: #F2E3B8 !important;
+  border-color: var(--ix-gold) !important;
+  box-shadow: 0 0 0 3px var(--ix-gold-shadow);
+}
+.ixcb-root .ixcb-r-sel:hover,
+.ixcb-root .ixcb-r-fold.ixcb-r-sel:hover{ background-color: #EDDBA6 !important; }
+.ixcb-r-att{ opacity: .48; }
+.ixcb-r:focus-visible{ outline: 2px solid var(--ix-blue); outline-offset: 1px; }
+
+/* ── Bundle = STRUCTURE, so it is drawn, not coloured ──
+   v0.5.2 filled this row with gold-glow. Gold is the platform's
+   editing-state accent, so a selected file and an unselected folder
+   read identically — the one signal that must never be ambiguous.
+   The folder now sits on the same white ground as every other row
+   and announces itself by shape: a violet BDL tile, a caret, a
+   heavier label, and a violet spine. Violet appears nowhere else in
+   the palette, so it cannot be confused with a state. */
+.ixcb-root .ixcb-r-fold{
+  /* v0.6.4 — the violet rail is gone. The BDL tile and the caret say
+     "folder" perfectly well; a coloured rail on every bundle made the
+     lane shout. Structure should be legible, not loud. */
+  background-color: var(--ix-surface) !important;
+  border-color: var(--ix-border);
+}
+.ixcb-root .ixcb-r-fold:hover{
+  background-color: #FAF9FE !important; border-color: var(--ix-gold);
+}
+.ixcb-root .ixcb-r-fold .ixcb-n-t{ font-weight: 600; color: var(--ix-teal); }
+.ixcb-root .ixcb-exp{
+  background-color: transparent !important; border: none; cursor: pointer;
+  font-size: 10px; color: #6B5CA5; padding: 2px 4px; width: 18px;
+  transition: transform var(--ix-ease);
+}
+.ixcb-r-fold.ixcb-open .ixcb-exp{ transform: rotate(90deg); }
+.ixcb-kids{ margin: 0 0 6px 28px; }
+
+/* Type tiles carry type — which is why D-CVS-6 bans media-type pills. */
+.ixcb-root .ixcb-t{
+  width: 32px; height: 28px; border-radius: var(--ix-radius-sharp); flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  font: 500 8px var(--ix-font-mono); letter-spacing: .05em;
+}
+/* Violet — 8.1:1 with white, and the only violet on the surface. */
+.ixcb-root .ixcb-t--fold { background-color: #6B5CA5 !important; color: #FFFFFF !important; }
+.ixcb-root .ixcb-t--text { background-color: #DDE5E4 !important; color: #16302F !important; }
+.ixcb-root .ixcb-t--image{ background-color: #E4EAFA !important; color: #2C3C86 !important; }
+.ixcb-root .ixcb-t--video{ background-color: #F4EBD6 !important; color: #6A5620 !important; }
+.ixcb-root .ixcb-t--audio{ background-color: #FAE5E0 !important; color: #93301C !important; }
+.ixcb-root .ixcb-t--other{ background-color: #EFEBE0 !important; color: #4A5468 !important; }
+
+.ixcb-n{ min-width: 0; flex: 1; }
+.ixcb-n-t{ display: block; font-size: 13px; color: var(--ix-text-dark);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ixcb-n-m{ display: block; font: 400 10.5px var(--ix-font-mono); color: var(--ix-text-light); margin-top: 2px; }
+.ixcb-lo{ color: #93301C; }
+/* "unplaced" is the actionable state in the Assets lane, so it reads
+   as a prompt rather than as absent data. */
+.ixcb-unpl{ color: #6A5620; font-weight: 500; }
+
+/* v0.6.10 — placement not yet known. Printing "unplaced" before
+   NL-BLOCKS has loaded states as fact something we have not looked up
+   yet, which is the exact error this release fixes. */
+.ixcb-pl-pending{ color: var(--ix-text-light); font-weight: 500; letter-spacing: .12em; }
+
+/* Provenance is a badge, never a category. */
+.ixcb-root .ixcb-prov{
+  flex: 0 0 auto; font: 500 8px var(--ix-font-mono); letter-spacing: .07em;
+  padding: 3px 6px; border-radius: var(--ix-radius-sharp);
+  background-color: #EFEBE0 !important; color: #4A5468 !important;
+}
+.ixcb-root .ixcb-prov-ai{ background-color: #E4EAFA !important; color: #2C3C86 !important; }
+
+/* ── v0.6.4 additions ── */
+
+/* Bundle file count — a number, not a sentence. */
+.ixcb-root .ixcb-bcount{
+  flex: 0 0 auto; font: 500 10px var(--ix-font-mono); color: #6B5CA5 !important;
+  background-color: #EEEBF7 !important; border-radius: var(--ix-radius-pill); padding: 3px 8px;
+}
+
+/* Locked plan. Lighter green so it reads as REFERENCE, not workspace —
+   the operator should be able to tell at a glance which cards they can
+   still act on without reading a single word. */
+.ixcb-root .ixcb-plan.ixcb-locked{ border-left-color: #9CB3AE !important; opacity: .92; }
+.ixcb-root .ixcb-plan.ixcb-locked .ixcb-plan-hd{ background-color: #4E6E68 !important; }
+.ixcb-root .ixcb-lockchip{
+  font: 500 8.5px var(--ix-font-mono); letter-spacing: .14em;
+  /* A white-on-translucent-white chip measured 3.65:1 against the
+     locked header. Solid dark ground instead — a LOCKED marker that
+     is hard to read defeats its own purpose. */
+  background-color: #24403B !important; color: #FFFFFF !important;
+  padding: 3px 7px; border-radius: var(--ix-radius-sharp);
+}
+.ixcb-root .ixcb-lockbar{
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 -16px 10px; padding: 8px 16px;
+  background-color: var(--ix-cream-deep) !important;
+  border-bottom: 1px solid var(--ix-border);
+  font: 500 11.5px var(--ix-font-body); color: var(--ix-text-mid);
+}
+.ixcb-root .ixcb-lockbar .ix-revert{ margin-left: auto; }
+
+/* Reader preview — ad creatives go to ix-lightbox; events and
+   listings get this, because they have no page a reader can visit. */
+.ixcb-ov{
+  position: fixed; inset: 0; z-index: 99996;
+  background-color: rgba(16,31,46,.62) !important;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.ixcb-ov-card{
+  background-color: var(--ix-surface) !important; border-radius: var(--ix-radius);
+  max-width: 560px; width: 100%; max-height: 86vh; overflow: auto;
+  box-shadow: 0 20px 60px rgba(16,31,46,.4);
+}
+.ixcb-ov-h{
+  display: flex; align-items: center; gap: 10px; padding: 13px 16px;
+  background-color: var(--ix-teal) !important;
+}
+.ixcb-ov-t{ font: 600 15px var(--ix-font-body); color: #FFFFFF !important; flex: 1; min-width: 0; }
+.ixcb-ov-x{
+  background-color: transparent !important; border: none; cursor: pointer;
+  font-size: 20px; line-height: 1; color: rgba(255,255,255,.75) !important; padding: 0 4px;
+}
+.ixcb-ov-img{ width: 100%; display: block; }
+.ixcb-ov-b{ padding: 16px 18px 20px; }
+.ixcb-ov-dl{ display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0 0 12px; }
+.ixcb-ov-dl dt{
+  font: 500 10px var(--ix-font-mono); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ix-text-light); padding-top: 2px;
+}
+.ixcb-ov-dl dd{ margin: 0; font-size: 13.5px; color: var(--ix-text-dark); }
+.ixcb-ov-p{ font-size: 13.5px; line-height: 1.6; color: var(--ix-text-mid); }
+.ixcb-ov-none{ font-size: 13px; color: var(--ix-text-light); text-align: center; padding: 18px 0; }
+
+/* ── Tray — VIEWPORT-FIXED ──
+   Attempt three. Sticky-in-body failed because the lane was not the
+   scroll container. Footer-of-column failed because the column's own
+   bottom was below the fold. Fixed to the window cannot fail: there
+   is no ancestor height, overflow or scroll context left to get it
+   wrong. Elegance lost to reliability, on purpose. */
+.ixcb-root .ixcb-tray{
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 99995;
+  padding: 12px 22px;
+  background-color: #16302F !important;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 -6px 24px rgba(16,31,46,.28);
+}
+.ixcb-tray-n{ font: 600 12.5px var(--ix-font-body); color: #FFFFFF !important; }
+.ixcb-root .ixcb-tray .ixcb-tray-x{ color: #E8C172 !important; }
+.ixcb-root .ixcb-tray-go{
+  /* White on salmon measures 2.95:1. Salmon works as a small marker
+     (the NEXT badge, where it is 8.5px caps against a dark card) but
+     fails as a button fill under body text. Deepened to salmon-deep,
+     which clears the floor and still reads unmistakably as the
+     "needs you" colour. */
+  margin-left: auto; background-color: #B23A22 !important; border: none;
+  border-radius: var(--ix-radius-pill); padding: 7px 15px;
+  font: 600 12px var(--ix-font-body); color: #FFFFFF !important; cursor: pointer; white-space: nowrap;
+}
+
+/* Creators menu (D-CVS-7) */
+.ixcb-menu{
+  position: absolute; z-index: 99997;
+  background-color: var(--ix-surface) !important; border: 1px solid var(--ix-border);
+  border-radius: var(--ix-radius-sm); box-shadow: 0 10px 34px rgba(26,58,58,.18);
+  padding: 5px; min-width: 214px;
+}
+.ixcb-menu button{
+  display: block; width: 100%; text-align: left;
+  background-color: transparent !important; border: none; cursor: pointer;
+  padding: 9px 12px; border-radius: 6px;
+  font: 500 13px var(--ix-font-body); color: var(--ix-text-dark) !important;
+}
+.ixcb-menu button:hover{ background-color: var(--ix-cream) !important; }
+
+/* ══ Asset rows ══ */
+.ixcb-rows { display: flex; flex-direction: column; gap: 6px; }
+.ixcb-root .ixcb-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 11px; background-color: var(--ix-surface) !important;
+  border: 1px solid var(--ix-border); border-radius: var(--ix-radius-sm);
+  cursor: pointer;
+}
+.ixcb-root .ixcb-row:hover {
+  border-color: var(--ix-gold); background-color: var(--ix-cream-warm) !important;
+}
+.ixcb-row:active { transform: translateY(1px); }
+.ixcb-row:focus-visible { outline: 2px solid var(--ix-blue); outline-offset: 1px; }
+
+/* ══ Placement (v0.6.4) ══ */
+
+/* The armed row. Gold is the platform's in-force accent and this is a
+   pending action, not something waiting on you — salmon stays on the
+   PLACING badge, which IS the thing now waiting. */
+.ixcb-root .ixcb-row-armed {
+  border-color: var(--ix-gold) !important;
+  background-color: #FBF6EA !important;
+  box-shadow: var(--ix-shadow-gold);
+}
+
+/* Edit is secondary: quiet until the row is hovered or it is focused,
+   never invisible to a keyboard. */
+.ixcb-root .ixcb-edit {
+  margin-left: auto; flex: 0 0 auto;
+  opacity: 0; transition: opacity var(--ix-ease);
+}
+.ixcb-row:hover .ixcb-edit,
+.ixcb-root .ixcb-edit:focus-visible { opacity: 1; }
+
+/* Armed banner — pinned so it cannot scroll away mid-placement. */
+.ixcb-root .ixcb-arm-bar {
+  position: sticky; top: 0; z-index: 4;
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 -16px 12px; padding: 9px 16px;
+  background-color: #16302F !important;
+  border-radius: 0 0 var(--ix-radius-sm) var(--ix-radius-sm);
+}
+.ixcb-arm-n {
+  font-size: 12.5px; font-weight: 600; color: #FFFFFF !important;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ixcb-arm-h {
+  font: 500 10px var(--ix-font-mono); letter-spacing: .12em;
+  text-transform: uppercase; color: rgba(255,255,255,.55) !important;
+  white-space: nowrap;
+}
+.ixcb-root .ixcb-arm-bar .ix-revert { margin-left: auto; color: #E8C172 !important; }
+
+/* Every plan is a target while something is armed. */
+.ixcb-targeting .ixcb-plan { outline: 1px dashed var(--ix-gold); outline-offset: 2px; }
+.ixcb-root .ixcb-place { margin-right: auto; }
+.ixcb-row-n {
+  font-size: 12.5px; color: var(--ix-text-dark);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Type codes read as a system, not as labels — mono, tight, uppercase. */
+.ixcb-root .ixcb-kind {
+  flex: 0 0 auto;
+  font: 500 9px var(--ix-font-mono); letter-spacing: .09em; text-transform: uppercase;
+  padding: 3px 7px; border-radius: var(--ix-radius-sharp);
+  background-color: #EFEBE0 !important; color: #4A5468 !important;
+}
+/* v0.6.4 — SOLID, OPAQUE, EXPLICIT. No alpha, no token indirection.
+
+   These four ran as tint-on-tint: an rgba() token at 10–14% alpha
+   with its own full-strength value as the text. That construction has
+   two failure modes and hit both. It renders differently depending on
+   whatever is behind it, so the same chip is legible on a white row
+   and unreadable somewhere else. And if the alpha token fails to
+   resolve for any reason, the declaration is dropped and the chip
+   inherits a background nobody chose — which is how ARTICLE ended up
+   dark-on-dark.
+
+   Solid values cannot do either. Each pair below is measured, not
+   estimated: contrast-audit.py reports the ratio and every one clears
+   4.5:1 against its own background regardless of what sits behind it.
+
+   Do NOT convert these back to var(--ix-*-soft) tints to "use the
+   tokens". The tokens are correct for surfaces; they are wrong for
+   small text on a coloured pill. */
+.ixcb-root .ixcb-kind--article { background-color: #DDE5E4 !important; color: #16302F !important; }
+.ixcb-root .ixcb-kind--ad      { background-color: #F4EBD6 !important; color: #6A5620 !important; }
+.ixcb-root .ixcb-kind--event   { background-color: #E4EAFA !important; color: #2C3C86 !important; }
+.ixcb-root .ixcb-kind--re      { background-color: #FAE5E0 !important; color: #93301C !important; }
+
+/* ══ Plan cards ══
+   The card carries ix-spine, and the first carries ix-spine--now, so
+   the salmon rail comes from the design system. Structure only here. */
+.ixcb-plans { display: flex; flex-direction: column; gap: 8px; }
+.ixcb-root .ixcb-plan {
+  background-color: var(--ix-surface) !important;
+  border-radius: var(--ix-radius-sm); overflow: hidden;
+  box-shadow: var(--ix-shadow-sm);
+  transition: transform var(--ix-ease), box-shadow var(--ix-ease);
+}
+.ixcb-plan:hover { transform: translateY(-1px); box-shadow: var(--ix-shadow-lg); }
+.ixcb-root .ixcb-plan-hd {
+  background-color: var(--ix-teal) !important;
+  padding: 9px 13px 8px;
+}
+.ixcb-plan-id { display: flex; align-items: center; gap: 9px; }
+.ixcb-plan-n {
+  font: 600 17px/1.1 var(--ix-font-display);
+  letter-spacing: -.015em; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.ixcb-plan-s {
+  margin-top: 3px;
+  font: 400 10.5px var(--ix-font-mono); letter-spacing: .07em;
+  color: rgba(255,255,255,.55) !important; white-space: nowrap;
+}
+.ixcb-plan-b { padding: 5px 13px 7px; }
+.ixcb-plan-m { display: flex; align-items: center; gap: 12px; }
+.ixcb-fill { font-size: var(--ix-text-tiny); color: var(--ix-text-mid); white-space: nowrap; }
+.ixcb-fill b { color: var(--ix-teal); font-weight: 600; }
+.ixcb-print {
+  font-size: var(--ix-text-tiny); color: var(--ix-blue); text-decoration: none;
+  margin-left: auto; white-space: nowrap;
+}
+.ixcb-print:hover { text-decoration: underline; }
+
+/* ── v0.6.7 · EDITION ROWS ───────────────────────────────────────
+   One tile per print issue; each edition is a row inside it. Built
+   from ix tokens only — no new colour values enter the system here.
+   Rows are separated by a hairline rather than boxed: they are parts
+   of one issue, not siblings of the tile.                          */
+
+/* Header chip. Deliberately quieter than .ix-needs-you and
+   .ixcb-lockchip — it is a fact about the issue, not a call to act. */
+.ixcb-edcount {
+  font: 500 8.5px/1 var(--ix-font-mono); letter-spacing: .14em;
+  text-transform: uppercase; white-space: nowrap;
+  padding: 3px 7px; border-radius: var(--ix-radius-sharp);
+  /* Same lesson as .ixcb-lockchip above: white-on-translucent-white
+     cannot be measured and did not pass. Solid ground, taken one step
+     lighter than the lockchip so the two chips stay distinguishable
+     when a locked issue shows both. */
+  background-color: #2E514B !important; color: #FFFFFF !important;
+}
+
+.ixcb-plan-s .ixcb-print { margin-left: 0; color: var(--ix-blue-light); }
+
+.ixcb-ed {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--ix-cream-deep);
+}
+.ixcb-ed:first-child { border-top: 0; padding-top: 2px; }
+
+/* The edition letter is the row's anchor, so it gets the display face
+   and a fixed min-width — A and B align down the tile even when one
+   row carries a lock chip and the other a Place button. */
+.ixcb-ed-lbl {
+  font: 600 12px/1 var(--ix-font-display);
+  color: var(--ix-teal); white-space: nowrap;
+  min-width: 22px;
+}
+.ixcb-ed-date {
+  font: 400 10.5px var(--ix-font-mono); letter-spacing: .05em;
+  color: var(--ix-text-light); white-space: nowrap;
+}
+.ixcb-ed .ixcb-fill { margin-left: auto; }
+
+/* Locked edition inside an otherwise-live issue. Muted, not hidden —
+   the operator needs to see that B is closed while A is open. */
+.ixcb-ed-locked .ixcb-ed-lbl { color: var(--ix-text-light); }
+.ixcb-ed-lock {
+  font: 500 8.5px/1 var(--ix-font-mono); letter-spacing: .14em;
+  text-transform: uppercase; white-space: nowrap;
+  padding: 3px 6px; border-radius: var(--ix-radius-sharp);
+  color: #4E6E68; background-color: rgba(78,110,104,.12);
+}
+
+/* The Place button sits last and must not stretch the row. */
+.ixcb-ed .ixcb-place { margin-left: 0; flex: 0 0 auto; }
+
+/* ══ States ══ */
+.ixcb-root .ixcb-empty {
+  padding: 30px 16px; text-align: center;
+  color: var(--ix-text-mid); font-size: 12.5px; line-height: 1.65;
+  border: 1px dashed var(--ix-border-input); border-radius: var(--ix-radius-sm);
+  background-color: var(--ix-cream-warm) !important;
+}
+/* A drifted DOM contract must not look like "no work to do". */
+.ixcb-root .ixcb-empty.ixcb-diag {
+  border-style: solid; border-color: var(--ix-gold);
+  background-color: var(--ix-gold-glow) !important;
+  color: var(--ix-warn); text-align: left;
+}
+.ixcb-empty.ixcb-diag b { display: block; margin-bottom: 5px; color: var(--ix-warn); }
+.ixcb-loading {
+  display: flex; align-items: center; gap: 9px;
+  padding: 24px 4px; font-size: 12.5px; color: var(--ix-text-light);
+}
+.ixcb-spin {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.28); border-top-color: var(--ix-white);
+  border-radius: 50%; animation: ixcbspin .7s linear infinite; display: inline-block;
+}
+.ixcb-colbody .ixcb-spin {
+  border-color: var(--ix-teal-soft); border-top-color: var(--ix-teal);
+}
+@keyframes ixcbspin { to { transform: rotate(360deg); } }
+
+/* ══ Legacy switch pill ══ */
+/* Injected OUTSIDE .ixcb-root, so it cannot borrow the root's
+   specificity. [class] buys the point instead — the same device
+   ix-tokens uses on .ix-surface-scope. */
+.ixcb-legacy-pill[class] {
+  display: inline-flex; align-items: center; gap: 6px; margin: 0 0 14px;
+  background-color: var(--ix-gold-glow) !important;
+  border: 1px solid var(--ix-gold);
+  border-radius: var(--ix-radius-pill); padding: 6px 15px;
+  font: 600 12px var(--ix-font-body); color: var(--ix-warn); cursor: pointer;
+}
+.ixcb-legacy-pill[class]:hover { background-color: var(--ix-gold-shadow) !important; color: var(--ix-teal); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* D-CVS-12 — desktop-only. Below this the board is the wrong tool. */
+@media (max-width: 900px) {
+  .ixcb-cols { display: block; }
+  .ixcb-root::before {
+    content: "The Cadence Board is a desktop surface.";
+    display: block; padding: 12px 18px;
+    background-color: var(--ix-gold-glow) !important;
+    font-size: 12.5px; color: var(--ix-warn);
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   OVERVIEW
+   Values below are the mockup's, read from its stylesheet
+   rather than judged by eye. The previous cut approximated
+   them and every one drifted — 16px gutters against 24,
+   a 190px cover against 238, and uppercase mono labels at
+   10px against plain 11.5px body. The labels were the costly
+   one: wide enough to wrap the control row three deep and
+   turn the gate into half a screen.
+
+   Mockup gutter is 24px horizontal throughout. Keep it.
+   ══════════════════════════════════════════════════════════ */
+
+.ixcb-root .ixcb-ovw {
+  flex: 1; min-height: 0; overflow: auto; padding: 0;
+  background-color: var(--ix-cream) !important;
+}
+
+/* ── Next bar ──
+   TEAL AT FULL STRENGTH, EVERYWHERE ON IT. --ix-gold carries exactly
+   one legible colour and this is it: 5.11:1. The previous cut faded
+   the secondary elements and every faded tone failed — source line
+   2.66:1, placeholder 2.25:1, cancel link 3.19:1. Nothing on this bar
+   is secondary enough to earn a faded tone, so nothing gets one.
+
+   Note for anyone auditing: contrast-audit.py compares solid hex
+   pairs and cannot composite rgba over a background, so it passed
+   this bar cleanly while three of its colours were failing. Use full
+   strength here and the question does not arise. */
+.ixcb-root .ixcb-nextbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 24px;
+  background-color: var(--ix-gold) !important;
+}
+
+/* The board's title. NO BORDER, at rest or on hover — the bar reads
+   as a title, not as a form. Left padding is ZERO so the first letter
+   sits on the same vertical line as the cover image below, which
+   starts at the hero's 24px gutter. */
+.ixcb-root input.ixcb-nb-title {
+  flex: 0 1 auto; min-width: 170px; max-width: 460px;
+  appearance: none; -webkit-appearance: none;
+  background: transparent !important; background-image: none !important;
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0;
+  padding: 1px 0 !important; margin: 0;
+  font-family: var(--ix-font-display) !important;
+  font-size: 20px !important; font-weight: 600 !important; line-height: 1.25;
+  color: var(--ix-teal) !important;
+}
+.ixcb-root input.ixcb-nb-title::placeholder {
+  /* Full strength, like everything else on this bar. At .62 it
+     measured 2.66:1 — under even the large-text floor. The weight
+     drop is what separates an empty title from a real one. */
+  color: var(--ix-teal) !important; opacity: 1; font-weight: 500;
+}
+.ixcb-root input.ixcb-nb-title:focus {
+  outline: none;
+  border-bottom-color: rgba(26,58,58,.35) !important;
+}
+/* Pending, unsaved. A box would be the border we just removed, so the
+   edit-state marker is an underline instead — same MEANING as
+   ix-picker-input--changed, drawn in teal because gold on gold says
+   nothing. */
+.ixcb-root input.ixcb-nb-title--changed {
+  border-bottom-color: var(--ix-teal) !important;
+}
+.ixcb-root .ixcb-nb-revert { color: var(--ix-teal) !important; flex: none; }
+.ixcb-root .ixcb-nb-revert:hover:not(:disabled) { color: var(--ix-teal) !important; }
+.ixcb-root .ixcb-nb-save { flex: none; padding: 4px 11px; font-size: 11.5px; }
+.ixcb-root .ixcb-nb-sp { flex: 1 1 auto; min-width: 8px; }
+.ixcb-root .ixcb-nb-s {
+  font: 500 10.5px/1 var(--ix-font-mono);
+  color: var(--ix-teal) !important;
+  flex: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── Hero · mockup: 238px 1fr, gap 22, padding 18/24/14 ── */
+.ixcb-root .ixcb-hero {
+  display: grid; grid-template-columns: 238px 1fr; gap: 22px;
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--ix-border);
+}
+/* align-self:start — the hero is a grid, and a stretched grid item
+   overrides aspect-ratio, which is what made the placeholder run the
+   full height of the panel beside it. */
+.ixcb-root .ixcb-cover { align-self: start; }
+.ixcb-root .ixcb-cover-img,
+.ixcb-root .ixcb-cover-ph {
+  display: block; width: 100%; aspect-ratio: 17 / 22; height: auto;
+  border-radius: var(--ix-radius); overflow: hidden;
+}
+.ixcb-root .ixcb-cover-img {
+  object-fit: cover; box-shadow: 0 8px 26px rgba(26,58,58,.24);
+}
+.ixcb-root .ixcb-cover-ph {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  border: 1px dashed var(--ix-border-input);
+  background-color: var(--ix-cream-warm) !important;
+  font: 500 10px/1 var(--ix-font-mono); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ix-text-light) !important;
+}
+.ixcb-root .ixcb-cover-note {
+  font: 400 8.5px/1.3 var(--ix-font-mono); letter-spacing: .04em; text-transform: none;
+}
+/* mockup .cvcap — 500 9px mono, centred */
+.ixcb-root .ixcb-cvcap {
+  margin-top: 7px; text-align: center;
+  font: 500 9px/1.3 var(--ix-font-mono); letter-spacing: .08em;
+  color: var(--ix-text-light) !important;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ixcb-root .ixcb-setup { display: flex; flex-direction: column; gap: 11px; min-width: 0; }
+
+/* mockup .gate — white, 15px 17px */
+.ixcb-root .ixcb-gate {
+  background-color: var(--ix-white) !important;
+  border: 1px solid var(--ix-border); border-radius: var(--ix-radius);
+  padding: 15px 17px;
+}
+/* mockup .ref — one row, 400 11.5px body */
+.ixcb-root .ixcb-ref {
+  display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+  padding-bottom: 11px; margin-bottom: 13px;
+  border-bottom: 1px solid var(--ix-border);
+  font: 400 11.5px/1 var(--ix-font-body); color: var(--ix-text-light) !important;
+}
+.ixcb-root .ixcb-ref b { font-weight: 600; color: var(--ix-text-mid) !important; }
+.ixcb-root .ixcb-ref-sep { opacity: .45; }
+/* mockup .gate h3 — 600 18px Fraunces. Family forced: a heavier
+   selector on the T-A page was dropping it to the body stack. */
+.ixcb-root .ixcb-gate-h,
+.ixcb-root h3.ixcb-gate-h {
+  margin: 0 0 11px;
+  font-family: var(--ix-font-display) !important;
+  font-size: 18px !important; font-weight: 600 !important; line-height: 1;
+  color: var(--ix-teal) !important;
+}
+/* mockup .ctrls — one wrapping row, gap 8 */
+/* Gap here is the WITHIN-group spacing: a label sits tight against
+   the control it names. Between groups, the divider adds its own
+   margin, so proximity does the grouping and the rule confirms it. */
+.ixcb-root .ixcb-ctrls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ixcb-root .ixcb-ctrls-div {
+  flex: 0 0 auto; width: 1px; height: 20px; margin: 0 7px;
+  background-color: var(--ix-border) !important;
+}
+/* mockup .ctrls label — PLAIN 11.5px body. Not mono, not uppercase,
+   not letter-spaced. This is the rule that kept the row to one line. */
+.ixcb-root .ixcb-ctrls label {
+  font: 400 11.5px/1 var(--ix-font-body);
+  letter-spacing: 0; text-transform: none;
+  color: var(--ix-text-mid) !important;
+}
+/* mockup select,input[type=date] — 500 11.5px body, padding 5px 7px.
+   WIDTH AND DISPLAY MUST BE FOUGHT: ix-form-controls sets
+   display:block + width:100% !important at (0,1,0), which is right
+   for a stacked form and wrong for this row. These selectors are
+   (0,2,0), so !important here wins. */
+.ixcb-root .ixcb-ctrls select.ix-picker-input,
+.ixcb-root .ixcb-ctrls input.ix-picker-input {
+  display: inline-block !important;
+  width: auto !important;
+  flex: 0 0 auto;
+  min-height: 0 !important;
+  font-family: var(--ix-font-body) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  padding: 5px 7px !important;
+  border-width: 1px !important;
+}
+/* Date pickers have no intrinsic width to shrink to. */
+.ixcb-root .ixcb-ctrls input[type="date"].ix-picker-input { width: 148px !important; }
+.ixcb-root input.ixcb-gate-no {
+  width: 58px !important; text-align: center;
+  font-family: var(--ix-font-mono) !important; font-size: 11.5px !important;
+}
+.ixcb-root .ixcb-ctrls-sp { flex: 1 1 auto; min-width: 4px; }
+.ixcb-root .ixcb-gate-ro {
+  margin-top: 10px; font: 400 11px/1.4 var(--ix-font-body);
+  color: var(--ix-text-light) !important; max-width: 860px;
+}
+
+/* ── Editions · mockup .edwrap 16px 24px 4px ── */
+.ixcb-root .ixcb-edwrap { padding: 16px 24px 4px; }
+.ixcb-root .ixcb-edhd { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.ixcb-root .ixcb-ed-chip {
+  font: 500 10px/1 var(--ix-font-mono);
+  background-color: var(--ix-gold) !important;
+  color: var(--ix-teal) !important;
+  border-radius: 99px; padding: 3px 8px;
+}
+/* mockup .edgrid — auto-fit, min 210px */
+.ixcb-root .ixcb-edgrid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px;
+}
+.ixcb-root .ixcb-ed {
+  display: flex; flex-direction: column; gap: 3px; padding: 9px 12px;
+  border: 1px solid var(--ix-border); border-radius: var(--ix-radius);
+  background-color: var(--ix-white) !important;
+}
+.ixcb-root .ixcb-ed-k { font: 600 12px/1 var(--ix-font-mono); color: var(--ix-teal) !important; }
+.ixcb-root .ixcb-ed-c { font-size: 10.5px; color: var(--ix-text-light) !important; }
+.ixcb-root .ixcb-ed-none {
+  font-size: 11.5px; color: var(--ix-text-light) !important; padding: 4px 0 8px;
+}
+
+/* ── Manifest · mockup .mani 14px 24px 20px ── */
+.ixcb-root .ixcb-ovw .ixcb-sl { display: flex; flex-direction: column; padding: 14px 24px 20px; }
+.ixcb-root .ixcb-sl-head { display: flex; align-items: center; gap: 11px; flex-wrap: wrap; }
+.ixcb-root .ixcb-sl-sp { flex: 1; }
+.ixcb-root .ixcb-sl-src { font: 500 10.5px/1 var(--ix-font-mono); color: var(--ix-text-light) !important; }
+.ixcb-root .ixcb-sl-badge {
+  font: 500 10px/1 var(--ix-font-mono);
+  background-color: var(--ix-white) !important;
+  color: var(--ix-salmon-ink) !important;
+  border: 1px solid var(--ix-salmon); border-radius: 99px; padding: 2px 9px;
+}
+/* mockup .filters — margin-left auto, gap 5 */
+.ixcb-root .ixcb-sl-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-left: auto; }
+.ixcb-root .ix-btn--pill.is-ixcb-on {
+  background-color: var(--ix-teal) !important;
+  color: var(--ix-text-invert) !important;
+  border-color: var(--ix-teal) !important;
+}
+.ixcb-root .ixcb-sl-n { margin-left: 6px; font-family: var(--ix-font-mono); font-size: 10px; opacity: .72; }
+/* mockup .mnote — 11.5px, capped at 860 so it never runs the full width */
+.ixcb-root .ixcb-sl-ro {
+  margin: 5px 0 11px; font: 400 11.5px/1.45 var(--ix-font-body);
+  color: var(--ix-text-mid) !important; max-width: 860px;
+}
+.ixcb-root .ixcb-sl-diag {
+  border-left: 3px solid var(--ix-salmon);
+  background-color: var(--ix-salmon-ghost) !important;
+  padding: 10px 12px; margin-bottom: 11px; border-radius: var(--ix-radius-sharp);
+  font: 400 12px/1.5 var(--ix-font-body); color: var(--ix-text-dark) !important;
+  max-width: 860px;
+}
+.ixcb-root .ixcb-sl-diag--soft {
+  border-left-color: var(--ix-gold);
+  background-color: var(--ix-gold-glow) !important;
+}
+
+.ixcb-root .ixcb-sl-tw {
+  border: 1px solid var(--ix-border); border-radius: var(--ix-radius);
+  overflow: hidden; background-color: var(--ix-white) !important;
+}
+.ixcb-root .ixcb-sl-tbl {
+  width: 100%; border-collapse: collapse; table-layout: fixed;
+  font-family: var(--ix-font-body);
+}
+/* mockup thead th — 500 8.6px mono, .13em, 8px 10px */
+.ixcb-root .ixcb-sl-tbl th {
+  text-align: left; padding: 8px 10px;
+  font: 500 8.6px/1 var(--ix-font-mono); letter-spacing: .13em; text-transform: uppercase;
+  color: var(--ix-text-light) !important;
+  background-color: var(--ix-cream) !important;
+  border-bottom: 1px solid var(--ix-border);
+  white-space: nowrap;
+}
+/* mockup tbody td — 8px 10px, 12.5px, middle */
+.ixcb-root .ixcb-sl-tbl td {
+  padding: 8px 10px; font-size: 12.5px; vertical-align: middle;
+  color: var(--ix-text-dark) !important;
+  border-bottom: 1px solid var(--ix-border-soft);
+}
+.ixcb-root .ixcb-sl-tbl tr:last-child td { border-bottom: 0; }
+
+/* mockup widths: pg 36, file 222, asn 118 */
+.ixcb-root .ixcb-sl-tbl th:nth-child(1), .ixcb-root .ixcb-sl-pg    { width: 36px; }
+.ixcb-root .ixcb-sl-tbl th:nth-child(2), .ixcb-root .ixcb-sl-sec   { width: 156px; }
+.ixcb-root .ixcb-sl-tbl th:nth-child(4), .ixcb-root .ixcb-sl-img   { width: 44px; }
+.ixcb-root .ixcb-sl-tbl th:nth-child(5), .ixcb-root .ixcb-sl-file  { width: 222px; }
+.ixcb-root .ixcb-sl-tbl th:nth-child(6), .ixcb-root .ixcb-sl-plans { width: 118px; }
+.ixcb-root .ixcb-sl-tbl th:nth-child(7), .ixcb-root .ixcb-sl-next  { width: 148px; }
+
+/* mockup td.pg — 500 11px mono, light */
+.ixcb-root .ixcb-sl-pg  { font: 500 11px/1 var(--ix-font-mono); color: var(--ix-text-light) !important; }
+.ixcb-root .ixcb-sl-img { font: 500 11px/1 var(--ix-font-mono); color: var(--ix-text-light) !important; }
+.ixcb-root .ixcb-sl-plans { font-family: var(--ix-font-mono); font-size: 11px; }
+.ixcb-root .ixcb-sl-file {
+  font-family: var(--ix-font-mono); font-size: 11px; color: var(--ix-text-light) !important;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* mockup .sectag — 500 8.2px mono, uppercase, teal-soft */
+.ixcb-root .ixcb-sl-sec {
+  font: 500 8.2px/1.3 var(--ix-font-mono); letter-spacing: .1em; text-transform: uppercase;
+  /* NOT --ix-teal-soft: that token is a 10% alpha tint, not a colour,
+     and would render this near-invisible on white. Solid mid-teal. */
+  color: var(--ix-teal-mid) !important;
+}
+/* One line, never two. */
+.ixcb-root .ixcb-sl-ttl {
+  font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* mockup td.title .by — 10.5px, light, 1px top */
+.ixcb-root .ixcb-sl-by {
+  display: block; margin-top: 1px;
+  font: 400 10.5px/1.2 var(--ix-font-body); color: var(--ix-text-light) !important;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* mockup td.asn — 118px, centred, left rule */
+.ixcb-root .ixcb-sl-asn {
+  width: 118px; text-align: center; white-space: nowrap;
+  border-left: 1px solid var(--ix-border-soft);
+}
+.ixcb-root .ixcb-sl-tbl th.ixcb-sl-asn { font-size: 8.6px; }
+
+.ixcb-root .ixcb-sl-next { font-size: 11.5px; }
+.ixcb-root .ixcb-sl-next--now  { color: var(--ix-salmon-ink) !important; font-weight: 600; }
+.ixcb-root .ixcb-sl-next--warn { color: var(--ix-warn) !important; }
+.ixcb-root .ixcb-sl-next--ok   { color: var(--ix-ok) !important; }
+.ixcb-root .ixcb-sl-next--mute { color: var(--ix-text-light) !important; }
+.ixcb-root .ixcb-sl-none {
+  padding: 20px 10px; text-align: center; font-size: 12px;
+  color: var(--ix-text-light) !important;
+}
+
+/* ── Orphans · mockup .orph 0 24px 18px ── */
+.ixcb-root .ixcb-orph { padding: 0 24px 18px; }
+/* mockup .orph h3 — 600 13px BODY, teal */
+.ixcb-root .ixcb-orph .ix-section-title {
+  font: 600 13px/1 var(--ix-font-body) !important; color: var(--ix-teal) !important;
+}
+.ixcb-root .ixcb-orph-p {
+  margin: 3px 0 8px; font-size: 11.5px; color: var(--ix-text-light) !important;
+}
+/* mockup .ofile — inline-flex, min 210, white card */
+.ixcb-root .ixcb-orph-none {
+  display: inline-flex; align-items: center; min-width: 210px;
+  padding: 7px 11px; border: 1px solid var(--ix-border); border-radius: var(--ix-radius);
+  background-color: var(--ix-white) !important;
+  font: 500 11px/1.3 var(--ix-font-mono); color: var(--ix-text-light) !important;
+}
+
+/* ── Lane rail · mockup .lanes 0 24px 20px, gap 8 ── */
+.ixcb-root .ixcb-lanes { display: flex; gap: 8px; padding: 0 24px 20px; }
+.ixcb-root .ixcb-lanes .ixcb-lane {
+  flex: 1; display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; cursor: pointer; text-align: left;
+  border: 1px solid var(--ix-border); border-radius: var(--ix-radius);
+  background-color: var(--ix-white) !important;
+  font-family: var(--ix-font-body);
+}
+.ixcb-root .ixcb-lanes .ixcb-lane:hover { border-color: var(--ix-teal); }
+/* mockup .lane .nm — 600 12.5px body, teal */
+.ixcb-root .ixcb-lane-nm { font: 600 12.5px/1 var(--ix-font-body); color: var(--ix-teal) !important; }
+.ixcb-root .ixcb-lane-ct { font: 500 10.5px/1 var(--ix-font-mono); color: var(--ix-text-light) !important; }
+.ixcb-root .ixcb-lane-ch { margin-left: auto; color: var(--ix-text-light) !important; }
+
+
+/* ============================================================
+   §  MANIFEST TABLE — v0.6.23  (companion: JS v0.6.25)
+   ------------------------------------------------------------
+   BUILD FROM THE IX SERIES. The pickers reuse
+   ix-form-controls (.ix-picker-input--changed is the gold
+   editing-state border, verbatim), the buttons reuse
+   ix-buttons (.ix-btn--primary/--teal/--danger/--pill), the
+   confirm reuses ix-modals (.ix-overlay / .ix-modal /
+   .ix-modal-banner--alert / .ix-modal-body / .ix-modal-footer).
+   Nothing below re-declares any of them. What IS here is only
+   the table geometry and the two tag variants ix-form-controls
+   has no equivalent for.
+
+   THREE HAZARDS SOLVED HERE — DO NOT RE-DERIVE
+
+   1. section.publisher-wrapper * forces background-color at
+      specificity (0,1,1) on EVERY descendant, including the
+      label INSIDE a button. Every colour-bearing rule below
+      carries !important and a trailing-descendant reach.
+
+   2. The old width rules were th:nth-child(1..7) at (0,3,1),
+      written for a seven-column table that no longer exists.
+      They would now size the WRONG columns. They are
+      neutralised below at (0,4,1) — .ixcb-root .ixcb-ovw
+      .ixcb-sl-tbl th:nth-child(n) — and real widths come from
+      the colgroup, which table-layout:fixed honours first.
+
+   3. A td with position:relative and z-index:auto paints in
+      DOM order, so a popover inside row 3 renders BEHIND rows
+      4..16. z-index on the popover cannot fix that. The CELL
+      holding the open popover takes the z-index —
+      .ixcb-asn--open — which is why the JS marks the cell
+      rather than the panel.
+   ============================================================ */
+
+/* ── Neutralise the seven-column widths (hazard 2) ─────────── */
+.ixcb-root .ixcb-ovw .ixcb-sl-tbl th:nth-child(1),
+.ixcb-root .ixcb-ovw .ixcb-sl-tbl th:nth-child(2),
+.ixcb-root .ixcb-ovw .ixcb-sl-tbl th:nth-child(3),
+.ixcb-root .ixcb-ovw .ixcb-sl-tbl th:nth-child(4),
+.ixcb-root .ixcb-ovw .ixcb-sl-tbl th:nth-child(5),
+.ixcb-root .ixcb-ovw .ixcb-sl-tbl th:nth-child(6),
+.ixcb-root .ixcb-ovw .ixcb-sl-tbl th:nth-child(7),
+.ixcb-root .ixcb-ovw .ixcb-sl-tbl th:nth-child(8) { width: auto; }
+
+/* ── Proportional columns. Percentages total 100 so the whole
+      width is allocated, rather than one flex column swallowing
+      it and crushing everything to its right. ──────────────── */
+.ixcb-root .ixcb-sl-tbl { table-layout: fixed; width: 100%; }
+.ixcb-root col.ixcb-c-pg   { width: 4%; }
+.ixcb-root col.ixcb-c-sec  { width: 13%; }
+.ixcb-root col.ixcb-c-typ  { width: 10%; }
+.ixcb-root col.ixcb-c-ttl  { width: 30%; }
+.ixcb-root col.ixcb-c-img  { width: 8%; }
+.ixcb-root col.ixcb-c-iss  { width: 18%; }
+.ixcb-root col.ixcb-c-disp { width: 13%; }
+.ixcb-root col.ixcb-c-act  { width: 4%; }
+
+/* ── ONE LINE PER ROW. No cell may wrap; long values clip and
+      carry the full string in a title attribute. ──────────── */
+.ixcb-root .ixcb-sl-tbl td,
+.ixcb-root .ixcb-sl-tbl th {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.ixcb-root .ixcb-sl-tbl th.ixcb-th-r,
+.ixcb-root .ixcb-sl-pg,
+.ixcb-root .ixcb-sl-img { text-align: right; }
+.ixcb-root .ixcb-sl-ttl  { font-weight: 500; color: var(--ix-text-dark) !important; }
+.ixcb-root .ixcb-sl-sec  { font-size: 10.5px; font-weight: 500; color: var(--ix-teal) !important; }
+.ixcb-root .ixcb-sl-act  { text-align: center; }
+.ixcb-root .ixcb-sl-row--out td      { opacity: .5; }
+.ixcb-root .ixcb-sl-row--out .ixcb-sl-ttl {
+  text-decoration: line-through; text-decoration-color: var(--ix-text-light);
+}
+
+/* ── Picker cells opt out of the clip, and the OPEN one lifts
+      above every row below it (hazard 3) ──────────────────── */
+.ixcb-root .ixcb-sl-tbl td.ixcb-asn { overflow: visible; position: relative; }
+.ixcb-root .ixcb-sl-tbl td.ixcb-asn--open { z-index: 60; }
+
+/* ── Assignment picker. ix-picker-input--changed supplies the
+      gold pending border; only the closed-state shape is here. ── */
+.ixcb-root .ixcb-pick {
+  display: inline-flex; align-items: center; gap: 5px; width: 100%;
+  border: 1px solid var(--ix-border-input); border-radius: 5px; padding: 3px 7px;
+  font: 500 10.5px/1.3 var(--ix-font-body); cursor: pointer; text-align: left;
+  background: var(--ix-surface) !important; color: var(--ix-text-mid) !important;
+}
+.ixcb-root .ixcb-pick:hover { border-color: var(--ix-teal); color: var(--ix-teal) !important; }
+.ixcb-root .ixcb-pick-l { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ixcb-root .ixcb-pick-c { font-size: 9px; opacity: .6; }
+
+.ixcb-root .ixcb-saved { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.ixcb-root .ixcb-chip {
+  border-radius: 4px; padding: 2px 6px; font: 700 10px/1.3 var(--ix-font-body);
+  white-space: nowrap;
+  background: var(--ix-teal-soft) !important; color: var(--ix-teal) !important;
+}
+.ixcb-root .ixcb-chip-more {
+  border-radius: 4px; padding: 2px 5px; font: 500 10px/1.3 var(--ix-font-body);
+  background: var(--ix-cream-deep) !important; color: var(--ix-text-mid) !important;
+}
+.ixcb-root .ixcb-edit {
+  border: 0; cursor: pointer; font-size: 11px; padding: 1px 3px; line-height: 1;
+  border-radius: 3px; background: transparent !important; color: var(--ix-text-light) !important;
+}
+.ixcb-root .ixcb-edit:hover { background: var(--ix-teal-ghost) !important; color: var(--ix-teal) !important; }
+
+/* ── Type and Status tags. A value first, a control second. ── */
+.ixcb-root .ixcb-tag {
+  display: inline-flex; align-items: center; gap: 5px; width: 100%;
+  border: 1px solid transparent; border-radius: 5px; padding: 3px 7px;
+  font: 600 10.5px/1.3 var(--ix-font-body); cursor: pointer; text-align: left;
+  background: var(--ix-cream-deep) !important; color: var(--ix-text-mid) !important;
+}
+.ixcb-root .ixcb-tag:hover { border-color: var(--ix-border-input); }
+.ixcb-root .ixcb-tag-l { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ixcb-root .ixcb-typ--article,
+.ixcb-root .ixcb-typ--article * { background: var(--ix-blue-ghost) !important; color: var(--ix-blue-deep) !important; }
+.ixcb-root .ixcb-typ--ad,
+.ixcb-root .ixcb-typ--ad * { background: var(--ix-gold-glow) !important; color: var(--ix-gold-ink) !important; }
+.ixcb-root .ixcb-typ--advertorial,
+.ixcb-root .ixcb-typ--advertorial * { background: rgba(196,163,90,.24) !important; color: var(--ix-gold-ink) !important; }
+.ixcb-root .ixcb-typ--other,
+.ixcb-root .ixcb-typ--other * { background: var(--ix-cream-deep) !important; color: var(--ix-text-mid) !important; }
+
+.ixcb-root .ixcb-disp--undecided,
+.ixcb-root .ixcb-disp--undecided * { background: var(--ix-salmon-soft) !important; color: var(--ix-salmon-ink) !important; }
+.ixcb-root .ixcb-disp--intended,
+.ixcb-root .ixcb-disp--intended * { background: rgba(31,122,92,.12) !important; color: var(--ix-ok) !important; }
+.ixcb-root .ixcb-disp--held,
+.ixcb-root .ixcb-disp--held * { background: rgba(111,87,34,.12) !important; color: var(--ix-warn) !important; }
+.ixcb-root .ixcb-disp--out,
+.ixcb-root .ixcb-disp--out * { background: var(--ix-cream-deep) !important; color: var(--ix-text-light) !important; }
+
+/* A DERIVED value must never pass for a chosen one. */
+.ixcb-root .ixcb-disp--auto { border-style: dashed; border-color: currentColor; }
+
+/* ── Images: arrived over expected, one column ──────────────── */
+.ixcb-root .ixcb-imgs { display: inline-flex; align-items: baseline; gap: 2px; font: 600 11px/1.3 var(--ix-font-body); }
+.ixcb-root .ixcb-imgs-a { font-weight: 700; }
+.ixcb-root .ixcb-imgs-s,
+.ixcb-root .ixcb-imgs-e { font-weight: 400; color: var(--ix-text-light) !important; }
+.ixcb-root .ixcb-imgs--full .ixcb-imgs-a { color: var(--ix-ok) !important; }
+.ixcb-root .ixcb-imgs--part .ixcb-imgs-a { color: var(--ix-warn) !important; }
+.ixcb-root .ixcb-imgs--none .ixcb-imgs-a,
+.ixcb-root .ixcb-imgs--unknown .ixcb-imgs-a { color: var(--ix-text-light) !important; }
+
+.ixcb-root .ixcb-del {
+  border: 0; cursor: pointer; font-size: 13px; line-height: 1; padding: 2px 4px;
+  border-radius: 4px; background: transparent !important; color: var(--ix-text-light) !important;
+}
+.ixcb-root .ixcb-del:hover { background: rgba(192,57,43,.09) !important; color: var(--ix-danger) !important; }
+
+/* ── Popover ────────────────────────────────────────────────── */
+.ixcb-root .ixcb-pop {
+  position: absolute; top: calc(100% + 4px); right: 0; width: 252px; z-index: 5;
+  border: 1px solid var(--ix-border); border-radius: 7px; padding: 7px;
+  box-shadow: 0 8px 24px rgba(26,58,58,.16); display: none;
+  background: var(--ix-surface) !important;
+}
+.ixcb-root .ixcb-asn--open .ixcb-pop { display: block; }
+.ixcb-root .ixcb-pop--narrow { width: 188px; }
+.ixcb-root .ixcb-pop-h {
+  font: 700 9.5px/1.3 var(--ix-font-body); text-transform: uppercase; letter-spacing: .07em;
+  padding: 2px 5px 6px; margin-bottom: 4px;
+  border-bottom: 1px solid var(--ix-border-soft); color: var(--ix-text-light) !important;
+}
+.ixcb-root .ixcb-opt {
+  display: flex; align-items: center; gap: 7px; padding: 5px 6px; border-radius: 5px;
+  cursor: pointer; font-size: 11.5px; white-space: nowrap;
+}
+.ixcb-root .ixcb-opt:hover { background: var(--ix-cream-warm) !important; }
+.ixcb-root .ixcb-opt input { accent-color: var(--ix-teal); margin: 0; cursor: pointer; }
+.ixcb-root .ixcb-opt-n { font-weight: 700; color: var(--ix-text-dark) !important; }
+.ixcb-root .ixcb-opt-d { font-size: 10.5px; color: var(--ix-text-light) !important; }
+.ixcb-root .ixcb-pop-note,
+.ixcb-root .ixcb-pop-none {
+  padding: 6px; font-size: 10px; line-height: 1.4; color: var(--ix-text-light) !important;
+}
+.ixcb-root .ixcb-pop-f {
+  display: flex; align-items: center; gap: 6px; padding-top: 6px; margin-top: 4px;
+  border-top: 1px solid var(--ix-border-soft);
+}
+.ixcb-root .ixcb-pop-sp { flex: 1; }
+.ixcb-root .ix-btn.ixcb-btn-xs { padding: 4px 11px; font-size: 10.5px; min-height: 0; }
+
+/* ── Save bar. Present only while something is pending. ────── */
+.ixcb-root .ixcb-savebar {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  border: 1px solid var(--ix-gold); border-radius: 6px; padding: 6px 10px;
+  background: var(--ix-gold-glow) !important;
+}
+.ixcb-root .ixcb-savebar-t { font: 700 11.5px/1.3 var(--ix-font-body); color: var(--ix-gold-ink) !important; }
+.ixcb-root .ixcb-savebar-sp { flex: 1; }
+
+/* ── Confirm. ix-modals owns the overlay, card, banner, body and
+      footer; only the inset note is local. ─────────────────── */
+.ixcb-root .ixcb-modal { max-width: 420px; }
+.ixcb-root .ixcb-modal-note {
+  margin-top: 10px; border-left: 3px solid var(--ix-danger); border-radius: 4px;
+  padding: 8px 10px; font-size: 11.5px; line-height: 1.45;
+  background: var(--ix-cream-deep) !important; color: var(--ix-text-mid) !important;
+}
+.ixcb-root .ixcb-modal-fsp { flex: 1; }
+
+
+/* ============================================================
+   §  HERO LAYOUT + CELL TYPOGRAPHY — v0.6.24
+   (companion: JS v0.6.28)
+   ------------------------------------------------------------
+   THE SHORTHAND LESSON. v0.6.23 tried to restyle .ixcb-sl-pg,
+   .ixcb-sl-sec and .ixcb-sl-img with font-size and font-weight
+   LONGHANDS. The rules they were overriding use the `font:`
+   SHORTHAND, which also sets font-family — so at equal
+   specificity the longhand won on size and the mono family
+   survived underneath. Print Section additionally kept
+   text-transform:uppercase and its badge letter-spacing,
+   because a longhand override resets nothing it does not name.
+
+   Every rule below that replaces a shorthand IS a shorthand,
+   and every inherited property is named explicitly. Overriding
+   a shorthand with longhands is not an override.
+   ============================================================ */
+
+/* ── Hero: narrow sticky cover, manifest takes the rest ────── */
+.ixcb-root .ixcb-hero {
+  display: grid; grid-template-columns: 172px minmax(0, 1fr);
+  gap: 14px; align-items: start;
+}
+.ixcb-root .ixcb-cover { position: sticky; top: 12px; }
+.ixcb-root .ixcb-cover-ph { height: 196px; }
+
+/* ── Cell typography. Shorthand beats shorthand. ──────────── */
+.ixcb-root .ixcb-sl-pg {
+  font: 500 11px/1.3 var(--ix-font-body);
+  letter-spacing: 0; text-transform: none;
+  color: var(--ix-text-light) !important;
+}
+.ixcb-root .ixcb-sl-sec {
+  font: 500 11px/1.3 var(--ix-font-body);
+  letter-spacing: 0; text-transform: none;
+  padding: 5px 7px; border-radius: 0;
+  background: transparent !important; color: var(--ix-teal) !important;
+}
+.ixcb-root .ixcb-sl-img {
+  font: 500 11px/1.3 var(--ix-font-body);
+  letter-spacing: 0; text-transform: none;
+}
+.ixcb-root .ixcb-sl-ttl {
+  font: 500 12px/1.35 var(--ix-font-body);
+  color: var(--ix-text-dark) !important;
+}
+
+/* ── Type tag. cream-deep on a white panel read as an empty
+      control, and Other is the commonest value in a manifest.
+      Each type now carries its own tint at a weight that is
+      visible against white. ─────────────────────────────── */
+.ixcb-root .ixcb-typ--other,
+.ixcb-root .ixcb-typ--other * {
+  background: #E9E4D6 !important; color: #4A5261 !important;
+}
+.ixcb-root .ixcb-typ--article,
+.ixcb-root .ixcb-typ--article * {
+  background: rgba(91,127,255,.14) !important; color: var(--ix-blue-deep) !important;
+}
+
+/* ── Proportions, retuned for the width the panel actually has
+      now that it shares the hero with a 172px cover. Images
+      held 168px for three characters; Title opened a canyon
+      before it. ───────────────────────────────────────────── */
+.ixcb-root col.ixcb-c-pg   { width: 3.5%; }
+.ixcb-root col.ixcb-c-sec  { width: 15%; }
+.ixcb-root col.ixcb-c-typ  { width: 11%; }
+.ixcb-root col.ixcb-c-ttl  { width: 33%; }
+.ixcb-root col.ixcb-c-img  { width: 5.5%; }
+.ixcb-root col.ixcb-c-iss  { width: 18%; }
+.ixcb-root col.ixcb-c-disp { width: 11%; }
+.ixcb-root col.ixcb-c-act  { width: 3%; }
+
+/* ── A filter that can only return zero says so. ──────────── */
+.ixcb-root .ix-btn--pill.ixcb-pill--dead {
+  opacity: .45; cursor: not-allowed; pointer-events: auto;
+}
+
+
+/* ============================================================
+   §  ESTIMATED TYPE — v0.6.25  (companion: JS v0.6.29)
+   ------------------------------------------------------------
+   The tag is now a reading, not a control, so it drops the
+   affordances of one: no pointer, no hover border, no caret.
+   Colour still carries the estimate.
+
+   A row with NO stored type renders the 'other' tint at reduced
+   weight, so a default never reads with the same confidence as
+   an assessment. The tooltip says which it is.
+   ============================================================ */
+
+.ixcb-root .ixcb-tag--ro {
+  cursor: default;
+  border-color: transparent !important;
+}
+.ixcb-root .ixcb-tag--ro:hover { border-color: transparent !important; }
+.ixcb-root .ixcb-typ--unset { opacity: .55; font-style: italic; }
