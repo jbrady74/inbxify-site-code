@@ -1,0 +1,27 @@
+<!-- templates/ix/web-fa-centered-v1.html -->
+<!-- WS-I first web template. Facts-only per Q2: bare photo URL, full teaser, direct link. -->
+<!-- NEW mapper keys consumed here (206 edit, step 5): f_photoSrc, f_teaserFull, f_linkDirect, f_paidBy -->
+<!-- Sponsor line + creative are NOT baked: the frame below stays collapsed until the page-level script hydrates it. -->
+<div class="nlw-fa">
+  {{#f_franchiseArt}}<div class="nlw-franchise"><img src="{{f_franchiseArt}}" alt="{{f_franchiseName}}" loading="lazy"></div>{{/f_franchiseArt}}
+  {{#f_rubric}}<div class="nlw-rubric">{{f_rubric}}</div>{{/f_rubric}}
+  {{#f_paidBy}}<div style="text-align:center"><span class="nlw-paid">PAID POST &middot; {{f_paidBy}}</span></div>{{/f_paidBy}}
+  <h2 class="nlw-headline">{{f_headline}}</h2>
+  {{#f_subhead}}<p class="nlw-subhead">{{f_subhead}}</p>{{/f_subhead}}
+  {{#f_author}}
+  <div class="nlw-byline">
+    By <span class="nlw-by-name">{{f_author}}</span>{{#f_authorTitle}}, {{f_authorTitle}}{{/f_authorTitle}}{{#f_coAuthor}} &amp; <span class="nlw-by-name">{{f_coAuthor}}</span>{{#f_coAuthorTitle}}, {{f_coAuthorTitle}}{{/f_coAuthorTitle}}{{/f_coAuthor}}
+    {{#f_authorBusiness}}<span class="nlw-by-biz">{{f_authorBusiness}}</span>{{/f_authorBusiness}}
+  </div>
+  {{/f_author}}
+  {{#f_photoSrc}}
+  <div class="nlw-photo"><img src="{{f_photoSrc}}-/preview/1360x1360/-/format/auto/-/quality/smart/" alt="{{f_headline}}" loading="lazy"></div>
+  {{#f_photoCredit}}<div class="nlw-photo-credit">{{f_photoCredit}}</div>{{/f_photoCredit}}
+  {{/f_photoSrc}}
+  <div class="nlw-teaser"><p>{{f_teaserFull}}</p></div>
+  {{#f_linkDirect}}
+  <div class="nlw-cta"><a href="{{f_linkDirect}}">{{#f_ctaText}}{{f_ctaText}}{{/f_ctaText}}{{^f_ctaText}}Read the full story{{/f_ctaText}}</a></div>
+  {{/f_linkDirect}}
+  <div data-ix-ad-frame="section-sponsor" data-ix-franchise="{{f_franchiseName}}"></div>
+</div>
+<hr class="nlw-divider">
