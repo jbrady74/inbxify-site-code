@@ -1,0 +1,40 @@
+<!-- templates/ix/web-fa-centered-v4.html -->
+<!-- WS-I first web template. Facts-only per Q2: bare photo URL, full teaser, direct link. -->
+<!-- v2: tokens use the Worker's normalized names — the engine strips the payload's field prefix -->
+<!-- before substitution, so templates address headline, not the prefixed payload key. -->
+<!-- v3: payor's baked ad (WS-I S3 / closure item 12). The buyer's creative is a RECEIPT — frozen -->
+<!-- with the issue, written into the stored render, never hydrated. Distinct from the section-sponsor -->
+<!-- frame below it, which stays an empty placeholder until the page-level script resolves a live sponsor. -->
+<!-- v4: the paid-ad block gates on paidAdLink, not paidAd. An advertiser bought a placement, not a -->
+<!-- picture — an ad with no destination is not the thing they paid for, so it does not render at all. -->
+<!-- Module 227 enforces the same rule upstream: no matching ADS row means no image and no link. -->
+<!-- Single gate also removes any state where the label or divider can appear above an empty space. -->
+<div class="nlw-fa">
+  {{#franchiseArt}}<div class="nlw-franchise"><img src="{{franchiseArt}}" alt="{{franchiseName}}" loading="lazy"></div>{{/franchiseArt}}
+  {{#rubric}}<div class="nlw-rubric">{{rubric}}</div>{{/rubric}}
+  {{#paidBy}}<div style="text-align:center"><span class="nlw-paid">PAID POST &middot; {{paidBy}}</span></div>{{/paidBy}}
+  <h2 class="nlw-headline">{{headline}}</h2>
+  {{#subhead}}<p class="nlw-subhead">{{subhead}}</p>{{/subhead}}
+  {{#author}}
+  <div class="nlw-byline">
+    By <span class="nlw-by-name">{{author}}</span>{{#authorTitle}}, {{authorTitle}}{{/authorTitle}}{{#coAuthor}} &amp; <span class="nlw-by-name">{{coAuthor}}</span>{{#coAuthorTitle}}, {{coAuthorTitle}}{{/coAuthorTitle}}{{/coAuthor}}
+    {{#authorBusiness}}<span class="nlw-by-biz">{{authorBusiness}}</span>{{/authorBusiness}}
+  </div>
+  {{/author}}
+  {{#photoSrc}}
+  <div class="nlw-photo"><img src="{{photoSrc}}-/preview/1360x1360/-/format/auto/-/quality/smart/" alt="{{headline}}" loading="lazy"></div>
+  {{#photoCredit}}<div class="nlw-photo-credit">{{photoCredit}}</div>{{/photoCredit}}
+  {{/photoSrc}}
+  <div class="nlw-teaser"><p>{{teaserFull}}</p></div>
+  {{#linkDirect}}
+  <div class="nlw-cta"><a href="{{linkDirect}}">{{#ctaText}}{{ctaText}}{{/ctaText}}{{^ctaText}}Read the full story{{/ctaText}}</a></div>
+  {{/linkDirect}}
+  {{#paidAdLink}}
+  <div class="nlw-paidad">
+    {{#paidBy}}<div class="nlw-paidad-label">Paid for by {{paidBy}}</div>{{/paidBy}}
+    <a href="{{paidAdLink}}" target="_blank" rel="noopener"><img src="{{paidAd}}" alt="{{paidBy}}" loading="lazy"></a>
+  </div>
+  {{/paidAdLink}}
+  <div data-ix-ad-frame="section-sponsor" data-ix-franchise="{{franchiseName}}"></div>
+</div>
+<hr class="nlw-divider">
