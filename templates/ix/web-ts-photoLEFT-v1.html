@@ -1,0 +1,39 @@
+<!-- templates/ix/web-ts-photoLEFT-v1.html -->
+<!-- WS-I fan-out · TS split, photo left. Facts-only; tokens are Worker-normalized names. -->
+<!-- Anatomy per approved web-blocks-mockup-v0_1: art/rubric span full width, photo column beside copy, -->
+<!-- left-aligned type in split mode, paid receipt + collapsed sponsor frame identical to web-fa-centered-v4. -->
+<div class="nlw-ts nlw-ts--split nlw-ts--photoleft">
+  {{#franchiseArt}}<div class="nlw-franchise"><img src="{{franchiseArt}}" alt="{{franchiseName}}" loading="lazy"></div>{{/franchiseArt}}
+  {{#rubric}}<div class="nlw-rubric">{{rubric}}</div>{{/rubric}}
+  <div class="nlw-ts-cols">
+    <div class="nlw-ts-media">
+      {{#photoSrc}}
+      <div class="nlw-photo"><img src="{{photoSrc}}-/preview/1360x1360/-/format/auto/-/quality/smart/" alt="{{headline}}" loading="lazy"></div>
+      {{#photoCredit}}<div class="nlw-photo-credit">{{photoCredit}}</div>{{/photoCredit}}
+      {{/photoSrc}}
+    </div>
+    <div class="nlw-ts-copy">
+      {{#paidBy}}<div><span class="nlw-paid">PAID POST &middot; {{paidBy}}</span></div>{{/paidBy}}
+      <h2 class="nlw-headline">{{headline}}</h2>
+      {{#subhead}}<p class="nlw-subhead">{{subhead}}</p>{{/subhead}}
+    {{#author}}
+    <div class="nlw-byline">
+      By <span class="nlw-by-name">{{author}}</span>{{#authorTitle}}, {{authorTitle}}{{/authorTitle}}{{#coAuthor}} &amp; <span class="nlw-by-name">{{coAuthor}}</span>{{#coAuthorTitle}}, {{coAuthorTitle}}{{/coAuthorTitle}}{{/coAuthor}}
+      {{#authorBusiness}}<span class="nlw-by-biz">{{authorBusiness}}</span>{{/authorBusiness}}
+    </div>
+    {{/author}}
+      <div class="nlw-teaser"><p>{{teaserFull}}</p></div>
+      {{#linkDirect}}
+      <div class="nlw-cta"><a href="{{linkDirect}}">{{#ctaText}}{{ctaText}}{{/ctaText}}{{^ctaText}}Read the full story{{/ctaText}}</a></div>
+      {{/linkDirect}}
+    </div>
+  </div>
+  {{#paidAdLink}}
+  <div class="nlw-paidad">
+    {{#paidBy}}<div class="nlw-paidad-label">Paid for by {{paidBy}}</div>{{/paidBy}}
+    <a href="{{paidAdLink}}" target="_blank" rel="noopener"><img src="{{paidAd}}" alt="{{paidBy}}" loading="lazy"></a>
+  </div>
+  {{/paidAdLink}}
+  <div data-ix-ad-frame="section-sponsor" data-ix-franchise="{{franchiseName}}"></div>
+</div>
+<hr class="nlw-divider">

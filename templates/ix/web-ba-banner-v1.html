@@ -1,0 +1,9 @@
+<!-- templates/ix/web-ba-banner-v1.html -->
+<!-- WS-I fan-out · BA banner, matted + labeled per approved mockup. the sold flag gates the whole block: -->
+<!-- an unsold slot renders nothing at all — no mat, no label, no gap. -->
+{{#sold}}
+<div class="nlw-ba">
+  <div class="nlw-ba-label">Featured Local Partner</div>
+  <a href="{{adLink}}" target="_blank" rel="noopener"><img src="{{adImage}}" alt="{{adName}}" loading="lazy"></a>
+</div>
+{{/sold}}

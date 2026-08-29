@@ -1,0 +1,21 @@
+<!-- templates/ix/web-re-listing-v1.html -->
+<!-- WS-I fan-out · RE listing card per approved mockup: photo full-bleed to card edge, price, -->
+<!-- address, spec strip, agent line, CTA. Every fact individually gated. -->
+<div class="nlw-re">
+  {{#hasREPhoto}}<div class="nlw-re-photo"><img src="{{rePhoto}}" alt="{{reAddress}}" loading="lazy"></div>{{/hasREPhoto}}
+  <div class="nlw-re-body">
+    {{#rubric}}<div class="nlw-rubric" style="text-align:left">{{rubric}}</div>{{/rubric}}
+    {{#rePrice}}<div class="nlw-re-price">{{rePrice}}</div>{{/rePrice}}
+    {{#reAddress}}<div class="nlw-re-address">{{reAddress}}</div>{{/reAddress}}
+    <div class="nlw-re-specs">{{#reBeds}}<span>{{reBeds}} BD</span>{{/reBeds}}{{#reBaths}}<span>{{reBaths}} BA</span>{{/reBaths}}{{#reSqft}}<span>{{reSqft}} SQFT</span>{{/reSqft}}</div>
+    {{#hasAgent}}
+    <div class="nlw-re-agent">
+      {{#reAgentLogo}}<img src="{{reAgentLogo}}" alt="{{reBrokerage}}" loading="lazy">{{/reAgentLogo}}
+      <div><b>{{reAgent}}</b>{{#reBrokerage}}<span class="nlw-re-brokerage">{{reBrokerage}}</span>{{/reBrokerage}}</div>
+    </div>
+    {{/hasAgent}}
+    {{#reLink}}
+    <div class="nlw-cta"><a href="{{reLink}}">See the Listing</a></div>
+    {{/reLink}}
+  </div>
+</div>

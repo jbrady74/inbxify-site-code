@@ -1,0 +1,21 @@
+<!-- templates/ix/web-txa-find-v1.html -->
+<!-- WS-I fan-out · TXA The Find. Card list from the cards[] loop per approved mockup. -->
+<!-- Loop dialect matches email-txa-find-v2: each-over-cards with renderer-supplied first/last flags. -->
+<!-- Card fields: logo business title body meta link. -->
+<div class="nlw-txa">
+  {{#franchiseArt}}<div class="nlw-franchise"><img src="{{franchiseArt}}" alt="{{franchiseName}}" loading="lazy"></div>{{/franchiseArt}}
+  {{#rubric}}<div class="nlw-rubric">{{rubric}}</div>{{/rubric}}
+  {{#txaKicker}}<p class="nlw-txa-kicker">{{txaKicker}}</p>{{/txaKicker}}
+  {{#each cards}}
+  <div class="nlw-txa-card">
+    {{#logo}}<div class="nlw-txa-logo"><img src="{{logo}}" alt="{{business}}" loading="lazy"></div>{{/logo}}
+    <div class="nlw-txa-copy">
+      <div class="nlw-txa-name">{{title}}</div>
+      {{#business}}<div class="nlw-txa-meta">{{business}}</div>{{/business}}
+      {{#body}}<p class="nlw-txa-blurb">{{body}}</p>{{/body}}
+      {{#meta}}<div class="nlw-txa-detail">{{meta}}</div>{{/meta}}
+      {{#link}}<a class="nlw-txa-visit" href="{{link}}" target="_blank" rel="noopener">Visit Site &rarr;</a>{{/link}}
+    </div>
+  </div>
+  {{/each}}
+</div>

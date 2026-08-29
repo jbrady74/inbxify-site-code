@@ -1,0 +1,11 @@
+<!-- templates/ix/web-gr-publisher-v1.html -->
+<!-- WS-I fan-out · GR publisher welcome. Inverted card per approved mockup; colors are shell-set -->
+<!-- variables, not WLN literals. Long-form body renders when present; supershort is the fallback. -->
+<div class="nlw-gr">
+  {{#greetingTitle}}<h2 class="nlw-gr-title">{{greetingTitle}}</h2>{{/greetingTitle}}
+  <hr class="nlw-gr-rule">
+  <div class="nlw-gr-body">
+    {{#greetingBody}}<p>{{greetingBody}}</p>{{/greetingBody}}
+    {{^greetingBody}}<p><em>{{greetingSupershort}}</em></p>{{/greetingBody}}
+  </div>
+</div>
