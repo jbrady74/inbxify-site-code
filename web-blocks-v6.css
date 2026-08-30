@@ -1,0 +1,513 @@
+/* web-blocks-v6.css
+   INBXIFY · WS-I web render stylesheet
+   v6 = v5 + the EV block (Events Display Engine, WS-I Session 4). EV renders
+   1..N events from one block; density comes from .nlw-ev--nN set by x_evCount,
+   so a new arrangement is a CSS rule, not a build.
+   v5 = v4 + the B1 fan-out (GR/BA/FA-split/TS/RE/TXA/spacer) + THE BRAND LIFT:
+   every publisher-brand value that v4 carried as a literal (WLN gold bar,
+   Playfair/Jost, signoff trim) now reads a --nl-* variable with a NEUTRAL
+   platform default. The title's web shell sets the brand — bnm-wln/web-shell-v5
+   sets WLN's values; a Renna shell will set Renna's. The shared stylesheet
+   contains no publisher. (Font @import still loads all families; per-title
+   font loading is a later optimization, logged.)
+   ─────────────────────────────────────────────────────────────
+   SELF-CONTAINED ON PURPOSE. Loads on the PUBLIC Newsletter Collection
+   page where ix-tokens is NOT loaded. Every custom prop is defined here,
+   on .ix-nl — never assume :root.
+   TYPOGRAPHY IS ARMORED: every font-family carries !important (RTE lesson).
+   AD FRAMES COLLAPSE BY DEFAULT (8/16): stored HTML never changes; the
+   hydration script un-collapses a frame only when a sponsor resolves.
+   LEGACY SEAM (D5): every selector scoped under .ix-nl. */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,600&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;1,700&family=Jost:wght@700&display=swap');
+
+.ix-nl{
+  /* platform palette — ix-tokens v1.0.2 lineage */
+  --nl-teal:#1A3A3A;
+  --nl-teal-deep:#14302F;
+  --nl-gold:#C4A35A;
+  --nl-cream:#FAF9F5;
+  --nl-cream-warm:#FDFCF8;
+  --nl-text:#1E2A3A;
+  --nl-text-mid:#5A6478;
+  --nl-text-light:#8A8E9A;
+  --nl-border:#E4E0D4;
+  --nl-border-soft:#EEE9DC;
+  --nl-surface:#FFFFFF;
+
+  /* type — NEUTRAL platform defaults; the title shell sets the brand.
+     (v4 hardcoded Fraunces here; Fraunces is WLN's, so it moved to the shell.) */
+  --nl-font-display:Georgia,'Times New Roman',serif;
+  --nl-font-body:'DM Sans',system-ui,sans-serif;
+  --nl-font-mono:'DM Mono',ui-monospace,monospace;
+
+  /* brand-carrying furniture — neutral defaults, shell-set per title */
+  --nl-bar-bg:var(--nl-border);
+  --nl-bar-ink:var(--nl-text);
+  --nl-bar-font:var(--nl-font-display);
+  --nl-bar-label-font:var(--nl-font-mono);
+  --nl-signoff-border:var(--nl-gold);
+  --nl-signoff-ink:#444444;
+  --nl-signoff-font:var(--nl-font-display);
+
+  /* inverted (dark) card — GR and any future dark block */
+  --nl-inv-bg:var(--nl-teal);
+  --nl-inv-ink:#F2E9D8;
+  --nl-inv-ink-soft:#DCE5E2;
+  --nl-inv-rule:rgba(196,163,90,.55);
+
+  display:block;
+  max-width:680px;
+  margin:0 auto;
+  padding:18px 20px 36px;
+  background:#FAF9F5;
+  border-radius:12px;
+  font-family:var(--nl-font-body) !important;
+  font-size:17px;
+  line-height:1.6;
+  color:var(--nl-text);
+  -webkit-text-size-adjust:100%;
+}
+.ix-nl *,.ix-nl *::before,.ix-nl *::after{box-sizing:border-box;}
+.ix-nl img{max-width:100%;height:auto;display:block;}
+.ix-nl a{color:var(--nl-teal);text-decoration:underline;text-decoration-color:var(--nl-gold);text-underline-offset:2px;}
+.ix-nl a:hover{color:var(--nl-teal-deep);}
+
+/* ── FA block ─────────────────────────────────────────────── */
+.ix-nl .nlw-fa{margin:0 0 40px;}
+
+.ix-nl .nlw-franchise{margin:0 0 14px;}
+.ix-nl .nlw-franchise img{margin:0 auto;max-height:110px;width:auto;}
+
+.ix-nl .nlw-rubric{
+  font-family:var(--nl-font-mono) !important;
+  font-size:12px;letter-spacing:2.2px;text-transform:uppercase;
+  color:var(--nl-teal);font-weight:500;text-align:center;margin:0 0 10px;
+}
+
+.ix-nl .nlw-headline{
+  font-family:var(--nl-font-display) !important;
+  font-size:clamp(26px,5.4vw,34px);line-height:1.18;font-weight:600;
+  color:var(--nl-teal);text-align:center;margin:0 0 10px;
+}
+.ix-nl .nlw-subhead{
+  font-family:var(--nl-font-body) !important;
+  font-size:18px;line-height:1.45;color:var(--nl-text-mid);
+  text-align:center;margin:0 0 14px;
+}
+
+/* byline — fresh-sheet anatomy: name [, title] / business line 2 */
+.ix-nl .nlw-byline{
+  text-align:center;margin:0 0 18px;
+  font-size:14px;color:var(--nl-text-mid);
+}
+.ix-nl .nlw-byline .nlw-by-name{font-weight:700;color:var(--nl-text);}
+.ix-nl .nlw-byline .nlw-by-biz{
+  display:block;margin-top:2px;
+  font-family:var(--nl-font-mono) !important;
+  font-size:11.5px;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--nl-text-light);
+}
+
+.ix-nl .nlw-photo{margin:0 0 6px;}
+.ix-nl .nlw-photo img{width:100%;border-radius:8px;}
+.ix-nl .nlw-photo-credit{
+  font-size:11.5px;color:var(--nl-text-light);text-align:right;margin:4px 0 18px;
+}
+
+.ix-nl .nlw-teaser{margin:0 0 18px;}
+.ix-nl .nlw-teaser p{margin:0 0 14px;}
+
+/* paid receipt badge — frozen with the issue */
+.ix-nl .nlw-paid{
+  display:inline-block;background:var(--nl-gold);color:#FFFFFF;
+  font-family:var(--nl-font-mono) !important;
+  font-size:10px;letter-spacing:1.6px;font-weight:500;
+  padding:3px 10px;border-radius:3px;margin:0 0 10px;
+}
+
+.ix-nl .nlw-cta{text-align:center;margin:6px 0 0;}
+.ix-nl .nlw-cta a{
+  display:inline-block;background:var(--nl-teal);color:#FFFFFF;
+  font-family:var(--nl-font-body) !important;
+  font-weight:700;font-size:15px;text-decoration:none;
+  padding:12px 26px;border-radius:8px;
+}
+.ix-nl .nlw-cta a:hover{background:var(--nl-teal-deep);color:#FFFFFF;}
+
+/* ── payor's baked ad — the receipt, frozen with the issue ── */
+.ix-nl .nlw-paidad{
+  margin:26px 0 0;padding:18px 0 0;
+  border-top:1px solid var(--nl-border-soft);
+}
+.ix-nl .nlw-paidad-label{
+  font-family:var(--nl-font-mono) !important;
+  font-size:10.5px;letter-spacing:1.8px;text-transform:uppercase;
+  color:var(--nl-text-light);text-align:center;margin:0 0 10px;
+}
+.ix-nl .nlw-paidad a{display:block;text-decoration:none;}
+.ix-nl .nlw-paidad img{margin:0 auto;border-radius:6px;}
+
+/* ── sponsor / ad frames — collapsed until hydrated ───────── */
+.ix-nl [data-ix-ad-frame]{display:none;}
+.ix-nl [data-ix-ad-frame].ix-hydrated{display:block;margin:22px 0 0;}
+.ix-nl [data-ix-ad-frame].ix-hydrated .nlw-sponsor-line{
+  font-size:13px;color:var(--nl-text-mid);text-align:center;margin:0 0 8px;
+}
+.ix-nl [data-ix-ad-frame].ix-hydrated .nlw-sponsor-line b{color:var(--nl-text);}
+.ix-nl [data-ix-ad-frame].ix-hydrated img{margin:0 auto;border-radius:6px;}
+
+/* ── divider ──────────────────────────────────────────────── */
+.ix-nl .nlw-divider{
+  border:0;border-top:1px solid var(--nl-border);
+  margin:0 0 40px;
+}
+
+/* ── shell furniture: issue bar + sign-off — brand via variables ── */
+.ix-nl .nlw-issuebar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--nl-bar-bg);border-radius:10px;padding:14px 18px;margin:0 0 26px;
+}
+.ix-nl .nlw-issuebar .nlw-ib-side{flex:0 0 auto;text-align:left;}
+.ix-nl .nlw-issuebar .nlw-ib-side--right{text-align:right;}
+.ix-nl .nlw-issuebar .nlw-ib-label{
+  font-family:var(--nl-bar-label-font) !important;
+  font-size:11px;font-weight:700;letter-spacing:3px;color:var(--nl-bar-ink);opacity:.6;display:block;
+}
+.ix-nl .nlw-issuebar .nlw-ib-big{
+  font-family:var(--nl-bar-font) !important;
+  font-size:22px;font-weight:700;color:var(--nl-bar-ink);line-height:1.1;display:block;
+}
+.ix-nl .nlw-issuebar .nlw-ib-title{
+  flex:1 1 auto;text-align:center;margin:0;
+  font-family:var(--nl-bar-font) !important;
+  font-size:clamp(18px,3.6vw,24px);font-weight:700;font-style:italic;
+  color:var(--nl-bar-ink);line-height:1.2;
+}
+@media (max-width:480px){
+  .ix-nl .nlw-issuebar{flex-wrap:wrap;justify-content:center;text-align:center;}
+  .ix-nl .nlw-issuebar .nlw-ib-side,.ix-nl .nlw-issuebar .nlw-ib-side--right{text-align:center;}
+}
+
+.ix-nl .nlw-signoff{
+  background:var(--nl-surface);border:2px solid var(--nl-signoff-border);border-radius:14px;
+  padding:28px 20px;text-align:center;margin:6px 0 10px;
+}
+.ix-nl .nlw-signoff p{
+  margin:0;font-family:var(--nl-signoff-font) !important;
+  font-size:clamp(20px,4vw,27px);font-style:italic;line-height:1.45;color:var(--nl-signoff-ink);
+}
+
+/* ═══════════ v5 · B1 fan-out blocks (approved mockup v0_1) ═══════════ */
+
+/* ── GR · publisher welcome — inverted card ── */
+.ix-nl .nlw-gr{background:var(--nl-inv-bg);border-radius:12px;padding:26px 26px 24px;margin:0 0 40px;}
+.ix-nl .nlw-gr-title{font-family:var(--nl-font-display) !important;font-style:italic;font-size:clamp(20px,4.2vw,25px);font-weight:600;color:var(--nl-inv-ink);margin:0 0 12px;}
+.ix-nl .nlw-gr-rule{border:0;border-top:1px solid var(--nl-inv-rule);margin:0 0 14px;width:64px;}
+.ix-nl .nlw-gr-body{color:var(--nl-inv-ink-soft);font-size:16.5px;}
+.ix-nl .nlw-gr-body p{margin:0 0 12px;}
+.ix-nl .nlw-gr-body p:last-child{margin-bottom:0;}
+
+/* ── BA · banner — matted, labeled, whole card linked ── */
+.ix-nl .nlw-ba{margin:0 0 40px;}
+.ix-nl .nlw-ba-label{font-family:var(--nl-font-mono) !important;font-size:10.5px;letter-spacing:1.8px;text-transform:uppercase;color:var(--nl-text-light);text-align:center;margin:0 0 8px;}
+.ix-nl .nlw-ba a{display:block;background:var(--nl-surface);border:1px solid var(--nl-border);border-radius:10px;padding:10px;text-decoration:none;}
+.ix-nl .nlw-ba a:hover{border-color:var(--nl-gold);}
+.ix-nl .nlw-ba img{margin:0 auto;border-radius:6px;}
+
+/* ── FA split variants ── */
+.ix-nl .nlw-fa--split .nlw-fa-cols{display:flex;gap:22px;align-items:flex-start;}
+.ix-nl .nlw-fa--split .nlw-fa-media{flex:0 0 46%;}
+.ix-nl .nlw-fa--split .nlw-fa-copy{flex:1 1 auto;}
+.ix-nl .nlw-fa--split .nlw-fa-media img{width:100%;border-radius:8px;}
+.ix-nl .nlw-fa--photoleft .nlw-fa-cols{flex-direction:row;}
+.ix-nl .nlw-fa--photoright .nlw-fa-cols{flex-direction:row-reverse;}
+.ix-nl .nlw-fa--split .nlw-headline,
+.ix-nl .nlw-fa--split .nlw-subhead,
+.ix-nl .nlw-fa--split .nlw-byline,
+.ix-nl .nlw-fa--split .nlw-cta{text-align:left;}
+.ix-nl .nlw-fa--split .nlw-headline{font-size:clamp(23px,4.6vw,28px);}
+.ix-nl .nlw-fa--split .nlw-rubric{text-align:left;}
+@media (max-width:560px){
+  .ix-nl .nlw-fa--split .nlw-fa-cols{flex-direction:column;}
+  .ix-nl .nlw-fa--split .nlw-fa-media{flex-basis:auto;width:100%;}
+}
+
+/* ── TS · teaser story — the FA anatomy at digest scale ── */
+.ix-nl .nlw-ts{margin:0 0 34px;}
+.ix-nl .nlw-ts .nlw-headline{font-size:clamp(20px,4vw,24px);}
+.ix-nl .nlw-ts .nlw-subhead{font-size:16px;}
+.ix-nl .nlw-ts .nlw-teaser{font-size:16px;}
+.ix-nl .nlw-ts .nlw-cta a{font-size:14px;padding:10px 20px;}
+.ix-nl .nlw-ts--split .nlw-ts-cols{display:flex;gap:18px;align-items:flex-start;}
+.ix-nl .nlw-ts--split .nlw-ts-media{flex:0 0 38%;}
+.ix-nl .nlw-ts--split .nlw-ts-copy{flex:1 1 auto;}
+.ix-nl .nlw-ts--split .nlw-ts-media img{width:100%;border-radius:8px;}
+.ix-nl .nlw-ts--photoleft .nlw-ts-cols{flex-direction:row;}
+.ix-nl .nlw-ts--photoright .nlw-ts-cols{flex-direction:row-reverse;}
+.ix-nl .nlw-ts--split .nlw-headline,
+.ix-nl .nlw-ts--split .nlw-subhead,
+.ix-nl .nlw-ts--split .nlw-byline,
+.ix-nl .nlw-ts--split .nlw-rubric,
+.ix-nl .nlw-ts--split .nlw-cta{text-align:left;}
+@media (max-width:560px){
+  .ix-nl .nlw-ts--split .nlw-ts-cols{flex-direction:column;}
+  .ix-nl .nlw-ts--split .nlw-ts-media{flex-basis:auto;width:100%;}
+}
+
+/* ── RE · listing card ── */
+.ix-nl .nlw-re{background:var(--nl-surface);border:1px solid var(--nl-border);border-radius:12px;overflow:hidden;margin:0 0 40px;}
+.ix-nl .nlw-re-photo img{width:100%;border-radius:0;}
+.ix-nl .nlw-re-body{padding:18px 22px 22px;}
+.ix-nl .nlw-re-price{font-family:var(--nl-font-display) !important;font-size:clamp(24px,5vw,30px);font-weight:600;color:var(--nl-teal);margin:0 0 2px;}
+.ix-nl .nlw-re-address{font-size:16px;color:var(--nl-text-mid);margin:0 0 12px;}
+.ix-nl .nlw-re-specs{display:flex;gap:18px;font-family:var(--nl-font-mono) !important;font-size:12.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--nl-text);border-top:1px solid var(--nl-border-soft);border-bottom:1px solid var(--nl-border-soft);padding:10px 0;margin:0 0 14px;flex-wrap:wrap;}
+.ix-nl .nlw-re-agent{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--nl-text-mid);margin:0 0 16px;}
+.ix-nl .nlw-re-agent img{width:44px;height:44px;border-radius:6px;object-fit:contain;background:var(--nl-cream);}
+.ix-nl .nlw-re-agent b{color:var(--nl-text);}
+.ix-nl .nlw-re-agent .nlw-re-brokerage{display:block;font-family:var(--nl-font-mono) !important;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--nl-text-light);}
+.ix-nl .nlw-re .nlw-cta{text-align:left;}
+
+/* ── TXA · The Find — card list ── */
+.ix-nl .nlw-txa{margin:0 0 40px;}
+.ix-nl .nlw-txa-kicker{font-family:var(--nl-font-display) !important;font-style:italic;font-size:19px;color:var(--nl-text-mid);text-align:center;margin:0 0 20px;}
+.ix-nl .nlw-txa-card{display:flex;gap:16px;align-items:flex-start;background:var(--nl-surface);border:1px solid var(--nl-border);border-radius:10px;padding:16px 18px;margin:0 0 14px;}
+.ix-nl .nlw-txa-logo{flex:0 0 64px;}
+.ix-nl .nlw-txa-logo img{width:64px;height:64px;object-fit:contain;border-radius:6px;background:var(--nl-cream);}
+.ix-nl .nlw-txa-copy{flex:1 1 auto;}
+.ix-nl .nlw-txa-name{font-family:var(--nl-font-display) !important;font-size:19px;font-weight:600;color:var(--nl-teal);margin:0 0 2px;}
+.ix-nl .nlw-txa-meta{font-family:var(--nl-font-mono) !important;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--nl-text-light);margin:0 0 8px;}
+.ix-nl .nlw-txa-blurb{font-size:15.5px;margin:0 0 10px;}
+.ix-nl .nlw-txa-detail{font-family:var(--nl-font-mono) !important;font-size:11px;letter-spacing:1px;color:var(--nl-text-light);margin:0 0 10px;}
+.ix-nl .nlw-txa-card .nlw-txa-visit{font-family:var(--nl-font-body) !important;font-weight:700;font-size:13.5px;letter-spacing:.4px;}
+@media (max-width:480px){.ix-nl .nlw-txa-card{flex-direction:column;}.ix-nl .nlw-txa-logo{flex-basis:auto;}}
+
+/* ── spacer ── */
+.ix-nl .nlw-spacer{height:28px;}
+
+/* ═══════════ v6 · EV · Events Display Engine ═══════════ */
+/* One block renders 1..N events. .nlw-ev--nN comes from x_evCount.        */
+/* 1-3 = cards. 4+ = compact rows: photo and teaser drop, chip narrows.    */
+/* Adding an arrangement means adding a rule here, not a template.         */
+
+/* Brand-at-shell per D17: every value here is a --nl-* variable with a */
+/* neutral platform default. No publisher appears in this file. */
+
+.ix-nl .nlw-ev{
+  padding: var(--nl-block-pad, 28px) var(--nl-gutter, 24px);
+  background: var(--nl-ev-bg, var(--nl-surface, #ffffff));
+}
+
+.ix-nl .nlw-ev-art{
+  margin: 0 0 18px;
+}
+.ix-nl .nlw-ev-art img{
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--nl-radius, 10px) var(--nl-radius, 10px) 0 0;
+}
+
+.ix-nl .nlw-ev-heading{
+  font-family: var(--nl-font-display, Georgia, serif) !important;
+  font-size: var(--nl-h2-size, 28px);
+  font-weight: 600;
+  color: var(--nl-ink, #1A3A3A);
+  margin: 0 0 18px;
+  letter-spacing: -0.01em;
+}
+
+/* ── Grid. Density comes from the count class, nothing else. ───────── */
+
+.ix-nl .nlw-ev-grid{
+  display: grid;
+  gap: var(--nl-ev-gap, 16px);
+  grid-template-columns: 1fr;
+}
+
+.ix-nl .nlw-ev--n2 .nlw-ev-grid,
+.ix-nl .nlw-ev--n3 .nlw-ev-grid{
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+/* 4 and up drop to compact rows: chip left, text right, no photo. */
+.ix-nl .nlw-ev--n4 .nlw-ev-card,
+.ix-nl .nlw-ev--n5 .nlw-ev-card,
+.ix-nl .nlw-ev--n6 .nlw-ev-card,
+.ix-nl .nlw-ev--n7 .nlw-ev-card,
+.ix-nl .nlw-ev--n8 .nlw-ev-card{
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 14px;
+}
+.ix-nl .nlw-ev--n4 .nlw-ev-photo,
+.ix-nl .nlw-ev--n5 .nlw-ev-photo,
+.ix-nl .nlw-ev--n6 .nlw-ev-photo,
+.ix-nl .nlw-ev--n7 .nlw-ev-photo,
+.ix-nl .nlw-ev--n8 .nlw-ev-photo,
+.ix-nl .nlw-ev--n4 .nlw-ev-teaser,
+.ix-nl .nlw-ev--n5 .nlw-ev-teaser,
+.ix-nl .nlw-ev--n6 .nlw-ev-teaser,
+.ix-nl .nlw-ev--n7 .nlw-ev-teaser,
+.ix-nl .nlw-ev--n8 .nlw-ev-teaser{
+  display: none;
+}
+
+/* ── Card ──────────────────────────────────────────────────────────── */
+
+.ix-nl .nlw-ev-card{
+  display: flex;
+  flex-direction: column;
+  background: var(--nl-card-bg, #ffffff);
+  border: 1px solid var(--nl-rule, #E2DDC8);
+  border-radius: var(--nl-radius, 10px);
+  overflow: hidden;
+}
+
+/* ── Date chip ─────────────────────────────────────────────────────── */
+
+.ix-nl .nlw-ev-chip{
+  display: block;
+  text-align: center;
+  padding: 8px 10px 9px;
+  background: var(--nl-ev-chip-bg, var(--nl-bar-bg, #1A3A3A));
+  color: var(--nl-ev-chip-ink, #ffffff);
+  text-decoration: none;
+  flex: 0 0 auto;
+}
+.ix-nl .nlw-ev-chip-mo{
+  display: block;
+  font-family: var(--nl-font-ui, Arial, sans-serif) !important;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nl-accent, #C4A35A);
+}
+.ix-nl .nlw-ev-chip-day{
+  display: block;
+  font-family: var(--nl-font-display, Georgia, serif) !important;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.05;
+}
+.ix-nl .nlw-ev-chip-dow{
+  display: block;
+  font-family: var(--nl-font-ui, Arial, sans-serif) !important;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+
+/* Compact rows get a narrow fixed chip so rows align. */
+.ix-nl .nlw-ev--n4 .nlw-ev-chip,
+.ix-nl .nlw-ev--n5 .nlw-ev-chip,
+.ix-nl .nlw-ev--n6 .nlw-ev-chip,
+.ix-nl .nlw-ev--n7 .nlw-ev-chip,
+.ix-nl .nlw-ev--n8 .nlw-ev-chip{
+  width: 62px;
+  border-radius: var(--nl-radius-sm, 6px);
+  margin: 12px 0 12px 12px;
+}
+
+/* ── Body ──────────────────────────────────────────────────────────── */
+
+.ix-nl .nlw-ev-body{
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ix-nl .nlw-ev-photo{
+  display: block;
+  margin: -14px -16px 4px;
+}
+.ix-nl .nlw-ev-photo img{
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ix-nl .nlw-ev-title{
+  font-family: var(--nl-font-display, Georgia, serif) !important;
+  font-size: var(--nl-h3-size, 19px);
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0;
+}
+.ix-nl .nlw-ev-title a{
+  color: var(--nl-ink, #1A3A3A);
+  text-decoration: none;
+}
+.ix-nl .nlw-ev-title a:hover { text-decoration: underline; },
+
+.ix-nl .nlw-ev-meta{
+  font-family: var(--nl-font-ui, Arial, sans-serif) !important;
+  font-size: 12px;
+  color: var(--nl-ink-soft, #6a7a6a);
+  margin: 0;
+}
+.ix-nl .nlw-ev-sep { margin: 0 6px; opacity: 0.5; },
+
+.ix-nl .nlw-ev-teaser{
+  font-family: var(--nl-font-body, Arial, sans-serif) !important;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--nl-ink-body, #4a5a4a);
+  margin: 0;
+}
+/* Collapse rather than leave a gap when the field is empty. */
+.ix-nl .nlw-ev-teaser:empty { display: none; },
+
+.ix-nl .nlw-ev-cta{
+  align-self: flex-start;
+  font-family: var(--nl-font-ui, Arial, sans-serif) !important;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--nl-accent-ink, #1A3A3A);
+  background: var(--nl-accent, #C4A35A);
+  padding: 8px 16px;
+  border-radius: var(--nl-radius-pill, 999px);
+  text-decoration: none;
+  margin-top: 2px;
+}
+.ix-nl .nlw-ev--n4 .nlw-ev-cta,
+.ix-nl .nlw-ev--n5 .nlw-ev-cta,
+.ix-nl .nlw-ev--n6 .nlw-ev-cta,
+.ix-nl .nlw-ev--n7 .nlw-ev-cta,
+.ix-nl .nlw-ev--n8 .nlw-ev-cta{
+  background: none;
+  padding: 0;
+  color: var(--nl-accent, #C4A35A);
+}
+
+/* ── Sponsor ───────────────────────────────────────────────────────── */
+
+.ix-nl .nlw-ev-sponsor{
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--nl-rule, #E2DDC8);
+  text-align: center;
+}
+.ix-nl .nlw-ev-sponsor-label{
+  font-family: var(--nl-font-ui, Arial, sans-serif) !important;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--nl-ink-soft, #6a7a6a);
+  margin: 0 0 10px;
+}
+.ix-nl .nlw-ev-sponsor-ad{
+  display: block;
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  margin: 0 auto;
+  border-radius: var(--nl-radius-sm, 6px);
+}
