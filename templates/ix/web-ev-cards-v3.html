@@ -1,0 +1,38 @@
+<!-- templates/ix/web-ev-cards-v3.html -->
+<!-- WS-I · EV Events Display Engine. Renders 1..N events from one block. -->
+<!-- Density comes from nlw-ev--nN driven by evCount, not from branching. -->
+<!-- Block tokens: rubric franchiseArt franchiseName sponsorName sponsorAd evCount -->
+<!-- Card fields: title eyebrow dtDay dtDow dtMonth dtTime venue teaser photo link -->
+<!-- Loop dialect matches web-txa-find-v1: each-over-cards, sections gate on the field. -->
+
+<div class="nlw-ev nlw-ev--n{{evCount}}">
+  {{#hasFranchise}}<div class="nlw-franchise"><img src="{{franchiseArt}}" alt="{{franchiseName}}" loading="lazy"></div>{{/hasFranchise}}
+  {{#rubric}}<div class="nlw-rubric">{{rubric}}</div>{{/rubric}}
+
+  <div class="nlw-ev-grid">
+    {{#each cards}}
+    <div class="nlw-ev-card">
+      <a class="nlw-ev-chip" href="{{link}}" target="_blank" rel="noopener">
+        <span class="nlw-ev-chip-mo">{{dtMonth}}</span>
+        <span class="nlw-ev-chip-day">{{dtDay}}</span>
+        <span class="nlw-ev-chip-dow">{{dtDow}}</span>
+      </a>
+      <div class="nlw-ev-body">
+        {{#photo}}<a class="nlw-ev-photo" href="{{link}}" target="_blank" rel="noopener"><img src="{{photo}}" alt="{{title}}" loading="lazy"></a>{{/photo}}
+        {{#eyebrow}}<div class="nlw-ev-eyebrow">{{eyebrow}}</div>{{/eyebrow}}
+        <h3 class="nlw-ev-title"><a href="{{link}}" target="_blank" rel="noopener">{{title}}</a></h3>
+        <p class="nlw-ev-meta"><span class="nlw-ev-time">{{dtTime}}</span><span class="nlw-ev-sep">&middot;</span><span class="nlw-ev-venue">{{venue}}</span></p>
+        {{#teaser}}<p class="nlw-ev-teaser">{{teaser}}</p>{{/teaser}}
+        <a class="nlw-ev-cta" href="{{link}}" target="_blank" rel="noopener">Details</a>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+
+  {{#hasSponsor}}
+  <div class="nlw-ev-sponsor">
+    <div class="nlw-ev-sponsor-label">Presented by {{sponsorName}}</div>
+    {{#sponsorAd}}<img class="nlw-ev-sponsor-ad" src="{{sponsorAd}}" alt="{{sponsorName}}" loading="lazy">{{/sponsorAd}}
+  </div>
+  {{/hasSponsor}}
+</div>
