@@ -1,0 +1,70 @@
+<!-- templates/ix/web-ev-cards-v2.html -->
+<!-- INBXIFY web block · EV · multi-event cards. Renders 1..N events. -->
+<!-- Density is set by the wrapper class from x_evCount, not by branching. -->
+<!-- No template syntax in comments. The Worker parses comments. -->
+
+<section class="ix-nl-block nlw-ev nlw-ev--n{{x_evCount}}">
+
+  {{#if x_hasFranchise}}
+  <div class="nlw-franchise">
+    <img src="{{f_franchiseArt}}" alt="{{f_franchiseName}}" />
+  </div>
+  {{/if}}
+
+  {{#if f_rubric}}
+  <p class="nlw-rubric">{{f_rubric}}</p>
+  {{/if}}
+
+  <div class="nlw-ev-grid">
+    {{#each cards}}
+    <article class="nlw-ev-card">
+
+      <a class="nlw-ev-chip" href="{{link}}" target="_blank" rel="noopener">
+        <span class="nlw-ev-chip-mo">{{dtMonth}}</span>
+        <span class="nlw-ev-chip-day">{{dtDay}}</span>
+        <span class="nlw-ev-chip-dow">{{dtDow}}</span>
+      </a>
+
+      <div class="nlw-ev-body">
+
+        {{#if x_hasPhoto}}
+        <a class="nlw-ev-photo" href="{{link}}" target="_blank" rel="noopener">
+          <img src="{{photo}}" alt="{{title}}" loading="lazy" />
+        </a>
+        {{/if}}
+
+        {{#if x_hasEyebrow}}
+        <p class="nlw-ev-eyebrow">{{eyebrow}}</p>
+        {{/if}}
+
+        <h3 class="nlw-ev-title">
+          <a href="{{link}}" target="_blank" rel="noopener">{{title}}</a>
+        </h3>
+
+        <p class="nlw-ev-meta">
+          <span class="nlw-ev-time">{{dtTime}}</span>
+          <span class="nlw-ev-sep">&middot;</span>
+          <span class="nlw-ev-venue">{{venue}}</span>
+        </p>
+
+        {{#if x_hasTeaser}}
+        <p class="nlw-ev-teaser">{{teaser}}</p>
+        {{/if}}
+
+        <a class="nlw-ev-cta" href="{{link}}" target="_blank" rel="noopener">Details</a>
+
+      </div>
+    </article>
+    {{/each}}
+  </div>
+
+  {{#if x_hasSponsor}}
+  <div class="nlw-ev-sponsor">
+    <p class="nlw-ev-sponsor-label">Presented by {{f_sponsorName}}</p>
+    {{#if f_sponsorAd}}
+    <img class="nlw-ev-sponsor-ad" src="{{f_sponsorAd}}" alt="{{f_sponsorName}}" />
+    {{/if}}
+  </div>
+  {{/if}}
+
+</section>
