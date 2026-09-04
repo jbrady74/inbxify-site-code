@@ -1,0 +1,647 @@
+/* ix-header-v1.0.3.css */
+/* ============================================================
+   ix-header-v1.0.3.css
+   Companion to ix-header-v1.0.2.js / ta-chrome-v1.0.5.js
+
+   Canonical styling for the T-A header rows. Values are the
+   APPROVED mockup's, ported verbatim from title-admin-page-design
+   v1.4.20 (.std-subtabs) and ta-intake-manager v3.0.8 (.bdl-l1).
+   Do not substitute tokens or "improve" contrast here — a darker
+   cream was tried and rejected.
+
+   ── v1.0.3 (Sep 4, 2026) — §0b ADDED ──
+   Three controls for ta-chrome v1.0.5: the operator back control,
+   the publisher line as an anchor, and the title switcher. Also
+   adds .ta-source, the clip rule for the hidden TITLES-ADMIN
+   Collection List the switcher reads.
+
+   ONE RULE IS SECURITY-ADJACENT. `.ix-topbar-back { display:none }`
+   is the default and is revealed only by `body.ix-operator`, a
+   class ta-chrome adds after Memberstack confirms the email
+   domain. Do not un-gate it and do not "simplify" it to always
+   visible. The Memberstack gate on /quill-admin is the actual
+   protection, but a publisher should not be shown a door they
+   cannot open.
+
+   §0b needs no !important armor because .ix-topbar sits outside
+   section.publisher-wrapper. See (a) below.
+
+   ── v1.0.2 (Aug 26, 2026) — ROW 0 ADDED ──
+   The page header and the title banner were two stacked rows
+   costing ~132px. They are now one pinned 72px bar (.ix-topbar),
+   built by ta-chrome v1.0.4 by RELOCATING the live CMS-bound
+   nodes. Nothing here re-authors a tenant value.
+
+   THREE things to know before editing §0:
+
+   a) .ix-topbar lives inside section.publ-navmenu, which is
+      OUTSIDE section.publisher-wrapper. The `section.publisher-
+      wrapper *` whitewash wildcard therefore does NOT reach it.
+      That is deliberate. Do not move this bar inside the wrapper
+      to "keep the header with the page" — it would drag the
+      entire !important war along with it.
+
+   b) EVERY §0 rule is gated on `body.ix-topbar-on`, a class only
+      ta-chrome adds after it has successfully relocated the
+      nodes. No JS, or a missing node, and the page falls back to
+      the v1.4.28 two-row layout untouched. Do not un-gate these
+      rules.
+
+   c) PINNED, NOT STICKY. position:sticky is dead on this page
+      (TD-229 — the overflow:hidden ancestor stack kills it). The
+      bar is position:fixed and the body carries a matching
+      padding-top. Both read --ix-topbar-h so they cannot drift.
+
+   ── TWO CASCADE HAZARDS, both already solved below. Do not
+      remove the defences: ──
+
+   1. `section.publisher-wrapper *` (title-admin-page-design)
+      forces `background-color: var(--ix-white) !important` on
+      EVERY descendant. Any background there needs !important AND
+      enough specificity. It also whitewashes the label element
+      INSIDE a button, not just the button — hence the trailing
+      `*` selectors.
+
+   2. ix-buttons-v1.0.x sets `font-family: DM Sans !important` at
+      `button.ix-btn.ix-btn--tab` (0,2,1) and loads AFTER this
+      file. Beating it needs 0,3,1 — a 0,2,0 selector loses even
+      with !important.
+
+   ── TRANSITIONAL ALIASES ──
+   .std-subtabs and .bdl-l1 are aliased to the new rules so tabs
+   keep rendering correctly while they're migrated one at a time.
+   DELETE the alias selectors once all tabs call IxTabs.
+   ============================================================ */
+
+
+/* ═════════════════════════════════════════════
+   §0  ROW 0 — PAGE TOPBAR (.ix-topbar)   added v1.0.2
+
+   Built by ta-chrome v1.0.4 inside
+   section.publ-navmenu > .navmenu-container.
+
+   Markup it emits:
+     .ix-topbar
+       .ix-topbar-client
+         .ix-topbar-avatar        derived first letter
+         .ix-topbar-names
+           .ix-topbar-parent      publisher name (attr-sourced)
+           h6.title-label.ix-topbar-pub   MOVED live node
+       .ix-topbar-right
+         img.inbxify-logo         MOVED live node
+         .ix-topbar-divider
+         .sign-in-div.ix-topbar-account   MOVED live node
+   ═════════════════════════════════════════════ */
+
+:root {
+  --ix-topbar-h: 72px;
+}
+
+/* ── The band. §29 pins section.publ-navmenu to height:60px
+      !important at (0,1,1); this is (0,3,2) and cannot lose. ── */
+body.ix-topbar-on section.publ-navmenu.publ-navmenu {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9000 !important;          /* under ix-modals' overlay (99999) */
+  height: var(--ix-topbar-h) !important;
+  min-height: var(--ix-topbar-h) !important;
+  padding: 0 16px !important;
+  background-color: var(--ix-white) !important;
+  border-bottom: 1px solid var(--ix-border-soft) !important;
+  box-sizing: border-box !important;
+}
+
+/* The band is fixed, so it no longer occupies flow. Give it back. */
+body.ix-topbar-on {
+  padding-top: var(--ix-topbar-h) !important;
+}
+
+body.ix-topbar-on section.publ-navmenu .navmenu-container {
+  height: 100% !important;
+  align-items: center !important;
+}
+
+/* ── The row ── */
+.ix-topbar {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Left: avatar + two-line identity ── */
+.ix-topbar-client {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.ix-topbar-avatar {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, var(--ix-teal), var(--ix-teal-mid));
+  background-color: var(--ix-teal);
+  color: var(--ix-gold);
+  font-family: var(--ix-font-display);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(26, 58, 58, 0.18);
+}
+
+.ix-topbar-names {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ix-topbar-parent {
+  font-family: var(--ix-font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ix-text-light);
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The publication name is the MOVED h6.title-label. §27 sets
+   `h6.title-label` at (0,1,1) with font-size:28px !important —
+   this is (0,2,1) and wins. The h6 default margin is what breaks
+   the bar height; margin:0 is load-bearing, not cosmetic. */
+.ix-topbar h6.title-label,
+.ix-topbar .ix-topbar-pub {
+  margin: 0 !important;
+  font-family: var(--ix-font-display) !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  color: var(--ix-text-dark) !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.2 !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* ═════════════════════════════════════════════
+   §0b  v1.0.3 ADDITIONS — back control, publisher link,
+        title switcher. Emitted by ta-chrome v1.0.5.
+
+   All three sit INSIDE .ix-topbar, which lives in
+   section.publ-navmenu and is therefore OUTSIDE
+   section.publisher-wrapper. The whitewash wildcard does not
+   reach here, which is why these rules need no !important armor
+   while everything inside the wrapper does. Do not copy this
+   block to a wrapper-side surface unarmored.
+   ═════════════════════════════════════════════ */
+
+/* ── ADDITION 1 · BACK CONTROL ──
+   display:none is the DEFAULT and is load-bearing. ta-chrome
+   builds this control on every T-A page and only reveals it once
+   Memberstack has confirmed an operator email. Un-gate this and
+   every publisher sees a link into the whole-network view.
+   The gate on /quill-admin is the real protection; this is the
+   affordance. Both matter. */
+.ix-topbar-back {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  margin-left: -4px;          /* keeps the avatar on its v1.0.4 x-position */
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ix-radius-sharp, 4px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ix-teal);
+  text-decoration: none;
+  transition: var(--ix-ease, .15s ease);
+}
+body.ix-operator .ix-topbar-back { display: flex; }
+
+.ix-topbar-back:hover {
+  background: var(--ix-cream-deep);
+  border-color: var(--ix-border-input);
+}
+.ix-topbar-back:focus-visible {
+  outline: 2px solid var(--ix-gold);
+  outline-offset: 2px;
+}
+/* The grid mark reads optically smaller than a glyph in the same
+   box, so 15px here sits at equal weight beside the 38px avatar. */
+.ix-topbar-back svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+/* ── ADDITION 2 · PUBLISHER LINE AS ANCHOR ──
+   The base .ix-topbar-parent rule above still owns type and
+   colour. These only add link behaviour, and only when ta-chrome
+   emitted an <a> — a span keeps the v1.0.2 rendering exactly. */
+a.ix-topbar-parent {
+  text-decoration: none;
+  width: max-content;
+  max-width: 100%;
+  transition: var(--ix-ease, .15s ease);
+}
+a.ix-topbar-parent:hover {
+  color: var(--ix-gold-deep, #8A6F35);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
+a.ix-topbar-parent:focus-visible {
+  outline: 2px solid var(--ix-gold);
+  outline-offset: 2px;
+}
+
+/* ── ADDITION 3 · TITLE SWITCHER ──
+   .ix-topbar-titlerow puts the moved h6 and the caret on one
+   line. Without it the caret drops below the parent line, because
+   .ix-topbar-names is a column. */
+.ix-topbar-titlerow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ix-topbar-switch {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.ix-topbar-caret {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ix-radius-sharp, 4px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ix-text-mid);
+  cursor: pointer;
+  padding: 0;
+  transition: var(--ix-ease, .15s ease);
+}
+.ix-topbar-caret:hover,
+.ix-topbar-switch.ix-switch-open .ix-topbar-caret {
+  background: var(--ix-cream-deep);
+  border-color: var(--ix-border-input);
+  color: var(--ix-teal);
+}
+.ix-topbar-caret:focus-visible {
+  outline: 2px solid var(--ix-gold);
+  outline-offset: 2px;
+}
+.ix-topbar-caret svg {
+  width: 13px;
+  height: 13px;
+  transition: transform var(--ix-ease, .15s ease);
+}
+.ix-topbar-switch.ix-switch-open .ix-topbar-caret svg {
+  transform: rotate(180deg);
+}
+
+/* The band is z-index 9000 and position:fixed, so the menu cannot
+   escape it. 9001 keeps the menu above the band's own contents
+   while staying under ix-modals' overlay at 99999. */
+.ix-topbar-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: -8px;
+  min-width: 262px;
+  display: none;
+  z-index: 9001;
+  padding: 6px;
+  background: var(--ix-white);
+  border: 1px solid var(--ix-border-soft);
+  border-radius: var(--ix-radius-sm, 8px);
+  box-shadow: var(--ix-shadow-lg, 0 10px 34px rgba(26,58,58,.12));
+}
+.ix-topbar-switch.ix-switch-open .ix-topbar-menu { display: block; }
+
+.ix-topbar-menu-lbl {
+  font-family: var(--ix-font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ix-text-light);
+  padding: 6px 10px 7px;
+}
+
+.ix-topbar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--ix-radius-sharp, 4px);
+  text-decoration: none;
+  transition: var(--ix-ease, .15s ease);
+}
+a.ix-topbar-menu-item:hover { background: var(--ix-cream); }
+a.ix-topbar-menu-item:focus-visible {
+  outline: 2px solid var(--ix-gold);
+  outline-offset: -2px;
+}
+/* A row with no slug is emitted as a span, not an anchor. Dim it
+   so the operator can see the title exists and cannot be opened,
+   rather than wondering why a click did nothing. */
+span.ix-topbar-menu-item {
+  opacity: .5;
+  cursor: default;
+}
+
+.ix-topbar-menu-item .code {
+  flex: 0 0 auto;
+  font-family: var(--ix-font-mono);
+  font-size: 9px;
+  letter-spacing: .08em;
+  color: var(--ix-teal);
+  background: var(--ix-cream-deep);
+  padding: 2px 6px;
+  border-radius: var(--ix-radius-sharp, 4px);
+}
+.ix-topbar-menu-item .nm {
+  font-family: var(--ix-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ix-text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ix-topbar-menu-item .tick {
+  margin-left: auto;
+  flex: 0 0 auto;
+  color: var(--ix-gold);
+  font-size: 12px;
+}
+.ix-topbar-menu-item[aria-current="page"] { background: var(--ix-cream); }
+.ix-topbar-menu-item[aria-current="page"] .nm { color: var(--ix-teal); }
+
+/* ── SOURCE LIST — the hidden TITLES-ADMIN Collection List ──
+   Must RENDER but not be seen. display:none would still emit the
+   rows, but clip is the pattern already used on Quill and it
+   keeps the element measurable if that is ever needed.
+   Webflow's own visibility toggle is NOT a substitute: it stops
+   the rows reaching the DOM and the switcher goes empty. */
+.ta-source {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: -1px;
+}
+
+/* ── Right: logo, divider, account ── */
+.ix-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 0 0 auto;
+}
+
+/* §29 sets .inbxify-logo height:54px !important at (0,1,0).
+   (0,2,0) + !important takes it. The logo is an IMAGE and stays
+   an image — it is never substituted with a text wordmark. */
+.ix-topbar .inbxify-logo {
+  height: 26px !important;
+  width: auto !important;
+  display: block !important;
+}
+
+.ix-topbar-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--ix-border-input);
+  flex: 0 0 auto;
+}
+
+/* The account control is the MOVED .sign-in-div, kept intact so
+   any handler bound inside it survives. Its text label is hidden
+   because the publisher name now reads on the left. */
+.ix-topbar .sign-in-div,
+.ix-topbar .ix-topbar-account {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+.ix-topbar .sign-in-div .text-block-111499 {
+  display: none !important;
+}
+
+/* ── Retire the old banner. Both rules are gated, so a JS failure
+      leaves the v1.4.28 layout fully intact. ── */
+
+/* §36's white tile — the circle-plus-name row, now redundant. */
+body.ix-topbar-on .publisher-wrapper .title-admin-name-left {
+  display: none !important;
+}
+
+/* Site URL link — dropped (Jeff, Aug 26 2026). Hidden BY CLASS,
+   not by href. title-admin-page-design still carries a tenant
+   hardcode at `section.publisher-wrapper a[href*="wyckoffliving"]`
+   which needs its own HC entry and cleanup. */
+body.ix-topbar-on section.publisher-wrapper a.link-615 {
+  display: none !important;
+}
+
+/* ── Narrow screens ── */
+@media (max-width: 640px) {
+  :root { --ix-topbar-h: 64px; }
+
+  body.ix-topbar-on section.publ-navmenu.publ-navmenu {
+    padding: 0 14px !important;
+  }
+  .ix-topbar-client { gap: 10px; }
+  .ix-topbar-avatar {
+    width: 32px; height: 32px; min-width: 32px; font-size: 15px;
+  }
+  .ix-topbar h6.title-label,
+  .ix-topbar .ix-topbar-pub { font-size: 18px !important; }
+  .ix-topbar-right { gap: 12px; }
+  .ix-topbar .inbxify-logo { height: 20px !important; }
+  .ix-topbar-divider { display: none; }
+}
+
+
+/* ─────────────────────────────────────────────
+   ROW 1 — panel header (.ix-hdr)
+   Base .ix-hdr / -left / -icon / -sub rules live in
+   title-admin-page-design §3. Only the row-gap rule is here so
+   the three rows sit flush with no seam.
+   ───────────────────────────────────────────── */
+.ix-hdr {
+  margin-bottom: 0 !important;
+}
+
+
+/* ─────────────────────────────────────────────
+   ROW 2 — channel tabs (.ix-tabs-l1)
+   ───────────────────────────────────────────── */
+.ix-tabs-l1.ix-tabs-l1,
+.std-subtabs.std-subtabs {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 0 20px;
+  margin-bottom: 0;
+  border-bottom: 1px solid #ece8dc;
+  background-color: #FAF9F5 !important;
+  border-radius: 0;
+}
+
+.ix-tabs-l1 button.ix-btn.ix-btn--tab,
+.ix-tabs-l1 .ix-btn.ix-btn--tab,
+.std-subtabs button.ix-btn.ix-btn--tab,
+.std-subtabs .ix-btn.ix-btn--tab {
+  font-family: var(--ix-font-display) !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  padding: 18px 20px 16px !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border-radius: 0 !important;
+}
+
+/* label element inside the button — see hazard 1 */
+.ix-tabs-l1 button.ix-btn.ix-btn--tab *,
+.ix-tabs-l1 .ix-btn.ix-btn--tab *,
+.std-subtabs button.ix-btn.ix-btn--tab *,
+.std-subtabs .ix-btn.ix-btn--tab * {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+
+/* ─────────────────────────────────────────────
+   ROW 3 — pill sub-tabs (.ix-tabs-l2)
+   ───────────────────────────────────────────── */
+.ix-tabs-l2.ix-tabs-l2,
+.bdl-l1.bdl-l1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #FCFBF7 !important;
+  border-bottom: 1px solid #f1eee4;
+  margin-top: 0;
+  margin-bottom: 20px;
+  padding: 18px 20px;
+}
+
+.ix-tab-pill.ix-tab-pill,
+.bdl-l1-tab.bdl-l1-tab {
+  font-family: var(--ix-font-mono);
+  background-color: #FAF9F5 !important;
+  border: 1.5px solid #e6e2d6;
+  border-radius: 24px;
+  padding: 10px 22px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: #5a5a52;
+  transition: all var(--ix-ease, .15s ease);
+}
+
+.ix-tab-pill.ix-tab-pill.is-active,
+.bdl-l1-tab.bdl-l1-tab.is-active {
+  color: #fff !important;
+  background-color: #5B7FFF !important;
+  border-color: #5B7FFF !important;
+}
+
+/* right-pinned slot (refresh button etc.) */
+.ix-tabs-l2 .ix-tabs-l2-end,
+.bdl-l1 .bdl-refresh-icon {
+  margin-left: auto;
+}
+
+/* activity dot */
+.ix-tab-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #C4A35A;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+
+/* ───────────────────────────────────────────
+   CANONICAL REFRESH CONTROL (.ix-refresh-icon)   added v1.0.1
+   Emitted by IxHeader.refreshBtn(). One refresh control for every
+   data/file surface.
+
+   Specificity note: the class is doubled to reach (0,3,1) so it
+   beats ix-buttons' `button.ix-btn.ix-btn--icon { width:28px
+   !important }` and `ix-btn--ghost { border:none !important }`,
+   both (0,2,1). A (0,2,1) selector here would only tie, and
+   ix-buttons may load after this file — ties go to the later
+   sheet. Do not reduce the doubling.
+   ─────────────────────────────────────────── */
+button.ix-btn.ix-refresh-icon.ix-refresh-icon,
+.ix-btn.ix-refresh-icon.ix-refresh-icon,
+.bdl-l1 button.ix-btn.bdl-refresh-icon {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  border: 1px solid rgba(196,163,90,.35) !important;
+  border-radius: 8px !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  color: var(--ix-gold, #C4A35A) !important;
+  background-color: transparent !important;
+  cursor: pointer;
+}
+button.ix-btn.ix-refresh-icon.ix-refresh-icon:hover:not(:disabled),
+.bdl-l1 button.ix-btn.bdl-refresh-icon:hover:not(:disabled) {
+  color: var(--ix-blue, #5B7FFF) !important;
+  border-color: var(--ix-blue, #5B7FFF) !important;
+}
+button.ix-btn.ix-refresh-icon.ix-refresh-icon.is-spinning,
+.bdl-refresh-icon.is-spinning {
+  pointer-events: none;
+  color: var(--ix-blue, #5B7FFF) !important;
+  animation: ix-spin 0.8s linear infinite;
+}
