@@ -1,0 +1,290 @@
+/* ============================================================
+   ix-success-toast-v1.0.0.css
+
+   TOAST-TRUTH surface. Pairs with ix-success-toast-v1.0.0.js.
+
+   WHY THIS EXISTS
+   Nine surfaces had grown nine private toast implementations
+   (ta-asf, ta-canvas, ta-default-layout, ipp-shell, issues-tab,
+   content-library, ta-cadence-board, ta-components-tab and the
+   batch toaster). They disagreed on colour, position, duration
+   and — the part that actually hurt — on what "success" means.
+   This is the one surface. Delete the private ones as each
+   consumer migrates.
+
+   THREE OUTCOMES, NOT TWO
+   The whole point of the module is that a write has three
+   possible endings, not two:
+
+     --ok           the write was echoed back and matched.  GREEN.
+     --unverified   the request was accepted but the response
+                    could not prove anything was written. AMBER.
+     --err          the write failed, or the echo came back
+                    holding different values than we sent.  RED.
+
+   The amber state is the one that did not exist before, and it
+   is the one that would have caught the Promote-to-Next bug:
+   Make answered HTTP 200 on receipt, the client painted green,
+   and Module 4 had been 400-ing on every run for months.
+
+   Amber is deliberately NOT a quiet variant of green. It is a
+   caution bed with a gold border, because the operator has to
+   go look. If amber ever reads as "fine", the module has failed.
+
+   STACKING
+   z-index 100001 — one above .ix-overlay's 99999, so a toast
+   fired from inside a modal is visible over it. The rail is
+   pointer-events:none; only the toast cards themselves take
+   clicks, so a toast never blocks the UI beneath it.
+
+   WILDCARD SAFETY
+   The rail mounts on document.body, outside
+   section.publisher-wrapper, so the
+   `section.publisher-wrapper *` background !important wildcard
+   in title-admin-page-design cannot reach it. !important is
+   used anyway, matching ix-modals, so the module survives being
+   mounted somewhere else later.
+
+   MULTI-TENANT: no publisher or title values anywhere. All
+   colour comes from ix-tokens. Nothing to hardcode.
+
+   DEPENDS ON: ix-tokens-v1.0.4.css (or later) for the token
+   values. Every var() carries a literal fallback, so the module
+   still renders correctly if tokens load late or not at all.
+   ============================================================ */
+
+/* ─── Rail ───────────────────────────────────────────────────
+   Single container, top-centre, newest at the bottom of the
+   stack so the eye lands on the most recent message without
+   the older ones jumping.                                     */
+.ix-toast-rail {
+  position: fixed !important;
+  top: 20px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 100001 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: auto !important;
+  max-width: min(560px, calc(100vw - 32px)) !important;
+  pointer-events: none !important;
+}
+
+/* ─── Card ───────────────────────────────────────────────── */
+.ix-toast {
+  pointer-events: auto !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 11px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 12px 14px 12px 14px !important;
+  border-radius: var(--ix-radius-sm, 8px) !important;
+  border: 1.5px solid transparent !important;
+  box-shadow: var(--ix-shadow-lg, 0 10px 34px rgba(26, 58, 58, 0.12)) !important;
+  font-family: var(--ix-font-body, 'DM Sans', system-ui, sans-serif) !important;
+  font-size: 13.5px !important;
+  line-height: 1.42 !important;
+  animation: ix-toast-in 0.2s ease-out !important;
+}
+
+.ix-toast.is-leaving {
+  animation: ix-toast-out 0.18s ease-in forwards !important;
+}
+
+/* ─── Icon ───────────────────────────────────────────────── */
+.ix-toast-icon {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  margin-top: 1px !important;
+  border-radius: 50% !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+/* ─── Text block ─────────────────────────────────────────── */
+.ix-toast-body {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+.ix-toast-title {
+  font-weight: 600 !important;
+  letter-spacing: 0.005em !important;
+}
+
+/* Second line. Carries the field names that did not persist, or
+   the HTTP status, or the reason the echo was unreadable. This
+   line is the difference between "it broke" and "here is what
+   broke" — never ship a failure toast without it.              */
+.ix-toast-detail {
+  margin-top: 4px !important;
+  font-size: 12px !important;
+  opacity: 0.92 !important;
+}
+
+/* Field names read as data, not prose. */
+.ix-toast-fields {
+  font-family: var(--ix-font-mono, 'DM Mono', ui-monospace, monospace) !important;
+  font-size: 11.5px !important;
+  word-break: break-word !important;
+}
+
+/* ─── Close ──────────────────────────────────────────────── */
+.ix-toast-close {
+  flex: 0 0 auto !important;
+  margin: -2px -4px 0 2px !important;
+  padding: 2px 6px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: var(--ix-radius-sharp, 4px) !important;
+  font-family: inherit !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  color: currentColor !important;
+  opacity: 0.55 !important;
+  cursor: pointer !important;
+  transition: opacity var(--ix-ease, .15s ease) !important;
+}
+.ix-toast-close:hover {
+  opacity: 1 !important;
+}
+.ix-toast-close:focus-visible {
+  outline: 2px solid var(--ix-blue, #5B7FFF) !important;
+  outline-offset: 1px !important;
+  opacity: 1 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VARIANTS
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── OK · the write was echoed and matched ───────────────── */
+.ix-toast.ix-toast--ok {
+  background: var(--ix-teal, #1A3A3A) !important;
+  border-color: var(--ix-teal, #1A3A3A) !important;
+  color: var(--ix-text-invert, #FFFFFF) !important;
+}
+.ix-toast.ix-toast--ok .ix-toast-icon {
+  background: var(--ix-ok-light, #7FD8B4) !important;
+  color: var(--ix-teal, #1A3A3A) !important;
+}
+/* on-dark variant — --ix-ok itself measures 2.34:1 on teal */
+.ix-toast.ix-toast--ok .ix-toast-detail {
+  color: var(--ix-ok-light, #7FD8B4) !important;
+}
+
+/* ─── UNVERIFIED · accepted, but nothing proved ───────────── */
+.ix-toast.ix-toast--unverified {
+  background: var(--ix-gold-glow, rgba(196, 163, 90, 0.12)) !important;
+  border-color: var(--ix-gold, #C4A35A) !important;
+  color: var(--ix-warn, #6F5722) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+/* The glow token is a 12% tint and needs an opaque bed under it
+   or the page shows through and the text drops below 4.5:1.    */
+.ix-toast.ix-toast--unverified {
+  background-color: var(--ix-cream-warm, #FDFCF8) !important;
+  background-image: linear-gradient(
+    var(--ix-gold-glow, rgba(196, 163, 90, 0.12)),
+    var(--ix-gold-glow, rgba(196, 163, 90, 0.12))
+  ) !important;
+}
+.ix-toast.ix-toast--unverified .ix-toast-icon {
+  background: var(--ix-gold, #C4A35A) !important;
+  color: var(--ix-white, #FFFFFF) !important;
+}
+
+/* ─── ERR · failed, or echoed back the wrong values ───────── */
+.ix-toast.ix-toast--err {
+  background: #FEF2F0 !important;
+  border-color: #F5B8AD !important;
+  color: var(--ix-danger, #C0392B) !important;
+}
+.ix-toast.ix-toast--err .ix-toast-icon {
+  background: var(--ix-danger, #C0392B) !important;
+  color: var(--ix-white, #FFFFFF) !important;
+}
+
+/* ─── INFO · client-side notices with no write behind them ── */
+.ix-toast.ix-toast--info {
+  background: var(--ix-white, #FFFFFF) !important;
+  border-color: var(--ix-border, #E4E0D4) !important;
+  color: var(--ix-text-dark, #1E2A3A) !important;
+}
+.ix-toast.ix-toast--info .ix-toast-icon {
+  background: var(--ix-teal-soft, rgba(26, 58, 58, 0.10)) !important;
+  color: var(--ix-teal, #1A3A3A) !important;
+}
+
+/* ─── BUSY · in flight ────────────────────────────────────── */
+.ix-toast.ix-toast--busy {
+  background: var(--ix-white, #FFFFFF) !important;
+  border-color: var(--ix-border, #E4E0D4) !important;
+  color: var(--ix-text-mid, #5A6478) !important;
+}
+.ix-toast.ix-toast--busy .ix-toast-icon {
+  background: transparent !important;
+  color: var(--ix-teal, #1A3A3A) !important;
+  animation: ix-spin 1s linear infinite !important;
+}
+
+/* ─── Button busy state ───────────────────────────────────────
+   Applied by the JS to the triggering button. The spinner only
+   appears after 1.5s, per the platform async rule — a fast round
+   trip should not flash a spinner.                              */
+.ix-btn.is-ix-submitting,
+button.is-ix-submitting {
+  cursor: progress !important;
+  opacity: 0.8 !important;
+}
+.is-ix-submitting.is-ix-spinning::after {
+  content: '\25CC';
+  display: inline-block;
+  margin-left: 7px;
+  animation: ix-spin 1s linear infinite;
+}
+
+/* ─── Motion ─────────────────────────────────────────────── */
+@keyframes ix-toast-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes ix-toast-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-8px); }
+}
+/* ix-spin is declared in ix-modals-v1.0.2.css. Redeclared here so
+   ix-toast works standalone; identical definition, so load order
+   between the two files does not matter. */
+@keyframes ix-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ix-toast,
+  .ix-toast.is-leaving,
+  .ix-toast.ix-toast--busy .ix-toast-icon,
+  .is-ix-submitting.is-ix-spinning::after {
+    animation: none !important;
+  }
+}
+
+/* ─── Narrow viewports ───────────────────────────────────── */
+@media (max-width: 640px) {
+  .ix-toast-rail {
+    left: 16px !important;
+    right: 16px !important;
+    transform: none !important;
+    max-width: none !important;
+    width: auto !important;
+  }
+}
