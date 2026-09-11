@@ -1,0 +1,12 @@
+<!-- templates/ix/web-ba-banner-v2.html -->
+<!-- WS-I Session 5 · BA banner. The sold flag gates the whole block: an unsold
+     slot renders nothing at all — no mat, no label, no gap (D10).
+     When the Worker detects consecutive BA blocks it wraps the run in
+     .nlw-ba-group and emits one .nlw-ba-group-label ahead of them; the
+     per-ad labels below are suppressed by CSS in that case. -->
+{{#sold}}
+<div class="nlw-ba">
+  <div class="nlw-ba-label">{{#adLabel}}{{adLabel}}{{/adLabel}}{{^adLabel}}Featured Local Partner{{/adLabel}}</div>
+  <a href="{{adLink}}" target="_blank" rel="noopener"><img src="{{adImage}}" alt="{{adName}}" loading="lazy"></a>
+</div>
+{{/sold}}

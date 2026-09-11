@@ -1,0 +1,36 @@
+<!-- templates/ix/web-txa-find-v5.html -->
+<!-- v5 = v4 + the block-art fallback its comment promised but its markup lacked.
+     Art order: issue theme (ctx.txaThemeArt) -> title default (ctx.txaArt)
+     -> the block's own franchiseArt. Until the masthead fields exist in 206's
+     context, the block's art shows, exactly as TXA v1 does today. Once they
+     exist, they take over with no template change. -->
+<!-- WS-I Session 5 · TXA The Find.
+     The frame groups; the plate announces; the cards stay open.
+     Theme name and art resolve from PUBLICATION PLAN via context, falling
+     back to the title default on TITLES-ADMIN, then to the block. -->
+<div class="nlw-txa">
+  {{#ctx.txaThemeArt}}<div class="nlw-franchise"><img src="{{ctx.txaThemeArt}}" alt="{{ctx.txaThemeName}}" loading="lazy"></div>{{/ctx.txaThemeArt}}
+  {{^ctx.txaThemeArt}}{{#ctx.txaArt}}<div class="nlw-franchise"><img src="{{ctx.txaArt}}" alt="The Find" loading="lazy"></div>{{/ctx.txaArt}}{{^ctx.txaArt}}{{#franchiseArt}}<div class="nlw-franchise"><img src="{{franchiseArt}}" alt="{{franchiseName}}" loading="lazy"></div>{{/franchiseArt}}{{/ctx.txaArt}}{{/ctx.txaThemeArt}}
+
+  <div class="nlw-txa-plate">
+    {{#themeEyebrow}}<div class="nlw-txa-eyebrow">{{themeEyebrow}}</div>{{/themeEyebrow}}
+    {{^themeEyebrow}}<div class="nlw-txa-eyebrow">This issue&rsquo;s theme</div>{{/themeEyebrow}}
+    <p class="nlw-txa-kicker">{{#ctx.txaThemeName}}{{&ctx.txaThemeName}}{{/ctx.txaThemeName}}{{^ctx.txaThemeName}}{{&txaKicker}}{{/ctx.txaThemeName}}</p>
+    {{#customerCount}}<div class="nlw-txa-count"><span></span><i>{{customerCount}}</i><span></span></div>{{/customerCount}}
+  </div>
+
+  {{#each cards}}
+  <div class="nlw-txa-card">
+    <div class="nlw-txa-head">
+      {{#logo}}<div class="nlw-txa-logo"><img src="{{logo}}" alt="{{business}}" loading="lazy"></div>{{/logo}}
+      <div class="nlw-txa-copy">
+        <div class="nlw-txa-name">{{title}}</div>
+        <div class="nlw-txa-meta">{{business}}</div>
+      </div>
+    </div>
+    {{#body}}<p class="nlw-txa-blurb">{{body}}</p>{{/body}}
+    {{#meta}}<div class="nlw-txa-detail">{{meta}}</div>{{/meta}}
+    {{#link}}<a class="nlw-txa-visit" href="{{link}}" target="_blank" rel="noopener">Visit site</a>{{/link}}
+  </div>
+  {{/each}}
+</div>
