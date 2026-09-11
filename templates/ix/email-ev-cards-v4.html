@@ -1,0 +1,121 @@
+<!-- templates/ix/email-ev-cards-v4.html -->
+<!--
+  EV · Events. 600px shell. Design Port Session 3 · D28 on email.
+  One event is a card: the date chip runs across the top, then photo,
+  eyebrow, title, time and venue, teaser, and the Details button.
+  Two or more events stack as rows: a date tile at left, then eyebrow,
+  title, time and venue, and a chevron at right. Photo and teaser stand
+  down in rows, as on web (web-blocks-v30).
+  Every colour, face and size reads a token. Spacing is typed (D55).
+  EV email review v0.1: all 14 items accepted.
+  Date stack (EV-6): the day numeral takes ev-chip-day-font (platform: the
+  UI chain). Display faces place numerals too differently to stack evenly:
+  Playfair sits 11px low, Palatino 5.5px high. Line heights below are px,
+  tuned to the platform chip sizes: rows 12/30/9, card 13/38/11. Change a
+  chip size and these line heights must be re-tuned (HC-039).
+  Needs Worker v1.5.0 for the loop flag "only" (true when the list has
+  exactly one item). On Worker v1.4.0 every event renders as a row.
+  Masthead art: franchiseArt. 206 resolves it block, then issue, then title
+  (types.EV.franchiseId in design-json).
+
+  Block fields: rubric franchiseArt franchiseName sponsorName sponsorAd
+  Flags:        hasFranchise hasSponsor
+  Card fields:  title eyebrow dtDay dtDow dtMonth dtTime venue teaser photo link
+  Loop flags:   first last only
+-->
+<tr>
+<td style="padding:0 0 18px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:{{ctx.ev-bg}};">
+<tr>
+<td style="padding:28px 24px;" class="mobile-padding">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+
+  <!-- MASTHEAD ART: the franchise's art, resolved by 206 -->
+  {{#hasFranchise}}{{#franchiseArt}}
+  <tr><td align="center" style="padding:0 0 16px;">
+    <img src="{{franchiseArt}}" alt="{{franchiseName}}" width="552" style="display:block;width:auto;max-width:100%;max-height:{{ctx.ev-franchise-h}};height:auto;border:0;margin:0 auto;">
+  </td></tr>
+  {{/franchiseArt}}{{/hasFranchise}}
+
+  <!-- RUBRIC -->
+  {{#rubric}}
+  <tr><td align="center" style="padding:0 0 12px;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:{{ctx.label-ls}};text-transform:uppercase;color:{{ctx.ink}};">{{rubric}}</td></tr>
+  {{/rubric}}
+
+  <!-- EVENTS -->
+  {{#each cards}}
+  <tr><td style="padding:0 0 {{^last}}16px{{/last}}{{#last}}0{{/last}};">
+
+    {{#only}}
+    <!-- one event: a card -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:{{ctx.surface}};border:1px solid {{ctx.border}};border-radius:6px;border-collapse:separate;">
+      <tr><td align="center" style="background-color:{{ctx.ev-chip-bg}};padding:9px 10px 8px;border-radius:5px 5px 0 0;">
+        <a href="{{link}}" target="_blank" style="display:block;text-decoration:none;">
+          <div style="font-family:{{&ctx.font-ui}};font-size:{{ctx.ev-chip-mo-size-n1}};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;line-height:12px;mso-line-height-rule:exactly;color:{{ctx.ev-chip-mo-color}};">{{dtMonth}}</div>
+          <div style="font-family:{{&ctx.ev-chip-day-font}};font-size:{{ctx.t-numeral}};font-weight:700;line-height:37px;mso-line-height-rule:exactly;color:{{ctx.ev-chip-ink}};">{{dtDay}}</div>
+          <div style="font-family:{{&ctx.font-ui}};font-size:{{ctx.ev-chip-dow-size-n1}};letter-spacing:0.9px;text-transform:uppercase;line-height:9px;mso-line-height-rule:exactly;color:{{ctx.ev-chip-ink}};opacity:0.65;">{{dtDow}}</div>
+        </a>
+      </td></tr>
+      <tr><td style="padding:12px;">
+        {{#photo}}<a href="{{link}}" target="_blank" style="display:block;margin:0 0 16px;"><img src="{{photo}}" alt="{{title}}" width="526" class="mobile-full" style="display:block;width:100%;max-width:526px;height:auto;border:0;border-radius:4px;"></a>{{/photo}}
+        {{#eyebrow}}<p style="margin:0 0 8px;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-micro}};font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:{{ctx.highlight}};">{{eyebrow}}</p>{{/eyebrow}}
+        <p style="margin:0;font-family:{{&ctx.font-display}};font-size:{{ctx.t-title}};font-weight:600;line-height:1.25;"><a href="{{link}}" target="_blank" style="color:{{ctx.ink}};text-decoration:none;">{{title}}</a></p>
+        <p style="margin:8px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};line-height:1.5;color:{{ctx.text-mid}};">{{dtTime}}{{#venue}}<span style="opacity:0.5;">&nbsp;&middot;&nbsp;</span>{{venue}}{{/venue}}</p>
+        {{#teaser}}<p style="margin:8px 0 0;font-family:{{&ctx.font-body}};font-size:{{ctx.t-body}};line-height:{{ctx.body-lh}};color:{{ctx.text-mid}};">{{teaser}}</p>{{/teaser}}
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:10px 0 0;"><tr>
+          <td style="background-color:{{ctx.accent}};border-radius:999px;padding:8px 16px;">
+            <a href="{{link}}" target="_blank" style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-button}};font-weight:700;letter-spacing:0.8px;text-transform:uppercase;white-space:nowrap;color:{{ctx.accent-ink}};text-decoration:none;">Details&nbsp;&rarr;</a>
+          </td>
+        </tr></table>
+      </td></tr>
+    </table>
+    {{/only}}
+
+    {{^only}}
+    <!-- two or more: a row -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:{{ctx.surface}};border:1px solid {{ctx.border}};border-radius:6px;border-collapse:separate;">
+      <tr>
+        <td width="90" valign="top" style="width:90px;padding:12px 0 12px 12px;">
+          <a href="{{link}}" target="_blank" style="display:block;text-decoration:none;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="78" style="width:78px;"><tr>
+              <td align="center" style="background-color:{{ctx.ev-chip-bg}};border-radius:6px;padding:6px 6px 7px;">
+                <div style="font-family:{{&ctx.font-ui}};font-size:{{ctx.ev-chip-mo-size-n4}};font-weight:700;letter-spacing:1.4px;text-transform:uppercase;line-height:14px;mso-line-height-rule:exactly;color:{{ctx.ev-chip-mo-color}};">{{dtMonth}}</div>
+                <div style="font-family:{{&ctx.ev-chip-day-font}};font-size:{{ctx.ev-chip-day-size-n4}};font-weight:700;line-height:27px;mso-line-height-rule:exactly;color:{{ctx.ev-chip-ink}};">{{dtDay}}</div>
+                <div style="font-family:{{&ctx.font-ui}};font-size:{{ctx.ev-chip-dow-size-n4}};letter-spacing:0.7px;text-transform:uppercase;line-height:8px;mso-line-height-rule:exactly;color:{{ctx.ev-chip-ink}};opacity:0.65;">{{dtDow}}</div>
+              </td>
+            </tr></table>
+          </a>
+        </td>
+        <td valign="top" style="padding:12px 0 12px 26px;">
+          {{#eyebrow}}<p style="margin:0 0 6px;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-micro}};font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:{{ctx.highlight}};">{{eyebrow}}</p>{{/eyebrow}}
+          <p style="margin:0;font-family:{{&ctx.font-display}};font-size:{{ctx.t-title}};font-weight:600;line-height:1.25;"><a href="{{link}}" target="_blank" style="color:{{ctx.ink}};text-decoration:none;">{{title}}</a></p>
+          <p style="margin:8px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};line-height:1.5;color:{{ctx.text-mid}};">{{dtTime}}{{#venue}}<span style="opacity:0.5;">&nbsp;&middot;&nbsp;</span>{{venue}}{{/venue}}</p>
+        </td>
+        <td width="40" align="center" valign="middle" style="width:40px;padding:0 4px 0 0;">
+          <a href="{{link}}" target="_blank" style="font-family:{{&ctx.font-ui}};font-size:28px;line-height:1;color:{{ctx.accent}};text-decoration:none;">&rsaquo;</a>
+        </td>
+      </tr>
+    </table>
+    {{/only}}
+
+  </td></tr>
+  {{/each}}
+
+  <!-- SPONSOR -->
+  {{#hasSponsor}}
+  <tr><td style="padding:18px 0 0;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr>
+      <td align="center" style="border-top:1px solid {{ctx.border}};padding:14px 0 0;">
+        <p style="margin:0 0 10px;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-micro}};letter-spacing:1px;text-transform:uppercase;color:{{ctx.text-mid}};">Presented by {{sponsorName}}</p>
+        {{#sponsorAd}}<img src="{{sponsorAd}}" width="500" alt="{{sponsorName}}" style="display:block;margin:0 auto;width:100%;max-width:500px;height:auto;border:0;border-radius:6px;">{{/sponsorAd}}
+      </td>
+    </tr></table>
+  </td></tr>
+  {{/hasSponsor}}
+
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
