@@ -1,0 +1,59 @@
+<!-- templates/ix/web-re-listing-v2.html -->
+<!--
+  RE · On the Market. Web.
+  Four listings is the cap, on both surfaces: a phone shows every listing
+  image-forward, and six of those is too long a scroll to hide the last two.
+  v2 replaces v1's single card with the editorial list the stylesheet has
+  drawn since web-blocks-v30: a heading with a rule and a count, then one
+  row per listing — thumbnail, address, flag, specs, agent, price.
+  v1 printed card markup into list CSS, which is why the specs ran together
+  and nothing lined up. Needs web-blocks-v38.css or later.
+
+  Block fields: rubric reTitle reCount franchiseArt franchiseName
+                sponsorName sponsorLogo sponsorLink sponsorAd exclusiveNotice
+  Flags:        hasFranchise hasSponsor isExclusive
+  Listing fields: address flag price beds baths sqft agent brokerage photo link
+  Loop flags:   first last only
+  Needs 206 v1.12, which sends the listings array.
+-->
+<div class="nlw-re-block{{#isExclusive}} nlw-re--exclusive{{/isExclusive}}">
+
+  {{#hasFranchise}}{{#franchiseArt}}
+  <div class="nlw-franchise"><img src="{{franchiseArt}}" alt="{{franchiseName}}" loading="lazy"></div>
+  {{/franchiseArt}}{{/hasFranchise}}
+
+  <div class="nlw-re-head">
+    <p class="nlw-re-title">{{#reTitle}}{{reTitle}}{{/reTitle}}{{^reTitle}}On the Market{{/reTitle}}</p>
+    {{#hasSponsor}}
+    <a class="nlw-re-sponsor" href="{{sponsorLink}}" target="_blank" rel="noopener">
+      <span class="nlw-re-sponsor-label">Sponsored by</span>
+      {{#sponsorLogo}}<img src="{{sponsorLogo}}" alt="{{sponsorName}}" loading="lazy">{{/sponsorLogo}}
+      {{^sponsorLogo}}<span class="nlw-re-sponsor-name">{{sponsorName}}</span>{{/sponsorLogo}}
+    </a>
+    {{/hasSponsor}}
+    {{^hasSponsor}}{{#reCount}}<span class="nlw-re-count">{{reCount}}</span>{{/reCount}}{{/hasSponsor}}
+  </div>
+
+  {{#each listings}}
+  <div class="nlw-re">
+    {{#photo}}<div class="nlw-re-photo"><a href="{{link}}" target="_blank" rel="noopener"><img src="{{photo}}" alt="{{address}}" loading="lazy"></a></div>{{/photo}}
+    <div class="nlw-re-body">
+      {{#flag}}<span class="nlw-re-flag">{{flag}}</span>{{/flag}}
+      <p class="nlw-re-address"><a href="{{link}}" target="_blank" rel="noopener">{{address}}</a></p>
+      <p class="nlw-re-specs">{{#beds}}{{beds}} BD{{/beds}}{{#baths}} &middot; {{baths}} BA{{/baths}}{{#sqft}} &middot; {{sqft}} SQ FT{{/sqft}}</p>
+      {{#agent}}<p class="nlw-re-agent">{{agent}}{{#brokerage}} &middot; {{brokerage}}{{/brokerage}}</p>{{/agent}}
+    </div>
+    {{#price}}<p class="nlw-re-price">{{price}}</p>{{/price}}
+  </div>
+  {{/each}}
+
+  {{#isExclusive}}{{#exclusiveNotice}}<p class="nlw-re-exclusive">{{exclusiveNotice}}</p>{{/exclusiveNotice}}{{/isExclusive}}
+
+  {{#hasSponsor}}{{#sponsorAd}}
+  <a class="nlw-re-sponsorad" href="{{sponsorLink}}" target="_blank" rel="noopener">
+    <span class="nlw-re-sponsorad-label">Advertisement</span>
+    <img src="{{sponsorAd}}" alt="{{sponsorName}}" loading="lazy">
+  </a>
+  {{/sponsorAd}}{{/hasSponsor}}
+
+</div>
