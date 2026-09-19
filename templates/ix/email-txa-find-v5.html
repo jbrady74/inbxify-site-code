@@ -1,0 +1,117 @@
+<!-- templates/ix/email-txa-find-v5.html -->
+<!--
+  TXA · The Find. 600px shell. Design Port Session 3 · D26-D31 on email.
+  v5 = v4 + the customer logo is gone and a mark takes its place: a small
+  diamond in the left gutter, built from a coloured table cell turned 45
+  degrees. Nothing here depends on a font carrying a glyph. Outlook ignores
+  the rotation and shows a square, which is a fair fallback.
+  The mark's colour and size are tokens, so a title can use its own.
+
+  v4 = v3 + the card logo at 73px, up from 52px, and the call to action
+  reads "Check them out" instead of "Visit site". Third person, to match
+  the blurbs. The words are typed here; a per-title or per-issue choice is
+  a roadmap item (HC-032).
+
+  TXA review v0.1: all 16 items accepted.
+    TXA-13  #ff4400 is the orange. It carries the Visit site rule here and
+            the theme's accent word on web. It is 3.3:1 on the plate, so it
+            is used only at large sizes and on rules, never on small text.
+    TXA-8   Spectral is the card-name face. Needs bnm-wln/email-shell-v7,
+            whose font link carries it; it falls back to Georgia elsewhere.
+    TXA-7   The accent word inside the theme is italic here, italic and
+            orange on web. The theme comes from the CMS as markup and an
+            inline style cannot reach inside it.
+    TXA-5   No shadow on the plate. Outlook drops CSS shadows and Gmail
+            strips them, so email carries the hairline border alone.
+
+  v3 replaces v2's banded-shoulder layout with Session 5's design, the one
+  web already draws (web-txa-find-v5 + web-blocks-v32):
+    - A frame holds the whole block: one warm fill, one hairline border.
+      The masthead art runs edge to edge across its top.
+    - A white theme plate sits inside the frame with air on all four sides.
+      It is the only white object here, which is what makes it read as the
+      one important thing.
+    - Cards are open: no border, no logo box, a hairline between each.
+      What groups them is the frame they sit inside.
+    - The disclosure line sits on the frame, under the last card.
+  Every colour, face and size reads a token; v2 carried sixteen literals.
+  Spacing is typed (D55).
+
+  Block fields: franchiseArt franchiseName txaKicker themeEyebrow customerCount
+  Card fields:  business title body meta link  (logo no longer read)
+  Flags:        hasFranchise
+  Loop flags:   first last only
+
+  206 note: module 201 sends neither themeEyebrow nor customerCount, so the
+  eyebrow always prints its fallback and the count never appears. Same on web.
+-->
+<tr>
+<td style="padding:0 0 18px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:{{ctx.txa-frame-bg}};border:1px solid {{ctx.txa-frame-border}};border-radius:6px;border-collapse:separate;">
+
+  <!-- MASTHEAD ART: edge to edge across the top of the frame -->
+  {{#hasFranchise}}{{#franchiseArt}}
+  <tr><td style="padding:0;font-size:0;line-height:0;">
+    <img src="{{franchiseArt}}" alt="{{franchiseName}}" width="600" class="mobile-full" style="display:block;width:100%;max-width:600px;max-height:{{ctx.txa-art-h}};height:auto;border:0;border-radius:5px 5px 0 0;">
+  </td></tr>
+  {{/franchiseArt}}{{/hasFranchise}}
+
+  <!-- THEME PLATE -->
+  <tr><td style="padding:26px 34px 0;" class="mobile-shoulder">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:{{ctx.txa-plate-bg}};border:1px solid {{ctx.txa-plate-border}};border-radius:4px;border-collapse:separate;">
+      <tr><td align="center" style="padding:26px 28px 22px;" class="mobile-padding">
+        <p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-micro}};font-weight:600;letter-spacing:3px;text-transform:uppercase;color:{{ctx.txa-eyebrow-color}};">{{#themeEyebrow}}{{themeEyebrow}}{{/themeEyebrow}}{{^themeEyebrow}}This issue&rsquo;s theme{{/themeEyebrow}}</p>
+        <p style="margin:6px 0 0;font-family:{{&ctx.font-display}};font-size:{{ctx.txa-kicker-size}};font-weight:700;line-height:1.05;color:{{ctx.txa-kicker-color}};">{{&txaKicker}}</p>
+        {{#customerCount}}
+        <p style="margin:12px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-micro}};font-weight:600;letter-spacing:2.6px;text-transform:uppercase;color:{{ctx.text-light}};">{{customerCount}}</p>
+        {{/customerCount}}
+      </td></tr>
+    </table>
+  </td></tr>
+
+  <!-- CARDS: open, hairline separated -->
+  <tr><td style="padding:24px 34px 0;" class="mobile-shoulder">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      {{#each cards}}
+      <tr><td style="padding:{{#first}}0{{/first}}{{^first}}20px{{/first}} 0 20px;">
+
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td width="46" valign="top" style="width:46px;padding:6px 0 0;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;"><tr>
+                <td width="14" height="14" style="width:{{ctx.txa-mark-size}};height:{{ctx.txa-mark-size}};background-color:{{ctx.txa-mark-color}};font-size:0;line-height:0;mso-line-height-rule:exactly;transform:rotate(45deg);">&nbsp;</td>
+              </tr></table>
+            </td>
+            <td valign="top" style="padding-left:16px;">
+              <p style="margin:0 0 3px;font-family:{{&ctx.txa-name-font}};font-size:{{ctx.t-title}};font-style:italic;font-weight:600;line-height:1.15;color:{{ctx.txa-name-color}};"><a href="{{&.link}}" target="_blank" style="color:{{ctx.txa-name-color}};text-decoration:none;">{{.title}}</a></p>
+              <p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{ctx.txa-meta-size}};letter-spacing:2.6px;text-transform:uppercase;color:{{ctx.txa-meta-color}};">{{.business}}</p>
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin:12px 0 11px;font-family:{{&ctx.font-body}};font-size:{{ctx.t-body}};line-height:{{ctx.body-lh}};color:{{ctx.txa-blurb-color}};">{{.body}}</p>
+        {{#meta}}<p style="margin:0 0 10px;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};letter-spacing:1px;color:{{ctx.text-light}};">{{.meta}}</p>{{/meta}}
+        {{#link}}
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+          <td style="border-bottom:2px solid {{ctx.txa-visit-rule}};padding:0 0 3px;">
+            <a href="{{&.link}}" target="_blank" style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-button}};font-weight:700;letter-spacing:2.4px;text-transform:uppercase;white-space:nowrap;color:{{ctx.txa-visit-color}};text-decoration:none;">Check them out&nbsp;&rarr;</a>
+          </td>
+        </tr></table>
+        {{/link}}
+
+      </td></tr>
+      {{^last}}
+      <tr><td style="font-size:0;line-height:1px;mso-line-height-rule:exactly;height:1px;border-top:1px solid {{ctx.txa-divider}};">&nbsp;</td></tr>
+      {{/last}}
+      {{/each}}
+    </table>
+  </td></tr>
+
+  <!-- DISCLOSURE -->
+  <tr><td align="center" style="padding:20px 20px 26px;">
+    <span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-micro}};font-weight:600;letter-spacing:2px;text-transform:uppercase;color:{{ctx.txa-disclosure-color}};">Paid placements &middot; {{ctx.titleName}}</span>
+  </td></tr>
+
+</table>
+</td>
+</tr>
