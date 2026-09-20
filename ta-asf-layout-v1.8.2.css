@@ -1,0 +1,85 @@
+/* ============================================================
+   ta-asf-layout-v1.8.2.css — ASF layout + density
+   LOADS AFTER ta-asf-v1.6.4.css, which is never edited.
+   Replaces ta-asf-layout-v1.8.0.css entirely.
+
+   v1.8.0 reordered the form and did nothing about how much room it
+   takes. This does the second half: the form is packed, and the
+   fields that deserve room keep it.
+
+   THE RULE: a field gets height in proportion to what gets typed
+   into it. A subtitle is one line and sits beside the banner
+   statement. A teaser is a paragraph and stays a box. The body is
+   the work and gets everything left over.
+
+   Base values this overrides, for whoever reads it next:
+     .asf-input/.asf-select/.asf-textarea  13px, padding 8px 10px
+     .asf-field        gap 5px
+     .asf-main         padding 24px 28px 88px, gap 14px
+     .asf-side         padding 20px 18px 88px, gap 18px
+   ============================================================ */
+
+/* ── each column scrolls on its own; the page never moves ───── */
+.ta-asf .asf-shell{ height:calc(100vh - 38px); min-height:0; overflow:hidden; }
+.ta-asf .asf-main,
+.ta-asf .asf-side{ min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+.ta-asf .asf-main::-webkit-scrollbar,
+.ta-asf .asf-side::-webkit-scrollbar{ width:9px; }
+.ta-asf .asf-main::-webkit-scrollbar-thumb,
+.ta-asf .asf-side::-webkit-scrollbar-thumb{ background:#DCD7C7; border-radius:6px; }
+
+/* ── the main column becomes a two-column grid ──────────────── */
+/* Everything spans both columns unless it is a one-line field,
+   which then pairs with its neighbour instead of eating a row. */
+.ta-asf .asf-main{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px 16px;
+  align-content:start;
+  padding:16px 22px 76px;
+}
+.ta-asf .asf-main > *{ grid-column:span 2; min-width:0; }
+.ta-asf .asf-main > .asf-field:has(input[data-asf-field="subtitle"]),
+.ta-asf .asf-main > .asf-field:has(input[data-asf-field="bannerStatement"]),
+.ta-asf .asf-main-banner{ grid-column:span 1; }
+
+/* ── density: labels and gaps ───────────────────────────────── */
+.ta-asf .asf-field{ gap:3px; }
+.ta-asf .asf-field-label{ font-size:8.5px; }
+.ta-asf .asf-side{ gap:10px; padding:14px 14px 76px; }
+.ta-asf .asf-side-section{ gap:4px; }
+.ta-asf .asf-side-section-head{ padding:2px 0 1px; }
+
+/* ── controls: shorter, same type size where it is read ─────── */
+.ta-asf .asf-input,
+.ta-asf .asf-select{ padding:5px 8px; font-size:12.5px; }
+.ta-asf .asf-textarea{ padding:6px 9px; }
+
+/* ── the fields that deserve room, keep it ──────────────────── */
+.ta-asf .asf-textarea[data-asf-field="teaser"]{ min-height:70px; }
+.ta-asf .asf-textarea[data-asf-field="shortSummary"]{ min-height:52px; }
+/* the body takes whatever is left */
+.ta-asf .asf-main .trix-content,
+.ta-asf .asf-main .asf-rte-body,
+.ta-asf .asf-main trix-editor{ min-height:300px; }
+
+/* ── an empty rail group leaves no hole ─────────────────────── */
+.ta-asf .asf-side-section:empty{ display:none; }
+.ta-asf .asf-side-section:has(> .asf-side-section-head:only-child){ display:none; }
+
+/* ── narrow screens: one column again, nothing overlaps ─────── */
+@media (max-width:1180px){
+  .ta-asf .asf-main{ grid-template-columns:1fr; }
+  .ta-asf .asf-main > *{ grid-column:span 1; }
+}
+
+/* ── the gallery, in the main column, four across ───────────── */
+.ta-asf .asf-main-gallery .asf-side-section{ margin:10px 0 0; }
+.ta-asf .asf-main-gallery .asf-gal-grid{
+  display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:9px;
+}
+@media (max-width:1180px){
+  .ta-asf .asf-main-gallery .asf-gal-grid{ grid-template-columns:repeat(3, minmax(0,1fr)); }
+}
+.ta-asf .asf-main-gallery .asf-gal-tile{ width:auto; }
+.ta-asf .asf-main-gallery .asf-gal-img{ width:100%; height:80px; object-fit:cover; display:block; }
