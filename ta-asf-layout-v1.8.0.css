@@ -1,0 +1,60 @@
+/* ============================================================
+   ta-asf-layout-v1.8.0.css — ASF layout addendum
+   LOADS AFTER ta-asf-v1.6.4.css, which is unchanged.
+
+   Why an addendum rather than an edit: the base stylesheet is 161 KB
+   and carries every control's styling. This file only does what
+   v1.8.0's regrouping needs — the gallery in the main column, and a
+   form that fits a laptop screen without scrolling the page itself.
+
+   Two rules underneath it:
+     · each column scrolls on its own, so the page never does
+     · the gallery gets the main column's width, four tiles across
+   ============================================================ */
+
+/* ── each column scrolls on its own ─────────────────────────── */
+.asf-panel{
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+.asf-main,
+.asf-side{
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.asf-main::-webkit-scrollbar,
+.asf-side::-webkit-scrollbar{ width: 9px; }
+.asf-main::-webkit-scrollbar-thumb,
+.asf-side::-webkit-scrollbar-thumb{ background:#DCD7C7; border-radius:6px; }
+
+/* ── the gallery, now in the main column ────────────────────── */
+.asf-main-gallery .asf-side-section{
+  margin: 18px 0 0;
+}
+.asf-main-gallery .asf-gal-grid{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 1180px){
+  .asf-main-gallery .asf-gal-grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 900px){
+  .asf-main-gallery .asf-gal-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.asf-main-gallery .asf-gal-tile{ width: auto; }
+.asf-main-gallery .asf-gal-img{
+  width: 100%;
+  height: 84px;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── the banner statement, now under the headline ───────────── */
+.asf-main-banner{ margin-top: 10px; }
+
+/* ── the rail's groups, tightened so more fits above the fold ─ */
+.asf-side .asf-side-section{ margin-bottom: 12px; }
+.asf-side .asf-side-section-head{ padding-top: 10px; padding-bottom: 8px; }
