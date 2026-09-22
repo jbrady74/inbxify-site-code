@@ -1,0 +1,132 @@
+/* ta-print-parse-v1.0.0.css
+   INBXIFY T-A — print issue upload + review modal
+   Companion to ta-print-issues-v3.3.0.js. Load AFTER ix-modals,
+   ix-form-controls and ix-buttons: this file only lays out the
+   surface. Every control is an ix-* primitive and keeps its own
+   styling, including the --changed border and ix-revert link.
+
+   Tables never wrap a cell: fixed column widths, ellipsis on the
+   one flexible column. */
+
+/* The review table needs more room than the default 720px card. */
+.ix-modal.tpi-pz-modal {
+  max-width: 1180px !important;
+  max-height: calc(100vh - 48px) !important;
+}
+
+.tpi-pz-modal .ix-modal-footer { gap: 12px !important; }
+.tpi-pz-modal .ix-modal-footer-right { display: flex !important; align-items: center !important; gap: 14px !important; }
+
+.tpi-pz-lab {
+  display: block;
+  margin: 12px 0 4px;
+  font-family: var(--ix-font-body, 'DM Sans', system-ui, sans-serif);
+  font-size: 11.5px;
+  color: var(--ix-text-mid, #5a6478);
+}
+.tpi-pz-lab:first-child { margin-top: 0; }
+
+/* A field plus its undo link, on one line. */
+.tpi-pz-f { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.tpi-pz-f > .ix-picker-input { flex: 1 1 auto; min-width: 0; }
+.tpi-pz-f > .ix-revert[hidden] { display: none !important; }
+
+.tpi-pz-file { font-size: 13px; }
+
+.tpi-pz-hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--ix-text-mid, #5a6478);
+}
+
+.tpi-pz-warn { margin-top: 12px; }
+
+/* Progress */
+.tpi-pz-prog { display: flex; align-items: center; gap: 12px; }
+.tpi-pz-bar {
+  flex: 1 1 auto;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--ix-border-soft, #eee9dc);
+  overflow: hidden;
+}
+.tpi-pz-bar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--ix-teal, #1A3A3A);
+  transition: width 0.25s ease;
+}
+.tpi-pz-prog-t { font-size: 12px; white-space: nowrap; color: var(--ix-text-dark, #1e2a3a); }
+
+/* Issue strip above the table */
+.tpi-pz-issue { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 14px; }
+.tpi-pz-cover {
+  width: 72px;
+  height: auto;
+  border: 1px solid var(--ix-border-soft, #eee9dc);
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+.tpi-pz-issue-f { flex: 1 1 auto; max-width: 420px; }
+.tpi-pz-meta { display: block; margin-top: 6px; font-size: 11.5px; color: var(--ix-text-light, #8a8e9a); }
+
+/* Review table */
+.tpi-pz-tw { overflow-x: auto; }
+.tpi-pz-t {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.tpi-pz-t th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--ix-text-mid, #5a6478);
+  padding: 6px 6px;
+  border-bottom: 1px solid var(--ix-border-soft, #eee9dc);
+  white-space: nowrap;
+}
+.tpi-pz-t td {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--ix-border-soft, #eee9dc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.tpi-pz-t .ix-picker-input { font-size: 12.5px !important; padding-top: 5px !important; padding-bottom: 5px !important; }
+
+.tpi-pz-c--inc     { width: 30px; }
+.tpi-pz-c--pg      { width: 56px; }
+.tpi-pz-c--section { width: 190px; }
+.tpi-pz-c--byline  { width: 160px; }
+.tpi-pz-c--img     { width: 40px; text-align: center; }
+.tpi-pz-c--type    { width: 300px; }
+.tpi-pz-c--conf    { width: 64px; }
+
+/* The type chips sit in a cell that must not clip them. */
+.tpi-pz-t td.tpi-pz-c--type { overflow: visible; }
+.tpi-pz-c--type .ix-chip-group { flex-wrap: nowrap !important; }
+.tpi-pz-c--type .ix-chip { padding-left: 8px !important; padding-right: 8px !important; }
+
+/* Selected chip that the operator has NOT changed: marked, but not
+   with the --changed border, which means "will save a change". */
+.tpi-pz-chip--on:not(.ix-chip--changed) {
+  background: var(--ix-cream, #FAF9F5) !important;
+  border-color: var(--ix-text-mid, #5a6478) !important;
+  color: var(--ix-text-dark, #1e2a3a) !important;
+}
+
+tr.tpi-pz-off td { opacity: 0.45; }
+
+.tpi-pz-flag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10.5px;
+  background: var(--ix-gold, #C4A35A);
+  color: var(--ix-teal, #1A3A3A);
+  cursor: help;
+}
