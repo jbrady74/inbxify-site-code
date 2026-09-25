@@ -1,0 +1,925 @@
+/* issues-tab-v1.0.9.css */
+/* ============================================================
+   issues-tab-v1.0.9.css
+   Pairs with issues-tab-v1.0.23.js. Ship both together.
+
+   v1.0.9 — TILE REDESIGN (Pub Plans tile review v0.1)
+     · Three zones: Next Newsletter (teal band, the one loud
+       element), Active, Archive (compact, quieter).
+     · Tiles are <article>s. The issue code is the link, set in
+       Fraunces. Status and actions share one footer row.
+     · Set as Next: teal secondary button. In-tile confirm with a
+       gold border (--ix-changed-border) and a Cancel text link.
+     · Next band: green check / red X / grey question mark, read
+       from the newsletter's own status.
+     · Clone restyled as a quiet text button (same class and data
+       attributes; the JS handler is unchanged).
+     · Every colour is an ix-tokens-v1.0.4 token; no hex values.
+       Contrast checked on every new pair; the lowest is 4.8:1
+       (--ix-salmon-ink on --ix-salmon-ghost).
+     · ppmFadeIn / ppmSlideUp / ppmSlideDown keyframes DEFINED.
+       They were referenced by the modal rules since v1.0.5 but
+       never declared anywhere, so those animations never ran.
+
+   REMOVED (dead since JS v1.0.19 / v1.0.23):
+     .it-promote-btn*, .it-promote-toast*, .it-card*, .it-pill*,
+     .it-card-actions. Nothing in v1.0.23 renders them.
+
+   UNCHANGED from v1.0.8: every .ppm-* modal rule, byte for byte.
+
+   Load AFTER ix-tokens and title-admin-page-design CSS.
+   ============================================================ */
+
+
+/* ─── Container ─────────────────────────────────────────────── */
+.it-overview {
+  padding: 8px 0 40px;
+  font-family: var(--ix-font-body);
+  color: var(--ix-text-dark);
+}
+
+/* ─── Empty state (zero PubPlans anywhere) ──────────────────── */
+.it-overview-empty {
+  padding: 48px 24px;
+}
+.it-empty-state {
+  background: var(--ix-cream);
+  border: 1px dashed var(--ix-border);
+  border-radius: var(--ix-radius);
+  padding: 32px 24px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ix-text-mid);
+  line-height: 1.5;
+}
+
+/* ─── Missing-config notice ─────────────────────────────────── */
+.it-config-warn {
+  margin: 12px 0 4px;
+  padding: 10px 14px;
+  background: var(--ix-salmon-ghost);
+  border-left: 3px solid var(--ix-salmon-ink);
+  border-radius: var(--ix-radius-sharp);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ix-salmon-ink);
+}
+.it-config-warn strong { font-weight: 700; }
+
+/* ─── Zones ─────────────────────────────────────────────────── */
+.it-zone {
+  margin-top: 28px;
+}
+.it-zone:first-child,
+.it-config-warn + .it-zone {
+  margin-top: 14px;
+}
+.it-zone-hdr {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.it-zone-label {
+  margin: 0;
+  font-family: var(--ix-font-display);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  color: var(--ix-teal);
+}
+.it-zone-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ix-text-light);
+}
+.it-zone--archive .it-zone-label {
+  font-size: 17px;
+  color: var(--ix-text-mid);
+}
+
+.it-zone-grid {
+  display: grid;
+  gap: 12px;
+}
+.it-zone-grid--active {
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+}
+.it-zone-grid--archive {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.it-zone-empty {
+  padding: 18px 20px;
+  background: var(--ix-cream);
+  border: 1px dashed var(--ix-border);
+  border-radius: var(--ix-radius-sm);
+  font-size: 13px;
+  color: var(--ix-text-light);
+}
+
+/* ─── Tile (Active + Archive) ───────────────────────────────── */
+.it-tile {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 18px 18px 0;
+  background: var(--ix-surface);
+  border: 1px solid var(--ix-border);
+  border-radius: var(--ix-radius);
+  transition: border-color var(--ix-ease), box-shadow var(--ix-ease);
+}
+.it-tile--active {
+  min-height: 168px;
+}
+.it-tile--active:hover {
+  border-color: var(--ix-teal-mid);
+}
+/* In-tile confirm: the same gold as any pending edit. */
+.it-tile--confirm,
+.it-tile--confirm:hover {
+  border-color: var(--ix-changed-border);
+  box-shadow: 0 0 0 3px var(--ix-changed-shadow);
+}
+
+.it-tile-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.it-code {
+  font-family: var(--ix-font-display);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ix-teal);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+a.it-code:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+a.it-code:focus-visible,
+.it-open:focus-visible {
+  outline: 2px solid var(--ix-blue);
+  outline-offset: 2px;
+  border-radius: var(--ix-radius-sharp);
+}
+.it-open {
+  display: inline-flex;
+  flex: none;
+  padding: 4px;
+  border-radius: var(--ix-radius-sharp);
+  color: var(--ix-text-light);
+  transition: color var(--ix-ease), background var(--ix-ease);
+}
+.it-open:hover {
+  color: var(--ix-teal);
+  background: var(--ix-teal-soft);
+}
+
+.it-when {
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ix-text-dark);
+}
+.it-rel {
+  font-size: 13px;
+  color: var(--ix-text-light);
+}
+.it-rel--warn {
+  color: var(--ix-warn);
+  font-weight: 600;
+}
+
+/* Notes inside a tile */
+.it-note {
+  margin-top: 12px;
+  padding: 8px 10px;
+  border-radius: var(--ix-radius-sm);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.it-note--warn {
+  background: var(--ix-gold-glow);
+  color: var(--ix-warn);
+}
+.it-note--info {
+  background: var(--ix-teal-ghost);
+  color: var(--ix-teal);
+}
+
+/* In-tile confirm box */
+.it-confirm {
+  margin-top: 14px;
+  padding: 12px;
+  background: var(--ix-cream);
+  border-radius: var(--ix-radius-sm);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ix-text-dark);
+}
+.it-confirm p {
+  margin: 0 0 10px;
+}
+.it-confirm-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Footer: status left, actions right. Wraps on narrow tiles. */
+.it-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  row-gap: 8px;
+  column-gap: 8px;
+  margin-top: auto;
+  padding: 12px 0 14px;
+  border-top: 1px solid var(--ix-border-soft);
+}
+.it-tile--active .it-foot {
+  margin-top: 16px;
+}
+.it-tile--active .it-when + .it-rel + .it-foot,
+.it-tile--active .it-when + .it-foot {
+  margin-top: auto;
+}
+.it-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ix-text-mid);
+  white-space: nowrap;
+}
+.it-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.it-dot--progress { background: var(--ix-gold); }
+.it-dot--sent     { background: var(--ix-text-light); }
+.it-acts {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ─── Archive tile (compact) ────────────────────────────────── */
+.it-tile--archive {
+  padding: 14px 16px 0;
+  background: var(--ix-cream-warm);
+  border-color: var(--ix-border-soft);
+}
+.it-tile--archive:hover {
+  border-color: var(--ix-border);
+  background: var(--ix-surface);
+}
+.it-code--sm {
+  font-size: 19px;
+}
+.it-when--sm {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ix-text-mid);
+}
+.it-foot--sm {
+  margin-top: 12px;
+  padding: 8px 0 10px;
+}
+.it-more {
+  margin-top: 10px;
+  padding: 4px 0;
+  background: none;
+  border: 0;
+  font-family: var(--ix-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ix-teal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.it-more:focus-visible {
+  outline: 2px solid var(--ix-blue);
+  outline-offset: 2px;
+}
+
+/* ─── Buttons (mirror ix-btn scale: 32px, radius-sm) ────────── */
+.it-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--ix-radius-sm);
+  background: none;
+  font-family: var(--ix-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--ix-ease), border-color var(--ix-ease), color var(--ix-ease);
+}
+.it-btn:focus-visible {
+  outline: 2px solid var(--ix-blue);
+  outline-offset: 2px;
+}
+.it-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.it-btn--sec {
+  color: var(--ix-teal);
+  border-color: var(--ix-teal);
+  background: var(--ix-surface);
+}
+.it-btn--sec:hover:not(:disabled) {
+  background: var(--ix-teal-soft);
+}
+.it-btn--teal {
+  color: var(--ix-text-invert);
+  background: var(--ix-teal);
+}
+.it-btn--teal:hover:not(:disabled) {
+  background: var(--ix-teal-mid);
+}
+.it-btn--busy {
+  color: var(--ix-text-mid);
+  border-color: var(--ix-border);
+  background: var(--ix-cream);
+  opacity: 1;
+}
+.it-btn--busy:disabled { opacity: 1; cursor: progress; }
+
+.it-cancel {
+  padding: 4px 6px;
+  background: none;
+  border: 0;
+  font-family: var(--ix-font-body);
+  font-size: 12.5px;
+  color: var(--ix-text-mid);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.it-cancel:hover { color: var(--ix-teal); }
+.it-cancel:focus-visible {
+  outline: 2px solid var(--ix-blue);
+  outline-offset: 2px;
+}
+
+/* Clone — quiet text button. Class and data attributes unchanged
+   so the v1.0.11+ delegated handler still binds. */
+.it-clone-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 10px;
+  background: none;
+  border: 0;
+  border-radius: var(--ix-radius-sm);
+  font-family: var(--ix-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ix-text-mid);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--ix-ease), color var(--ix-ease);
+}
+.it-clone-btn:hover {
+  background: var(--ix-teal-soft);
+  color: var(--ix-teal);
+}
+.it-clone-btn:focus-visible {
+  outline: 2px solid var(--ix-blue);
+  outline-offset: 2px;
+}
+.it-clone-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ─── Next Newsletter band ──────────────────────────────────── */
+.it-next-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.it-next {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(260px, 1.4fr);
+  gap: 24px;
+  align-items: center;
+  padding: 22px 24px;
+  background: var(--ix-teal);
+  color: var(--ix-text-invert);
+  border-radius: var(--ix-radius);
+}
+.it-next-code {
+  font-family: var(--ix-font-display);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.015em;
+  color: var(--ix-text-invert);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+a.it-next-code:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+}
+a.it-next-code:focus-visible {
+  outline: 2px solid var(--ix-gold-bright);
+  outline-offset: 3px;
+  border-radius: var(--ix-radius-sharp);
+}
+.it-next-when {
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: 500;
+}
+.it-next-rel {
+  font-size: 13px;
+  color: var(--ix-rail-text);
+}
+
+.it-check {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: var(--ix-radius-sm);
+  background: var(--ix-rail-lift);
+}
+.it-check-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--ix-teal);
+}
+.it-check--ok .it-check-icon      { background: var(--ix-ok-light); }
+.it-check--bad .it-check-icon     { background: var(--ix-danger-light); }
+.it-check--unknown .it-check-icon { background: var(--ix-rail-text); }
+.it-check-line {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.it-check--ok .it-check-line      { color: var(--ix-ok-light); }
+.it-check--bad .it-check-line     { color: var(--ix-danger-light); }
+.it-check--unknown .it-check-line { color: var(--ix-text-invert); }
+.it-check-sub {
+  margin-top: 2px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ix-rail-text);
+}
+.it-next-note {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--ix-gold-bright);
+}
+.it-next-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.it-btn--ongold {
+  color: var(--ix-teal);
+  background: var(--ix-gold-bright);
+}
+.it-btn--ongold:hover {
+  background: var(--ix-gold);
+}
+.it-btn--onghost {
+  color: var(--ix-text-invert);
+  border-color: var(--ix-rail-text);
+}
+.it-btn--onghost:hover:not(:disabled) {
+  background: var(--ix-rail-lift);
+}
+.it-btn--ongold:focus-visible,
+.it-btn--onghost:focus-visible,
+.it-clone-btn--ondark:focus-visible {
+  outline-color: var(--ix-gold-bright);
+}
+.it-clone-btn--ondark {
+  color: var(--ix-rail-text);
+}
+.it-clone-btn--ondark:hover {
+  background: var(--ix-rail-lift);
+  color: var(--ix-text-invert);
+}
+
+/* A tile that just arrived from Active. One pulse, then still. */
+@keyframes itArrive {
+  from { box-shadow: 0 0 0 6px var(--ix-ok-light); }
+  to   { box-shadow: 0 0 0 0 transparent; }
+}
+.it-next--arrive {
+  animation: itArrive 1.4s ease-out;
+}
+
+.it-next-empty {
+  padding: 22px 24px;
+  background: var(--ix-surface);
+  border: 1.5px dashed var(--ix-border);
+  border-radius: var(--ix-radius);
+  font-size: 14px;
+  color: var(--ix-text-mid);
+}
+.it-next-empty strong {
+  display: block;
+  margin-bottom: 2px;
+  font-family: var(--ix-font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ix-teal);
+}
+
+/* ─── Narrow screens ────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .it-next {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .it-next-code { font-size: 32px; }
+}
+@media (max-width: 640px) {
+  .it-zone-grid--active,
+  .it-zone-grid--archive {
+    grid-template-columns: 1fr;
+  }
+  .it-code { font-size: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .it-next--arrive { animation: none; }
+  .ppm-backdrop, .ppm-modal, .ppm-success-banner { animation: none; }
+}
+
+/* ─── Modal keyframes (referenced since v1.0.5, never declared) ── */
+@keyframes ppmFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes ppmSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes ppmSlideDown {
+  from { opacity: 0; transform: translate(-50%, -8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ---- Add-a-PubPlan modal (.ppm-*) ---- */
+/* ─── Backdrop ──────────────────────────────────────────────── */
+.ppm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 58, 58, 0.45);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: ppmFadeIn 0.18s ease-out;
+}
+
+/* ─── Modal shell ───────────────────────────────────────────── */
+.ppm-modal {
+  position: relative;
+  z-index: 10001;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 12px 48px rgba(26, 58, 58, 0.25);
+  width: 100%;
+  max-width: 440px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  font-family: 'DM Sans', sans-serif;
+  animation: ppmSlideUp 0.22s ease-out;
+}
+
+/* ─── Header ────────────────────────────────────────────────── */
+.ppm-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid #e8e4d8;
+}
+
+.ppm-hdr h3 {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1A3A3A;
+  letter-spacing: -0.01em;
+}
+
+.ppm-close {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: #8a8a7a;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ppm-close:hover {
+  background: #faf9f5;
+  color: #1A3A3A;
+}
+
+/* ─── Body ──────────────────────────────────────────────────── */
+.ppm-body {
+  padding: 18px 24px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ppm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ppm-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5a6a5a;
+  font-weight: 600;
+}
+
+.ppm-help {
+  font-size: 11px;
+  color: #8a8a7a;
+  line-height: 1.4;
+}
+
+/* ─── Inputs ────────────────────────────────────────────────── */
+.ppm-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: #1A3A3A;
+  background: #ffffff;
+  border: 1.5px solid #e8e4d8;
+  border-radius: 8px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+
+.ppm-input:focus {
+  outline: none;
+  border-color: #5b7fff;
+  box-shadow: 0 0 0 3px rgba(91, 127, 255, 0.12);
+}
+
+.ppm-input[type="date"] {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  /* Native date picker icon — keep default, browser-styled */
+}
+
+/* ─── Issue row: prefix label + number input ────────────────── */
+.ppm-issue-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border: 1.5px solid #e8e4d8;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.ppm-issue-row:focus-within {
+  border-color: #5b7fff;
+  box-shadow: 0 0 0 3px rgba(91, 127, 255, 0.12);
+}
+
+.ppm-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  background: #faf9f5;
+  border-right: 1px solid #e8e4d8;
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1A3A3A;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Number input inside the issue row — strip its own border, inherit row border */
+.ppm-number-input {
+  flex: 1;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ppm-number-input:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+/* Hide spinners on number input — cleaner look */
+.ppm-number-input::-webkit-outer-spin-button,
+.ppm-number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.ppm-number-input {
+  -moz-appearance: textfield;
+}
+
+.ppm-preview {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #5b7fff;
+  margin-top: 2px;
+  padding-left: 2px;
+}
+
+/* ─── Error banner ──────────────────────────────────────────── */
+.ppm-error {
+  background: #fef2f0;
+  border: 1px solid #f5b8ad;
+  color: #c0392b;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ppm-error[hidden] { display: none !important; }
+
+/* ─── Actions ───────────────────────────────────────────────── */
+.ppm-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px 20px;
+  border-top: 1px solid #e8e4d8;
+  margin-top: 8px;
+}
+
+.ppm-cancel-link {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: #C4A35A;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.ppm-cancel-link:hover {
+  color: #a78645;
+}
+
+.ppm-create-btn {
+  padding: 10px 20px;
+  background: #5b7fff;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  min-width: 110px;
+}
+
+.ppm-create-btn:hover:not(:disabled) {
+  background: #4a6ce8;
+}
+
+.ppm-create-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.ppm-create-btn:disabled {
+  background: #b8c4ef;
+  cursor: not-allowed;
+}
+
+.ppm-create-btn:focus-visible {
+  outline: 2px solid #5b7fff;
+  outline-offset: 2px;
+}
+
+/* ─── Success banner (post-create, pre-reload) ──────────────── */
+.ppm-success-banner {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10002;
+  padding: 12px 24px;
+  background: #1A3A3A;
+  color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(26, 58, 58, 0.3);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: ppmSlideDown 0.25s ease-out;
+}
+
+/* Toast-truth: request succeeded but the response carried no
+   fieldData echo, so we cannot confirm what was written. Amber,
+   not green — we have not earned the check. Expected only until
+   Scenario 103 blueprint v1.1 is imported. */
+.ppm-success-banner--unverified {
+  background: #7A5C18;
+  box-shadow: 0 8px 24px rgba(122, 92, 24, 0.32);
+}
+
+.ppm-success-banner--unverified .ppm-success-icon {
+  background: rgba(255, 255, 255, 0.22);
+  font-weight: 700;
+}
+
+.ppm-success-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: #10b981;
+  color: #ffffff;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ppm-hdr,
+  .ppm-body,
+  .ppm-actions {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+
+/* Shared-vs-cloned explainer inside the clone modal. */
+.ppm-clone-note {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  background: #FAF9F5;
+  border-left: 3px solid #C4A35A;
+  border-radius: 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #4a4a42;
+}
+
+.ppm-clone-note strong {
+  color: #1A3A3A;
+  font-weight: 600;
+}
