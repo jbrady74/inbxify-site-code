@@ -1,0 +1,211 @@
+/* ix-progress-v1.0.0.css */
+/* ============================================================
+   ix-progress-v1.0.0.css
+   INBXIFY · ix component series · pairs with ix-progress-v1.0.0.js
+
+   A teal card at the top centre of the screen for any Make or
+   Worker request still running after 1.5s. A gold paper plane
+   bobs along a dashed salmon trail; the bar runs a gold-to-salmon
+   stripe; the seconds tick. On reply the plane flies off and an
+   envelope drops in. On failure a red X and a red bar.
+
+   Every colour is an ix-tokens-v1.0.4 token. Text pairs on teal:
+     white 12.3:1 · --ix-rail-text 6.8:1 · --ix-gold-bright 7.2:1 ·
+     --ix-danger-light 7.2:1.
+
+   Lives on <body>, outside section.publisher-wrapper, so the
+   background wildcard never reaches it. z-index sits above
+   ix-modals' overlay so it shows over the Add and Clone modals.
+   Motion stops under prefers-reduced-motion.
+
+   Load after ix-tokens.
+   ============================================================ */
+
+.ixp-rail {
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(420px, calc(100vw - 24px));
+  pointer-events: none;
+}
+
+.ixp-more {
+  pointer-events: auto;
+  padding: 4px 12px;
+  border-radius: var(--ix-radius-pill);
+  background: var(--ix-teal-deep);
+  color: var(--ix-gold-bright);
+  font-family: var(--ix-font-body);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: var(--ix-shadow-lg);
+}
+
+.ixp-card {
+  pointer-events: auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 40px 14px 14px;
+  background: var(--ix-teal);
+  color: var(--ix-text-invert);
+  border-radius: 16px;
+  box-shadow: 0 14px 40px rgba(20, 48, 47, 0.35), 0 0 0 1px rgba(232, 193, 114, 0.25);
+  font-family: var(--ix-font-body);
+  opacity: 0;
+  transform: translateY(-14px) scale(0.96);
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(.2, 1.4, .4, 1);
+}
+.ixp-card.is-in   { opacity: 1; transform: none; }
+.ixp-card.is-out  { opacity: 0; transform: translateY(-10px) scale(0.97); transition-duration: 0.24s; }
+.ixp-card.is-hidden { display: none; }
+
+/* ── the art ── */
+.ixp-art-wrap {
+  flex: none;
+  width: 64px;
+  height: 40px;
+}
+.ixp-art { width: 64px; height: 40px; overflow: visible; display: block; }
+
+.ixp-trail {
+  stroke: var(--ix-salmon);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 2 6;
+  animation: ixpTrail 0.9s linear infinite;
+}
+.ixp-plane {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ixpBob 1.6s ease-in-out infinite;
+}
+.ixp-wing { fill: var(--ix-gold-bright); }
+.ixp-fold { fill: var(--ix-gold); }
+.ixp-body { fill: var(--ix-gold-warm); }
+
+.ixp-env {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+.ixp-env rect { fill: var(--ix-gold-bright); }
+.ixp-env path { stroke: var(--ix-teal); stroke-width: 2; stroke-linejoin: round; }
+
+/* reply: plane leaves, envelope lands */
+.ixp-card.is-done .ixp-plane { animation: ixpFlyOff 0.5s ease-in forwards; }
+.ixp-card.is-done .ixp-trail { animation: none; opacity: 0; transition: opacity 0.3s; }
+.ixp-card.is-done .ixp-env   { animation: ixpLand 0.55s 0.25s cubic-bezier(.2, 1.6, .4, 1) forwards; }
+
+/* failure mark */
+.ixp-x-ring { fill: var(--ix-danger-light); }
+.ixp-x { stroke: var(--ix-teal); stroke-width: 3.2; stroke-linecap: round; fill: none; }
+.ixp-card.is-fail .ixp-art { animation: ixpShake 0.4s ease-in-out; }
+
+/* ── the words ── */
+.ixp-text { flex: 1; min-width: 0; }
+.ixp-title {
+  font-family: var(--ix-font-display);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ixp-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--ix-rail-text);
+}
+.ixp-msg { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ixp-time {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--ix-gold-bright);
+}
+.ixp-card.is-fail .ixp-msg,
+.ixp-card.is-fail .ixp-time { color: var(--ix-danger-light); }
+
+/* ── the bar: motion, not a percentage ── */
+.ixp-bar {
+  position: relative;
+  height: 6px;
+  margin-top: 9px;
+  border-radius: 3px;
+  background: var(--ix-rail-lift);
+  overflow: hidden;
+}
+.ixp-bar span {
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 40%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--ix-gold-bright), var(--ix-salmon));
+  animation: ixpSlide 1.25s cubic-bezier(.45, 0, .55, 1) infinite;
+}
+.ixp-card.is-done .ixp-bar span { animation: none; left: 0; width: 100%; transition: width 0.3s; }
+.ixp-card.is-fail .ixp-bar span { animation: none; left: 0; width: 100%; background: var(--ix-danger-light); }
+
+.ixp-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ix-rail-text);
+  font-size: 18px;
+  line-height: 26px;
+  cursor: pointer;
+}
+.ixp-close:hover { background: var(--ix-rail-lift); color: var(--ix-text-invert); }
+.ixp-close:focus-visible { outline: 2px solid var(--ix-gold-bright); outline-offset: 1px; }
+
+/* ── keyframes ── */
+@keyframes ixpTrail  { to { stroke-dashoffset: -16; } }
+@keyframes ixpBob {
+  0%, 100% { transform: translate(0, 0) rotate(-3deg); }
+  50%      { transform: translate(3px, -4px) rotate(4deg); }
+}
+@keyframes ixpSlide {
+  0%   { left: -40%; }
+  100% { left: 100%; }
+}
+@keyframes ixpFlyOff {
+  to { transform: translate(40px, -26px) rotate(-18deg) scale(0.6); opacity: 0; }
+}
+@keyframes ixpLand {
+  0%   { opacity: 0; transform: translateY(-16px) scale(0.7); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ixpShake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-4px); }
+  75%      { transform: translateX(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ixp-card, .ixp-card.is-in, .ixp-card.is-out { transition: opacity 0.2s; transform: none; }
+  .ixp-trail, .ixp-plane, .ixp-card.is-fail .ixp-art { animation: none; }
+  .ixp-bar span { animation: none; left: 0; width: 100%; opacity: 0.6; }
+  .ixp-card.is-done .ixp-plane { animation: none; opacity: 0; }
+  .ixp-card.is-done .ixp-env   { animation: none; opacity: 1; }
+}
