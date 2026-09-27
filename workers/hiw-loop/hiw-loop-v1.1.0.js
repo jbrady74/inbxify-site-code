@@ -1,3 +1,4 @@
+// hiw-loop-v1.1.0.js
 /**
  * INBXIFY — HIW animated-loop server Worker
  *

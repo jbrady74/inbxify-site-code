@@ -1,3 +1,4 @@
+// home-hero-v1.0.0.js
 export default {
   async fetch() {
     const src = "https://raw.githubusercontent.com/jbrady74/inbxify-site-code/main/public-site/inbxify-home-hero-v2.8.html";
