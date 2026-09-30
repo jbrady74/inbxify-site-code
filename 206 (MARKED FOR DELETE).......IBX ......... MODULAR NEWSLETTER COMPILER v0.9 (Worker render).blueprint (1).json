@@ -1,0 +1,1246 @@
+{
+    "name": "206 (MARKED FOR DELETE).......IBX ......... MODULAR NEWSLETTER COMPILER v0.9 (Worker render)",
+    "flow": [
+        {
+            "id": 1,
+            "module": "gateway:CustomWebHook",
+            "version": 1,
+            "parameters": {
+                "hook": 2795558,
+                "maxResults": 1
+            },
+            "mapper": {},
+            "metadata": {
+                "designer": {
+                    "x": 0,
+                    "y": 1950,
+                    "name": "206 render webhook"
+                },
+                "restore": {
+                    "parameters": {
+                        "hook": {
+                            "data": {
+                                "editable": "true"
+                            },
+                            "label": "newsletter-renderer-01"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "hook",
+                        "type": "hook:gateway-webhook",
+                        "label": "Webhook",
+                        "required": true
+                    },
+                    {
+                        "name": "maxResults",
+                        "type": "number",
+                        "label": "Maximum number of results"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 2,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{1.contextNlId}}",
+                "collection_id": "64e905038caaa2edd76842bc"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 300,
+                    "y": 1950,
+                    "name": "get NL (context)"
+                }
+            }
+        },
+        {
+            "id": 23,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{2.fieldData.sector}}",
+                "collection_id": "64e905038caaa2edd76842bb"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 600,
+                    "y": 1950,
+                    "name": "get TITLES-ADMIN"
+                }
+            }
+        },
+        {
+            "id": 96,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{23.fieldData.`associated-client`}}",
+                "collection_id": "64e905038caaa2edd76842ba"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 900,
+                    "y": 1950,
+                    "name": "get PUBLISHER"
+                }
+            }
+        },
+        {
+            "id": 4,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{if(1.parentId = 2.id; 2.fieldData.`publication-plan`; 1.parentId)}}",
+                "collection_id": "68b1ce556019ec55bf4727f3"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 1200,
+                    "y": 1950,
+                    "name": "get PUBPLAN (context)"
+                }
+            }
+        },
+        {
+            "id": 220,
+            "module": "json:ParseJSON",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "json": "{{ifempty(23.fieldData.`design-json`; \"{}\")}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 1500,
+                    "y": 1950,
+                    "name": "P-TTL design-json"
+                }
+            }
+        },
+        {
+            "id": 221,
+            "module": "json:ParseJSON",
+            "version": 1,
+            "parameters": {
+                "type": ""
+            },
+            "mapper": {
+                "json": "{{ifempty(4.fieldData.`design-json`; \"{}\")}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 1800,
+                    "y": 1950,
+                    "name": "P-ISS design-json"
+                }
+            },
+            "onerror": [
+                {
+                    "id": 22100,
+                    "module": "builtin:Resume",
+                    "version": 1,
+                    "mapper": {},
+                    "metadata": {
+                        "designer": {
+                            "x": 2100,
+                            "y": 3900
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 31,
+            "module": "util:SetVariable2",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "name": "utm_base",
+                "scope": "roundtrip",
+                "value": "?utm_source={{23.fieldData.name}}&utm_medium=email&utm_campaign={{4.fieldData.name}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 2100,
+                    "y": 1800,
+                    "name": "utm_base"
+                }
+            }
+        },
+        {
+            "id": 232,
+            "module": "webflow:listItems",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "limit": 100,
+                "select": "manual",
+                "collection_id": "68929c45dc27b1bb31fb4404"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 2400,
+                    "y": 1800,
+                    "name": "List ADS (run-level)"
+                }
+            }
+        },
+        {
+            "id": 233,
+            "module": "builtin:BasicAggregator",
+            "version": 1,
+            "parameters": {
+                "feeder": 232
+            },
+            "filter": {
+                "name": "active banner ads",
+                "conditions": [
+                    [
+                        {
+                            "a": "{{232.fieldData.`add-type`}}",
+                            "b": "22dfc5944f56db4cf583a07eac4888d1",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{232.fieldData.status}}",
+                            "b": "e9b5863d38d5bf7d588632aa50121b91",
+                            "o": "text:equal"
+                        }
+                    ]
+                ]
+            },
+            "mapper": {
+                "bannerLink": "{{232.fieldData.`banner-ad-link`}}",
+                "advertiserId": "{{232.fieldData.`associated-advertiser`}}",
+                "redirectLink": "{{232.fieldData.`redirect-link`}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 2700,
+                    "y": 1800,
+                    "name": "AGG active banner ads"
+                }
+            }
+        },
+        {
+            "id": 162,
+            "module": "webflow:listItems",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "limit": 100,
+                "select": "manual",
+                "collection_id": "6a0c36247dddc71bd8cc2b7d"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 3000,
+                    "y": 1800,
+                    "name": "List NL-BLOCKS"
+                }
+            }
+        },
+        {
+            "id": 165,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "filter": {
+                "name": "parent + heavy types",
+                "conditions": [
+                    [
+                        {
+                            "a": "{{162.fieldData.`publication-plan`}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{162.fieldData.`block-type`}}",
+                            "b": "d8ed1e0fcf99626c5a5485dac411c51b",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{162.fieldData.`publication-plan`}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{162.fieldData.`block-type`}}",
+                            "b": "de309b19086b191a0faa251477676da3",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{162.fieldData.`publication-plan`}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{162.fieldData.`block-type`}}",
+                            "b": "4d028a2e7399cca145dd456ab958a8bb",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{162.fieldData.`publication-plan`}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{162.fieldData.`block-type`}}",
+                            "b": "58dd8b66df83c0e767921024469d66d9",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{162.fieldData.`publication-plan`}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{162.fieldData.`block-type`}}",
+                            "b": "6d22ca8afc8d3765fbef23d44d9a8052",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{162.fieldData.`publication-plan`}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{162.fieldData.`block-type`}}",
+                            "b": "2f2893fee6b9d57961c8723935753f82",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{162.fieldData.newsletter}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{162.fieldData.`block-type`}}",
+                            "b": "d8ed1e0fcf99626c5a5485dac411c51b",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{162.fieldData.newsletter}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{162.fieldData.`block-type`}}",
+                            "b": "de309b19086b191a0faa251477676da3",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{162.fieldData.newsletter}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{162.fieldData.`block-type`}}",
+                            "b": "4d028a2e7399cca145dd456ab958a8bb",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{162.fieldData.newsletter}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{162.fieldData.`block-type`}}",
+                            "b": "58dd8b66df83c0e767921024469d66d9",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{162.fieldData.newsletter}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{162.fieldData.`block-type`}}",
+                            "b": "6d22ca8afc8d3765fbef23d44d9a8052",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{162.fieldData.newsletter}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{162.fieldData.`block-type`}}",
+                            "b": "2f2893fee6b9d57961c8723935753f82",
+                            "o": "text:equal"
+                        }
+                    ]
+                ]
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{162.fieldData.`asset-article`}}",
+                "collection_id": "64e905038caaa2edd76842b5"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 3300,
+                    "y": 1800,
+                    "name": "get ARTICLE"
+                }
+            },
+            "onerror": [
+                {
+                    "id": 16500,
+                    "module": "builtin:Ignore",
+                    "version": 1,
+                    "metadata": {
+                        "designer": {
+                            "x": 3600,
+                            "y": 3600
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 250,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{162.fieldData.design}}",
+                "collection_id": "6a7cab6e75497f55ff2633e8"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 3600,
+                    "y": 1650,
+                    "name": "Get DESIGN (heavy)"
+                }
+            },
+            "onerror": [
+                {
+                    "id": 25000,
+                    "module": "builtin:Resume",
+                    "version": 1,
+                    "mapper": {},
+                    "metadata": {
+                        "designer": {
+                            "x": 3900,
+                            "y": 3300
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 252,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{162.fieldData.`asset-re`}}",
+                "collection_id": "68d452672ad6cfb333cae5f9"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 3900,
+                    "y": 1500,
+                    "name": "Get RE LISTING"
+                }
+            },
+            "onerror": [
+                {
+                    "id": 25200,
+                    "module": "builtin:Resume",
+                    "version": 1,
+                    "mapper": {},
+                    "metadata": {
+                        "designer": {
+                            "x": 4200,
+                            "y": 3000
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 253,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{252.fieldData.`listing-agent-customer`}}",
+                "collection_id": "6539226238805f7127e99189"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 4200,
+                    "y": 1350,
+                    "name": "Get RE AGENT"
+                }
+            },
+            "onerror": [
+                {
+                    "id": 25300,
+                    "module": "builtin:Resume",
+                    "version": 1,
+                    "mapper": {},
+                    "metadata": {
+                        "designer": {
+                            "x": 4500,
+                            "y": 2700
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 222,
+            "module": "json:ParseJSON",
+            "version": 1,
+            "parameters": {
+                "type": ""
+            },
+            "mapper": {
+                "json": "{{ifempty(162.fieldData.`design-json`; \"{}\")}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 4500,
+                    "y": 1200,
+                    "name": "P-BLK design-json"
+                }
+            },
+            "onerror": [
+                {
+                    "id": 22200,
+                    "module": "builtin:Resume",
+                    "version": 1,
+                    "mapper": {},
+                    "metadata": {
+                        "designer": {
+                            "x": 4800,
+                            "y": 2400
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 241,
+            "module": "builtin:BasicFeeder",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "array": "{{222.txaAds}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 4800,
+                    "y": 1050,
+                    "name": "ITER txaAds"
+                }
+            }
+        },
+        {
+            "id": 242,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{241.value}}",
+                "collection_id": "68929c45dc27b1bb31fb4404"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 5100,
+                    "y": 1050,
+                    "name": "Get TXA AD"
+                }
+            },
+            "onerror": [
+                {
+                    "id": 24200,
+                    "module": "builtin:Resume",
+                    "version": 1,
+                    "mapper": {},
+                    "metadata": {
+                        "designer": {
+                            "x": 5400,
+                            "y": 2100
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 243,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{242.fieldData.`associated-advertiser`}}",
+                "collection_id": "6539226238805f7127e99189"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 5400,
+                    "y": 900,
+                    "name": "Get TXA CUSTOMER"
+                }
+            },
+            "onerror": [
+                {
+                    "id": 24300,
+                    "module": "builtin:Resume",
+                    "version": 1,
+                    "mapper": {},
+                    "metadata": {
+                        "designer": {
+                            "x": 5700,
+                            "y": 1800
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 244,
+            "module": "builtin:BasicAggregator",
+            "version": 1,
+            "parameters": {
+                "feeder": 241
+            },
+            "mapper": {
+                "J": "{ \"logo\": \"{{replace(243.fieldData.`logo-link`; '/\"/g'; \"'\")}}\", \"business\": \"{{replace(242.fieldData.`customer-name`; '/\"/g'; \"'\")}}\", \"title\": \"{{replace(242.fieldData.`short-title`; '/\"/g'; \"'\")}}\", \"body\": \"{{replace(242.fieldData.`short-text`; '/\"/g'; \"'\")}}\", \"meta\": \"{{replace(242.fieldData.`txa-meta`; '/\"/g'; \"'\")}}\", \"link\": \"{{replace(242.fieldData.`redirect-link` + 31.utm_base + \"&utm_content=TXA-b\" + 162.fieldData.position; '/\"/g'; \"'\")}}\" }"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 5700,
+                    "y": 750,
+                    "name": "AGG txa cards"
+                }
+            }
+        },
+        {
+            "id": 231,
+            "module": "util:SetVariable2",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "name": "blockLabel",
+                "scope": "roundtrip",
+                "value": "{{switch(162.fieldData.`block-type`; \"d8ed1e0fcf99626c5a5485dac411c51b\"; \"FA\"; \"de309b19086b191a0faa251477676da3\"; \"TS\"; \"52f88a9ba5d43d0de9bf97fa318911c0\"; \"BA\"; \"caac2dc5abdc1ce824e97850b0bf994a\"; \"SB\"; \"58dd8b66df83c0e767921024469d66d9\"; \"TXA\"; \"4d028a2e7399cca145dd456ab958a8bb\"; \"RE\"; \"6d22ca8afc8d3765fbef23d44d9a8052\"; \"EV\"; \"2f2893fee6b9d57961c8723935753f82\"; \"BL\"; \"2dcd106b589aea90384c026ea57d3cd7\"; \"GR\"; \"40cf37e9d47cde8904768f1eabe81632\"; \"LW\"; \"95faba16c10b142672a2d528fce5752e\"; \"Divider\"; \"6329ee89d026a2a905bddf3a5873d280\"; \"Spacer\"; emptystring)}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 6000,
+                    "y": 750,
+                    "name": "V-LBL blockLabel"
+                }
+            }
+        },
+        {
+            "id": 224,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{ifempty(get(222.types; 231.blockLabel + \".franchiseId\"); ifempty(222.franchiseId; ifempty(get(221.types; 231.blockLabel + \".franchiseId\"); ifempty(221.franchiseId; emptystring))))}}",
+                "collection_id": "68fa2e3c16639f180010d514"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 6300,
+                    "y": 750,
+                    "name": "G-PL franchise"
+                }
+            },
+            "onerror": [
+                {
+                    "id": 22400,
+                    "module": "builtin:Resume",
+                    "version": 1,
+                    "mapper": {},
+                    "metadata": {
+                        "designer": {
+                            "x": 6600,
+                            "y": 1500
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 226,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{162.fieldData.`asset-ad-sponsor`}}",
+                "collection_id": "6539226238805f7127e99189"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 6600,
+                    "y": 600,
+                    "name": "G-CUST sponsor"
+                }
+            },
+            "onerror": [
+                {
+                    "id": 22600,
+                    "module": "builtin:Resume",
+                    "version": 1,
+                    "mapper": {},
+                    "metadata": {
+                        "designer": {
+                            "x": 6900,
+                            "y": 1200
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 230,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{165.fieldData.`associated-business-coc`}}",
+                "collection_id": "6539226238805f7127e99189"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 6900,
+                    "y": 450,
+                    "name": "G-CUST author (EC)"
+                }
+            },
+            "onerror": [
+                {
+                    "id": 23000,
+                    "module": "builtin:Resume",
+                    "version": 1,
+                    "mapper": {},
+                    "metadata": {
+                        "designer": {
+                            "x": 7200,
+                            "y": 900
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 227,
+            "module": "util:SetVariables",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "scope": "roundtrip",
+                "variables": [
+                    {
+                        "name": "d_sponsored",
+                        "value": "{{if(162.fieldData.`show-as-sponsored-2` = \"cea8ebec61d0dabe74cfa91ba97faded\"; \"1\"; \"0\")}}"
+                    },
+                    {
+                        "name": "d_dek",
+                        "value": "{{if(length(165.fieldData.`post-summary`) > 400; substring(165.fieldData.`post-summary`; 0; 397) + \"…\"; 165.fieldData.`post-summary`)}}"
+                    },
+                    {
+                        "name": "d_linkUrl",
+                        "value": "https://splash.inbxify.com/?logo={{23.fieldData.`title-masthead-ulc-link-for-splash`}}&issue={{2.fieldData.`issue-no`}}&date={{formatDate(2.fieldData.`publish-date`; \"MMMM D, YYYY\"; ifempty(23.fieldData.`title-timezone`; \"America/New_York\"))}}&sn={{2.fieldData.`splash-sponsor-name`}}&sl={{2.fieldData.`splash-sponsor-tagline`}}&su={{2.fieldData.`splash-sponsor-go-url`}}&sg={{2.fieldData.`splash-sponsor-logo`}}&ad={{ifempty(2.fieldData.`splash-ad-image`; emptystring)}}&to=https://inbxify.com/articles-blog-posts/{{165.fieldData.slug}}{{31.utm_base}}&utm_content=FA-b{{162.fieldData.position}}"
+                    }
+                ]
+            },
+            "metadata": {
+                "designer": {
+                    "x": 7200,
+                    "y": 300,
+                    "name": "R-DSN resolve"
+                }
+            }
+        },
+        {
+            "id": 201,
+            "module": "builtin:BasicAggregator",
+            "version": 1,
+            "parameters": {
+                "feeder": 162
+            },
+            "mapper": {
+                "J": "{ \"cards\": [ {{join(map(244.array; \"J\"); \",\")}} ], \"template\": \"{{replace(250.fieldData.`template-file`; '/\"/g'; \"'\")}}\", \"blockType\": \"{{replace(231.blockLabel; '/\"/g'; \"'\")}}\", \"position\": {{162.fieldData.position}}, \"f_headline\": \"{{replace(165.fieldData.name; '/\"/g'; \"'\")}}\", \"f_subhead\": \"{{replace(165.fieldData.`sub-title`; '/\"/g'; \"'\")}}\", \"f_teaser\": \"{{replace(227.d_dek; '/\"/g'; \"'\")}}\", \"f_photo\": \"{{replace(165.fieldData.`main-image-ulc-link---1-1-ratio` + '-/scale_crop/1296x1296/smart_faces/-/format/auto/-/quality/smart/'; '/\"/g'; \"'\")}}\", \"f_photoTall\": \"{{replace(165.fieldData.`main-image-ulc-link---1-1-ratio` + '-/scale_crop/1040x1300/smart_faces/-/format/auto/-/quality/smart/'; '/\"/g'; \"'\")}}\", \"f_photoCredit\": \"{{replace(165.fieldData.photographer; '/\"/g'; \"'\")}}\", \"f_author\": \"{{replace(165.fieldData.writername; '/\"/g'; \"'\")}}\", \"f_authorTitle\": \"{{replace(165.fieldData.writertitle; '/\"/g'; \"'\")}}\", \"f_coAuthor\": \"{{replace(165.fieldData.`co-writername`; '/\"/g'; \"'\")}}\", \"f_coAuthorTitle\": \"{{replace(165.fieldData.`co-writertitle`; '/\"/g'; \"'\")}}\", \"f_authorBusiness\": \"{{replace(230.fieldData.name; '/\"/g'; \"'\")}}\", \"f_authorLogo\": \"{{replace(230.fieldData.`logo-link`; '/\"/g'; \"'\")}}\", \"f_rubric\": \"{{replace(162.fieldData.rubric; '/\"/g'; \"'\")}}\", \"f_txaKicker\": \"{{replace(ifempty(get(221.types; \"txaKicker\"); ifempty(221.txaKicker; ifempty(get(220.types; \"txaKicker\"); ifempty(220.txaKicker; \"This Week\")))); '/\"/g'; \"'\")}}\", \"f_ctaText\": \"{{replace(ifempty(165.fieldData.`cta-button-text`; \"Read On\"); '/\"/g'; \"'\")}}\", \"f_articleUrl\": \"{{replace(165.fieldData.`redirect-link`; '/\"/g'; \"'\")}}\", \"f_shortSummary\": \"{{replace(165.fieldData.`short-article-summary`; '/\"/g'; \"'\")}}\", \"f_link\": \"{{replace(227.d_linkUrl; '/\"/g'; \"'\")}}\", \"f_sponsorName\": \"{{replace(226.fieldData.name; '/\"/g'; \"'\")}}\", \"f_sponsorAd\": \"{{replace(ifempty(get(map(233.array; \"bannerLink\"; \"advertiserId\"; 226.id); 1); 226.fieldData.`default-paid-ad-ulc-link`); '/\"/g'; \"'\")}}\", \"f_franchiseName\": \"{{replace(224.fieldData.name; '/\"/g'; \"'\")}}\", \"f_franchiseArt\": \"{{replace(224.fieldData.`ulc-section-image-link`; '/\"/g'; \"'\")}}\", \"f_reAddress\": \"{{replace(252.fieldData.name; '/\"/g'; \"'\")}}\", \"f_rePhoto\": \"{{replace(252.fieldData.`property-image-link` + '-/scale_crop/1200x800/smart/-/format/auto/-/quality/smart/'; '/\"/g'; \"'\")}}\", \"f_reLink\": \"{{replace(252.fieldData.`listing-link`; '/\"/g'; \"'\")}}\", \"f_rePrice\": \"{{replace(\"$\" + formatNumber(252.fieldData.`property-price`; 0; \".\"; \",\"); '/\"/g'; \"'\")}}\", \"f_reBeds\": \"{{replace(252.fieldData.bedrooms; '/\"/g'; \"'\")}}\", \"f_reBaths\": \"{{replace(252.fieldData.bathrooms; '/\"/g'; \"'\")}}\", \"f_reSqft\": \"{{replace(formatNumber(252.fieldData.`sq-ft`; 0; \".\"; \",\"); '/\"/g'; \"'\")}}\", \"f_reBrokerage\": \"{{replace(252.fieldData.brokerage; '/\"/g'; \"'\")}}\", \"f_reAgent\": \"{{replace(253.fieldData.name; '/\"/g'; \"'\")}}\", \"f_reAgentLogo\": \"{{replace(253.fieldData.`business-logo-ulc-link`; '/\"/g'; \"'\")}}\", \"x_sponsored\": {{227.d_sponsored}}, \"x_hasPhoto\": {{if(length(165.fieldData.`main-image-ulc-link---1-1-ratio`) > 0; 1; 0)}}, \"x_hasAuthor\": {{if(length(165.fieldData.writername) > 0; 1; 0)}}, \"x_showPhotoCredit\": {{if(165.fieldData.`show-photo-credits` = true; 1; 0)}}, \"x_hasCoAuthor\": {{if(length(165.fieldData.`co-writername`) > 0; 1; 0)}}, \"x_isEC\": {{if(length(165.fieldData.`associated-business-coc`) > 0 and 230.fieldData.`expert-contributor` = true; 1; 0)}}, \"x_hasREPhoto\": {{if(length(252.fieldData.`property-image-link`) > 0; 1; 0)}}, \"x_hasAgent\": {{if(length(253.fieldData.name) > 0; 1; 0)}}, \"x_hasFranchise\": {{if(length(224.fieldData.name) > 0; 1; 0)}} }",
+                "position": "{{162.fieldData.position}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 7500,
+                    "y": 300,
+                    "name": "AGG A (design lane)"
+                }
+            }
+        },
+        {
+            "id": 262,
+            "module": "webflow:listItems",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "limit": 100,
+                "select": "manual",
+                "collection_id": "6a0c36247dddc71bd8cc2b7d"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 7800,
+                    "y": 300,
+                    "name": "List NL-BLOCKS (light)"
+                }
+            }
+        },
+        {
+            "id": 280,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "filter": {
+                "name": "parent + light types",
+                "conditions": [
+                    [
+                        {
+                            "a": "{{262.fieldData.`publication-plan`}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{262.fieldData.`block-type`}}",
+                            "b": "52f88a9ba5d43d0de9bf97fa318911c0",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{262.fieldData.`publication-plan`}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{262.fieldData.`block-type`}}",
+                            "b": "2dcd106b589aea90384c026ea57d3cd7",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{262.fieldData.`publication-plan`}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{262.fieldData.`block-type`}}",
+                            "b": "40cf37e9d47cde8904768f1eabe81632",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{262.fieldData.`publication-plan`}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{262.fieldData.`block-type`}}",
+                            "b": "95faba16c10b142672a2d528fce5752e",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{262.fieldData.`publication-plan`}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{262.fieldData.`block-type`}}",
+                            "b": "6329ee89d026a2a905bddf3a5873d280",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{262.fieldData.newsletter}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{262.fieldData.`block-type`}}",
+                            "b": "52f88a9ba5d43d0de9bf97fa318911c0",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{262.fieldData.newsletter}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{262.fieldData.`block-type`}}",
+                            "b": "2dcd106b589aea90384c026ea57d3cd7",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{262.fieldData.newsletter}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{262.fieldData.`block-type`}}",
+                            "b": "40cf37e9d47cde8904768f1eabe81632",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{262.fieldData.newsletter}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{262.fieldData.`block-type`}}",
+                            "b": "95faba16c10b142672a2d528fce5752e",
+                            "o": "text:equal"
+                        }
+                    ],
+                    [
+                        {
+                            "a": "{{262.fieldData.newsletter}}",
+                            "b": "{{1.parentId}}",
+                            "o": "text:equal"
+                        },
+                        {
+                            "a": "{{262.fieldData.`block-type`}}",
+                            "b": "6329ee89d026a2a905bddf3a5873d280",
+                            "o": "text:equal"
+                        }
+                    ]
+                ]
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{262.fieldData.`asset-ad`}}",
+                "collection_id": "68929c45dc27b1bb31fb4404"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 8100,
+                    "y": 300,
+                    "name": "get AD (light)"
+                }
+            },
+            "onerror": [
+                {
+                    "id": 5,
+                    "module": "builtin:Ignore",
+                    "version": 1,
+                    "metadata": {
+                        "designer": {
+                            "x": 8400,
+                            "y": 600
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 251,
+            "module": "webflow:getItem",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 2229036
+            },
+            "mapper": {
+                "select": "manual",
+                "item_id": "{{262.fieldData.design}}",
+                "collection_id": "6a7cab6e75497f55ff2633e8"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 8400,
+                    "y": 150,
+                    "name": "Get DESIGN (light)"
+                }
+            },
+            "onerror": [
+                {
+                    "id": 25100,
+                    "module": "builtin:Resume",
+                    "version": 1,
+                    "mapper": {},
+                    "metadata": {
+                        "designer": {
+                            "x": 8700,
+                            "y": 300
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": 301,
+            "module": "builtin:BasicAggregator",
+            "version": 1,
+            "parameters": {
+                "feeder": 262
+            },
+            "mapper": {
+                "J": "{ \"template\": \"{{replace(251.fieldData.`template-file`; '/\"/g'; \"'\")}}\", \"blockType\": \"{{replace(262.fieldData.`block-type`; '/\"/g'; \"'\")}}\", \"position\": {{262.fieldData.position}}, \"f_adImage\": \"{{replace(280.fieldData.`banner-ad-link`; '/\"/g'; \"'\")}}\", \"f_adLink\": \"{{replace(280.fieldData.`redirect-link` + 31.utm_base + \"&utm_content=BA-b\" + 262.fieldData.position + \"&utm_term=\" + 280.fieldData.`customer-id`; '/\"/g'; \"'\")}}\", \"f_adName\": \"{{replace(280.fieldData.`customer-name`; '/\"/g'; \"'\")}}\", \"f_greetingTitle\": \"{{replace(262.fieldData.`block-greeting-title`; '/\"/g'; \"'\")}}\", \"f_greetingBody\": \"{{replace(262.fieldData.`block-greeting-paragraph`; '/\"/g'; \"'\")}}\", \"f_greetingSupershort\": \"{{replace(262.fieldData.`block-greeting-supershort`; '/\"/g'; \"'\")}}\", \"f_rubric\": \"{{replace(262.fieldData.rubric; '/\"/g'; \"'\")}}\", \"x_sold\": {{if(length(262.fieldData.`asset-ad`) > 0; 1; 0)}} }",
+                "position": "{{262.fieldData.position}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 8700,
+                    "y": 0,
+                    "name": "AGG B (light lane)"
+                }
+            }
+        },
+        {
+            "id": 210,
+            "module": "util:SetVariable2",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "name": "BLOCKS_JSON",
+                "scope": "roundtrip",
+                "value": "{{join(map(sort(merge(201.array; 301.array); \"asc\"; \"position\"); \"J\"); \",\")}}"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 9000,
+                    "y": 0,
+                    "name": "ASSEMBLE email"
+                }
+            }
+        },
+        {
+            "id": 212,
+            "module": "http:MakeRequest",
+            "version": 4,
+            "parameters": {
+                "tlsType": "",
+                "authenticationType": "noAuth"
+            },
+            "mapper": {
+                "url": "https://newsletter-render.jeff-2cd.workers.dev/render",
+                "method": "post",
+                "headers": [],
+                "contentType": "json",
+                "inputMethod": "jsonString",
+                "shareCookies": false,
+                "parseResponse": false,
+                "allowRedirects": true,
+                "stopOnHttpError": true,
+                "jsonStringBodyContent": "{ \"surface\": \"email\", \"shell\": \"{{23.fieldData.`shell-template`}}\", \"context\": { \"titleName\": \"{{replace(23.fieldData.name; '/\"/g'; \"'\")}}\", \"titleTagline\": \"{{replace(23.fieldData.`title-tagline`; '/\"/g'; \"'\")}}\", \"masthead\": \"{{replace(23.fieldData.`title-masthead-ulc-link`; '/\"/g'; \"'\")}}\", \"publisherName\": \"{{replace(96.fieldData.name; '/\"/g'; \"'\")}}\", \"publisherHeadshot\": \"{{replace(23.fieldData.`publisher-headshot-ulc-link`; '/\"/g'; \"'\")}}\", \"issueNo\": \"{{replace(2.fieldData.`issue-no`; '/\"/g'; \"'\")}}\", \"issueTitle\": \"{{replace(2.fieldData.`newsletter-greeting-title`; '/\"/g'; \"'\")}}\", \"publishDate\": \"{{replace(formatDate(2.fieldData.`publish-date`; \"MMMM D, YYYY\"; ifempty(23.fieldData.`title-timezone`; \"America/New_York\")); '/\"/g'; \"'\")}}\", \"utm\": \"{{replace(31.utm_base; '/\"/g'; \"'\")}}\", \"previewText\": \"{{replace(2.fieldData.`entry-paragraph-for-each-newsletter`; '/\"/g'; \"'\")}}\", \"publishDateShort\": \"{{replace(formatDate(2.fieldData.`publish-date`; \"MMM D\"; ifempty(23.fieldData.`title-timezone`; \"America/New_York\")); '/\"/g'; \"'\")}}\", \"publishYear\": \"{{replace(formatDate(2.fieldData.`publish-date`; \"YYYY\"; ifempty(23.fieldData.`title-timezone`; \"America/New_York\")); '/\"/g'; \"'\")}}\", \"issueUrl\": \"{{replace(\"https://www.inbxify.com/nl/\" + 2.fieldData.slug; '/\"/g'; \"'\")}}\", \"bgColor\": \"{{replace(23.fieldData.`nl-background`; '/\"/g'; \"'\")}}\", \"themeAccent\": \"{{replace(get(221.theme; \"accent\"); '/\"/g'; \"'\")}}\", \"themeBg\": \"{{replace(get(221.theme; \"background\"); '/\"/g'; \"'\")}}\", \"themeOrnament\": \"{{replace(get(221.theme; \"ornament\"); '/\"/g'; \"'\")}}\", \"themeMasthead\": \"{{replace(get(221.theme; \"mastheadArt\"); '/\"/g'; \"'\")}}\" }, \"blocks\": [ {{210.BLOCKS_JSON}} ] }",
+                "requestCompressedContent": true
+            },
+            "metadata": {
+                "designer": {
+                    "x": 9300,
+                    "y": 0,
+                    "name": "POST → newsletter-render"
+                }
+            }
+        },
+        {
+            "id": 211,
+            "module": "gateway:WebhookRespond",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "body": "{{212.data}}",
+                "status": "200",
+                "headers": [
+                    {
+                        "key": "Content-Type",
+                        "value": "text/html"
+                    }
+                ]
+            },
+            "metadata": {
+                "designer": {
+                    "x": 9600,
+                    "y": 0,
+                    "name": "respond HTML"
+                },
+                "restore": {
+                    "expect": {
+                        "headers": {
+                            "mode": "chose",
+                            "items": [
+                                null
+                            ]
+                        }
+                    }
+                },
+                "expect": [
+                    {
+                        "name": "status",
+                        "type": "uinteger",
+                        "label": "Status",
+                        "required": true,
+                        "validate": {
+                            "min": 100
+                        }
+                    },
+                    {
+                        "name": "body",
+                        "type": "any",
+                        "label": "Body"
+                    },
+                    {
+                        "name": "headers",
+                        "spec": [
+                            {
+                                "name": "key",
+                                "type": "text",
+                                "label": "Key",
+                                "required": true,
+                                "validate": {
+                                    "max": 256
+                                }
+                            },
+                            {
+                                "name": "value",
+                                "type": "text",
+                                "label": "Value",
+                                "required": true,
+                                "validate": {
+                                    "max": 4096
+                                }
+                            }
+                        ],
+                        "type": "array",
+                        "label": "Custom headers",
+                        "validate": {
+                            "maxItems": 16
+                        }
+                    }
+                ],
+                "advanced": true
+            }
+        }
+    ],
+    "metadata": {
+        "instant": true,
+        "version": 1,
+        "scenario": {
+            "roundtrips": 1,
+            "maxErrors": 3,
+            "autoCommit": true,
+            "autoCommitTriggerLast": true,
+            "sequential": false,
+            "slots": null,
+            "confidential": false,
+            "dataloss": false,
+            "dlq": false,
+            "freshVariables": false
+        },
+        "designer": {
+            "orphans": [
+                [
+                    {
+                        "id": 18001,
+                        "module": "placeholder:Placeholder",
+                        "filter": null,
+                        "metadata": {
+                            "designer": {
+                                "x": 0,
+                                "y": 4200
+                            }
+                        }
+                    }
+                ]
+            ]
+        },
+        "zone": "us1.make.com",
+        "notes": []
+    }
+}
