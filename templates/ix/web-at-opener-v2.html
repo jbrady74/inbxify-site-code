@@ -1,0 +1,19 @@
+<!-- templates/ix/web-at-opener-v2.html -->
+<!-- v2 = v1 as an opener over a run (D145): no card; the accent bar on a
+     hairline closes the heading. The run itself (this block and the blocks
+     under it, up to the next ad) is wrapped by newsletter-render v1.9.0.
+     Styles: web-blocks-v50.css, .nlw-at.
+     Words, in order of who wins:
+       teaser  : the block's own text (NL-BLOCKS block-text), else the
+                 labels map (ctx.aroundTownTeaser: issue, then title), else
+                 no teaser line at all.
+       title   : ctx.lblAroundTown, else the platform default "Around Town".
+       eyebrow : ctx.lblAroundTownEyebrow, else the platform default "This issue".
+     The platform defaults below are the root of the labels map (D144). -->
+<section class="nlw-at">
+  <p class="nlw-at-eyebrow">{{#ctx.lblAroundTownEyebrow}}{{ctx.lblAroundTownEyebrow}}{{/ctx.lblAroundTownEyebrow}}{{^ctx.lblAroundTownEyebrow}}This issue{{/ctx.lblAroundTownEyebrow}}</p>
+  <h2 class="nlw-at-title">{{#ctx.lblAroundTown}}{{ctx.lblAroundTown}}{{/ctx.lblAroundTown}}{{^ctx.lblAroundTown}}Around Town{{/ctx.lblAroundTown}}</h2>
+  {{#blockText}}<p class="nlw-at-teaser">{{blockText}}</p>{{/blockText}}
+  {{^blockText}}{{#ctx.aroundTownTeaser}}<p class="nlw-at-teaser">{{ctx.aroundTownTeaser}}</p>{{/ctx.aroundTownTeaser}}{{/blockText}}
+  <div class="nlw-at-rule" aria-hidden="true"><span class="nlw-at-rule-bar"></span><span class="nlw-at-rule-line"></span></div>
+</section>
