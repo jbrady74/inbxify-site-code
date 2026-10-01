@@ -1,0 +1,24 @@
+<!-- templates/ix/email-at-opener-v1.html -->
+<!--
+  Design Pass 2 · AT · Around Town opener (D133, D138). Email.
+  Placeholder-grade for the web-first pass: same words and order as
+  web-at-opener-v1, drawn from tokens. The email pass re-derives it.
+  Words: block-text, else ctx.aroundTownTeaser; ctx.lblAroundTown, else
+  "Around Town"; ctx.lblAroundTownEyebrow, else "This issue".
+  206 requires an AT block's email file to contain "email-at-".
+-->
+<tr>
+<td style="background-color:{{ctx.page-bg}};padding:0 22px 22px;" class="mobile-padding">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+       style="background-color:{{ctx.surface}};border:1px solid {{ctx.border}};border-top:3px solid {{ctx.accent}};border-radius:8px;">
+  <tr>
+    <td style="padding:14px 16px 12px;">
+      <p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:{{ctx.label-ls}};text-transform:uppercase;color:{{ctx.highlight}};line-height:1.4;">{{#ctx.lblAroundTownEyebrow}}{{ctx.lblAroundTownEyebrow}}{{/ctx.lblAroundTownEyebrow}}{{^ctx.lblAroundTownEyebrow}}This issue{{/ctx.lblAroundTownEyebrow}}</p>
+      <p style="margin:2px 0 6px;font-family:{{&ctx.font-display}};font-size:{{ctx.t-title}};font-weight:700;line-height:1.05;color:{{ctx.ink}};">{{#ctx.lblAroundTown}}{{ctx.lblAroundTown}}{{/ctx.lblAroundTown}}{{^ctx.lblAroundTown}}Around Town{{/ctx.lblAroundTown}}</p>
+      {{#blockText}}<p style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.t-body}};line-height:1.5;color:{{ctx.text}};">{{blockText}}</p>{{/blockText}}
+      {{^blockText}}{{#ctx.aroundTownTeaser}}<p style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.t-body}};line-height:1.5;color:{{ctx.text}};">{{ctx.aroundTownTeaser}}</p>{{/ctx.aroundTownTeaser}}{{/blockText}}
+    </td>
+  </tr>
+</table>
+</td>
+</tr>
