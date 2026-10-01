@@ -1,0 +1,17 @@
+<!-- templates/ix/web-at-opener-v1.html -->
+<!-- Design Pass 2 · AT · Around Town opener (D133, D138). Web.
+     A block the MNA places like any other, usually first.
+     Words, in order of who wins:
+       teaser  : the block's own text (NL-BLOCKS block-text), else the
+                 labels map (ctx.aroundTownTeaser: issue, then title), else
+                 no teaser line at all.
+       title   : ctx.lblAroundTown, else the platform default "Around Town".
+       eyebrow : ctx.lblAroundTownEyebrow, else the platform default "This issue".
+     The platform defaults below are the root of the labels map (D144).
+     Styles: web-blocks-v49.css, .nlw-at. -->
+<section class="nlw-at">
+  <p class="nlw-at-eyebrow">{{#ctx.lblAroundTownEyebrow}}{{ctx.lblAroundTownEyebrow}}{{/ctx.lblAroundTownEyebrow}}{{^ctx.lblAroundTownEyebrow}}This issue{{/ctx.lblAroundTownEyebrow}}</p>
+  <h2 class="nlw-at-title">{{#ctx.lblAroundTown}}{{ctx.lblAroundTown}}{{/ctx.lblAroundTown}}{{^ctx.lblAroundTown}}Around Town{{/ctx.lblAroundTown}}</h2>
+  {{#blockText}}<p class="nlw-at-teaser">{{blockText}}</p>{{/blockText}}
+  {{^blockText}}{{#ctx.aroundTownTeaser}}<p class="nlw-at-teaser">{{ctx.aroundTownTeaser}}</p>{{/ctx.aroundTownTeaser}}{{/blockText}}
+</section>
