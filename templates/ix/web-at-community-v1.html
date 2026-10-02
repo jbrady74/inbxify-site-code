@@ -1,0 +1,26 @@
+<!-- templates/ix/web-at-community-v1.html -->
+<!-- v1 · the Community News opener (Design Pass 2 S3, D165, option B1).
+     An AT block whose DESIGNS record ("AT · Community News") points here.
+     Centred between double rules, italic title. Styles: web-blocks-v53.css,
+     .nlw-at--community.
+     Words, in order of who wins:
+       teaser  : the block's own text (NL-BLOCKS block-text), then the
+                 issue's labels (PUBLICATION PLAN design-json), then the
+                 title's labels (TITLES-ADMIN design-json), else no teaser.
+       title, eyebrow: the issue's labels, then the title's labels,
+                 then the platform default typed below (the root of the
+                 labels map, D144).
+     Label keys: communityNews, communityNewsEyebrow, communityNewsTeaser.
+     206 v1.31 sends both design-json objects whole as ctx.djIssue and
+     ctx.djTitle, so a new label needs no 206 change. Before v1.31 the
+     defaults show.
+     The run under this opener (up to the next ad or opener) is wrapped by
+     newsletter-render v1.9.0, which treats any web-at-… file as an opener. -->
+<section class="nlw-at nlw-at--community">
+  <div class="nlw-atc-rules"><div class="nlw-atc-inner">
+  <p class="nlw-at-eyebrow">{{#ctx.djIssue.labels.communityNewsEyebrow}}{{ctx.djIssue.labels.communityNewsEyebrow}}{{/ctx.djIssue.labels.communityNewsEyebrow}}{{^ctx.djIssue.labels.communityNewsEyebrow}}{{#ctx.djTitle.labels.communityNewsEyebrow}}{{ctx.djTitle.labels.communityNewsEyebrow}}{{/ctx.djTitle.labels.communityNewsEyebrow}}{{^ctx.djTitle.labels.communityNewsEyebrow}}Also this week{{/ctx.djTitle.labels.communityNewsEyebrow}}{{/ctx.djIssue.labels.communityNewsEyebrow}}</p>
+  <h2 class="nlw-at-title">{{#ctx.djIssue.labels.communityNews}}{{ctx.djIssue.labels.communityNews}}{{/ctx.djIssue.labels.communityNews}}{{^ctx.djIssue.labels.communityNews}}{{#ctx.djTitle.labels.communityNews}}{{ctx.djTitle.labels.communityNews}}{{/ctx.djTitle.labels.communityNews}}{{^ctx.djTitle.labels.communityNews}}Community News{{/ctx.djTitle.labels.communityNews}}{{/ctx.djIssue.labels.communityNews}}</h2>
+  {{#blockText}}<p class="nlw-at-teaser">{{blockText}}</p>{{/blockText}}
+  {{^blockText}}{{#ctx.djIssue.labels.communityNewsTeaser}}<p class="nlw-at-teaser">{{ctx.djIssue.labels.communityNewsTeaser}}</p>{{/ctx.djIssue.labels.communityNewsTeaser}}{{^ctx.djIssue.labels.communityNewsTeaser}}{{#ctx.djTitle.labels.communityNewsTeaser}}<p class="nlw-at-teaser">{{ctx.djTitle.labels.communityNewsTeaser}}</p>{{/ctx.djTitle.labels.communityNewsTeaser}}{{/ctx.djIssue.labels.communityNewsTeaser}}{{/blockText}}
+  </div></div>
+</section>

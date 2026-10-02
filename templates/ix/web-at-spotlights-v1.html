@@ -1,0 +1,26 @@
+<!-- templates/ix/web-at-spotlights-v1.html -->
+<!-- v1 · the Spotlights opener (Design Pass 2 S3, D165 option C1, D166).
+     An AT block whose DESIGNS record ("AT · Spotlights") points here.
+     A band in the title's Highlight with a tilted sticker in the Accent.
+     Text on the band is --nl-sp-ink (WLN sets its ink, because white on
+     its salmon is 2.95:1). Styles: web-blocks-v53.css, .nlw-at--spot.
+     Words, in order of who wins:
+       teaser  : the block's own text (NL-BLOCKS block-text), then the
+                 issue's labels (PUBLICATION PLAN design-json), then the
+                 title's labels (TITLES-ADMIN design-json), else no teaser.
+       title, eyebrow, sticker: the issue's labels, then the title's labels,
+                 then the platform default typed below (the root of the
+                 labels map, D144).
+     Label keys: spotlights, spotlightsEyebrow, spotlightsSticker, spotlightsTeaser.
+     206 v1.31 sends both design-json objects whole as ctx.djIssue and
+     ctx.djTitle, so a new label needs no 206 change. Before v1.31 the
+     defaults show.
+     The run under this opener (up to the next ad or opener) is wrapped by
+     newsletter-render v1.9.0, which treats any web-at-… file as an opener. -->
+<section class="nlw-at nlw-at--spot">
+  <span class="nlw-sp-sticker">{{#ctx.djIssue.labels.spotlightsSticker}}{{ctx.djIssue.labels.spotlightsSticker}}{{/ctx.djIssue.labels.spotlightsSticker}}{{^ctx.djIssue.labels.spotlightsSticker}}{{#ctx.djTitle.labels.spotlightsSticker}}{{ctx.djTitle.labels.spotlightsSticker}}{{/ctx.djTitle.labels.spotlightsSticker}}{{^ctx.djTitle.labels.spotlightsSticker}}Just for fun{{/ctx.djTitle.labels.spotlightsSticker}}{{/ctx.djIssue.labels.spotlightsSticker}}</span>
+  <p class="nlw-at-eyebrow">{{#ctx.djIssue.labels.spotlightsEyebrow}}{{ctx.djIssue.labels.spotlightsEyebrow}}{{/ctx.djIssue.labels.spotlightsEyebrow}}{{^ctx.djIssue.labels.spotlightsEyebrow}}{{#ctx.djTitle.labels.spotlightsEyebrow}}{{ctx.djTitle.labels.spotlightsEyebrow}}{{/ctx.djTitle.labels.spotlightsEyebrow}}{{^ctx.djTitle.labels.spotlightsEyebrow}}Before you go{{/ctx.djTitle.labels.spotlightsEyebrow}}{{/ctx.djIssue.labels.spotlightsEyebrow}}</p>
+  <h2 class="nlw-at-title">{{#ctx.djIssue.labels.spotlights}}{{ctx.djIssue.labels.spotlights}}{{/ctx.djIssue.labels.spotlights}}{{^ctx.djIssue.labels.spotlights}}{{#ctx.djTitle.labels.spotlights}}{{ctx.djTitle.labels.spotlights}}{{/ctx.djTitle.labels.spotlights}}{{^ctx.djTitle.labels.spotlights}}Spotlights{{/ctx.djTitle.labels.spotlights}}{{/ctx.djIssue.labels.spotlights}}</h2>
+  {{#blockText}}<p class="nlw-at-teaser">{{blockText}}</p>{{/blockText}}
+  {{^blockText}}{{#ctx.djIssue.labels.spotlightsTeaser}}<p class="nlw-at-teaser">{{ctx.djIssue.labels.spotlightsTeaser}}</p>{{/ctx.djIssue.labels.spotlightsTeaser}}{{^ctx.djIssue.labels.spotlightsTeaser}}{{#ctx.djTitle.labels.spotlightsTeaser}}<p class="nlw-at-teaser">{{ctx.djTitle.labels.spotlightsTeaser}}</p>{{/ctx.djTitle.labels.spotlightsTeaser}}{{/ctx.djIssue.labels.spotlightsTeaser}}{{/blockText}}
+</section>
