@@ -1,0 +1,21 @@
+<!-- templates/ix/email-ba-house-v1.html -->
+<!--
+  Design Pass 2 · house ad (D146). Email, placeholder-grade for the web-first
+  pass: headline, copy and button only, on the ad's colour rule. The email
+  pass re-derives it (art and postmark as images, likely via a small Worker).
+  206 requires a BA block's email file to contain "email-ba-".
+-->
+{{#houseHeadline}}<tr>
+<td style="background-color:{{ctx.page-bg}};padding:0 22px 22px;" class="mobile-padding">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#ffffff;border:2px solid {{ctx.ink}};border-radius:12px;">
+  <tr>
+    <td style="padding:20px 18px;text-align:center;">
+      {{#houseEyebrow}}<p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};letter-spacing:{{ctx.label-ls}};text-transform:uppercase;color:{{ctx.text}};">{{houseEyebrow}}</p>{{/houseEyebrow}}
+      <p style="margin:6px 0 0;font-family:{{&ctx.font-display}};font-size:{{ctx.t-title}};font-weight:700;line-height:1.1;color:{{ctx.ink}};">{{houseHeadline}}</p>
+      {{#houseCopy}}<p style="margin:10px 0 0;font-family:{{&ctx.font-body}};font-size:{{ctx.t-body}};line-height:1.45;color:{{ctx.text}};">{{houseCopy}}</p>{{/houseCopy}}
+      {{#houseButtonLink}}<p style="margin:14px 0 0;"><a href="{{houseButtonLink}}" style="display:inline-block;background-color:{{ctx.ink}};color:#ffffff;font-family:{{&ctx.font-ui}};font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;text-decoration:none;padding:11px 22px;border-radius:8px;">{{houseButtonText}}</a></p>{{/houseButtonLink}}
+    </td>
+  </tr>
+</table>
+</td>
+</tr>{{/houseHeadline}}
