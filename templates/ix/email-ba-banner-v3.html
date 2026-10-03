@@ -1,0 +1,30 @@
+<!-- templates/ix/email-ba-banner-v3.html -->
+<!--
+  v3 = email-ba-banner-v2 rebuilt for the Email Pass (Design Pass 2 S4, review v0.3, E13, E14).
+  The ad sits on its own white tile (D177) at the one banner width,
+  ctx.banner-w (460, full width on phones, D175), with a 1px border in
+  ctx.ad-border (D176). The label sits above the tile.
+  Label words, as web-ba-banner-v3 (D179): this row's block-text, then
+  ctx.lblPartners, then "Featured local partners". v2 always printed
+  "Featured Local Partner".
+  The label is wrapped in ix-label markers. When two or more ads sit
+  together, newsletter-render v1.12.0 removes each ad's label and prints
+  one label above the group. A lone ad keeps its own.
+  The sold flag gates the whole block: an unsold slot renders nothing.
+  Fields: adImage adLink adName blockText   Flags: sold
+-->
+{{#sold}}
+<tr>
+<td style="padding:0 0 {{ctx.tile-gap}};">
+  <!-- ix-label -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td align="center" style="padding:0 0 10px;"><span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:{{ctx.text-mid}};">{{#blockText}}{{blockText}}{{/blockText}}{{^blockText}}{{#ctx.lblPartners}}{{ctx.lblPartners}}{{/ctx.lblPartners}}{{^ctx.lblPartners}}Featured local partners{{/ctx.lblPartners}}{{/blockText}}</span></td></tr></table>
+  <!-- /ix-label -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="{{ctx.tile-bg}}" style="background-color:{{ctx.tile-bg}};border-radius:{{ctx.tile-radius}};"><tr>
+    <td align="center" class="ad-pad" style="padding:{{ctx.ad-tile-pad}};">
+      <a href="{{adLink}}" target="_blank" style="display:block;"><img src="{{adImage}}" alt="{{adName}}" width="{{ctx.banner-w}}" class="mobile-full"
+         style="display:block;width:100%;max-width:{{ctx.banner-w}}px;height:auto;margin:0 auto;border:1px solid {{ctx.ad-border}};"></a>
+    </td>
+  </tr></table>
+</td>
+</tr>
+{{/sold}}

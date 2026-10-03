@@ -1,0 +1,59 @@
+<!-- templates/ix/email-gr-publisher-v3.html -->
+<!--
+  v3 = email-gr-publisher-v2 for the Email Pass (Design Pass 2 S4, review v0.3, E1).
+  The greeting closes the header block: no page colour of its own (the shell
+  column sets the edge), rounded bottom corners (ctx.header-radius), and 20px
+  of paper below it before the first group. In email-shell-v10 the weather
+  strip sits directly above it. Words and sizes unchanged from v2.
+  Fields: greetingSupershort greetingTitle greetingBody
+  Context: ctx.publisherHeadshot ctx.publisherName
+-->
+<tr>
+<td style="padding:0 0 20px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="{{ctx.inv-bg}}"
+       style="background-color:{{ctx.inv-bg}};border-radius:0 0 {{ctx.header-radius}} {{ctx.header-radius}};">
+
+  <!-- gold dot rule -->
+  <tr>
+    <td style="padding:12px 22px 0;" class="mobile-padding">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td width="6" style="width:6px;height:6px;border-radius:50%;background:{{ctx.accent-soft}};font-size:0;line-height:0;">&#8203;</td>
+          <td height="1" style="height:1px;line-height:1px;font-size:0;background:{{ctx.inv-rule}};mso-line-height-rule:exactly;">&#8203;</td>
+          <td width="6" style="width:6px;height:6px;border-radius:50%;background:{{ctx.accent-soft}};font-size:0;line-height:0;">&#8203;</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="padding:14px 22px 16px;" class="mobile-padding">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td width="50" valign="top" style="width:50px;">
+            <img src="{{ctx.publisherHeadshot}}" width="50" height="50" alt="{{ctx.publisherName}}"
+                 style="display:block;width:50px;height:50px;border-radius:50%;border:2px solid {{ctx.accent-soft}};">
+          </td>
+          <td valign="middle" style="padding-left:18px;">
+
+            {{#greetingTitle}}
+            <p style="margin:0 0 6px;font-family:{{&ctx.font-display}};font-size:{{ctx.gr-title-size}};font-weight:600;color:{{ctx.inv-ink}};line-height:1.25;">{{greetingTitle}}</p>
+            {{/greetingTitle}}
+
+            {{#greetingSupershort}}
+            <p style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.gr-body-size}};font-style:italic;color:{{ctx.inv-ink-soft}};line-height:{{ctx.body-lh}};">{{greetingSupershort}}</p>
+            {{/greetingSupershort}}
+            {{^greetingSupershort}}
+            <p style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.gr-body-size}};line-height:{{ctx.body-lh}};color:{{ctx.inv-ink-soft}};">{{greetingBody}}</p>
+            {{/greetingSupershort}}
+
+            <p style="margin:8px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:{{ctx.inv-ink-mute}};">{{ctx.publisherName}}, Publisher</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+</table>
+</td>
+</tr>

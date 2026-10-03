@@ -1,0 +1,24 @@
+<!-- templates/ix/email-at-opener-v2.html -->
+<!-- ix-tone: accent -->
+<!--
+  v2 = email-at-opener-v1 rebuilt for the Email Pass (Design Pass 2 S4, review v0.3, E3).
+  The Around Town opener: no card. Eyebrow in the darkened Highlight, title
+  52px (38px phone, class at-title), teaser, then the accent bar on a hairline.
+  The tone marker above tells newsletter-render v1.12.0 to put this group on
+  an Accent panel (D170). Words, as web-at-opener-v2: block-text, else
+  ctx.aroundTownTeaser; ctx.lblAroundTown, else "Around Town";
+  ctx.lblAroundTownEyebrow, else "This issue".
+  206 requires an AT block's email file to contain "email-at-".
+-->
+<tr>
+<td style="padding:0 0 22px;">
+  <p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:{{ctx.label-ls}};text-transform:uppercase;line-height:1.4;color:{{ctx.highlight-ink}};">{{#ctx.lblAroundTownEyebrow}}{{ctx.lblAroundTownEyebrow}}{{/ctx.lblAroundTownEyebrow}}{{^ctx.lblAroundTownEyebrow}}This issue{{/ctx.lblAroundTownEyebrow}}</p>
+  <h2 class="at-title" style="margin:4px 0 10px;font-family:{{&ctx.font-display}};font-size:{{ctx.at-title-size}};font-weight:700;line-height:{{ctx.hero-lh}};letter-spacing:-0.5px;color:{{ctx.ink}};">{{#ctx.lblAroundTown}}{{ctx.lblAroundTown}}{{/ctx.lblAroundTown}}{{^ctx.lblAroundTown}}Around Town{{/ctx.lblAroundTown}}</h2>
+  {{#blockText}}<p style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.t-body}};line-height:1.5;color:{{ctx.text}};">{{blockText}}</p>{{/blockText}}{{^blockText}}{{#ctx.aroundTownTeaser}}<p style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.t-body}};line-height:1.5;color:{{ctx.text}};">{{ctx.aroundTownTeaser}}</p>{{/ctx.aroundTownTeaser}}{{/blockText}}
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top:16px;"><tr>
+    <td width="44" height="3" style="width:44px;height:3px;background-color:{{ctx.accent}};font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td>
+    <td width="10" style="width:10px;font-size:0;line-height:0;">&nbsp;</td>
+    <td valign="middle" style="font-size:0;line-height:0;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td height="1" style="height:1px;background-color:{{ctx.border}};font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td></tr></table></td>
+  </tr></table>
+</td>
+</tr>

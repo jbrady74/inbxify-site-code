@@ -1,0 +1,91 @@
+<!-- templates/ix/email-re-listing-v4.html -->
+<!--
+  v4 = email-re-listing-v3 for the Email Pass (Design Pass 2 S4, review v0.3, E15).
+  1 · On a white tile like the stories (D181), no side padding of its own.
+  2 · Section art (franchiseArt), when the section has it, small and left (D183) between a
+      dot and a rule (D184); the text heading and its rule hide then (D185).
+      Without art the heading shows as before.
+  3 · As web-re-listing-v3: a listing with no link shows unlinked, and when
+      beds, baths and square feet are all empty the specs line shows the
+      listing's description (206 v1.33).
+  4 · Address 23px, 19px on phones (class re-addr, E2).
+  5 · The sponsor ad at the one banner width with a 1px border (D175, D176).
+  Phone rules (re-row re-thumb re-img re-body re-flag re-price re-addr) are
+  in email-shell-v10.
+  Block fields: reTitle reCount franchiseArt franchiseName sponsorName sponsorAd
+                sponsorLink exclusiveNotice
+  Flags:        hasSponsor isExclusive
+  Listing fields: address flag price beds baths sqft description agent brokerage photo link
+  Loop flags:   first last only
+-->
+<tr>
+<td style="padding:0 0 {{ctx.tile-gap}};">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="{{ctx.re-bg}}" style="background-color:{{ctx.re-bg}};border-radius:{{ctx.tile-radius}};">
+<tr>
+<td class="tile-pad" style="padding:26px 24px 10px;">
+
+  {{#franchiseArt}}
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr>
+    <td width="10" valign="middle" style="width:10px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td width="10" height="10" style="width:10px;height:10px;background-color:{{ctx.art-dot}};border-radius:50%;font-size:0;line-height:0;">&nbsp;</td></tr></table></td>
+    <td valign="middle" style="padding:0 12px;white-space:nowrap;width:1%;"><img class="art-img" src="{{franchiseArt}}" alt="{{franchiseName}}" height="40" style="display:block;height:{{ctx.art-h}};width:auto;border:0;"></td>
+    <td valign="middle" style="font-size:0;line-height:0;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td height="2" style="height:2px;background-color:{{ctx.art-rule}};font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td></tr></table></td>
+    {{#hasSponsor}}<td valign="middle" align="right" style="padding-left:12px;white-space:nowrap;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};letter-spacing:2px;text-transform:uppercase;color:{{ctx.re-count-color}};">Sponsored by {{sponsorName}}</td>{{/hasSponsor}}
+  </tr></table>
+  {{/franchiseArt}}
+
+  {{^franchiseArt}}
+  <!-- HEADING (only when there is no section art) -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td valign="bottom" style="font-family:{{&ctx.font-display}};font-size:{{ctx.t-title}};font-weight:600;line-height:1;color:{{ctx.re-title-color}};">{{#reTitle}}{{reTitle}}{{/reTitle}}{{^reTitle}}On the Market{{/reTitle}}</td>
+      <td valign="bottom" align="right" style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};letter-spacing:2.6px;text-transform:uppercase;white-space:nowrap;color:{{ctx.re-count-color}};">{{#hasSponsor}}Sponsored by {{sponsorName}}{{/hasSponsor}}{{^hasSponsor}}{{reCount}}{{/hasSponsor}}</td>
+    </tr>
+    <tr><td colspan="2" style="padding:8px 0 0;font-size:0;line-height:0;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td style="border-top:2px solid {{ctx.re-rule-color}};font-size:0;line-height:1px;mso-line-height-rule:exactly;">&nbsp;</td></tr></table></td></tr>
+  </table>
+  {{/franchiseArt}}
+
+  <!-- LISTINGS -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    {{#each listings}}
+    <tr><td class="re-row" style="padding:22px 0;{{^last}}border-bottom:1px solid {{ctx.re-divider}};{{/last}}">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr>
+        {{#photo}}
+        <td width="120" valign="middle" class="re-thumb" style="width:120px;">
+          {{#link}}<a href="{{&.link}}" target="_blank" style="display:block;">{{/link}}<img src="{{.photo}}" alt="{{.address}}" width="120" height="80" class="re-img" style="display:block;width:120px;height:80px;border:0;border-radius:3px;">{{#link}}</a>{{/link}}
+        </td>
+        {{/photo}}
+        <td valign="middle" class="re-body" style="padding:0 12px 0 16px;">
+          {{#flag}}<p class="re-flag" style="margin:0 0 6px;"><span style="display:inline-block;font-family:{{&ctx.font-ui}};font-size:{{ctx.re-flag-size}};font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:{{ctx.re-flag-ink}};background-color:{{ctx.re-flag-bg}};border-radius:2px;padding:4px 9px;white-space:nowrap;">{{.flag}}</span></p>{{/flag}}
+          <p class="re-addr" style="margin:0;font-family:{{&ctx.font-display}};font-size:{{ctx.re-addr-size}};font-weight:600;line-height:1.2;color:{{ctx.re-addr-color}};">{{#link}}<a href="{{&.link}}" target="_blank" style="color:{{ctx.re-addr-color}};text-decoration:none;">{{/link}}{{.address}}{{#link}}</a>{{/link}}</p>
+          {{#beds}}<p style="margin:4px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};letter-spacing:1.4px;text-transform:uppercase;color:{{ctx.re-specs-color}};">{{.beds}} BD{{#baths}} &middot; {{.baths}} BA{{/baths}}{{#sqft}} &middot; {{.sqft}} SQ FT{{/sqft}}</p>{{/beds}}
+          {{^beds}}{{#baths}}<p style="margin:4px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};letter-spacing:1.4px;text-transform:uppercase;color:{{ctx.re-specs-color}};">{{.baths}} BA{{#sqft}} &middot; {{.sqft}} SQ FT{{/sqft}}</p>{{/baths}}{{/beds}}
+          {{^beds}}{{^baths}}{{#sqft}}<p style="margin:4px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};letter-spacing:1.4px;text-transform:uppercase;color:{{ctx.re-specs-color}};">{{.sqft}} SQ FT</p>{{/sqft}}{{^sqft}}{{#description}}<p style="margin:4px 0 0;font-family:{{&ctx.font-body}};font-size:13px;line-height:1.45;color:{{ctx.text-mid}};">{{.description}}</p>{{/description}}{{/sqft}}{{/baths}}{{/beds}}
+          {{#agent}}<p style="margin:3px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.re-agent-size}};color:{{ctx.re-agent-color}};">{{.agent}}{{#brokerage}} &middot; {{.brokerage}}{{/brokerage}}</p>{{/agent}}
+          {{^agent}}{{#brokerage}}<p style="margin:3px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.re-agent-size}};color:{{ctx.re-agent-color}};">{{.brokerage}}</p>{{/brokerage}}{{/agent}}
+        </td>
+        {{#price}}
+        <td valign="middle" align="right" class="re-price" style="white-space:nowrap;font-family:{{&ctx.font-display}};font-size:{{ctx.re-price-size}};font-weight:600;color:{{ctx.re-price-color}};">{{.price}}</td>
+        {{/price}}
+      </tr></table>
+    </td></tr>
+    {{/each}}
+  </table>
+
+  {{#isExclusive}}{{#exclusiveNotice}}
+  <p style="margin:12px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-body}};line-height:1.45;color:{{ctx.re-exclusive-color}};">{{exclusiveNotice}}</p>
+  {{/exclusiveNotice}}{{/isExclusive}}
+
+  {{#hasSponsor}}{{#sponsorAd}}
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:18px 0 16px;"><tr>
+    <td align="center">
+      <p style="margin:0 0 7px;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-micro}};letter-spacing:2px;text-transform:uppercase;color:{{ctx.re-sponsorad-label-color}};">Advertisement</p>
+      <a href="{{sponsorLink}}" target="_blank" style="display:block;"><img src="{{sponsorAd}}" alt="{{sponsorName}}" width="{{ctx.banner-w}}" class="mobile-full" style="display:block;width:100%;max-width:{{ctx.banner-w}}px;height:auto;margin:0 auto;border:1px solid {{ctx.ad-border}};"></a>
+    </td>
+  </tr></table>
+  {{/sponsorAd}}{{/hasSponsor}}
+
+</td>
+</tr>
+</table>
+</td>
+</tr>

@@ -1,0 +1,88 @@
+<!-- templates/ix/email-ts-photoRIGHT-v4.html -->
+<!--
+  v4 = email-ts-photoRIGHT-v3 rebuilt for the Email Pass (Design Pass 2 S4, review v0.3):
+  - a white tile (12px corners, 22px apart) on the paper or on its group panel (D174)
+  - photo and text side by side inside the tile; headline 27px, 22px on phones (D173)
+  - text left-aligned, as web; on a phone the photo stacks on top (dir="rtl" keeps it on the right on desktop)
+  - section art small and left, between a dot and a rule in the group colour (D178, D184)
+  - flag pill above the headline (D163); "Read the story →" text link (D164)
+  - the sponsor creative at the one banner width with a 1px border (D175, D176)
+  No side padding: the shell column (email-shell-v10) or the group panel sets it.
+  Block fields: headline subhead teaser link ctaText flag rubric photo photoSrc
+                photoTall photoCredit author authorTitle authorBusiness coAuthor
+                coAuthorTitle franchiseArt franchiseName sponsorName sponsorAd sponsorLink
+  Flags:        hasPhoto showPhotoCredit hasAuthor hasCoAuthor isEC hasFranchise sponsored
+  Context:      tokens (ix/email-tokens-v9), ctx.lblReadStory, and from
+                newsletter-render v1.12.0 ctx.art-dot / ctx.art-rule.
+-->
+<tr>
+<td style="padding:0 0 {{ctx.tile-gap}};">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="{{ctx.tile-bg}}" style="background-color:{{ctx.tile-bg}};border-radius:{{ctx.tile-radius}};">
+<tr><td class="tile-pad" style="padding:{{ctx.tile-pad}};">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+  {{#hasFranchise}}{{#franchiseArt}}
+  <tr><td style="padding:0 0 16px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr>
+    <td width="10" valign="middle" style="width:10px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td width="10" height="10" style="width:10px;height:10px;background-color:{{ctx.art-dot}};border-radius:50%;font-size:0;line-height:0;">&nbsp;</td></tr></table></td>
+    <td valign="middle" style="padding:0 12px;white-space:nowrap;width:1%;"><img class="art-img" src="{{franchiseArt}}" alt="{{franchiseName}}" height="40" style="display:block;height:{{ctx.art-h}};width:auto;border:0;"></td>
+    <td valign="middle" style="font-size:0;line-height:0;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td height="2" style="height:2px;background-color:{{ctx.art-rule}};font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td></tr></table></td>
+  </tr></table></td></tr>
+  {{/franchiseArt}}{{/hasFranchise}}
+  <tr><td>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" dir="rtl">
+    <tr>
+      <td dir="ltr" width="46%" valign="top" class="mobile-stack" style="width:46%;padding:0;">
+        {{#hasPhoto}}
+        <a href="{{link}}" target="_blank" style="display:block;"><img src="{{photoTall}}" alt="{{headline}}" width="216" class="mobile-full split-img"
+             style="display:block;width:100%;max-width:216px;height:auto;border:0;border-radius:6px;"></a>
+        {{#showPhotoCredit}}{{#photoCredit}}<p style="margin:5px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:1.3px;text-transform:uppercase;color:{{ctx.text-light}};line-height:1.4;">{{photoCredit}}</p>{{/photoCredit}}{{/showPhotoCredit}}
+        {{/hasPhoto}}
+      </td>
+      <td dir="ltr" valign="middle" class="mobile-stack split-text" style="padding:0 22px 0 0;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        {{#sponsored}}<tr><td style="padding:0 0 10px;"><span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:{{ctx.text-mid}};">Sponsored by:</span> <span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:{{ctx.ink}};">{{sponsorName}}</span></td></tr>{{/sponsored}}
+        {{#rubric}}
+  <tr><td align="left" style="padding:0 0 8px;"><p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:{{ctx.label-ls}};text-transform:uppercase;color:{{ctx.highlight-ink}};">{{rubric}}</p></td></tr>
+  {{/rubric}}
+  {{#flag}}
+  <tr><td align="left" style="padding:0 0 10px;"><span style="display:inline-block;background-color:{{ctx.flag-bg}};color:{{ctx.flag-ink}};font-family:{{&ctx.font-ui}};font-size:{{ctx.flag-size}};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;line-height:1;padding:6px 10px 5px;border-radius:999px;">{{flag}}</span></td></tr>
+  {{/flag}}
+        <tr><td>
+          <h2 class="split-h" style="margin:0;font-family:{{&ctx.font-display}};font-size:{{ctx.split-headline-size}};font-weight:700;line-height:1.12;color:{{ctx.ink}};">
+            <a href="{{link}}" target="_blank" style="color:{{ctx.ink}};text-decoration:none;">{{headline}}</a>
+          </h2>
+        </td></tr>
+        {{#subhead}}<tr><td style="padding:10px 0 0;"><p style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.fa-subhead-size}};font-style:italic;line-height:{{ctx.subhead-lh}};color:{{ctx.text-mid}};">{{subhead}}</p></td></tr>{{/subhead}}
+  {{#hasAuthor}}
+  <tr><td align="left" style="padding:18px 0 0;">
+      {{#isEC}}<p style="margin:0 0 9px;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-micro}};font-weight:700;letter-spacing:1.6px;text-transform:uppercase;line-height:1;"><span style="display:inline-block;background:{{ctx.badge-bg}};border:1px solid {{ctx.accent-soft}};padding:4px 9px;border-radius:2px;color:{{ctx.badge-ink}};">Expert Contributor</span></p>{{/isEC}}
+      <p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-byline}};font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:{{ctx.text-light}};">By {{author}}{{#hasCoAuthor}} and {{coAuthor}}{{/hasCoAuthor}}</p>
+      {{#authorBusiness}}<p style="margin:3px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:{{ctx.ink}};">{{authorBusiness}}</p>{{/authorBusiness}}
+  </td></tr>
+  {{/hasAuthor}}
+        </table>
+      </td>
+    </tr>
+    </table>
+  </td></tr>
+  <tr><td style="padding:18px 0 0;">
+    <p class="fa-excerpt" style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.fa-teaser-size}};line-height:{{ctx.body-lh}};color:{{ctx.text}};">{{teaser}}</p>
+  </td></tr>
+  <tr><td align="left" style="padding:22px 0 0;">
+    <a href="{{link}}" target="_blank" style="display:inline-block;font-family:{{&ctx.font-ui}};font-size:{{ctx.story-link-size}};font-weight:600;letter-spacing:0.3px;color:{{ctx.story-link-color}};text-decoration:none;padding:0 0 2px;border-bottom:2px solid {{ctx.story-link-rule}};">{{#ctaText}}{{ctaText}}{{/ctaText}}{{^ctaText}}{{#ctx.lblReadStory}}{{ctx.lblReadStory}}{{/ctx.lblReadStory}}{{^ctx.lblReadStory}}Read the story{{/ctx.lblReadStory}}{{/ctaText}} &rarr;</a>
+  </td></tr>
+  {{#sponsored}}{{#sponsorAd}}
+  <tr><td align="center" style="padding:26px 0 8px;">
+    <span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:{{ctx.highlight-ink}};">Sponsored by</span>
+  </td></tr>
+  <tr><td align="center">
+    <a href="{{#sponsorLink}}{{sponsorLink}}{{/sponsorLink}}{{^sponsorLink}}{{link}}{{/sponsorLink}}" target="_blank" style="display:block;">
+      <img src="{{sponsorAd}}" alt="{{sponsorName}}" width="{{ctx.banner-w}}" class="mobile-full"
+           style="display:block;width:100%;max-width:{{ctx.banner-w}}px;height:auto;margin:0 auto;border:1px solid {{ctx.ad-border}};">
+    </a>
+  </td></tr>
+  {{/sponsorAd}}{{/sponsored}}
+</table>
+</td></tr>
+</table>
+</td>
+</tr>

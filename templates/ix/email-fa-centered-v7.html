@@ -1,0 +1,95 @@
+<!-- templates/ix/email-fa-centered-v7.html -->
+<!--
+  v7 = email-fa-centered-v6 rebuilt for the Email Pass (Design Pass 2 S4, review v0.3):
+  - a white tile (12px corners, 22px apart) on the paper or on its group panel (D174)
+  - section art small and centred, as Our Neighbors has it (D168); no name band (D162)
+  - flag pill above the headline, ARTICLES banner-statement (D163)
+  - photo cropped 4:3 by Uploadcare smart crop when 206 sends photoSrc (D172);
+    otherwise the photo 206 already cropped
+  - "Read the story →" text link: the article's button text, then labels
+    readStory, then the platform default (D164). Fixes the empty button.
+  - the sponsor creative at the one banner width with a 1px border (D175, D176)
+  No side padding: the shell column (email-shell-v10) or the group panel sets it.
+  Block fields: headline subhead teaser link ctaText flag rubric photo photoSrc
+                photoTall photoCredit author authorTitle authorBusiness coAuthor
+                coAuthorTitle franchiseArt franchiseName sponsorName sponsorAd sponsorLink
+  Flags:        hasPhoto showPhotoCredit hasAuthor hasCoAuthor isEC hasFranchise sponsored
+  Context:      tokens (ix/email-tokens-v9), ctx.lblReadStory, and from
+                newsletter-render v1.12.0 ctx.art-dot / ctx.art-rule.
+-->
+<tr>
+<td style="padding:0 0 {{ctx.tile-gap}};">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="{{ctx.tile-bg}}" style="background-color:{{ctx.tile-bg}};border-radius:{{ctx.tile-radius}};">
+<tr><td class="tile-pad" style="padding:{{ctx.tile-pad}};">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+  {{#hasFranchise}}{{#franchiseArt}}
+  <tr><td align="center" style="padding:0 0 14px;"><img src="{{franchiseArt}}" alt="{{franchiseName}}" height="52" style="display:block;height:{{ctx.franchise-h}};width:auto;border:0;margin:0 auto;"></td></tr>
+  {{/franchiseArt}}{{/hasFranchise}}
+  {{#sponsored}}
+  <tr><td align="center" style="padding:0 0 14px;">
+    <span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:{{ctx.text-mid}};">Sponsored by:</span>
+    <span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:{{ctx.ink}};padding-left:6px;">{{sponsorName}}</span>
+  </td></tr>
+  {{/sponsored}}
+  {{#hasPhoto}}
+  <tr><td align="center">
+    <a href="{{link}}" target="_blank" style="display:block;">
+      <img src="{{#photoSrc}}{{photoSrc}}-/scale_crop/1360x1020/smart/-/format/auto/-/quality/smart/{{/photoSrc}}{{^photoSrc}}{{photo}}{{/photoSrc}}" alt="{{headline}}" width="480" class="mobile-full"
+           style="display:block;width:100%;max-width:480px;height:auto;border:0;border-radius:6px;">
+    </a>
+  </td></tr>
+  {{#showPhotoCredit}}{{#photoCredit}}
+  <tr><td align="right" style="padding:5px 0 0;"><span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:1.3px;text-transform:uppercase;color:{{ctx.text-light}};">Photos by: {{photoCredit}}</span></td></tr>
+  {{/photoCredit}}{{/showPhotoCredit}}
+  <tr><td style="height:18px;line-height:18px;font-size:0;mso-line-height-rule:exactly;">&nbsp;</td></tr>
+  {{/hasPhoto}}
+  {{#rubric}}
+  <tr><td align="center" style="padding:0 0 8px;"><p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:{{ctx.label-ls}};text-transform:uppercase;color:{{ctx.highlight-ink}};">{{rubric}}</p></td></tr>
+  {{/rubric}}
+  {{#flag}}
+  <tr><td align="center" style="padding:0 0 10px;"><span style="display:inline-block;background-color:{{ctx.flag-bg}};color:{{ctx.flag-ink}};font-family:{{&ctx.font-ui}};font-size:{{ctx.flag-size}};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;line-height:1;padding:6px 10px 5px;border-radius:999px;">{{flag}}</span></td></tr>
+  {{/flag}}
+  <tr><td align="center">
+    <h2 class="fa-title" style="margin:0;font-family:{{&ctx.font-display}};font-size:{{ctx.fa-headline-size}};font-weight:700;line-height:{{ctx.hero-lh}};color:{{ctx.ink}};letter-spacing:-0.5px;">
+      <a href="{{link}}" target="_blank" style="color:{{ctx.ink}};text-decoration:none;">{{headline}}</a>
+    </h2>
+  </td></tr>
+  {{#subhead}}
+  <tr><td align="center" style="padding:12px 16px 0;"><p style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.fa-subhead-size}};font-style:italic;line-height:{{ctx.subhead-lh}};color:{{ctx.text-mid}};">{{subhead}}</p></td></tr>
+  {{/subhead}}
+  <tr><td align="center" style="padding:18px 0 0;font-size:0;line-height:0;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center"><tr><td width="64" height="1" style="width:64px;height:1px;background-color:{{ctx.accent-soft}};font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td></tr></table>
+  </td></tr>
+  {{#hasAuthor}}
+  <tr><td align="center" style="padding:18px 0 0;">
+      {{#isEC}}<p style="margin:0 0 9px;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-micro}};font-weight:700;letter-spacing:1.6px;text-transform:uppercase;line-height:1;"><span style="display:inline-block;background:{{ctx.badge-bg}};border:1px solid {{ctx.accent-soft}};padding:4px 9px;border-radius:2px;color:{{ctx.badge-ink}};">Expert Contributor</span></p>{{/isEC}}
+      <p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{ctx.byline-lead-size}};font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:{{ctx.text-light}};">Written by</p>
+      <p style="margin:4px 0 0;font-family:{{&ctx.font-display}};font-size:{{ctx.t-deck}};font-weight:700;color:{{ctx.text}};">{{author}}</p>
+      {{#authorTitle}}<p style="margin:2px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-byline}};letter-spacing:0.6px;color:{{ctx.text-mid}};">{{authorTitle}}</p>{{/authorTitle}}
+      {{#hasCoAuthor}}<p style="margin:8px 0 0;font-family:{{&ctx.font-display}};font-size:{{ctx.t-deck}};font-weight:700;color:{{ctx.text}};">{{coAuthor}}</p>
+      {{#coAuthorTitle}}<p style="margin:2px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-byline}};letter-spacing:0.6px;color:{{ctx.text-mid}};">{{coAuthorTitle}}</p>{{/coAuthorTitle}}{{/hasCoAuthor}}
+      {{#authorBusiness}}<p style="margin:3px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:{{ctx.ink}};">{{authorBusiness}}</p>{{/authorBusiness}}
+  </td></tr>
+  {{/hasAuthor}}
+  <tr><td style="padding:18px 0 0;">
+    <p class="fa-excerpt" style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.fa-teaser-size}};line-height:{{ctx.body-lh}};color:{{ctx.text}};">{{teaser}}</p>
+  </td></tr>
+  <tr><td align="center" style="padding:22px 0 0;">
+    <a href="{{link}}" target="_blank" style="display:inline-block;font-family:{{&ctx.font-ui}};font-size:{{ctx.story-link-size}};font-weight:600;letter-spacing:0.3px;color:{{ctx.story-link-color}};text-decoration:none;padding:0 0 2px;border-bottom:2px solid {{ctx.story-link-rule}};">{{#ctaText}}{{ctaText}}{{/ctaText}}{{^ctaText}}{{#ctx.lblReadStory}}{{ctx.lblReadStory}}{{/ctx.lblReadStory}}{{^ctx.lblReadStory}}Read the story{{/ctx.lblReadStory}}{{/ctaText}} &rarr;</a>
+  </td></tr>
+  {{#sponsored}}{{#sponsorAd}}
+  <tr><td align="center" style="padding:26px 0 8px;">
+    <span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:{{ctx.highlight-ink}};">Sponsored by</span>
+  </td></tr>
+  <tr><td align="center">
+    <a href="{{#sponsorLink}}{{sponsorLink}}{{/sponsorLink}}{{^sponsorLink}}{{link}}{{/sponsorLink}}" target="_blank" style="display:block;">
+      <img src="{{sponsorAd}}" alt="{{sponsorName}}" width="{{ctx.banner-w}}" class="mobile-full"
+           style="display:block;width:100%;max-width:{{ctx.banner-w}}px;height:auto;margin:0 auto;border:1px solid {{ctx.ad-border}};">
+    </a>
+  </td></tr>
+  {{/sponsorAd}}{{/sponsored}}
+</table>
+</td></tr>
+</table>
+</td>
+</tr>

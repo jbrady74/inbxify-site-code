@@ -1,0 +1,25 @@
+<!-- templates/ix/email-at-spotlights-v1.html -->
+<!-- ix-tone: highlight -->
+<!--
+  v1 · the Spotlights opener on email (Design Pass 2 S4, review v0.3, E5; D165 option C1, D166).
+  An AT block whose DESIGNS record ("AT · Spotlights") names this file.
+  A band in the Highlight (sp-bg) with text in sp-ink (WLN: ink), a sticker
+  top right in the Accent, italic title 46px (36px phone, class sp-title).
+  The sticker tilts in Apple Mail and iOS Mail; Gmail and Outlook show it
+  straight. The tone marker puts the group on a Highlight panel (D170).
+  Words, as web-at-spotlights-v1: keys spotlights, spotlightsEyebrow,
+  spotlightsSticker, spotlightsTeaser; block-text wins for the teaser.
+-->
+<tr>
+<td style="padding:0 0 22px;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="{{ctx.sp-bg}}" style="background-color:{{ctx.sp-bg}};border-radius:{{ctx.sp-radius}};"><tr>
+  <td class="sp-pad" style="padding:22px 22px 24px 24px;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr>
+      <td valign="top" style="padding-top:4px;"><p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:{{ctx.label-ls}};text-transform:uppercase;line-height:1.4;color:{{ctx.sp-ink}};">{{#ctx.djIssue.labels.spotlightsEyebrow}}{{ctx.djIssue.labels.spotlightsEyebrow}}{{/ctx.djIssue.labels.spotlightsEyebrow}}{{^ctx.djIssue.labels.spotlightsEyebrow}}{{#ctx.djTitle.labels.spotlightsEyebrow}}{{ctx.djTitle.labels.spotlightsEyebrow}}{{/ctx.djTitle.labels.spotlightsEyebrow}}{{^ctx.djTitle.labels.spotlightsEyebrow}}Before you go{{/ctx.djTitle.labels.spotlightsEyebrow}}{{/ctx.djIssue.labels.spotlightsEyebrow}}</p></td>
+      <td valign="top" align="right" width="120" style="width:120px;"><span style="display:inline-block;background-color:{{ctx.sp-sticker-bg}};color:{{ctx.sp-sticker-ink}};font-family:{{&ctx.font-ui}};font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;line-height:1;padding:9px 12px;border-radius:4px;white-space:nowrap;transform:rotate(9deg);-webkit-transform:rotate(9deg);">{{#ctx.djIssue.labels.spotlightsSticker}}{{ctx.djIssue.labels.spotlightsSticker}}{{/ctx.djIssue.labels.spotlightsSticker}}{{^ctx.djIssue.labels.spotlightsSticker}}{{#ctx.djTitle.labels.spotlightsSticker}}{{ctx.djTitle.labels.spotlightsSticker}}{{/ctx.djTitle.labels.spotlightsSticker}}{{^ctx.djTitle.labels.spotlightsSticker}}Just for fun{{/ctx.djTitle.labels.spotlightsSticker}}{{/ctx.djIssue.labels.spotlightsSticker}}</span></td>
+    </tr></table>
+    <h2 class="sp-title" style="margin:6px 0 0;font-family:{{&ctx.font-display}};font-size:{{ctx.sp-title-size}};font-style:italic;font-weight:700;line-height:1.05;color:{{ctx.sp-ink}};">{{#ctx.djIssue.labels.spotlights}}{{ctx.djIssue.labels.spotlights}}{{/ctx.djIssue.labels.spotlights}}{{^ctx.djIssue.labels.spotlights}}{{#ctx.djTitle.labels.spotlights}}{{ctx.djTitle.labels.spotlights}}{{/ctx.djTitle.labels.spotlights}}{{^ctx.djTitle.labels.spotlights}}Spotlights{{/ctx.djTitle.labels.spotlights}}{{/ctx.djIssue.labels.spotlights}}</h2>
+    {{#blockText}}<p style="margin:8px 0 0;max-width:420px;font-family:{{&ctx.font-body}};font-size:{{ctx.t-body}};line-height:1.5;color:{{ctx.sp-ink}};">{{blockText}}</p>{{/blockText}}{{^blockText}}{{#ctx.djIssue.labels.spotlightsTeaser}}<p style="margin:8px 0 0;max-width:420px;font-family:{{&ctx.font-body}};font-size:{{ctx.t-body}};line-height:1.5;color:{{ctx.sp-ink}};">{{ctx.djIssue.labels.spotlightsTeaser}}</p>{{/ctx.djIssue.labels.spotlightsTeaser}}{{^ctx.djIssue.labels.spotlightsTeaser}}{{#ctx.djTitle.labels.spotlightsTeaser}}<p style="margin:8px 0 0;max-width:420px;font-family:{{&ctx.font-body}};font-size:{{ctx.t-body}};line-height:1.5;color:{{ctx.sp-ink}};">{{ctx.djTitle.labels.spotlightsTeaser}}</p>{{/ctx.djTitle.labels.spotlightsTeaser}}{{/ctx.djIssue.labels.spotlightsTeaser}}{{/blockText}}
+  </td></tr></table>
+</td>
+</tr>
