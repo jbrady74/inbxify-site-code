@@ -1,0 +1,49 @@
+<!-- templates/ix/email-ba-house-center-v3.html -->
+<!-- v3 = v2 trimmed to keep the email under Gmail's clip (Email Pass S2): no spacer table under a card without a button (the cell takes 26px bottom padding instead), no style values that repeat an attribute (cell width, brush and postmark sizes). Looks the same. Needs email-shell-v12 (its .ha-type rule sets side padding only). -->
+<!-- v2 = v1 with the button reading ctx.ha-href and ctx.ha-button (newsletter-render v1.13.1): the ADS House Button Link and Text when set, otherwise the kind's defaults from tokens (Advertise: an email to the publisher, PUBLISHERS business-email). No link, no button. Nothing else changed. -->
+<!-- ix-house -->
+<!--
+  Email Pass S2 (Design Pass 2 S5) · house ad, center layout (D146). Email.
+  The postmark family on email: split card, thin border in the ad's colour,
+  the title's postmark in a tab at the top, the button as a tab on the
+  bottom edge. Left: art left. Right: art right. Center: art above.
+  The art and the postmark are pictures (Uploadcare), made from the web art
+  (web-ha-*-v3). SVG does not show in Gmail or Outlook.
+  The ix-house marker above tells newsletter-render v1.13.0 that this block
+  is a house ad: never grouped with banners, no partner label. The Worker
+  copies the kind's tokens (ha-subscribe-*, ha-advertise-*, ha-bookmark-*)
+  into ctx.ha-*: ha-c (edge), ha-on (colour on the edge), ha-art-bg, ha-art,
+  ha-pm. Sizes and shape are ha-* tokens too. No colour is typed here.
+  Words come from the ADS record: houseEyebrow, houseHeadline, houseCopy,
+  houseButtonText, houseButtonLink. No button without a link (the web
+  Subscribe popup does not exist in an inbox). Nothing renders without a
+  headline. On the content edge: no side padding (D187).
+  Phone rules (email-shell-v11): .ha-cell stacks, .ha-art takes top corners,
+  .ha-type (side padding) and .ha-h.
+  206 requires a BA block's email file to contain "email-ba-".
+-->
+{{#houseHeadline}}<tr>
+<td style="padding:0 0 {{ctx.tile-gap}};">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="{{ctx.ha-bg}}" style="background-color:{{ctx.ha-bg}};border:{{ctx.ha-border-w}} solid {{ctx.ha-c}};border-radius:{{ctx.ha-radius}};border-collapse:separate;">
+{{#ctx.ha-art}}<tr>
+  <td align="center" valign="middle" bgcolor="{{ctx.ha-art-bg}}" style="background-color:{{ctx.ha-art-bg}};border-radius:{{ctx.ha-art-radius}} {{ctx.ha-art-radius}} 0 0;font-size:0;line-height:0;">
+    <img src="{{ctx.ha-art}}" width="{{ctx.ha-center-art-w}}" alt="{{houseHeadline}}" class="mobile-full" style="display:block;width:100%;max-width:{{ctx.ha-center-art-w}}px;height:auto;margin:0 auto;border:0;">
+  </td>
+</tr>
+{{/ctx.ha-art}}<tr>
+  <td class="ha-type" align="center" valign="top" style="padding:0 18px {{#ctx.ha-href}}0{{/ctx.ha-href}}{{^ctx.ha-href}}26px{{/ctx.ha-href}};text-align:center;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center"><tr>
+      <td bgcolor="{{ctx.ha-c}}" style="background-color:{{ctx.ha-c}};border-radius:0 0 12px 12px;padding:6px 14px 8px;font-size:0;line-height:0;">{{#ctx.ha-pm}}<img src="{{ctx.ha-pm}}" width="{{ctx.ha-pm-w}}" height="{{ctx.ha-pm-w}}" alt="" style="display:block;border:0;">{{/ctx.ha-pm}}</td>
+    </tr></table>
+    {{#houseEyebrow}}<p style="margin:22px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.ha-eyebrow-size}};font-style:italic;font-weight:600;letter-spacing:.2em;text-transform:uppercase;line-height:1.4;color:{{ctx.text}};">{{houseEyebrow}}</p>{{/houseEyebrow}}
+    <p class="ha-h" style="margin:{{#houseEyebrow}}6px{{/houseEyebrow}}{{^houseEyebrow}}22px{{/houseEyebrow}} 0 0;font-family:{{&ctx.font-display}};font-size:{{ctx.ha-headline-size}};font-weight:600;line-height:1.05;color:{{ctx.ink}};">{{houseHeadline}}</p>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:12px auto 0;"><tr><td width="64" height="4" bgcolor="{{ctx.ha-c}}" style="background-color:{{ctx.ha-c}};border-radius:2px;font-size:0;line-height:0;">&nbsp;</td></tr></table>
+    {{#houseCopy}}<p style="margin:12px auto 0;max-width:290px;font-family:{{&ctx.font-display}};font-size:{{ctx.ha-copy-size}};line-height:1.32;color:{{ctx.text}};white-space:pre-line;">{{houseCopy}}</p>{{/houseCopy}}
+    {{#ctx.ha-href}}<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:24px auto 0;"><tr>
+      <td bgcolor="{{ctx.ha-c}}" style="background-color:{{ctx.ha-c}};border-radius:12px 12px 0 0;padding:12px 22px 13px;"><a href="{{ctx.ha-href}}" target="_blank" style="font-family:{{&ctx.font-ui}};font-size:{{ctx.ha-button-size}};font-weight:600;letter-spacing:.22em;text-transform:uppercase;text-decoration:none;white-space:nowrap;color:{{ctx.ha-on}};">{{ctx.ha-button}}</a></td>
+    </tr></table>{{/ctx.ha-href}}
+  </td>
+</tr>
+</table>
+</td>
+</tr>{{/houseHeadline}}
