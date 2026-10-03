@@ -1,0 +1,18 @@
+<!-- templates/ix/web-ba-banner-v3.html -->
+<!-- v3 = web-ba-banner-v2.html with its label set per placement (D179). In
+     order: this row's NL-BLOCKS block-text (f_blockText), the labels map
+     (ctx.lblPartners: issue, then title), then "Featured local partners".
+     v2 read an adLabel field 206 never sent, so it always printed the typed
+     "Featured Local Partner". A group of ads shows one label instead, set by
+     newsletter-render v1.11.0 in the same order. Nothing else changed. -->
+<!-- WS-I Session 5 · BA banner. The sold flag gates the whole block: an unsold
+     slot renders nothing at all — no mat, no label, no gap (D10).
+     When the Worker detects consecutive BA blocks it wraps the run in
+     .nlw-ba-group and emits one .nlw-ba-group-label ahead of them; the
+     per-ad labels below are suppressed by CSS in that case. -->
+{{#sold}}
+<div class="nlw-ba">
+  <div class="nlw-ba-label">{{#blockText}}{{blockText}}{{/blockText}}{{^blockText}}{{#ctx.lblPartners}}{{ctx.lblPartners}}{{/ctx.lblPartners}}{{^ctx.lblPartners}}Featured local partners{{/ctx.lblPartners}}{{/blockText}}</div>
+  <a href="{{adLink}}" target="_blank" rel="noopener"><img src="{{adImage}}" alt="{{adName}}" loading="lazy"></a>
+</div>
+{{/sold}}
