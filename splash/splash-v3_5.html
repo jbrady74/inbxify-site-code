@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<!-- splash-v3_5.html
+     INBXIFY Splash — v3.5 (total 6.96s; ad holds ~5.4s)
+     Repo copy: splash/splash-v3_5.html. Deployed to Cloudflare Pages (inbxify-splash) as index.html.
+     Page 1: masthead + gold rule. Page 2: 1080x1080 ad (ad=) + spinner pill.
+     No ad= -> masthead only for full duration. Tap anywhere -> su=.
+     Params: logo, sn (sponsor name, pill only — optional), su (tap target; web or tel:),
+             ad (1080x1280 portrait ad image URL), dur (total ms, default 4300),
+             tsplit (title fraction, default 0.28 = ~1.2s),
+             house (1 = the publisher's own house ad, not a paid one),
+             to (destination, must be last)
+     v2.1: legacy sponsor card removed. v2.2: &amp; -> & decode. v2.3: eased crossfade.
+     v2.4: inline teal bg (anti white-flash). v2.5: 4.3s, exit fade 350ms before nav.
+     v2.6: auto-forward appends splashed=1 for newsletter fade-in.
+     v2.7: ad tap -> sponsor in NEW tab (noopener, popup-blocked fallback); splash still forwards this tab to the newsletter.
+     v2.8: quiet "Tap to visit" hint when su= present.
+     v2.9: total 6.3s, prefetch+preconnect destination.
+     v3.0: ad spec is now 1080x1280 PORTRAIT (27:32). Frame sized by height min(62vh,600px), max-width 90vw, object-fit contain (no crop).
+     v3.2: house=1 marks a publisher's house ad. The tag above the ad then shows the
+           publisher's name (sn=) instead of "Sponsored", because a house ad is not paid
+           and must not be labelled as if it were. No sn= with house=1: the tag is hidden.
+           Nothing else changed; links without house= render exactly as v3.1.
+     v3.3: short links (Clean-Up S1, D219). A link may carry only n= (the NEWSLETTER id)
+           and to=: ?n=<id>&to=<destination>. The page then asks the Data Worker
+           (GET /splash?n=<id>) for logo, ad, su, sn and house, so each email link is
+           about 220 characters shorter. The Data Worker picks the issue's paid splash ad,
+           else the title's Splash house ad. If the answer does not arrive within 2.5s,
+           or fails, the page shows nothing extra and still forwards to= on time.
+           Links without n= are read exactly as v3.2 (every email already sent keeps working).
+           dur= and tsplit= still come from the link.
+     v3.4: two fixes for D220. (1) A sharp logo: when the logo is an Uploadcare picture, the
+           page drops any size in its address and asks for 920px wide (the logo shows up to
+           460px; 920 is sharp on phone and Mac screens). The stored field is not changed.
+           (2) A second house-ad picture: when the Data Worker sends ad2 (house ads only), the
+           first picture shows for the first half of the ad time and the second for the rest,
+           with the same crossfade. A tap on either goes to su. Nothing else changed.
+     v3.5: the title's own colours (Clean-Up S2, HC-P-CU1-4). No colour is typed for a title.
+           The Data Worker (v1.0.6) answers colors { bg, accent, ink, tileBg, tileBorder } from
+           the title's tokens file (splash-* tokens). Short links (n=) get them with the logo
+           and ad. Long links (legacy 106) ask GET /splash?logo=<logo> for the colours only.
+           Until the answer arrives the page shows a plain dark ground and nothing else; it then
+           fades to the title's background. If there is no answer within 2.5s, or no colours,
+           the page uses the NEUTRAL look below (no logo when the Data Worker gave none) and
+           still forwards on time. NEUTRAL is the platform look, HC-P-CU2-3 (By design: a
+           reader must never be stopped on the way to the issue). -->
+<html lang="en" style="background:#111111;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Loading...</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* v3.5 — every colour comes from these, set from the title's tokens (start()). The values
+     here are the NEUTRAL look (HC-P-CU2-3), used until and unless the title's arrive. */
+  :root {
+    --sp-bg: #111111; --sp-accent: #9A9A9A; --sp-ink: #F2F2F2;
+    --sp-tile-bg: #FFFFFF; --sp-tile-border: #DDDDDD;
+    --sp-accent-40: rgba(154,154,154,0.4); --sp-accent-30: rgba(154,154,154,0.3);
+    --sp-ink-07: rgba(242,242,242,0.07);
+  }
+  html, body { height: 100%; width: 100%; overflow: hidden; background: var(--sp-bg);
+    transition: background-color 0.4s ease; }
+
+  body {
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none;
+    position: relative;
+  }
+
+  .page {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 48px 32px 72px;
+    opacity: 0; transition: opacity 0.6s cubic-bezier(0.22,1,0.36,1);
+  }
+  .page.show { opacity: 1; }
+  .page.leaving { opacity: 0; transition: opacity 0.35s cubic-bezier(0.4,0,0.2,1); }
+
+  /* PAGE 1 — Title */
+  #page-title { gap: 24px; }
+  .masthead { width: min(460px, 90vw); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .masthead img { width: 100%; height: auto; display: block; }
+  .gold-rule { width: 48px; height: 1.5px; background: var(--sp-accent); flex-shrink: 0; }
+
+  /* PAGE 2 — Sponsor ad */
+  #page-ad { gap: 18px; }
+  .sponsored-tag {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--sp-accent); flex-shrink: 0;
+  }
+  .ad-frame {
+    aspect-ratio: 1080 / 1280;
+    /* Fit by the smaller constraint: width on desktop, height on short phones.
+       max-height keeps the whole sequence (tag + ad + pill) on screen. */
+    width: auto;
+    height: min(62vh, 600px);
+    max-width: 90vw;
+    background: var(--sp-tile-bg); border: 1px solid var(--sp-tile-border); border-radius: 10px;
+    overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .ad-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+  /* Loading pill */
+  .pill {
+    display: flex; align-items: center; gap: 9px;
+    background: var(--sp-ink-07); border: 1px solid var(--sp-accent-40);
+    padding: 8px 16px; border-radius: 22px; flex-shrink: 0; max-width: 88vw;
+  }
+  .pill .spinner {
+    width: 13px; height: 13px; border: 2px solid var(--sp-accent-30); border-top-color: var(--sp-accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0;
+  }
+  .pill .pill-text {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 12px; letter-spacing: 0.02em; color: var(--sp-ink); opacity: 0.9;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .tap-hint {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--sp-accent); opacity: 0.85; flex-shrink: 0;
+  }
+
+  /* Progress wave bar */
+  .wave-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 1.5px; overflow: hidden; pointer-events: none; }
+  .wave-inner {
+    position: absolute; top: 0; left: -100%; width: 300%; height: 100%;
+    background: linear-gradient(to right, transparent 0%, transparent 12%, rgba(255,255,255,0.2) 35%, var(--sp-accent) 50%, rgba(255,255,255,0.2) 65%, transparent 88%, transparent 100%);
+    animation: wave 2.4s ease-in-out infinite;
+  }
+
+  @keyframes wave { 0%{transform:translateX(0%)} 50%{transform:translateX(33.33%)} 100%{transform:translateX(0%)} }
+  @keyframes spin { to { transform: rotate(360deg) } }
+</style>
+</head>
+<body id="splash">
+
+  <div class="page" id="page-title">
+    <div class="masthead" id="masthead"><img id="pub-logo" src="" alt=""></div>
+    <div class="gold-rule"></div>
+  </div>
+
+  <div class="page" id="page-ad">
+    <div class="sponsored-tag" id="ad-tag">Sponsored</div>
+    <div class="ad-frame"><img id="ad-img" src="" alt=""></div>
+    <div class="tap-hint" id="tap-hint" style="display:none">Tap to visit <span aria-hidden="true">&#8599;</span></div>
+    <div class="pill"><div class="spinner"></div><span class="pill-text">One moment...</span></div>
+  </div>
+
+  <div class="wave-bar"><div class="wave-inner"></div></div>
+
+<script>
+(function() {
+  var DURATION = 6960;
+  var TSPLIT   = 0.172;   // ~1.2s title of 6.96s total
+
+  // Defensive: redirect chains (Webflow/HTML contexts) can encode & as &amp;.
+  // Normalize before parsing so an upstream-encoded URL still forwards.
+  var search = window.location.search.replace(/&amp;/g, '&');
+
+  var dest = '';
+  var toIdx = search.indexOf('&to=');
+  if (toIdx >= 0) {
+    dest = decodeURIComponent(search.substring(toIdx + 4));
+  } else {
+    var m = search.match(/[?&]to=(.+)/);
+    if (m) dest = decodeURIComponent(m[1]);
+  }
+
+  var paramStr = toIdx >= 0 ? search.substring(0, toIdx) : search;
+  var p = new URLSearchParams(paramStr);
+
+  // Prefetch the destination during the splash so the newsletter is (mostly)
+  // cached by the time we forward — faster arrival. Cross-origin, so this
+  // fetches HTML/assets in the background; the fade-in covers any residual.
+  if (dest && dest !== '/') {
+    try {
+      var pre = document.createElement('link');
+      pre.rel = 'prefetch';
+      pre.href = dest;
+      document.head.appendChild(pre);
+      // Warm the connection too (DNS/TLS) for the destination origin.
+      var pc = document.createElement('link');
+      pc.rel = 'preconnect';
+      pc.href = new URL(dest).origin;
+      document.head.appendChild(pc);
+    } catch (e) {}
+  }
+
+  // v3.3 — with n=, the splash values come from the Data Worker.
+  // v3.5 — long links (no n=) ask the Data Worker for the colours only, by logo.
+  var DATA_URL = 'https://ix-issue-data.jeff-2cd.workers.dev/splash';
+  var nlId = p.get('n') || '';
+  var duration    = parseInt(p.get('dur'), 10)   || DURATION;
+  var tsplit      = parseFloat(p.get('tsplit'))  || TSPLIT;
+  var hasN = /^[0-9a-f]{24}$/.test(nlId);
+  var fromLink = {
+    logo: p.get('logo') || '', sn: p.get('sn') || '', su: p.get('su') || '',
+    ad: p.get('ad') || '', house: p.get('house') === '1'
+  };
+
+  // Ask once; whatever happens, start() runs exactly once within 2.5s.
+  function ask(query, use) {
+    var settled = false;
+    var done = function(d) { if (settled) return; settled = true; clearTimeout(giveUp); start(use(d)); };
+    var giveUp = setTimeout(function() { done(null); }, 2500);
+    fetch(DATA_URL + query).then(function(r) { return r.json(); })
+      .then(function(d) { done(d && d.ok ? d : null); })
+      .catch(function() { done(null); });
+  }
+
+  if (hasN && window.fetch) {
+    ask('?n=' + nlId, function(d) { return d || {}; });
+  } else if (fromLink.logo && window.fetch) {
+    ask('?logo=' + encodeURIComponent(fromLink.logo), function(d) {
+      fromLink.colors = d ? d.colors : null;
+      return fromLink;
+    });
+  } else {
+    start(fromLink);
+  }
+
+  // v3.5 — the title's colours onto the page. Anything not a hex colour keeps NEUTRAL.
+  function rgba(hex, a) {
+    var h = String(hex).replace('#', '');
+    if (h.length === 3) h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
+    return 'rgba(' + parseInt(h.slice(0, 2), 16) + ',' + parseInt(h.slice(2, 4), 16) + ',' +
+      parseInt(h.slice(4, 6), 16) + ',' + a + ')';
+  }
+  function applyColors(c) {
+    var hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+    if (!c || !hex.test(c.bg) || !hex.test(c.accent) || !hex.test(c.ink) ||
+        !hex.test(c.tileBg) || !hex.test(c.tileBorder)) return;
+    var r = document.documentElement.style;
+    r.setProperty('--sp-bg', c.bg);
+    r.setProperty('--sp-accent', c.accent);
+    r.setProperty('--sp-ink', c.ink);
+    r.setProperty('--sp-tile-bg', c.tileBg);
+    r.setProperty('--sp-tile-border', c.tileBorder);
+    r.setProperty('--sp-accent-40', rgba(c.accent, 0.4));
+    r.setProperty('--sp-accent-30', rgba(c.accent, 0.3));
+    r.setProperty('--sp-ink-07', rgba(c.ink, 0.07));
+    r.background = c.bg;
+  }
+
+  // v3.4 — an Uploadcare logo is asked for at 920px wide, whatever size its address carried.
+  function sharpLogo(u) {
+    var m = /^(https:\/\/[^\/]*(?:ucarecdn\.com|ucarecd\.net)\/[0-9a-f-]{36}\/)/i.exec(u || '');
+    return m ? m[1] + '-/resize/920x/-/format/auto/-/quality/smart/' : (u || '');
+  }
+
+  function start(v) {
+  applyColors(v.colors);                                    // v3.5
+  var logoUrl     = sharpLogo(v.logo || '');
+  var sponsorName = v.sn || '';
+  var sponsorUrl  = v.su || dest;
+  var adImage     = v.ad || '';
+  var adImage2    = v.house === true ? (v.ad2 || '') : '';   // v3.4
+  var isHouse     = v.house === true;
+
+  if (logoUrl) {
+    var logoEl = document.getElementById('pub-logo');
+    logoEl.src = logoUrl; logoEl.alt = 'Publication';
+  } else {
+    document.getElementById('masthead').style.display = 'none';
+  }
+
+  if (sponsorName) {
+    document.querySelector('.pill-text').textContent = sponsorName + ' \u00b7 One moment...';
+  }
+
+  // v3.2 — a house ad is the publisher's own, so it is never labelled "Sponsored".
+  if (isHouse) {
+    var tag = document.getElementById('ad-tag');
+    if (sponsorName) { tag.textContent = sponsorName; }
+    else { tag.style.display = 'none'; }
+  }
+
+  // Forward to destination, flagging the arrival so the newsletter fades in.
+  function go() {
+    var d = dest || '/';
+    if (d !== '/') {
+      d += (d.indexOf('?') === -1 ? '?' : '&') + 'splashed=1';
+    }
+    window.location.href = d;
+  }
+
+  document.getElementById('splash').addEventListener('click', function() {
+    // Open sponsor in a NEW tab (noopener for security); the splash keeps
+    // running its timer and still forwards THIS tab to the newsletter.
+    var target = sponsorUrl || dest || '/';
+    var w = window.open(target, '_blank');
+    if (w) { w.opener = null; }
+    // If the browser blocked the popup, fall back to same-tab sponsor nav.
+    else { window.location.href = target; }
+  });
+
+  var titlePage = document.getElementById('page-title');
+  var adPage    = document.getElementById('page-ad');
+  var switchAt  = Math.round(duration * tsplit);
+
+  titlePage.classList.add('show');
+
+  // No ad creative -> masthead only for the full duration, fade out, then forward.
+  if (!adImage) {
+    setTimeout(function(){ titlePage.classList.add('leaving'); }, duration - 350);
+    setTimeout(go, duration);
+    return;
+  }
+
+  document.getElementById('ad-img').src = adImage;
+  document.getElementById('ad-img').alt = sponsorName || 'Sponsor';
+
+  // Show the tap affordance only when there's a real sponsor target (su=).
+  if (v.su) {
+    document.getElementById('tap-hint').style.display = 'block';
+  }
+
+  setTimeout(function() {
+    titlePage.classList.remove('show');
+    adPage.classList.add('show');
+  }, switchAt);
+
+  // v3.4 — a second house-ad picture takes the second half of the ad time.
+  var lastPage = adPage;
+  if (adImage2) {
+    var adPage2 = adPage.cloneNode(true);
+    adPage2.id = 'page-ad2';
+    adPage2.classList.remove('show');
+    var img2 = adPage2.querySelector('img');
+    img2.removeAttribute('id');
+    img2.src = adImage2;
+    adPage.parentNode.insertBefore(adPage2, adPage.nextSibling);
+    lastPage = adPage2;
+    setTimeout(function() {
+      adPage.classList.remove('show');
+      adPage2.classList.add('show');
+    }, switchAt + Math.round((duration - switchAt) / 2));
+  }
+
+  // Fade the ad/content out quickly (bg stays the title's colour), navigate as the fade completes — no dead blank.
+  setTimeout(function() {
+    lastPage.classList.remove('show');
+    lastPage.classList.add('leaving');
+  }, duration - 350);
+
+  setTimeout(go, duration);
+  }
+})();
+</script>
+</body>
+</html>
