@@ -1,0 +1,115 @@
+/* ipp-publish-v1.2.css */
+/* ============================================================
+   ipp-publish-v1.2.css — Publish view styles · COMPILE CONTROL
+   Companion script: ipp-publish-v1.4.js
+   Load after ix-tokens, ix-buttons, ix-success-toast, ix-info.
+
+   v1.2 (Compile Control S1): the "Before you compile" box
+     (.ipp-pub-check) above the button: neutral while checking, green
+     line when the data is complete, amber for size and unpublished
+     records, red when 206 would stop. "Check again" is a small text
+     link. Notes fold away in a <details>. Everything else as v1.1.
+
+   v1.1 (Compile Control S1):
+     · The button is ix-btn ix-btn--primary ix-btn--lg from
+       ix-buttons. The v1.0 .ipp-pub-go gradient is gone.
+     · New result panel: green (compiled), red (stopped), amber
+       (no clear answer), with a size meter against the 95 KB line.
+     · Colours come from ix-tokens (--ix-*). Layout keeps the IPP
+       shell's radius and shadow (--ipp-*) so the card still sits
+       in the shell like the other views.
+     · The ix-info badge gets a visible border on this light card
+       (its own CSS assumes a dark header).
+   ============================================================ */
+[data-ipp-root] .ipp-pub-head{max-width:640px;margin:0 0 20px}
+[data-ipp-root] .ipp-pub-kicker{margin:0 0 6px;font:600 11px var(--ix-font-body);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-pub-titlerow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+[data-ipp-root] .ipp-pub-title{margin:0;font:600 30px var(--ix-font-display);
+  letter-spacing:-.012em;color:var(--ix-text-dark);line-height:1.1}
+[data-ipp-root] .ipp-pub-titlerow .ix-info-badge{border-color:var(--ix-border) !important;
+  color:var(--ix-text-mid) !important}
+[data-ipp-root] .ipp-pub-titlerow .ix-info-badge:hover{border-color:var(--ix-gold) !important}
+[data-ipp-root] .ipp-pub-sub{margin:8px 0 0;font:400 14px var(--ix-font-body);
+  color:var(--ix-text-mid);line-height:1.55}
+
+[data-ipp-root] .ipp-pub-card{max-width:640px;background:var(--ix-surface);border:1px solid var(--ix-border);
+  border-radius:var(--ipp-r);box-shadow:var(--ipp-shadow-card);padding:22px 24px}
+
+[data-ipp-root] .ipp-pub-facts{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0 0 20px}
+[data-ipp-root] .ipp-pub-facts dt{font:600 11px var(--ix-font-body);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ix-text-light);align-self:center;white-space:nowrap}
+[data-ipp-root] .ipp-pub-facts dd{margin:0;font:500 14px var(--ix-font-body);color:var(--ix-text-dark);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-ipp-root] .ipp-pub-facts dd.mono,
+[data-ipp-root] .ipp-pub-result .mono{font-family:var(--ix-font-mono);font-size:12px;color:var(--ix-text-mid)}
+
+[data-ipp-root] .ipp-pub-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+[data-ipp-root] .ipp-pub-status{font:500 13px var(--ix-font-body);color:var(--ix-text-mid)}
+
+/* ── blocked ─────────────────────────────────────────────── */
+[data-ipp-root] .ipp-pub-blocked{border-color:var(--ix-border-input);background:var(--ix-cream)}
+[data-ipp-root] .ipp-pub-blocked-head{margin:0 0 10px;font:600 13px var(--ix-font-body);color:var(--ix-warn)}
+[data-ipp-root] .ipp-pub-list{margin:0;padding-left:18px}
+[data-ipp-root] .ipp-pub-list li{font:400 13px var(--ix-font-body);color:var(--ix-text-mid);
+  line-height:1.6;margin:0 0 4px}
+
+/* ── result panel ────────────────────────────────────────── */
+[data-ipp-root] .ipp-pub-result{margin:20px 0 0;padding:16px 18px;border-radius:var(--ix-radius-sm);
+  border:1px solid var(--ix-border);border-left-width:4px;background:var(--ix-cream-warm)}
+[data-ipp-root] .ipp-pub-result[hidden]{display:none}
+[data-ipp-root] .ipp-pub-result.is-ok{border-left-color:var(--ix-ok)}
+[data-ipp-root] .ipp-pub-result.is-stop{border-left-color:var(--ix-danger);background:var(--ix-salmon-ghost)}
+[data-ipp-root] .ipp-pub-result.is-unclear{border-left-color:var(--ix-gold);background:var(--ix-gold-glow)}
+
+[data-ipp-root] .ipp-pub-result-head{margin:0 0 4px;font:600 16px var(--ix-font-body);color:var(--ix-text-dark)}
+[data-ipp-root] .ipp-pub-result.is-ok .ipp-pub-result-head{color:var(--ix-ok)}
+[data-ipp-root] .ipp-pub-result.is-stop .ipp-pub-result-head{color:var(--ix-danger)}
+[data-ipp-root] .ipp-pub-result.is-unclear .ipp-pub-result-head{color:var(--ix-warn)}
+[data-ipp-root] .ipp-pub-result-sub{margin:0;font:400 13px var(--ix-font-body);color:var(--ix-text-mid);line-height:1.55}
+
+[data-ipp-root] .ipp-pub-problems{margin:6px 0 10px;padding-left:18px}
+[data-ipp-root] .ipp-pub-problems li{font:500 14px var(--ix-font-body);color:var(--ix-danger);
+  line-height:1.5;margin:0 0 4px}
+
+[data-ipp-root] .ipp-pub-warn{margin:12px 0 0;padding:10px 12px 10px 28px;border-radius:var(--ix-radius-sharp);
+  background:var(--ix-gold-glow);border:1px solid var(--ix-gold)}
+[data-ipp-root] .ipp-pub-warn li{font:500 13px var(--ix-font-body);color:var(--ix-warn);line-height:1.5;margin:0 0 3px}
+
+/* size meter: bar width = email bytes / the Worker's 95 KB line */
+[data-ipp-root] .ipp-pub-meter{margin:12px 0 0;max-width:420px}
+[data-ipp-root] .ipp-pub-meter-bar{height:8px;border-radius:var(--ix-radius-pill);background:var(--ix-cream-deep);overflow:hidden}
+[data-ipp-root] .ipp-pub-meter-bar span{display:block;height:100%;border-radius:inherit;background:var(--ix-teal);
+  transition:width .4s ease}
+[data-ipp-root] .ipp-pub-meter.is-over .ipp-pub-meter-bar span{background:var(--ix-salmon)}
+[data-ipp-root] .ipp-pub-meter-label{margin:5px 0 0;font:500 12px var(--ix-font-mono);color:var(--ix-text-mid)}
+
+[data-ipp-root] .ipp-pub-result-actions{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0}
+[data-ipp-root] .ipp-pub-result-actions:empty{display:none}
+[data-ipp-root] .ipp-pub-result-actions a.ix-btn{text-decoration:none !important}
+
+/* ── before you compile (v1.2) ───────────────────────────── */
+[data-ipp-root] .ipp-pub-check{margin:0 0 18px;padding:12px 14px;border-radius:var(--ix-radius-sm);
+  border:1px solid var(--ix-border);border-left-width:4px;border-left-color:var(--ix-border-input);
+  background:var(--ix-cream)}
+[data-ipp-root] .ipp-pub-check:empty{display:none}
+[data-ipp-root] .ipp-pub-check.is-ok{border-left-color:var(--ix-ok)}
+[data-ipp-root] .ipp-pub-check.is-warn,
+[data-ipp-root] .ipp-pub-check.is-unclear{border-left-color:var(--ix-gold)}
+[data-ipp-root] .ipp-pub-check.is-stop{border-left-color:var(--ix-danger);background:var(--ix-salmon-ghost)}
+[data-ipp-root] .ipp-pub-check-head{margin:0 0 6px;font:600 11px var(--ix-font-body);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-pub-check p{margin:0 0 4px;font:400 13px var(--ix-font-body);line-height:1.5}
+[data-ipp-root] .ipp-pub-check-line{color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-pub-check-good{color:var(--ix-ok);font-weight:500 !important}
+[data-ipp-root] .ipp-pub-check-warnline{color:var(--ix-warn);font-weight:500 !important}
+[data-ipp-root] .ipp-pub-check-stop{color:var(--ix-danger);font-weight:600 !important}
+[data-ipp-root] .ipp-pub-check-list{margin:2px 0 6px;padding-left:18px}
+[data-ipp-root] .ipp-pub-check-list li{font:400 13px var(--ix-font-body);color:var(--ix-warn);line-height:1.5;margin:0 0 3px}
+[data-ipp-root] .ipp-pub-check-notes{margin:4px 0 0;font:400 12px var(--ix-font-body);color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-pub-check-notes summary{cursor:pointer;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-pub-check-notes ul{margin:4px 0 0;padding-left:18px}
+[data-ipp-root] .ipp-pub-check-notes li{margin:0 0 2px;line-height:1.45;word-break:break-word}
+[data-ipp-root] .ipp-pub-recheck{margin:6px 0 0;padding:0;border:0;background:none;cursor:pointer;
+  font:500 12px var(--ix-font-body);color:var(--ix-text-mid);text-decoration:underline}
+[data-ipp-root] .ipp-pub-recheck:hover{color:var(--ix-text-dark)}
