@@ -1,0 +1,291 @@
+<!-- templates/bnm-wln/email-shell-v14.html -->
+<!-- v14 = v13 without the orange "Advertise with us" panel (Clean-Up S1). It was legacy end matter printed on every issue; advertising now runs as the Advertise house ad, placed as a block. The orange footer stays, unchanged. Token end-bar is no longer read by this shell. Nothing else changed. -->
+<!-- v13 = v12 with the publisher's details and the end-matter colours read from data (M11, Clean-Up S1; retires HC-P-EP2-4). The advertise panel's contact line and the footer read publisherPerson (PUBLISHERS Contact Name), publisherPhone and publisherPhoneTel (PUBLISHERS Business Phone, digits only for the tel: link), publisherName (PUBLISHERS name, shown in capitals as before) and publishYear (the issue's year) from 206 v1.40, instead of typed text. Their colours come from tokens: accent, accent-soft, and the new WLN tokens end-bg, end-bar, end-ink, end-ink-soft (bnm-wln/email-tokens-v17.json); the white wrapper reads surface. Same look; the words in the panel stay as WLN content in this file. Nothing else changed. -->
+<!-- v12 = v11 for the email size and the publisher email (Email Pass S2). The advertise panel and footer read the faces from tokens (ctx.font-ui, ctx.font-display) instead of typed font chains, and their email address from PUBLISHERS Business Email (publisherEmail, 206 v1.35) instead of a typed address. .ha-type sets side padding only, so a house ad without a button keeps its 26px bottom (ix/email-ba-house-*-v3). .ha-cell adds box-sizing:border-box: on a 375px phone the stacked text cell was 28px wider than the screen. The rest of the advertise panel and footer is still typed WLN content (tracker HC-P-EP2-4). Standing rule: shell changes ALWAYS bump the filename. -->
+<!-- v11 = v10 + phone rules for the house ads (ix/email-ba-house-left/right/center-v1, Email Pass S2): .ha-cell stacks the split card, .ha-art takes the top corners, .ha-type narrows its side padding, .ha-h is the phone headline size (token ha-headline-size-phone). The weather strip is unchanged: newsletter-render v1.13.0 now fills ctx.weather. Standing rule: shell changes ALWAYS bump the filename. -->
+<!-- v10 = v9 for the Email Pass (Design Pass 2 S4, review v0.3 and the header
+     ruling after it). Needs ix/email-tokens-v9 (via bnm-wln/email-tokens-v9)
+     and newsletter-render v1.12.0.
+     1 · One content edge. Every block sits in a column with ctx.col-pad (16px,
+         8px phones) of paper either side: the header stack, the blocks, the
+         sign-off. Only the footer (advertise panel and orange footer) runs
+         the full 600px. Block templates carry no side padding of their own.
+     2 · Colours. Outside the column: ctx.page-bg (WLN pale teal). The column:
+         ctx.paper. The dark page colour is gone.
+     3 · Header stack. 16px of paper, then the issue bar (rounded top), the
+         masthead art at 568px (Outlook obeys the width attribute), the accent
+         line, then the weather strip with no gap. The greeting block
+         (email-gr-publisher-v3) follows directly and closes the stack with
+         rounded bottom corners and 20px below.
+     4 · Weather (kept from the legacy email, L1). Prints when 206 sends
+         ctx.weather, a list of days: { icon, day, hi, lo, phoneHide }. The
+         first day is today: larger, day label in ctx.weather-today. Days
+         with phoneHide drop on phones. No list, no strip.
+     5 · Phone rules for the Email Pass templates: col-pad grp-pad tile-pad
+         ad-pad sp-pad at-title cn-title sp-title split-h split-text split-img
+         art-img mobile-hide txa-kicker txa-name re-addr. Sizes read tokens and
+         stay in proportion to desktop (E2).
+     The sign-off keeps the Closing Note with the fixed fallback sentence.
+     Standing rule: shell changes ALWAYS bump the filename. -->
+<!-- v9 = v8 + phone rules for the RE list. At 620px the row becomes
+     image-forward: the thumbnail fills the width, and the status chip,
+     address, specs, price and agent stack beneath it. Needs
+     ix/email-re-listing-v2.html for the class names. -->
+<!-- v8 = v7 + the EV phone rules, matching web-blocks-v34: on a phone the
+     date tile becomes the row's left edge, full height and square, the meta
+     line parses onto two lines, and the title grows and tightens. The card
+     loses its radius on phones so the tile can sit flush without a sliver
+     of rounded border beside it. Needs ix/email-ev-cards-v6.html for the
+     class names and ix/email-tokens-v5.json for the three phone values. -->
+<!-- v7 = v6 + Spectral in the font link, for the TXA card names (TXA-8).
+     Spectral loads in Apple Mail and most webmail; elsewhere the stack falls
+     back to Georgia. No other change. -->
+<!-- v6 = v5 + design values from tokens (Design Port S2). Issue bar, masthead
+     frame, page colour and sign-off read tokens; the phone rules read tokens.
+     The sign-off prints the issue's Closing Note, falling back to the fixed
+     sentence, as web does (D42). New phone rule .mobile-stack-text centres
+     the split FA/TS text column on phones (it overflowed by 22px).
+     Unused phone rules removed: .ts-title .ts-excerpt .ev-title .ev-day
+     .ba-img .mobile-center .mobile-hide .mobile-no-border.
+     Kept as WLN content in this file: the advertise panel and the footer.
+     Standing rule: shell changes ALWAYS bump the filename. -->
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<title>{{issueTitle}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Lora:ital,wght@0,400;1,400&family=Jost:wght@500;600;700&family=Spectral:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+
+<!--[if mso]>
+<noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+<![endif]-->
+<style type="text/css">
+/* RESET */
+body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
+img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none}
+body{height:100%!important;margin:0!important;padding:0!important;width:100%!important;background-color:{{ctx.page-bg}}}
+a{color:{{ctx.ink}};text-decoration:none}
+/* MOBILE */
+@media screen and (max-width:620px){
+.wrapper{width:100%!important}
+.mobile-padding{padding-left:10px!important;padding-right:10px!important}
+.mobile-stack{display:block!important;width:100%!important;padding-right:0!important;padding-bottom:12px!important}
+.mobile-stack-text{box-sizing:border-box!important;padding:28px 20px!important}
+.mobile-full{width:100%!important;height:auto!important}
+.outer-padding{padding-left:4px!important;padding-right:4px!important}
+.fa-title{font-size:{{ctx.t-headline-phone}}!important;line-height:{{ctx.headline-lh-phone}}!important}
+.fa-excerpt{font-size:{{ctx.t-body-phone}}!important;line-height:{{ctx.body-lh-phone}}!important}
+/* Email Pass (v10): one content edge, tiles, panels, openers */
+.col-pad{padding-left:8px!important;padding-right:8px!important}
+.grp-pad{padding:18px 12px 0 12px!important}
+.tile-pad{padding:20px 16px 20px!important}
+.ad-pad{padding:16px 8px!important}
+.sp-pad{padding:18px 16px 20px!important}
+.at-title{font-size:{{ctx.at-title-size-phone}}!important}
+.cn-title{font-size:{{ctx.atc-title-size-phone}}!important}
+.sp-title{font-size:{{ctx.sp-title-size-phone}}!important}
+.split-h{font-size:{{ctx.split-headline-size-phone}}!important;line-height:1.15!important}
+.split-text{padding:16px 0 0!important}
+.split-img{max-width:100%!important}
+.art-img{height:{{ctx.art-h-phone}}!important}
+.mobile-hide{display:none!important;width:0!important;max-height:0!important;overflow:hidden!important}
+.txa-kicker{font-size:{{ctx.txa-kicker-size-phone}}!important}
+.txa-name{font-size:{{ctx.txa-name-size-phone}}!important}
+.re-addr{font-size:{{ctx.re-addr-size-phone}}!important}
+/* House ads (v11) — the split card stacks, art on top */
+.ha-cell{display:block!important;width:100%!important;box-sizing:border-box!important}
+.ha-art{border-radius:{{ctx.ha-art-radius}} {{ctx.ha-art-radius}} 0 0!important}
+.ha-art img{border-radius:{{ctx.ha-art-radius}} {{ctx.ha-art-radius}} 0 0!important;max-width:100%!important}
+.ha-type{padding-left:14px!important;padding-right:14px!important}
+.ha-h{font-size:{{ctx.ha-headline-size-phone}}!important}
+/* EV rows — the date tile becomes the row's left edge */
+.ev-card{border-radius:0!important}
+.ev-chip-cell{width:56px!important;padding:0!important;background-color:{{ctx.ev-chip-bg}}!important}
+.ev-chip-tile{width:56px!important}
+.ev-chip-tile td{border-radius:0!important;padding:10px 4px 11px!important}
+.ev-body{padding:12px 30px 12px 12px!important}
+.ev-title{font-size:{{ctx.ev-title-size-m}}!important;line-height:{{ctx.ev-title-lh-m}}!important}
+.ev-meta{line-height:{{ctx.ev-meta-lh-m}}!important}
+.ev-meta-time{display:block!important}
+.ev-meta-sep{display:none!important}
+.ev-meta-venue{display:block!important}
+/* RE list — image-forward on a phone */
+.re-thumb{display:block!important;width:100%!important;padding:0 0 10px!important}
+.re-img{width:100%!important;height:auto!important;max-height:none!important;border-radius:4px!important}
+.re-body{display:block!important;width:100%!important;padding:0!important}
+.re-price{display:block!important;width:100%!important;text-align:left!important;padding:6px 0 0!important;font-size:19px!important}
+}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:{{ctx.page-bg}};">
+
+<!-- PREVIEW TEXT -->
+<div style="display:none;max-height:0;overflow:hidden;">
+{{previewText}}
+&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+</div>
+
+<!-- OUTER WRAPPER -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:{{ctx.page-bg}};">
+<tr>
+<td align="center" style="padding:24px 0 30px;" class="outer-padding">
+
+<!-- MAIN CONTAINER 600px -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="wrapper" bgcolor="{{ctx.paper}}" style="max-width:600px;background-color:{{ctx.paper}};">
+
+
+<!-- ============================================
+     SECTION 1a: GOLD BAR (above masthead)
+     ============================================ -->
+<tr><td style="background-color:{{ctx.paper}};height:16px;line-height:16px;font-size:0;mso-line-height-rule:exactly;">&nbsp;</td></tr>
+
+<tr>
+<td class="col-pad" style="background-color:{{ctx.paper}};padding:0 {{ctx.col-pad}};">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-radius:{{ctx.header-radius}} {{ctx.header-radius}} 0 0;">
+
+<tr>
+  <td style="background-color:{{ctx.accent}};padding:14px 20px;border-radius:{{ctx.header-radius}} {{ctx.header-radius}} 0 0;" class="mobile-padding">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      <tr>
+        <td width="80" valign="middle" style="text-align:left;">
+          <span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:3px;color:{{ctx.accent-ink}};opacity:0.6;">ISSUE</span><br>
+          <span style="font-family:{{&ctx.font-display}};font-size:{{ctx.t-title}};font-weight:700;color:{{ctx.accent-ink}};">{{issueNo}}</span>
+        </td>
+        <td valign="middle" style="text-align:center;padding:0 12px;">
+          <h1 style="margin:0;font-family:{{&ctx.font-display}};font-size:{{ctx.bar-title-size}};font-weight:700;font-style:italic;color:{{ctx.accent-ink}};line-height:1.2;">{{issueTitle}}</h1>
+        </td>
+        <td width="100" valign="middle" style="text-align:right;">
+          <span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:2px;color:{{ctx.accent-ink}};opacity:0.6;">{{publishDateShort}}</span><br>
+          <span style="font-family:{{&ctx.font-display}};font-size:{{ctx.t-title}};font-weight:700;color:{{ctx.accent-ink}};">{{publishYear}}</span>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<!-- ============================================
+     SECTION 1b: MASTHEAD IMAGE (below gold bar)
+     ============================================ -->
+<tr>
+  <td style="background-color:{{ctx.ink}};">
+    <a href="{{issueUrl}}{{utm}}&amp;utm_content=masthead-logo" target="_blank" style="display:block;">
+      <img src="{{masthead}}" alt="{{titleName}}" width="568" style="display:block;width:100%;height:auto;">
+    </a>
+  </td>
+</tr>
+<tr><td style="background-color:{{ctx.accent}};height:2px;line-height:2px;font-size:0;mso-line-height-rule:exactly;">&nbsp;</td></tr>
+
+<!-- ============================================
+     SECTION 1c: WEATHER (when 206 sends ctx.weather)
+     ============================================ -->
+{{#weather}}
+<tr>
+  <td bgcolor="{{ctx.weather-bg}}" style="background-color:{{ctx.weather-bg}};padding:10px 14px 2px;" class="mobile-padding">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr>
+    {{#each weather}}
+      <td align="center" valign="middle"{{#phoneHide}} class="mobile-hide"{{/phoneHide}} style="padding:4px 2px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+          <td style="padding:0 5px 0 0;"><p style="margin:0;font-size:{{#first}}22px{{/first}}{{^first}}18px{{/first}};line-height:1;">{{.icon}}</p></td>
+          <td>
+            <p style="margin:0;font-family:{{&ctx.font-ui}};font-size:9px;font-weight:{{#first}}700{{/first}}{{^first}}600{{/first}};letter-spacing:1px;text-transform:uppercase;color:{{#first}}{{ctx.weather-today}}{{/first}}{{^first}}{{ctx.weather-day}}{{/first}};">{{.day}}</p>
+            <p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{#first}}15px{{/first}}{{^first}}14px{{/first}};font-weight:700;line-height:1.1;white-space:nowrap;color:{{ctx.weather-temp}};">{{.hi}}<span style="font-size:{{#first}}11px{{/first}}{{^first}}10px{{/first}};font-weight:400;color:{{ctx.weather-lo}};"> {{#first}}/ {{/first}}{{.lo}}</span></p>
+          </td>
+        </tr></table>
+      </td>
+    {{/each}}
+    </tr></table>
+  </td>
+</tr>
+{{/weather}}
+
+</table>
+</td>
+</tr>
+
+<!-- ============================================
+     BLOCKS · one content edge (ctx.col-pad)
+     ============================================ -->
+<tr>
+<td class="col-pad" style="background-color:{{ctx.paper}};padding:0 {{ctx.col-pad}};">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+
+{{BLOCKS}}
+
+<!-- ══════════════════════════════════════════════
+     SECTION 24: SIGN-OFF — Closing Note, or the fixed sentence
+     ══════════════════════════════════════════════ -->
+<tr>
+<td style="padding:4px 0 26px;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:{{ctx.surface}};border-radius:14px;border:2px solid {{ctx.signoff-border}};overflow:hidden;">
+  <tr><td style="padding:28px 20px;text-align:center;" class="mobile-padding">
+    <p style="margin:0;font-family:{{&ctx.font-display}};font-size:{{ctx.signoff-size}};font-style:italic;line-height:1.45;color:{{ctx.signoff-ink}};">{{#closingNote}}{{closingNote}}{{/closingNote}}{{^closingNote}}Thanks for reading. See you next week!{{/closingNote}}</p>
+  </td></tr>
+  </table>
+</td>
+</tr>
+
+</table>
+</td>
+</tr>
+<!-- END BLOCKS column -->
+
+<!-- ══════════════════════════════════════════════
+     MEGA-FOOTER: White wrapper (full width)
+     Contains: Footer
+     ══════════════════════════════════════════════ -->
+<tr>
+<td style="padding: 0 0 10px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:{{ctx.surface}}; border-radius: 14px; overflow: hidden;">
+ 
+ 
+<!-- ── FOOTER — Orange background, +2px fonts ── -->
+<tr><td style="padding: 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:{{ctx.end-bg}}; border-radius: 0 0 14px 14px; overflow: hidden;">
+    <!-- Gold accent line -->
+    <tr><td style="height:3px; background:linear-gradient(90deg,{{ctx.accent}},{{ctx.accent-soft}},{{ctx.accent}}); font-size:1px; line-height:1px;">&nbsp;</td></tr>
+    <tr><td style="padding: 28px 20px; text-align: center;">
+      <!-- Logo -->
+      <img src="https://uyluucdnr2.ucarecd.net/1c324dea-1760-4675-8f34-5c9e3ae0a970/" alt="{{titleName}}" width="160" style="display:block; width:160px; height:auto; margin:0 auto 12px; opacity:0.9;">
+      <!-- Publisher line -->
+      <p style="margin:0 0 12px; font-family:{{&ctx.font-ui}}; font-size:15px; color:{{ctx.end-ink-soft}};">Published by <span style="color:{{ctx.end-ink}}; font-weight:600; text-transform:uppercase;">{{publisherName}}</span> &middot; {{publisherPerson}}, Publisher</p>
+      <!-- Contact -->
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+      <tr>
+        <td style="padding:0 10px;"><a href="tel:{{publisherPhoneTel}}" style="font-family:{{&ctx.font-ui}}; font-size:16px; color:{{ctx.end-ink}}; text-decoration:none;">&#128222; {{publisherPhone}}</a></td>
+        <td style="padding:0 10px;"><a href="mailto:{{publisherEmail}}" style="font-family:{{&ctx.font-ui}}; font-size:16px; color:{{ctx.end-ink}}; text-decoration:none;">✉️ Email Us</a></td>
+      </tr>
+      </table>
+      
+      <p style="margin:10px 0 0; font-family:{{&ctx.font-ui}}; font-size:13px; color:{{ctx.accent}}; text-transform:uppercase;">&copy; {{publishYear}} {{publisherName}}. All Rights Reserved.</p>
+    </td></tr>
+  </table>
+</td></tr>
+ 
+</table>
+<!-- END mega-footer white wrapper -->
+</td>
+</tr>
+ 
+ 
+</table>
+<!-- END CONTENT AREA -->
+</td>
+</tr>
+ 
+ 
+</table>
+<!-- END MAIN CONTAINER -->
+ 
+</td>
+</tr>
+</table>
+<!-- END OUTER WRAPPER -->
+ 
+</body>
+</html>
