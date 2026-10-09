@@ -1,0 +1,268 @@
+/* ipp-revenue-v1.4.css */
+/* ============================================================
+   ipp-revenue-v1.4.css — Revenue view styles · REVENUE LIGHT
+   Companion script: ipp-revenue-v1.4.js
+
+   v1.3 (IPP Build S7, 9 Oct 2026) — tabs.
+     · Three tabs, Banners · Splash · Sponsors, on the ix-tab-pill
+       pattern (ix-header). The pill look is repeated here, scoped to
+       Revenue, so the tabs look right whether or not ix-header's sheet
+       is on the page. Every tab is the same fixed size.
+     · Each tab carries a state mark: salmon Not ready, gold Unsaved,
+       green Ready, grey Not built. The mark is a small white chip so it
+       reads on the blue active tab as well.
+     · The title row carries one pill: Revenue ready / Revenue not ready.
+     · Retired: .ipp-rv-sub, .ipp-rv-summary, .ipp-rv-ackbar rules stay
+       below, unused, until the next clean-up (no markup emits them).
+
+   v1.2 (IPP Build S7, 9 Oct 2026) — the hero row.
+     · Splash and Lead sit in a hero row above the banner grid, both
+       fixed and taller than a banner tile (HC-P-RV1-6): Splash 260 x 430
+       with a 256 px portrait picture; Lead 534 x 430 with the banner
+       picture across its width. Stacked (no room side by side): Splash
+       534 x 430 too. Narrow (under 534): Lead 260 x 300.
+     · Ceremony lives in a header band across the top of the card:
+       Splash deep teal (most), Lead soft teal (less). Border colours are
+       untouched, so state still reads the same on every card.
+     · Card padding is held in --rv-py / --rv-px so the header band
+       reaches the card edge in the 1 px and 2 px border states alike.
+     · "Banners" label above the grid of Banner 2..N.
+
+   v1.1 (IPP Build S7, 9 Oct 2026) — the Splash tile.
+     · The Splash tile is the same fixed 260 px tile as a banner. Its
+       picture box keeps the banner box's size; the portrait splash
+       picture is shown whole inside it (contain) on a dark bed, so the
+       grid stays even.
+     · On the shelf, while Splash is chosen, each ad's picture box keeps
+       its size and shows the splash picture whole.
+     · A Splash tile that cannot be chosen (no NEWSLETTER yet) is dashed
+       and does not react to hover.
+   Load after ix-tokens, ix-buttons, ix-form-controls, ix-info and
+   ipp-shell-v1.6.css.
+
+   v1.0 (IPP Build S7, 9 Oct 2026) — first build.
+     · Banner slots are FIXED-size tiles (260 px wide, fixed height) in
+       a grid that fills left to right. A tile never grows or shrinks
+       with its text; long names cut with an ellipsis.
+     · The ad shelf is a fixed 360 px column, right beside the tiles:
+       the script sizes the slots column to whole tiles, so no gap
+       opens between them. Too narrow for both: the shelf goes under.
+     · States, one colour each (ix-tokens):
+         blue ring   the chosen slot (focus colour)
+         gold        a change waiting for Save (--ix-changed-border)
+         salmon      a cloned ad waiting for approval (needs you)
+         green       saved, until the plan is read again
+         red text    a save that failed, with the reason
+     · The save bar sticks to the bottom of the canvas.
+   ============================================================ */
+[data-ipp-root] .ipp-rv{display:flex;flex-direction:column;gap:16px;min-height:100%}
+[data-ipp-root] .ipp-rv-head{margin:0}
+[data-ipp-root] .ipp-rv-kicker{margin:0 0 6px;font:600 11px var(--ix-font-body);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-rv-titlerow{display:flex;align-items:center;gap:12px;white-space:nowrap}
+[data-ipp-root] .ipp-rv-title{margin:0;font:600 30px var(--ix-font-display);letter-spacing:-.012em;
+  color:var(--ix-text-dark);line-height:1.1}
+[data-ipp-root] .ipp-rv-titlerow .ix-info-badge{border-color:var(--ix-border) !important;color:var(--ix-text-mid) !important}
+[data-ipp-root] .ipp-rv-titlerow .ix-info-badge:hover{border-color:var(--ix-gold) !important}
+[data-ipp-root] .ipp-rv-sub{margin:8px 0 0;font:400 14px var(--ix-font-body);color:var(--ix-text-mid)}
+
+[data-ipp-root] .ipp-rv-summary{display:flex;gap:22px;font:400 13px var(--ix-font-body);color:var(--ix-text-mid);white-space:nowrap}
+[data-ipp-root] .ipp-rv-summary b{font-weight:600;color:var(--ix-text-dark)}
+[data-ipp-root] .ipp-rv-summary .is-ack b,
+[data-ipp-root] .ipp-rv-summary .is-ack{color:var(--ix-salmon-ink)}
+[data-ipp-root] .ipp-rv-msg{padding:12px 14px;border:1px solid var(--ix-border);border-radius:var(--ix-radius-sm);
+  background:var(--ix-cream-warm);font:500 13px var(--ix-font-body);color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-rv-msg.is-err{border-color:var(--ix-danger);color:var(--ix-danger);background:var(--ix-surface)}
+[data-ipp-root] .ipp-rv-ackbar{padding:11px 14px;border-radius:var(--ix-radius-sm);border:1px solid var(--ix-salmon);
+  border-left-width:4px;background:var(--ix-salmon-ghost);font:500 13px var(--ix-font-body);color:var(--ix-salmon-ink)}
+
+/* ── two columns: slots | shelf ─────────────────────────────── */
+/* The script sets the slots column to the exact width of its tiles
+   (fit()), so the shelf sits right beside them. */
+[data-ipp-root] .ipp-rv-body{display:flex;gap:24px;align-items:flex-start}
+[data-ipp-root] .ipp-rv-slots{flex:none;min-width:260px}
+[data-ipp-root] .ipp-rv-grid{display:grid;grid-template-columns:repeat(auto-fill,260px);gap:14px}
+[data-ipp-root] .ipp-rv-body.is-stacked{flex-direction:column}
+[data-ipp-root] .ipp-rv-body.is-stacked .ipp-rv-shelf{position:static;width:100%;max-height:none}
+
+/* ── slot tile (fixed size) ─────────────────────────────────── */
+[data-ipp-root] .ipp-rv-tile{--rv-py:10px;--rv-px:12px;box-sizing:border-box;width:260px;height:236px;display:flex;flex-direction:column;
+  padding:var(--rv-py) var(--rv-px);background:var(--ix-surface);border:1px solid var(--ix-border);border-radius:var(--ix-radius-sm);
+  box-shadow:var(--ipp-shadow-card, var(--ix-shadow-sm));cursor:pointer;outline:none;
+  transition:border-color .15s var(--ix-ease),box-shadow .15s var(--ix-ease)}
+[data-ipp-root] .ipp-rv-tile:hover{border-color:var(--ix-border-input)}
+[data-ipp-root] .ipp-rv-tile:focus-visible{box-shadow:0 0 0 3px var(--ix-blue-glow)}
+[data-ipp-root] .ipp-rv-tile.is-armed{border-color:var(--ix-blue);box-shadow:0 0 0 3px var(--ix-blue-glow)}
+[data-ipp-root] .ipp-rv-tile.is-ack{border-color:var(--ix-salmon);border-width:2px;--rv-py:9px;--rv-px:11px;background:var(--ix-salmon-ghost)}
+[data-ipp-root] .ipp-rv-tile.is-pending{border-color:var(--ix-changed-border, var(--ix-gold));border-width:2px;--rv-py:9px;--rv-px:11px;
+  box-shadow:0 0 0 3px var(--ix-gold-glow)}
+[data-ipp-root] .ipp-rv-tile.is-pending.is-armed{box-shadow:0 0 0 3px var(--ix-blue-glow)}
+[data-ipp-root] .ipp-rv-tile.is-saved{border-color:var(--ix-ok)}
+[data-ipp-root] .ipp-rv-tile.is-fail{border-color:var(--ix-danger);border-width:2px;--rv-py:9px;--rv-px:11px}
+[data-ipp-root] .ipp-rv-tile-head{display:flex;align-items:center;justify-content:space-between;height:18px;margin:0 0 8px}
+[data-ipp-root] .ipp-rv-headtext{display:flex;flex-direction:column;min-width:0}
+[data-ipp-root] .ipp-rv-slotname{font:600 11px var(--ix-font-body);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ix-text-light);white-space:nowrap}
+[data-ipp-root] .ipp-rv-chosen{font:600 10px var(--ix-font-body);letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ix-blue);white-space:nowrap}
+/* banner shape 700 x 235 */
+[data-ipp-root] .ipp-rv-thumb{flex:none;width:100%;aspect-ratio:700/235;border-radius:var(--ix-radius-sharp);overflow:hidden;
+  background:var(--ix-cream-deep);display:flex;align-items:center;justify-content:center}
+[data-ipp-root] .ipp-rv-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+[data-ipp-root] .ipp-rv-thumb span{font:500 12px var(--ix-font-body);color:var(--ix-text-light)}
+[data-ipp-root] .ipp-rv-tile.is-empty .ipp-rv-thumb{background:transparent;border:1px dashed var(--ix-border-input)}
+[data-ipp-root] .ipp-rv-tile.is-removing .ipp-rv-thumb img{opacity:.35}
+[data-ipp-root] .ipp-rv-who,
+[data-ipp-root] .ipp-rv-what,
+[data-ipp-root] .ipp-rv-note{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-ipp-root] .ipp-rv-who{margin:8px 0 0;font:600 13px var(--ix-font-body);color:var(--ix-text-dark);height:18px}
+[data-ipp-root] .ipp-rv-what{font:400 12px var(--ix-font-body);color:var(--ix-text-mid);height:17px}
+[data-ipp-root] .ipp-rv-note{margin:4px 0 0;font:500 12px var(--ix-font-body);height:17px}
+[data-ipp-root] .ipp-rv-note .dim{color:var(--ix-text-light)}
+[data-ipp-root] .ipp-rv-note .gold{color:var(--ix-gold-ink)}
+[data-ipp-root] .ipp-rv-note .ack{color:var(--ix-salmon-ink)}
+[data-ipp-root] .ipp-rv-note .ok{color:var(--ix-ok)}
+[data-ipp-root] .ipp-rv-note .bad{color:var(--ix-danger)}
+[data-ipp-root] .ipp-rv-acts{margin-top:auto;display:flex;align-items:center;gap:14px;height:32px}
+/* Approve is the standard ix-btn--secondary (ix-buttons sets it with !important). */
+[data-ipp-root] .ipp-rv-acts .ix-revert{font-size:12px}
+[data-ipp-root] .ipp-rv-acts .ipp-rv-cancel{margin-left:auto}
+
+/* ── ad shelf (fixed 360 px) ────────────────────────────────── */
+[data-ipp-root] .ipp-rv-shelf{position:sticky;top:0;box-sizing:border-box;width:360px;display:flex;flex-direction:column;
+  max-height:calc(100vh - 140px);background:var(--ix-surface);border:1px solid var(--ix-border);
+  border-radius:var(--ix-radius-sm);box-shadow:var(--ipp-shadow-card, var(--ix-shadow-sm))}
+[data-ipp-root] .ipp-rv-shelf-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  padding:12px 14px 8px;white-space:nowrap}
+[data-ipp-root] .ipp-rv-shelf-title{font:600 15px var(--ix-font-display);color:var(--ix-text-dark)}
+[data-ipp-root] .ipp-rv-shelf-target{font:400 12px var(--ix-font-body);color:var(--ix-text-mid);overflow:hidden;text-overflow:ellipsis}
+[data-ipp-root] .ipp-rv-shelf-target b{color:var(--ix-blue);font-weight:600}
+[data-ipp-root] .ipp-rv-search{margin:0 14px 10px;height:34px;box-sizing:border-box;padding:0 10px;
+  border:1px solid var(--ix-border-input);border-radius:var(--ix-radius-sharp);font:400 13px var(--ix-font-body);
+  color:var(--ix-text-dark);background:var(--ix-surface)}
+[data-ipp-root] .ipp-rv-search:focus{outline:none;border-color:var(--ix-blue);box-shadow:0 0 0 3px var(--ix-blue-glow)}
+[data-ipp-root] .ipp-rv-shelf-list{overflow-y:auto;padding:0 8px 10px;min-height:120px}
+[data-ipp-root] .ipp-rv-empty{padding:16px 8px;font:400 13px var(--ix-font-body);color:var(--ix-text-light)}
+[data-ipp-root] .ipp-rv-back{margin:2px 6px 6px}
+[data-ipp-root] .ipp-rv-group-name{padding:0 6px 8px;font:600 13px var(--ix-font-body);color:var(--ix-text-dark);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-ipp-root] .ipp-rv-cust{display:flex;align-items:center;gap:8px;width:100%;height:38px;box-sizing:border-box;
+  padding:0 8px;border:0;border-radius:var(--ix-radius-sharp);background:transparent;cursor:pointer;text-align:left;
+  font:500 13px var(--ix-font-body);color:var(--ix-text-dark)}
+[data-ipp-root] .ipp-rv-cust:hover{background:var(--ix-cream-deep)}
+[data-ipp-root] .ipp-rv-cust .n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-ipp-root] .ipp-rv-cust .u{flex:none;width:72px;text-align:right;font:500 11px var(--ix-font-body);color:var(--ix-teal-mid)}
+[data-ipp-root] .ipp-rv-cust .c{flex:none;width:28px;text-align:right;font:500 12px var(--ix-font-mono);color:var(--ix-text-light)}
+[data-ipp-root] .ipp-rv-cust.is-house{border-bottom:1px solid var(--ix-border);border-radius:0;margin-bottom:4px}
+[data-ipp-root] .ipp-rv-ad{display:flex;gap:10px;width:100%;box-sizing:border-box;height:76px;padding:8px;margin:0 0 6px;
+  border:1px solid var(--ix-border);border-radius:var(--ix-radius-sharp);background:var(--ix-surface);cursor:pointer;text-align:left}
+[data-ipp-root] .ipp-rv-ad:hover{border-color:var(--ix-blue)}
+[data-ipp-root] .ipp-rv-ad.is-off{cursor:default;opacity:.55}
+[data-ipp-root] .ipp-rv-ad.is-off:hover{border-color:var(--ix-border)}
+[data-ipp-root] .ipp-rv-ad-pic{flex:none;width:176px;height:59px;border-radius:2px;overflow:hidden;background:var(--ix-cream-deep);
+  display:flex;align-items:center;justify-content:center}
+[data-ipp-root] .ipp-rv-ad-pic img{width:100%;height:100%;object-fit:cover;display:block}
+[data-ipp-root] .ipp-rv-ad-pic span{font:500 11px var(--ix-font-body);color:var(--ix-text-light)}
+[data-ipp-root] .ipp-rv-ad-text{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px}
+[data-ipp-root] .ipp-rv-ad-text > span,
+[data-ipp-root] .ipp-rv-ad-text em{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+[data-ipp-root] .ipp-rv-ad-text .w{font:500 11px var(--ix-font-body);color:var(--ix-text-light)}
+[data-ipp-root] .ipp-rv-ad-text .n{font:600 13px var(--ix-font-body);color:var(--ix-text-dark)}
+[data-ipp-root] .ipp-rv-ad-text .m{font:400 11px var(--ix-font-body);color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-rv-ad-text em{font:500 11px var(--ix-font-body);font-style:normal;color:var(--ix-teal-mid)}
+[data-ipp-root] .ipp-rv-ad-text em.off{color:var(--ix-text-light)}
+
+/* ── save bar ───────────────────────────────────────────────── */
+[data-ipp-root] .ipp-rv-savebar{position:sticky;bottom:0;margin-top:auto;display:flex;align-items:center;gap:18px;
+  padding:12px 16px;background:var(--ix-surface);border:2px solid var(--ix-changed-border, var(--ix-gold));
+  border-radius:var(--ix-radius-sm);box-shadow:var(--ix-shadow-md)}
+[data-ipp-root] .ipp-rv-savebar.is-saving{border-color:var(--ix-border-input)}
+[data-ipp-root] .ipp-rv-save-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+[data-ipp-root] .ipp-rv-save-text b{font:600 14px var(--ix-font-body);color:var(--ix-text-dark)}
+[data-ipp-root] .ipp-rv-save-text span{font:400 12px var(--ix-font-body);color:var(--ix-text-mid);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+
+/* ── v1.1 Splash tile ───────────────────────────────────────── */
+[data-ipp-root] .ipp-rv-tile.is-splash .ipp-rv-thumb{background:var(--ix-text-dark)}
+[data-ipp-root] .ipp-rv-tile.is-splash .ipp-rv-thumb img{object-fit:contain}
+[data-ipp-root] .ipp-rv-tile.is-splash.is-empty .ipp-rv-thumb{background:transparent}
+[data-ipp-root] .ipp-rv-tile.is-blank{cursor:default}
+[data-ipp-root] .ipp-rv-tile.is-blank:hover{border-color:var(--ix-border)}
+[data-ipp-root] .ipp-rv-ad.is-splash .ipp-rv-ad-pic{background:var(--ix-text-dark)}
+[data-ipp-root] .ipp-rv-ad.is-splash .ipp-rv-ad-pic img{object-fit:contain}
+
+/* ── v1.2 hero row (Splash, Lead) ───────────────────────────── */
+[data-ipp-root] .ipp-rv-slots{display:flex;flex-direction:column;gap:14px}
+[data-ipp-root] .ipp-rv-hero{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
+[data-ipp-root] .ipp-rv-band{display:flex;align-items:baseline;gap:8px;margin:10px 0 0;padding:0 0 6px;
+  border-bottom:1px solid var(--ix-border);font:600 11px var(--ix-font-body);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-rv-band b{font:500 12px var(--ix-font-mono);letter-spacing:0;color:var(--ix-text-mid)}
+
+[data-ipp-root] .ipp-rv-tile.is-hero{height:430px}
+[data-ipp-root] .ipp-rv-tile.is-hero .ipp-rv-tile-head{box-sizing:border-box;height:48px;
+  margin:calc(-1 * var(--rv-py)) calc(-1 * var(--rv-px)) 10px;padding:0 var(--rv-px);
+  border-radius:calc(var(--ix-radius-sm) - 1px) calc(var(--ix-radius-sm) - 1px) 0 0}
+[data-ipp-root] .ipp-rv-tile.is-hero .ipp-rv-slotname{letter-spacing:.12em}
+[data-ipp-root] .ipp-rv-desc{margin-top:2px;font:400 11px var(--ix-font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-ipp-root] .ipp-rv-tile.is-hero .ipp-rv-chosen{flex:none;padding:3px 8px;border-radius:var(--ix-radius-pill);
+  background:var(--ix-blue);color:#fff;letter-spacing:.06em}
+[data-ipp-root] .ipp-rv-tile.is-hero .ipp-rv-who{height:24px;margin-top:10px;font:600 17px var(--ix-font-display);letter-spacing:-.005em}
+[data-ipp-root] .ipp-rv-tile.is-hero .ipp-rv-what{font-size:13px;height:18px}
+
+/* Splash: the most ceremony */
+[data-ipp-root] .ipp-rv-tile.is-hero.is-splash .ipp-rv-tile-head{background:var(--ix-teal-deep)}
+[data-ipp-root] .ipp-rv-tile.is-hero.is-splash .ipp-rv-slotname{font-size:12px;color:var(--ix-cream)}
+[data-ipp-root] .ipp-rv-tile.is-hero.is-splash .ipp-rv-desc{color:rgba(250,249,245,.72)}
+[data-ipp-root] .ipp-rv-tile.is-hero.is-splash .ipp-rv-thumb{aspect-ratio:auto;height:256px}
+[data-ipp-root] .ipp-rv-tile.is-blank .ipp-rv-tile-head{opacity:.7}
+
+/* Lead: ceremony, a notch less */
+[data-ipp-root] .ipp-rv-tile.is-lead{width:534px}
+[data-ipp-root] .ipp-rv-tile.is-hero.is-lead .ipp-rv-tile-head{background:var(--ix-teal-soft)}
+[data-ipp-root] .ipp-rv-tile.is-hero.is-lead .ipp-rv-slotname{color:var(--ix-teal)}
+[data-ipp-root] .ipp-rv-tile.is-hero.is-lead .ipp-rv-desc{color:var(--ix-teal-mid)}
+[data-ipp-root] .ipp-rv-tile.is-hero.is-lead .ipp-rv-who{font-size:20px;height:28px}
+[data-ipp-root] .ipp-rv-hero.is-narrow .ipp-rv-tile.is-lead{width:260px;height:300px}
+[data-ipp-root] .ipp-rv-hero.is-narrow .ipp-rv-tile.is-lead .ipp-rv-who{font-size:17px;height:24px}
+[data-ipp-root] .ipp-rv-hero.is-stack .ipp-rv-tile.is-hero.is-splash{width:534px}
+
+/* ── v1.3 tabs ────────────────────────────────────────────────── */
+[data-ipp-root] .ipp-rv-tabs{display:flex;gap:10px;align-items:center;padding:0 0 14px;border-bottom:1px solid var(--ix-border)}
+[data-ipp-root] .ipp-rv-tab.ix-tab-pill{display:inline-flex;align-items:center;justify-content:space-between;gap:10px;
+  box-sizing:border-box;width:200px;height:42px;padding:0 8px 0 18px;margin:0;
+  font:500 12px var(--ix-font-mono);letter-spacing:.04em;text-transform:uppercase;
+  background-color:var(--ix-cream) !important;border:1.5px solid #e6e2d6;border-radius:24px;color:#5a5a52;cursor:pointer;
+  transition:background-color .15s,border-color .15s,color .15s}
+[data-ipp-root] .ipp-rv-tab.ix-tab-pill:hover:not(.is-active){border-color:var(--ix-gold)}
+[data-ipp-root] .ipp-rv-tab.ix-tab-pill.is-active{color:#fff !important;background-color:var(--ix-blue) !important;border-color:var(--ix-blue) !important}
+[data-ipp-root] .ipp-rv-tab-name{white-space:nowrap}
+[data-ipp-root] .ipp-rv-mark{flex:none;display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:13px;
+  background:#fff;border:1.5px solid currentColor;font:600 11px var(--ix-font-body);letter-spacing:.02em;text-transform:none;white-space:nowrap}
+[data-ipp-root] .ipp-rv-mark.is-needs{color:var(--ix-salmon-ink);background:#fff}
+[data-ipp-root] .ipp-rv-mark.is-unsaved{color:#8A6E2E}
+[data-ipp-root] .ipp-rv-mark.is-ready{color:var(--ix-ok)}
+[data-ipp-root] .ipp-rv-mark.is-soon{color:var(--ix-text-light);border-color:var(--ix-border)}
+[data-ipp-root] .ipp-rv-tab:not(.is-active) .ipp-rv-mark.is-needs{background:var(--ix-salmon-ghost)}
+
+[data-ipp-root] .ipp-rv-ready{display:inline-flex;align-items:center;height:26px;padding:0 12px;border-radius:13px;
+  font:600 12px var(--ix-font-body);border:1.5px solid currentColor;background:#fff}
+[data-ipp-root] .ipp-rv-ready.is-ready{color:var(--ix-ok)}
+[data-ipp-root] .ipp-rv-ready.is-not{color:var(--ix-salmon-ink)}
+
+[data-ipp-root] .ipp-rv-soon{max-width:560px;padding:22px 24px;border:1.5px dashed var(--ix-border);border-radius:var(--ix-radius-sm);
+  background:var(--ix-white);font:400 14px var(--ix-font-body);color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-rv-soon p{margin:0}
+[data-ipp-root] .ipp-rv-soon .ipp-rv-soon-title{margin:0 0 6px;font:600 16px var(--ix-font-display);color:var(--ix-text-dark)}
+
+/* ── v1.4 add and delete banner slots ──────────────────────── */
+[data-ipp-root] .ipp-rv-addtile{box-sizing:border-box;width:260px;height:236px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  background:transparent;border:2px dashed var(--ix-border, #c9d2de);border-radius:10px;cursor:pointer;color:var(--ix-ink-2, #44546a);font:inherit}
+[data-ipp-root] .ipp-rv-addtile:hover:not([disabled]){border-color:var(--ix-blue, #1f6feb);color:var(--ix-blue, #1f6feb)}
+[data-ipp-root] .ipp-rv-addtile[disabled]{opacity:.5;cursor:default}
+[data-ipp-root] .ipp-rv-add-circle{width:40px;height:40px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1}
+[data-ipp-root] .ipp-rv-add-lbl{font-size:14px;font-weight:600}
+[data-ipp-root] .ipp-rv-tile.is-deleting .ipp-rv-thumb{opacity:.35}
+[data-ipp-root] .ipp-rv-tile.is-deleting .ipp-rv-who,[data-ipp-root] .ipp-rv-tile.is-deleting .ipp-rv-what{text-decoration:line-through;opacity:.6}
+[data-ipp-root] .ipp-rv-band-note{margin-left:12px;text-transform:none;letter-spacing:0;font-size:12px;font-weight:400;color:var(--ix-ink-3, #6b7a90)}
