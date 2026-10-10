@@ -1,0 +1,287 @@
+/* ipp-publish-v2.1.css */
+/* ============================================================
+   ipp-publish-v2.1.css — Publish view styles · PUBLISH THIS ISSUE
+   Companion script: ipp-publish-v2.1.js. Replaces ipp-publish-v1.2.css.
+   Load after ix-tokens, ix-buttons, ix-form-controls, ix-success-toast,
+   ix-info. Everything is scoped to [data-ipp-root].
+   v2.0: Send Setup groups, the readiness board, links and tracking,
+   Confirmation, steps 4 and 5 by hand (v2.1), and the done rail.
+   Five step tabs share the row in equal widths (never sized by label).
+   ============================================================ */
+[data-ipp-root] .ipp-pub-head{max-width:640px;margin:0 0 20px}
+[data-ipp-root] .ipp-pub-kicker{margin:0 0 6px;font:600 11px var(--ix-font-body);
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-pub-titlerow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+[data-ipp-root] .ipp-pub-title{margin:0;font:600 30px var(--ix-font-display);
+  letter-spacing:-.012em;color:var(--ix-text-dark);line-height:1.1}
+[data-ipp-root] .ipp-pub-titlerow .ix-info-badge{border-color:var(--ix-border) !important;
+  color:var(--ix-text-mid) !important}
+[data-ipp-root] .ipp-pub-titlerow .ix-info-badge:hover{border-color:var(--ix-gold) !important}
+[data-ipp-root] .ipp-pub-sub{margin:8px 0 0;font:400 14px var(--ix-font-body);
+  color:var(--ix-text-mid);line-height:1.55}
+
+[data-ipp-root] .ipp-pub-card{max-width:860px;background:var(--ix-surface);border:1px solid var(--ix-border);
+  border-radius:var(--ipp-r);box-shadow:var(--ipp-shadow-card);padding:22px 24px}
+
+[data-ipp-root] .ipp-pub-facts{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;margin:0 0 20px}
+[data-ipp-root] .ipp-pub-facts dt{font:600 11px var(--ix-font-body);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ix-text-light);align-self:center;white-space:nowrap}
+[data-ipp-root] .ipp-pub-facts dd{margin:0;font:500 14px var(--ix-font-body);color:var(--ix-text-dark);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-ipp-root] .ipp-pub-facts dd.mono,
+[data-ipp-root] .ipp-pub-result .mono{font-family:var(--ix-font-mono);font-size:12px;color:var(--ix-text-mid)}
+
+[data-ipp-root] .ipp-pub-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+[data-ipp-root] .ipp-pub-status{font:500 13px var(--ix-font-body);color:var(--ix-text-mid)}
+
+/* ── blocked ─────────────────────────────────────────────── */
+[data-ipp-root] .ipp-pub-blocked{border-color:var(--ix-border-input);background:var(--ix-cream)}
+[data-ipp-root] .ipp-pub-blocked-head{margin:0 0 10px;font:600 13px var(--ix-font-body);color:var(--ix-warn)}
+[data-ipp-root] .ipp-pub-list{margin:0;padding-left:18px}
+[data-ipp-root] .ipp-pub-list li{font:400 13px var(--ix-font-body);color:var(--ix-text-mid);
+  line-height:1.6;margin:0 0 4px}
+
+/* ── result panel ────────────────────────────────────────── */
+[data-ipp-root] .ipp-pub-result{margin:20px 0 0;padding:16px 18px;border-radius:var(--ix-radius-sm);
+  border:1px solid var(--ix-border);border-left-width:4px;background:var(--ix-cream-warm)}
+[data-ipp-root] .ipp-pub-result[hidden]{display:none}
+[data-ipp-root] .ipp-pub-result.is-ok{border-left-color:var(--ix-ok)}
+[data-ipp-root] .ipp-pub-result.is-stop{border-left-color:var(--ix-danger);background:var(--ix-salmon-ghost)}
+[data-ipp-root] .ipp-pub-result.is-unclear{border-left-color:var(--ix-gold);background:var(--ix-gold-glow)}
+
+[data-ipp-root] .ipp-pub-result-head{margin:0 0 4px;font:600 16px var(--ix-font-body);color:var(--ix-text-dark)}
+[data-ipp-root] .ipp-pub-result.is-ok .ipp-pub-result-head{color:var(--ix-ok)}
+[data-ipp-root] .ipp-pub-result.is-stop .ipp-pub-result-head{color:var(--ix-danger)}
+[data-ipp-root] .ipp-pub-result.is-unclear .ipp-pub-result-head{color:var(--ix-warn)}
+[data-ipp-root] .ipp-pub-result-sub{margin:0;font:400 13px var(--ix-font-body);color:var(--ix-text-mid);line-height:1.55}
+
+[data-ipp-root] .ipp-pub-problems{margin:6px 0 10px;padding-left:18px}
+[data-ipp-root] .ipp-pub-problems li{font:500 14px var(--ix-font-body);color:var(--ix-danger);
+  line-height:1.5;margin:0 0 4px}
+
+[data-ipp-root] .ipp-pub-warn{margin:12px 0 0;padding:10px 12px 10px 28px;border-radius:var(--ix-radius-sharp);
+  background:var(--ix-gold-glow);border:1px solid var(--ix-gold)}
+[data-ipp-root] .ipp-pub-warn li{font:500 13px var(--ix-font-body);color:var(--ix-warn);line-height:1.5;margin:0 0 3px}
+
+/* size meter: bar width = email bytes / the Worker's 95 KB line */
+[data-ipp-root] .ipp-pub-meter{margin:12px 0 0;max-width:420px}
+[data-ipp-root] .ipp-pub-meter-bar{height:8px;border-radius:var(--ix-radius-pill);background:var(--ix-cream-deep);overflow:hidden}
+[data-ipp-root] .ipp-pub-meter-bar span{display:block;height:100%;border-radius:inherit;background:var(--ix-teal);
+  transition:width .4s ease}
+[data-ipp-root] .ipp-pub-meter.is-over .ipp-pub-meter-bar span{background:var(--ix-salmon)}
+[data-ipp-root] .ipp-pub-meter-label{margin:5px 0 0;font:500 12px var(--ix-font-mono);color:var(--ix-text-mid)}
+
+[data-ipp-root] .ipp-pub-result-actions{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0}
+[data-ipp-root] .ipp-pub-result-actions:empty{display:none}
+[data-ipp-root] .ipp-pub-result-actions a.ix-btn{text-decoration:none !important}
+
+/* ── before you compile (v1.2) ───────────────────────────── */
+[data-ipp-root] .ipp-pub-check{margin:0 0 18px;padding:12px 14px;border-radius:var(--ix-radius-sm);
+  border:1px solid var(--ix-border);border-left-width:4px;border-left-color:var(--ix-border-input);
+  background:var(--ix-cream)}
+[data-ipp-root] .ipp-pub-check:empty{display:none}
+[data-ipp-root] .ipp-pub-check.is-ok{border-left-color:var(--ix-ok)}
+[data-ipp-root] .ipp-pub-check.is-warn,
+[data-ipp-root] .ipp-pub-check.is-unclear{border-left-color:var(--ix-gold)}
+[data-ipp-root] .ipp-pub-check.is-stop{border-left-color:var(--ix-danger);background:var(--ix-salmon-ghost)}
+[data-ipp-root] .ipp-pub-check-head{margin:0 0 6px;font:600 11px var(--ix-font-body);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-pub-check p{margin:0 0 4px;font:400 13px var(--ix-font-body);line-height:1.5}
+[data-ipp-root] .ipp-pub-check-line{color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-pub-check-good{color:var(--ix-ok);font-weight:500 !important}
+[data-ipp-root] .ipp-pub-check-warnline{color:var(--ix-warn);font-weight:500 !important}
+[data-ipp-root] .ipp-pub-check-stop{color:var(--ix-danger);font-weight:600 !important}
+[data-ipp-root] .ipp-pub-check-list{margin:2px 0 6px;padding-left:18px}
+[data-ipp-root] .ipp-pub-check-list li{font:400 13px var(--ix-font-body);color:var(--ix-warn);line-height:1.5;margin:0 0 3px}
+[data-ipp-root] .ipp-pub-check-notes{margin:4px 0 0;font:400 12px var(--ix-font-body);color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-pub-check-notes summary{cursor:pointer;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-pub-check-notes ul{margin:4px 0 0;padding-left:18px}
+[data-ipp-root] .ipp-pub-check-notes li{margin:0 0 2px;line-height:1.45;word-break:break-word}
+[data-ipp-root] .ipp-pub-recheck{margin:6px 0 0;padding:0;border:0;background:none;cursor:pointer;
+  font:500 12px var(--ix-font-body);color:var(--ix-text-mid);text-decoration:underline}
+[data-ipp-root] .ipp-pub-recheck:hover{color:var(--ix-text-dark)}
+
+/* ── v1.3 · the Email card (ipp-publish-v1.7.js) ───────────────
+   Inputs are the platform's ix-picker-input (ix-form-controls v1.1.0),
+   so the changed state is its gold border; Cancel is ix-revert. */
+[data-ipp-root] .ipp-pub-email{margin:0 0 20px;padding:16px 18px;border:1px solid var(--ix-border);
+  border-radius:var(--ix-radius-sm,8px);background:var(--ix-cream-warm,#FDFCF8)}
+[data-ipp-root] .ipp-pub-em-head{margin:0 0 12px;font:600 11px var(--ix-font-body);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-pub-em-wait{margin:0;font:400 13px var(--ix-font-body);color:var(--ix-text-light)}
+[data-ipp-root] .ipp-pub-em-row{margin:0 0 14px}
+[data-ipp-root] .ipp-pub-em-labelrow{display:flex;align-items:baseline;gap:10px;margin:0 0 6px;min-height:18px}
+[data-ipp-root] .ipp-pub-em-label{font:600 13px var(--ix-font-body);color:var(--ix-text-dark)}
+[data-ipp-root] .ipp-pub-em-opt{font:400 12px var(--ix-font-body);color:var(--ix-text-light)}
+[data-ipp-root] .ipp-pub-em-count{margin-left:auto;font:400 12px 'DM Mono',ui-monospace,monospace;
+  font-variant-numeric:tabular-nums;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-pub-em-count.is-over{color:var(--ix-salmon-ink)}
+[data-ipp-root] .ipp-pub-em-note{margin:5px 0 0;font:400 12px var(--ix-font-body);color:var(--ix-gold-ink)}
+[data-ipp-root] .ipp-pub-em-note.is-dim{color:var(--ix-text-light)}
+[data-ipp-root] .ipp-pub-em-note.is-bad{color:var(--ix-danger,#B42318)}
+[data-ipp-root] .ipp-pub-em-actions{display:flex;align-items:center;gap:14px;margin-top:4px}
+[data-ipp-root] .ipp-pub-em-status{font:500 12px var(--ix-font-body);color:var(--ix-ok)}
+
+/* ── v1.4 · three step tabs (ipp-publish-v1.8.js) ──────────────
+   Same pill as Revenue's tabs; one fixed width so a label never
+   resizes its neighbours. Locked = muted with a lock; done = a check. */
+[data-ipp-root] .ipp-pub-tabs{display:flex;gap:10px;align-items:center;margin:0 0 18px;padding:0 0 14px;
+  border-bottom:1px solid var(--ix-border)}
+[data-ipp-root] .ipp-pub-tab{display:inline-flex;align-items:center;gap:10px;box-sizing:border-box;
+  width:252px;height:42px;padding:0 14px 0 8px;margin:0;font:500 12px var(--ix-font-mono,'DM Mono',monospace);
+  letter-spacing:.04em;text-transform:uppercase;background:var(--ix-cream,#FAF9F5);border:1.5px solid #e6e2d6;
+  border-radius:24px;color:#5a5a52;cursor:pointer;white-space:nowrap;text-align:left}
+[data-ipp-root] .ipp-pub-tab:hover:not(.is-active):not(.is-locked){border-color:var(--ix-gold)}
+[data-ipp-root] .ipp-pub-tab:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ix-blue-glow)}
+[data-ipp-root] .ipp-pub-tab-n{flex:none;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+  border-radius:50%;background:#fff;border:1px solid #e6e2d6;font-size:12px;color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-pub-tab-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+[data-ipp-root] .ipp-pub-tab-end{flex:none;display:inline-flex;align-items:center;width:16px;justify-content:center;
+  font-size:14px;color:var(--ix-ok)}
+[data-ipp-root] .ipp-pub-tab.is-active{color:#fff;background:var(--ix-blue);border-color:var(--ix-blue)}
+[data-ipp-root] .ipp-pub-tab.is-active .ipp-pub-tab-n{background:rgba(255,255,255,.2);border-color:transparent;color:#fff}
+[data-ipp-root] .ipp-pub-tab.is-active .ipp-pub-tab-end{color:#fff}
+[data-ipp-root] .ipp-pub-tab.is-locked{cursor:not-allowed;color:var(--ix-text-light);background:transparent;border-style:dashed}
+[data-ipp-root] .ipp-pub-tab.is-locked .ipp-pub-tab-end{color:var(--ix-text-light)}
+[data-ipp-root] .ipp-pub-pane[hidden]{display:none!important}
+[data-ipp-root] .ipp-pub-pane > .ipp-pub-sub{margin:0 0 16px}
+
+/* v1.5 · four steps share the row in equal widths (no tab sized by its
+   label); the label ellipsizes before the tab grows. */
+[data-ipp-root] .ipp-pub-tabs{gap:8px}
+[data-ipp-root] .ipp-pub-tab{flex:1 1 0;width:auto;min-width:0;max-width:252px;gap:8px;padding:0 12px 0 7px;
+  font-size:11px;letter-spacing:.03em}
+/* the step number sits as plain mono text (no circle) so the longest
+   label, NEWSLETTER EMAIL PREP, fits a 202px tab on a 1288px screen */
+[data-ipp-root] .ipp-pub-tab{padding:0 8px 0 12px;gap:6px;letter-spacing:0;font-size:10.5px}
+[data-ipp-root] .ipp-pub-tab-end{width:13px}
+[data-ipp-root] .ipp-pub-tab-n,[data-ipp-root] .ipp-pub-tab.is-active .ipp-pub-tab-n{width:auto;height:auto;border:0;
+  background:none;border-radius:0;font-size:11px;opacity:.75}
+[data-ipp-root] .ipp-pub-tab-n::after{content:'\00b7';margin-left:7px}
+
+/* ── v2.0 · five tabs ─────────────────────────────────────── */
+/* steps 4 and 5 are simulated: the pane says so; the tab looks like the others */
+/* ── v2.0 · Send Setup ────────────────────────────────────── */
+[data-ipp-root] .ipp-pub-grp{border:1px solid var(--ix-border);border-radius:var(--ix-radius-sm,8px);background:var(--ix-cream-warm,#FDFCF8);padding:14px 16px;margin:0 0 14px}
+[data-ipp-root] .ipp-pub-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+[data-ipp-root] .ipp-pub-chips{display:flex;flex-wrap:wrap;gap:6px}
+[data-ipp-root] .ipp-pub-chip{font:500 12px 'DM Mono',ui-monospace,monospace;padding:5px 10px;border-radius:14px;background:#fff;border:1px solid var(--ix-border-input)}
+[data-ipp-root] .ipp-pub-age,[data-ipp-root] .ipp-pub-when{display:flex;align-items:center;gap:10px}
+[data-ipp-root] .ipp-pub-age select.ix-picker-input{width:86px!important}
+[data-ipp-root] .ipp-pub-when input.ix-picker-input{width:180px!important}
+[data-ipp-root] .ipp-pub-when select.ix-picker-input{width:130px!important}
+@media (max-width:1100px){[data-ipp-root] .ipp-pub-two{grid-template-columns:1fr}}
+/* ── v2.0 · the readiness board ───────────────────────────── */
+[data-ipp-root] .ipp-pub-board{border:1px solid var(--ix-border);border-radius:10px;overflow:hidden;margin:0 0 16px;background:#fff}
+[data-ipp-root] .ipp-pub-bsum{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:14px 18px;border-bottom:1px solid var(--ix-border)}
+[data-ipp-root] .ipp-pub-bsum .big{font:600 17px var(--ix-font-body)}
+[data-ipp-root] .ipp-pub-bsum .bn{font:400 12px 'DM Mono',ui-monospace,monospace;color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-pub-bsum.is-ok{background:#E9F6EF;color:var(--ix-ok)}
+[data-ipp-root] .ipp-pub-bsum.is-bad{background:#FDEEEA;color:var(--ix-salmon-ink)}
+[data-ipp-root] .ipp-pub-bsum.is-wait{background:var(--ix-cream);color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-pub-bg{padding:10px 18px 12px;border-top:1px solid var(--ix-border)}
+[data-ipp-root] .ipp-pub-bsum + .ipp-pub-bg{border-top:0}
+[data-ipp-root] .ipp-pub-bgh{display:flex;justify-content:space-between;font:600 11px var(--ix-font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--ix-text-mid);margin:2px 0 6px}
+[data-ipp-root] .ipp-pub-bgh .bc{font:500 11px 'DM Mono',ui-monospace,monospace;letter-spacing:0;color:var(--ix-ok)}
+[data-ipp-root] .ipp-pub-bgh .bc.is-bad{color:var(--ix-salmon-ink)}
+[data-ipp-root] .ipp-pub-ln{position:relative;padding:3px 0 3px 22px;font:400 13px/1.5 var(--ix-font-body)}
+[data-ipp-root] .ipp-pub-ln::before{position:absolute;left:0;top:3px;width:16px;text-align:center;font-weight:700}
+[data-ipp-root] .ipp-pub-ln.is-ok{color:#1d5e3c}[data-ipp-root] .ipp-pub-ln.is-ok::before{content:'\2713';color:var(--ix-ok)}
+[data-ipp-root] .ipp-pub-ln.is-bad{color:var(--ix-salmon-ink);font-weight:500}[data-ipp-root] .ipp-pub-ln.is-bad::before{content:'\2715';color:var(--ix-salmon-ink)}
+[data-ipp-root] .ipp-pub-ln.is-warn{color:var(--ix-gold-ink)}[data-ipp-root] .ipp-pub-ln.is-warn::before{content:'!';color:var(--ix-gold-ink)}
+[data-ipp-root] .ipp-pub-ln.is-note{color:var(--ix-text-mid)}[data-ipp-root] .ipp-pub-ln.is-note::before{content:'i';font:italic 700 13px Georgia,serif;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-pub-ln.is-wait,[data-ipp-root] .ipp-pub-ln.is-grey{color:var(--ix-text-light)}
+[data-ipp-root] .ipp-pub-ln.is-wait::before{content:'\2026'}[data-ipp-root] .ipp-pub-ln.is-grey::before{content:'\2013'}
+[data-ipp-root] .ipp-pub-go{background:none;border:0;padding:0;margin-left:8px;font:500 12.5px var(--ix-font-body);color:var(--ix-blue);text-decoration:underline;cursor:pointer}
+[data-ipp-root] .ipp-pub-gohint{font:400 12.5px var(--ix-font-body);color:var(--ix-salmon-ink)}
+[data-ipp-root] .ipp-pub-utm{margin:6px 0 2px 22px;font-size:12.5px}
+[data-ipp-root] .ipp-pub-utm summary{cursor:pointer;color:var(--ix-blue);text-decoration:underline}
+[data-ipp-root] .ipp-pub-utm-common{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0}
+[data-ipp-root] .ipp-pub-utm-common span{color:var(--ix-text-light);margin-right:4px}
+[data-ipp-root] .ipp-pub-utm code{font:400 11.5px 'DM Mono',ui-monospace,monospace;background:var(--ix-cream);border:1px solid var(--ix-border);border-radius:4px;padding:1px 6px;white-space:nowrap}
+[data-ipp-root] .ipp-pub-utm-wrap{overflow-x:auto;max-height:340px;overflow-y:auto}
+[data-ipp-root] .ipp-pub-utm table{width:100%;border-collapse:collapse;font-size:12px}
+[data-ipp-root] .ipp-pub-utm th{text-align:left;font:600 10.5px var(--ix-font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--ix-text-light);padding:6px;border-bottom:1px solid var(--ix-border);position:sticky;top:0;background:#fff}
+[data-ipp-root] .ipp-pub-utm td{padding:6px;border-bottom:1px dashed var(--ix-border);vertical-align:top}
+[data-ipp-root] .ipp-pub-utm td.u{font:400 11.5px 'DM Mono',ui-monospace,monospace;color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-pub-utm td.st{font:500 11px 'DM Mono',ui-monospace,monospace;color:var(--ix-ok)}
+[data-ipp-root] .ipp-pub-utm tr.is-bad td{background:#FDEEEA}[data-ipp-root] .ipp-pub-utm tr.is-bad td.st{color:var(--ix-salmon-ink)}
+/* ── v2.0 · Confirmation ──────────────────────────────────── */
+[data-ipp-root] .cf-hero{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin:0 0 14px}
+[data-ipp-root] .cf-what,[data-ipp-root] .cf-when{background:#1E2A3A;color:#fff;border-radius:10px;padding:16px 18px}
+[data-ipp-root] .cf-when{background:#2A3A52}
+[data-ipp-root] .cf-k{font:600 10.5px var(--ix-font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--ix-text-mid);margin:0 0 8px}
+[data-ipp-root] .cf-what .cf-k,[data-ipp-root] .cf-when .cf-k{color:#9AA5B8}
+[data-ipp-root] .cf-big{font:600 22px/1.2 var(--ix-font-display,'Fraunces',Georgia,serif)}
+[data-ipp-root] .cf-sub{margin-top:6px;font-size:12.5px;color:#C3CAD6}
+[data-ipp-root] .cf-sub a{color:#fff;text-decoration:underline;cursor:pointer}
+[data-ipp-root] .cf-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 18px}
+[data-ipp-root] .cf-box{border:1px solid var(--ix-border);border-radius:10px;padding:14px 16px;background:var(--ix-cream-warm,#FDFCF8)}
+[data-ipp-root] .cf-row{display:grid;grid-template-columns:110px 1fr;gap:10px;font-size:13px;padding:4px 0;border-top:1px dashed var(--ix-border)}
+[data-ipp-root] .cf-box .cf-k + .cf-row{border-top:0}
+[data-ipp-root] .cf-row span{color:var(--ix-text-light)}[data-ipp-root] .cf-row b{font-weight:600;min-width:0;overflow-wrap:anywhere}
+[data-ipp-root] .cf-ack{border:1px solid var(--ix-border);border-radius:10px;padding:12px 16px;margin:0 0 18px;background:#fff}
+[data-ipp-root] .cf-ack label{display:flex;gap:10px;align-items:center;padding:6px 0;font-size:14px;cursor:pointer}
+[data-ipp-root] .cf-ack input{width:18px;height:18px;accent-color:var(--ix-ok)}
+[data-ipp-root] .cf-go{display:block;width:100%;height:64px;border:0;border-radius:12px;background:#B84A33;color:#fff;font:700 18px var(--ix-font-body);cursor:pointer;box-shadow:0 6px 18px rgba(184,74,51,.28)}
+[data-ipp-root] .cf-go.is-ink{background:#1E2A3A;box-shadow:0 6px 18px rgba(30,42,58,.25)}
+[data-ipp-root] .cf-go[disabled]{background:#E6D9D3;color:#7C6A63;box-shadow:none;cursor:not-allowed}
+[data-ipp-root] .cf-fine{font-size:12px;color:var(--ix-text-light);margin:10px 0 0;line-height:1.5}
+[data-ipp-root] .cf-done{margin-top:14px;padding:14px 16px;border-radius:10px;background:#E9F6EF;color:var(--ix-ok);font-weight:600}
+@media (max-width:1100px){[data-ipp-root] .cf-hero,[data-ipp-root] .cf-grid{grid-template-columns:1fr}}
+/* ── v2.0 · steps 4 and 5, simulated ──────────────────────── */
+[data-ipp-root] .ipp-pub-sim{margin:0 0 14px;padding:8px 12px;border:1px dashed var(--ix-gold);border-radius:8px;background:var(--ix-gold-glow,rgba(196,163,90,.12));color:var(--ix-gold-ink);font:600 12px var(--ix-font-body)}
+[data-ipp-root] .sim-mail{border:1px solid var(--ix-border);border-radius:10px;overflow:hidden;margin:0 0 16px}
+[data-ipp-root] .sim-mh{margin:0;background:var(--ix-cream-warm,#FDFCF8);border-bottom:1px solid var(--ix-border);padding:12px 16px;display:grid;grid-template-columns:70px 1fr;gap:6px 10px;font-size:13px}
+[data-ipp-root] .sim-mh dt{color:var(--ix-text-light)}[data-ipp-root] .sim-mh dd{margin:0}
+[data-ipp-root] .sim-mb{padding:16px 18px;font-size:13.5px;line-height:1.6}
+[data-ipp-root] .sim-att{display:inline-flex;margin-top:8px;padding:6px 10px;border:1px solid var(--ix-border);border-radius:8px;background:var(--ix-cream);font:500 12px 'DM Mono',ui-monospace,monospace}
+[data-ipp-root] .sim-demo{font-size:12px;color:var(--ix-text-light);margin:0 0 12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+[data-ipp-root] .sim-demo button{font:500 11px 'DM Mono',ui-monospace,monospace;border:1px solid var(--ix-border-input);background:#fff;border-radius:12px;padding:3px 10px;cursor:pointer;color:var(--ix-text-mid)}
+[data-ipp-root] .sim-bar{border:1px solid var(--ix-border);border-radius:10px;padding:14px 18px;margin:0 0 14px;background:#F3F6FF}
+[data-ipp-root] .sim-bar.is-testing{background:#FBF6EA}[data-ipp-root] .sim-bar.is-ready{background:#E9F6EF}
+[data-ipp-root] .sim-bar b{font-size:16px;margin-right:10px}[data-ipp-root] .sim-bar > span{font-size:12.5px;color:var(--ix-text-light)}
+[data-ipp-root] .sim-steps{display:flex;gap:6px;margin-top:10px}
+[data-ipp-root] .sim-steps span{flex:1;text-align:center;font:500 11px 'DM Mono',ui-monospace,monospace;text-transform:uppercase;padding:6px 0;border-radius:6px;background:#fff;border:1px solid var(--ix-border);color:var(--ix-text-light)}
+[data-ipp-root] .sim-steps span.on{background:#1E2A3A;color:#fff;border-color:#1E2A3A}
+[data-ipp-root] .sim-thread{display:flex;flex-direction:column;gap:10px}
+[data-ipp-root] .sim-em{border:1px solid var(--ix-border);border-radius:10px;padding:12px 16px;background:#fff;max-width:88%;font-size:13.5px;line-height:1.55}
+[data-ipp-root] .sim-em.out{align-self:flex-end;background:var(--ix-cream-warm,#FDFCF8)}
+[data-ipp-root] .sim-emh{font-size:12px;color:var(--ix-text-light);margin:0 0 4px}
+[data-ipp-root] .sim-em mark{background:rgba(196,163,90,.25);padding:0 2px;border-radius:3px}
+[data-ipp-root] .sim-tag{margin-top:6px;font-size:12px;color:var(--ix-text-mid)}
+[data-ipp-root] .sim-final{display:flex;gap:12px;align-items:center;margin-top:14px;padding:14px 16px;border-radius:10px;background:#0F5132;color:#fff;font-size:14px;line-height:1.5}
+/* done (v2.1): Vendor Status "Fully set up" turns the rail deep green with a lock */
+[data-ipp-root].ipp-sheet.ipp-pub-done .ipp-rail{background:#0F5132}
+[data-ipp-root].ipp-sheet.ipp-pub-done .ipp-switcher button.on{background:#17653F}
+[data-ipp-root].ipp-sheet.ipp-pub-done .ipp-b-head::after{content:'\1F512  Done \00B7 fully set up with the vendor';display:inline-block;margin:0 0 14px;padding:6px 10px;border-radius:6px;background:rgba(255,255,255,.12);color:#fff;font:600 12px var(--ix-font-body)}
+/* ── v2.1 · step 4, copy and paste ────────────────────────── */
+[data-ipp-root] .vd-mail{border:1px solid var(--ix-border);border-radius:10px;overflow:hidden;margin:0 0 14px;background:#fff}
+[data-ipp-root] .vd-row{display:grid;grid-template-columns:76px 1fr 84px;gap:12px;align-items:start;padding:10px 14px;border-top:1px solid var(--ix-border)}
+[data-ipp-root] .vd-row:first-child{border-top:0}
+[data-ipp-root] .vd-l{font:600 11px var(--ix-font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--ix-text-light);padding-top:3px}
+[data-ipp-root] .vd-v{font:400 13.5px var(--ix-font-body);color:var(--ix-text-dark);min-width:0;overflow-wrap:anywhere;padding-top:1px}
+[data-ipp-root] .vd-v.mono{font:400 12.5px 'DM Mono',ui-monospace,monospace}
+[data-ipp-root] .vd-body{margin:0;white-space:pre-wrap;font:400 13px/1.55 var(--ix-font-body);color:var(--ix-text-dark);background:var(--ix-cream-warm,#FDFCF8);border:1px solid var(--ix-border);border-radius:8px;padding:10px 12px;max-height:300px;overflow:auto}
+[data-ipp-root] .vd-copy{box-sizing:border-box;width:84px;height:30px;border:1.5px solid var(--ix-border-input);border-radius:8px;background:#fff;font:600 12px var(--ix-font-body);color:var(--ix-text-dark);cursor:pointer}
+[data-ipp-root] .vd-copy:hover{border-color:var(--ix-blue)}
+[data-ipp-root] .vd-copy.is-done{border-color:var(--ix-ok);color:var(--ix-ok)}
+[data-ipp-root] .vd-actions{display:flex;align-items:center;gap:14px;margin:0 0 16px;flex-wrap:wrap}
+/* ── v2.1 · step 5, tick boxes ────────────────────────────── */
+[data-ipp-root] .vs-bar{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border:1px solid var(--ix-border);border-radius:10px;padding:12px 16px;margin:0 0 12px;background:#F3F6FF}
+[data-ipp-root] .vs-bar.is-ready{background:#E9F6EF;color:var(--ix-ok)}
+[data-ipp-root] .vs-bar b{font-size:16px}[data-ipp-root] .vs-bar span{font:400 12px 'DM Mono',ui-monospace,monospace;color:var(--ix-text-mid)}
+[data-ipp-root] .vs-list{border:1px solid var(--ix-border);border-radius:10px;background:#fff;margin:0 0 14px}
+[data-ipp-root] .vs-row{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-top:1px solid var(--ix-border);cursor:pointer}
+[data-ipp-root] .vs-row:first-child{border-top:0}
+[data-ipp-root] .vs-row input{flex:none;width:18px;height:18px;margin-top:2px;accent-color:var(--ix-ok)}
+[data-ipp-root] .vs-row.is-changed{background:var(--ix-gold-glow,rgba(196,163,90,.12));box-shadow:inset 3px 0 var(--ix-gold)}
+[data-ipp-root] .vs-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+[data-ipp-root] .vs-t b{font:600 14px var(--ix-font-body);color:var(--ix-text-dark)}
+[data-ipp-root] .vs-when{font:400 12px 'DM Mono',ui-monospace,monospace;color:var(--ix-ok);min-height:14px}
+[data-ipp-root] .vs-row.is-changed .vs-when{color:var(--ix-gold-ink)}
+[data-ipp-root] .vs-auto{font:400 12px var(--ix-font-body);color:var(--ix-text-light)}
+/* five tabs at 1288px: tighter inner spacing so SUBMIT TO VENDOR fits */
+[data-ipp-root] .ipp-pub-tab{padding:0 6px 0 10px;gap:5px}
+[data-ipp-root] .ipp-pub-tab-n::after{margin-left:5px}
+[data-ipp-root] .ipp-pub-tab-end{width:12px}
