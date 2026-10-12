@@ -1,0 +1,272 @@
+/* ipp-layout-v1.0.9.css */
+/* ============================================================
+   ipp-layout-v1.0.9.css — Layout view for the IPP
+   Pairs ipp-layout-v1.0.12.js. Replaces v1.0.8.
+
+   v1.0.9 (Layout Preview · S2, 12 Oct 2026) — Preview
+     · The right column is Before Publish (its height) over the Preview
+       card, which fills the rest. The column itself no longer scrolls;
+       each page scrolls inside its own pane.
+     · .ipp-ly-seg: Email / Even / Web. .ipp-ly-panes[data-split] shows
+       one page or both.
+     · .ipp-ly-pvf: the page, drawn at its real width and scaled to fit
+       (the scale is set inline by the script).
+     · .ipp-ly-pvnote.is-behind: gold, the preview is behind the layout.
+       .is-bad: salmon, the preview could not be made.
+
+   v1.0.8 (Layout tiles · S1, 12 Oct 2026) — fixed icons, option B
+     · .ipp-ly-art.is-k-<kind>: the kind's pale ground plus a faint
+       pattern (greeting arcs, event hatching, re dots).
+     · .ipp-ly-disc: a 28px white disc holding the 17px icon in the
+       kind's deeper hue. The 72 x 40 slot is unchanged.
+     · Colours are tokens on .ipp-ly (--ly-k-*), so a title skin can
+       override them later without touching these rules.
+
+   v1.0.7 (Layout tiles · S1, 12 Oct 2026) — dropdowns on the tile
+     · The tile head is handle 14 · position 18 · type 44 · the block
+       (art 72 + text, fills) · right column 150. Position, type and
+       the right column sit outside the tile's open button, so a
+       dropdown never opens the tile.
+     · .ipp-ly-tsel / .ipp-ly-dsel: the type and design dropdowns.
+       Changed = 2px gold border on a pale gold ground; wrong design =
+       salmon border. The Cancel link sits under the design dropdown.
+     · The line under the title is EC 24 · byline · franchise 112 (the
+       design moved to the right column).
+     · .ipp-ly-open now holds review cards only: picture 112 x 63, then
+       label / value lines. .ipp-ly-miss names what is missing in salmon.
+       The Move, Type and Design rows of v1.0.5 are removed.
+
+   v1.0.6 (Layout tiles · S1, 12 Oct 2026) — list tiles
+     · .ipp-ly-art.is-icon: the fixed calendar / house icon, ink on the
+       cream slot, centred in the same 72 x 40 slot.
+     · .ipp-ly-items: the open list tile's items. Each line is a fixed
+       28px: number 16 · picture 40 x 22 · name (fills) · date 150.
+
+   v1.0.5 (Layout tiles · S1, 12 Oct 2026) — the tile redesign
+     Frame 6 v3 of the canvas "PubPlan Layout tab · S12 mockup".
+     · .ipp-ly-tile: handle 14 · then one button holding position 18 ·
+       type 32 · art 72 · text. Head is a fixed 56px; the inside-ad
+       strip adds a fixed 30px. Tiles never grow with their words;
+       long words are cut with an ellipsis.
+     · Art sits in a fixed 72 x 40 slot (banners 72 x 18, centred).
+     · Line under the title: EC 24 · byline (fills) · franchise 112 ·
+       design 104. The 24px EC slot is on every tile, so the bylines
+       start on one vertical line too.
+     · .is-banner: #EEF1F6 ground; the customer name in italic.
+     · .ipp-ly-ec: filled teal #2F6F73. Teal because gold means
+       unsaved and salmon means needs you.
+     · .is-open: the tile opens in place (Move, Type, Design, Cancel),
+       ink ring as the old selected row had.
+     · The stack is 620px at most; the right column takes the rest and
+       holds Before Publish (Preview in S2).
+     The weather tile, tray, rail tab and Before Publish rules carry
+     over from v1.0.4 unchanged.
+   Earlier history: see ipp-layout-v1.0.4.css.
+   ============================================================ */
+.ipp-view[data-view="layout"] .ipp-canvas{display:flex;flex-direction:column;min-height:0}
+.ipp-ly{--ly-gold:var(--ix-gold,#C4A35A);--ly-salmon:var(--ix-salmon,#EC7259);--ly-salmon-ink:var(--ix-salmon-ink,#C0432B);
+  --ly-ink:var(--ix-text-dark,#1E2A3A);--ly-mid:var(--ix-text-mid,#5A6478);--ly-border:var(--ix-border,#E4E0D4);
+  --ly-cream:var(--ix-cream,#FAF9F5);--ly-sand:var(--ix-border-soft,#EEE9DC);--ly-ec:#2F6F73;--ly-ban:#EEF1F6;
+  --ly-k-gr-bg:#F4E6DC;--ly-k-gr-ink:#8A5A44;--ly-k-gr-line:#E9D3C3;
+  --ly-k-ev-bg:#E5ECDD;--ly-k-ev-ink:#4E6B3E;--ly-k-ev-line:#CFDDC3;
+  --ly-k-re-bg:#ECE6F0;--ly-k-re-ink:#5E4A7A;--ly-k-re-line:#DACFE3;
+  display:flex;flex-direction:column;flex:1;min-height:0;font-family:var(--ix-font-body,'DM Sans',system-ui,sans-serif);color:var(--ly-ink)}
+
+/* head */
+.ipp-ly-head{display:flex;align-items:baseline;gap:12px;flex:none;margin-bottom:12px}
+.ipp-ly-h2{margin:0;font:600 22px var(--ix-font-display,'Fraunces',Georgia,serif);color:var(--ly-ink)}
+.ipp-ly-hint{font-size:13px;color:var(--ly-mid);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ipp-ly-info{flex:none}
+.ipp-ly-msgline{flex:none;margin:0 0 12px;padding:10px 14px;border-radius:10px;background:#fff;border:1px solid var(--ly-border);font-size:13px;line-height:1.45}
+.ipp-ly-msgline.is-bad{border-color:var(--ly-salmon);color:var(--ly-salmon-ink)}
+.ipp-ly-wait{font-size:13px;color:var(--ly-mid);margin:8px 2px}
+
+/* body: stack + right column */
+.ipp-ly-body{flex:1;min-height:0;display:flex;gap:24px}
+.ipp-ly-stack{position:relative;flex:0 1 620px;min-width:480px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding:2px 4px 72px 2px}
+.ipp-ly-stack::-webkit-scrollbar{width:8px}
+.ipp-ly-stack::-webkit-scrollbar-thumb{background:var(--ix-border-input,#DDD9C8);border-radius:4px}
+.ipp-ly-side{flex:1 1 300px;min-width:280px;min-height:0;display:flex;flex-direction:column;gap:12px;padding:2px 2px 64px}
+.ipp-ly-chk{flex:none}
+
+/* a tile */
+.ipp-ly-tile{flex:none;box-sizing:border-box;border-radius:9px;background:#fff;border:1px solid var(--ly-border)}
+.ipp-ly-tile.is-banner{background:var(--ly-ban)}
+.ipp-ly-tile.is-open{box-shadow:0 0 0 2px var(--ly-ink)}
+.ipp-ly-tile.ipp-dirty{border:2px solid var(--ly-gold);margin:-1px}
+.ipp-ly-tile.is-dragging{opacity:.45}
+.ipp-ly-tr{position:relative;display:grid;grid-template-columns:14px 18px 44px minmax(0,1fr) 150px;gap:0 8px;align-items:start;padding:0 10px 0 7px}
+.ipp-ly-tr>.ipp-ly-pos,.ipp-ly-tc{height:56px;display:flex;align-items:center}
+.ipp-ly-tr>.ipp-ly-pos{justify-content:flex-end}
+.ipp-ly-h{width:14px;height:56px;display:flex;align-items:center;justify-content:center;border:0;background:none;padding:0;
+  color:#9AA0AC;border-radius:4px;cursor:grab;touch-action:none}
+.ipp-ly-h:hover{color:var(--ly-ink)}
+.ipp-ly-h:focus-visible{outline:2px solid var(--ly-ink);outline-offset:1px}
+.ipp-ly-lock{cursor:default}
+.ipp-ly-lock:hover{color:#9AA0AC}
+.ipp-ly-main{display:flex;flex-direction:column;width:100%;min-width:0;border:0;background:none;padding:0;margin:0;
+  text-align:left;cursor:pointer;color:inherit;font:inherit}
+.ipp-ly-main:focus-visible{outline:2px solid var(--ly-ink);outline-offset:2px;border-radius:6px}
+.ipp-ly-grid1{display:grid;grid-template-columns:72px minmax(0,1fr);gap:0 8px;align-items:center;height:56px}
+.ipp-ly-pos{font:500 11px var(--ix-font-mono,'DM Mono',ui-monospace,monospace);color:var(--ly-mid);text-align:right}
+.ipp-ly-type{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:32px;height:18px;border-radius:4px;
+  background:var(--ly-sand);font:600 9px var(--ix-font-mono,'DM Mono',ui-monospace,monospace);color:var(--ly-ink);white-space:nowrap;overflow:hidden}
+.ipp-ly-type.is-none{background:#fff;box-shadow:inset 0 0 0 1.5px var(--ly-salmon);color:var(--ly-salmon-ink)}
+.ipp-ly-type.is-changed{background:#FBF4E2;box-shadow:inset 0 0 0 1.5px var(--ly-gold)}
+.ipp-ly-art{width:72px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:4px;background:#F6F3EA;overflow:hidden}
+.ipp-ly-tile.is-banner .ipp-ly-art{background:transparent}
+.ipp-ly-img{display:block;width:72px;height:40px;object-fit:cover;border-radius:4px}
+.ipp-ly-img.is-ban{height:18px;border-radius:2px}
+.ipp-ly-img.is-empty{background:transparent}
+.ipp-ly-tx{min-width:0;display:flex;flex-direction:column;gap:6px}
+.ipp-ly-t{min-width:0;font-weight:600;font-size:13px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ipp-ly-t.is-cust{font-style:italic}
+.ipp-ly-t.is-empty{color:var(--ly-mid);font-weight:500}
+.ipp-ly-tile.is-removing .ipp-ly-t{text-decoration:line-through;color:var(--ly-mid)}
+.ipp-ly-l2{display:grid;grid-template-columns:24px minmax(0,1fr) 112px;gap:0 8px;align-items:center;height:16px}
+.ipp-ly-ecs{display:flex;align-items:center}
+.ipp-ly-ec{display:inline-flex;align-items:center;justify-content:center;width:22px;height:15px;border-radius:3px;background:var(--ly-ec);
+  color:#fff;font:700 8.5px var(--ix-font-body,'DM Sans',sans-serif);letter-spacing:.04em}
+.ipp-ly-s{min-width:0;font-size:11px;color:#3A4558;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ipp-ly-tile.is-failed .ipp-ly-s{color:var(--ly-salmon-ink);font-weight:600}
+.ipp-ly-fr{min-width:0;display:flex;align-items:center;gap:4px}
+.ipp-ly-frdot{width:10px;height:10px;border-radius:2px;background:#9AA585;flex:none}
+.ipp-ly-frn{min-width:0;font-size:10px;color:var(--ly-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ipp-ly-d{min-width:0;font-size:10px;color:var(--ly-mid);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ipp-ly-d.is-bad{color:var(--ly-salmon-ink);font-weight:600}
+.ipp-ly-d.is-changed{color:var(--ly-ink);font-weight:600}
+
+/* v1.0.6 — list tiles */
+.ipp-ly-art.is-icon{color:var(--ly-ink)}
+.ipp-ly-art.is-k-greeting{color:var(--ly-k-gr-ink);background:radial-gradient(circle at 0 100%,transparent 9px,var(--ly-k-gr-line) 9px,var(--ly-k-gr-line) 10px,transparent 10px) 0 0/18px 18px,var(--ly-k-gr-bg)}
+.ipp-ly-art.is-k-event{color:var(--ly-k-ev-ink);background:repeating-linear-gradient(135deg,var(--ly-k-ev-line) 0 1px,transparent 1px 7px),var(--ly-k-ev-bg)}
+.ipp-ly-art.is-k-re{color:var(--ly-k-re-ink);background:radial-gradient(var(--ly-k-re-line) 1.2px,transparent 1.4px) 0 0/7px 7px,var(--ly-k-re-bg)}
+.ipp-ly-disc{width:28px;height:28px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(30,42,58,.12)}
+.ipp-ly-disc svg{width:17px;height:17px}
+
+/* the ad inside an article */
+.ipp-ly-strip{display:grid;grid-template-columns:72px minmax(0,1fr);gap:0 8px;align-items:center;height:26px;margin-bottom:4px}
+.ipp-ly-sa{display:flex;justify-content:center}
+.ipp-ly-st{min-width:0;font-size:11px;color:#3A4558;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ipp-ly-st.is-bad{color:var(--ly-salmon-ink);font-weight:600}
+
+/* the open tile: review only (v1.0.7) */
+.ipp-ly-open{border-top:1px solid var(--ly-sand);margin:0 10px;padding:10px 0 12px;display:flex;flex-direction:column;gap:10px}
+.ipp-ly-card2{display:grid;grid-template-columns:112px minmax(0,1fr);gap:0 14px;align-items:start}
+.ipp-ly-rp{display:block;width:112px;height:63px;object-fit:cover;border-radius:4px;background:#F6F3EA}
+.ipp-ly-rp.is-missing,.ipp-ly-bp.is-missing{display:flex;align-items:center;justify-content:center;box-sizing:border-box;border:1.5px dashed var(--ly-salmon);
+  color:var(--ly-salmon-ink);font-size:11px;font-weight:600;background:#fff}
+.ipp-ly-rg{min-width:0;display:grid;grid-template-columns:64px minmax(0,1fr);gap:3px 10px;align-items:baseline}
+.ipp-ly-rn{grid-column:1 / -1;font-size:13px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ipp-ly-rk{font:600 9px var(--ix-font-body,'DM Sans',sans-serif);letter-spacing:.1em;text-transform:uppercase;color:var(--ly-mid)}
+.ipp-ly-rv{min-width:0;font-size:12px;line-height:1.4;color:#3A4558}
+.ipp-ly-miss{color:var(--ly-salmon-ink);font-weight:600}
+.ipp-ly-banbig{max-width:100%}
+.ipp-ly-bp{display:block;max-width:100%;height:auto;border-radius:3px}
+.ipp-ly-bp.is-missing{width:300px;height:40px}
+
+/* the right column: design dropdown and Cancel (v1.0.7) */
+.ipp-ly-rc{height:56px;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:3px;min-width:0}
+.ipp-ly-dsel,.ipp-ly-tsel{box-sizing:border-box;height:26px;border:1.5px solid var(--ix-border-input,#DDD9C8);border-radius:6px;background:#fff;
+  color:var(--ly-ink);cursor:pointer;-webkit-appearance:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%235A6478'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 7px center}
+.ipp-ly-dsel{width:150px;padding:0 20px 0 8px;font:500 11px var(--ix-font-body,'DM Sans',sans-serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ipp-ly-tsel{width:44px;height:22px;padding:0 13px 0 5px;font:600 9px var(--ix-font-mono,'DM Mono',ui-monospace,monospace);background-position:right 4px center;background-color:var(--ly-sand);border-color:transparent}
+.ipp-ly-dsel:hover,.ipp-ly-tsel:hover{border-color:#B9B2A0}
+.ipp-ly-dsel:focus-visible,.ipp-ly-tsel:focus-visible{outline:2px solid var(--ly-ink);outline-offset:1px}
+.ipp-ly-dsel.is-bad{border-color:var(--ly-salmon);color:var(--ly-salmon-ink)}
+.ipp-ly-dsel.is-changed,.ipp-ly-tsel.is-changed{border:2px solid var(--ly-gold);background-color:#FBF4E2;font-weight:700}
+.ipp-ly-tsel.is-none{border-color:var(--ly-salmon);color:var(--ly-salmon-ink);background-color:#fff}
+.ipp-ly-dsel:disabled,.ipp-ly-tsel:disabled{cursor:default;opacity:.6}
+.ipp-ly-dtx{font-size:11px;color:var(--ly-mid)}
+.ipp-ly-dtx.is-bad{color:var(--ly-salmon-ink);font-weight:600}
+.ipp-ly-cx{border:0;background:none;padding:0;font:500 11px var(--ix-font-body,'DM Sans',sans-serif);color:var(--ly-mid);
+  text-decoration:underline;text-underline-offset:2px;cursor:pointer;line-height:1}
+.ipp-ly-cx:hover{color:var(--ly-ink)}
+.ipp-ly-tile .ipp-ly-rm{font-size:11px}
+
+.ipp-ly-msg{font-size:12px;color:var(--ly-mid)}
+.ipp-ly-msg.is-bad{color:var(--ly-salmon-ink);font-weight:600}
+.ipp-ly-drop{position:absolute;left:4px;right:4px;height:3px;border-radius:2px;background:var(--ly-ink);pointer-events:none;z-index:2}
+
+/* side cards */
+.ipp-ly-card{box-sizing:border-box;background:#fff;border-radius:12px;border:1px solid var(--ly-border);padding:16px 18px}
+.ipp-ly-card p{margin:6px 0 0;font-size:13px;line-height:1.45;color:var(--ly-mid)}
+.ipp-ly-k{font:600 10px var(--ix-font-body,'DM Sans',sans-serif);letter-spacing:.12em;text-transform:uppercase;color:var(--ly-mid)}
+
+/* Before Publish */
+.ipp-ly-check{border:1.5px solid var(--ly-salmon)}
+.ipp-ly-check.is-ok{border:1px solid #B9DCCB;background:#F3FAF6}
+.ipp-ly-check.is-ok p{color:var(--ix-ok,#1F7A5C)}
+.ipp-ly-check ul{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ipp-ly-check li button{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;border:0;background:none;padding:2px 0;
+  font:400 13px/1.4 var(--ix-font-body,'DM Sans',sans-serif);color:var(--ly-ink);cursor:pointer}
+.ipp-ly-check li button::before{content:"";width:8px;height:8px;border-radius:4px;background:var(--ly-salmon);flex:none;margin-top:5px}
+.ipp-ly-check li button:hover{text-decoration:underline;text-underline-offset:2px}
+
+/* tray: Layout's own (.ipp-ly-bar), placed like the shell's .ipp-savebar */
+.ipp-ly-bar{position:absolute;left:var(--ipp-b-rail,290px);right:0;bottom:0;height:56px;z-index:20;box-sizing:border-box;
+  display:flex;align-items:center;gap:16px;padding:0 28px;background:#fff;border-top:1px solid var(--ix-border,#E4E0D4);
+  box-shadow:0 -6px 22px -10px rgba(30,42,58,.18);font-family:var(--ix-font-body,'DM Sans',system-ui,sans-serif)}
+.ipp-ly-bar .dot{width:8px;height:8px;border-radius:50%;background:var(--ix-text-light,#6B7280);flex:none}
+.ipp-ly-bar .stat{font-size:13px;color:var(--ix-text-mid,#5A6478);white-space:nowrap}
+.ipp-ly-bar.ipp-dirty{border-top:2px solid var(--ix-gold,#C4A35A)}
+.ipp-ly-bar.ipp-dirty .dot,.ipp-ly-bar.saving .dot{background:var(--ix-gold,#C4A35A);box-shadow:0 0 0 4px var(--ix-gold-shadow,rgba(196,163,90,.2))}
+.ipp-ly-bar.ipp-dirty .stat{color:var(--ix-text-dark,#1E2A3A);font-weight:600}
+.ipp-ly-actions{margin-left:auto;display:inline-flex;align-items:center;gap:14px}
+.ipp-ly-actions [hidden]{display:none!important}
+.ipp-ly-ed{font-size:13px;color:var(--ix-text-mid,#5A6478);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px}
+
+/* the rail's Layout tab: fit / total and the salmon dot */
+.ipp-switcher button.ipp-ly-tab{display:flex;align-items:center}
+.ipp-switcher button.ipp-ly-tab .ipp-ly-tabname{flex:1;text-align:left}
+.ipp-switcher button.ipp-ly-tab .ipp-ly-tabn{font:500 12px var(--ix-font-mono,'DM Mono',ui-monospace,monospace);opacity:.9}
+.ipp-switcher button.ipp-ly-tab .ipp-ly-tabdot{width:8px;height:8px;border-radius:4px;background:var(--ix-rail-alert,#F08A73);margin-left:8px;flex:none}
+.ipp-switcher button.ipp-ly-tab .ipp-ly-tabdot[hidden]{display:none}
+
+/* the weather tile (v1.0.3, on tiles) */
+.ipp-ly-tile.is-wx-bad{background:#FDEEEA;border-color:var(--ly-salmon)}
+.ipp-ly-tile.is-wx-bad .ipp-ly-s{color:var(--ly-salmon-ink);font-weight:600}
+.ipp-ly-tile.is-wx-ok{border-left:4px solid var(--ix-ok,#1F7A5C)}
+.ipp-ly-rm{border:0;background:none;padding:0;font:600 12px var(--ix-font-body,'DM Sans',system-ui,sans-serif);color:var(--ix-danger,#B42318);text-decoration:underline;cursor:pointer;white-space:nowrap}
+.ipp-ly-rm:hover{text-decoration-thickness:2px}
+.ipp-ly-wx{margin:0;padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.45}
+.ipp-ly-wx.is-bad{background:#FDEEEA;color:var(--ly-salmon-ink)}
+.ipp-ly-wx.is-ok{background:#E9F6EF;color:var(--ix-ok,#1F7A5C)}
+.ipp-ly-wx.is-wait{background:var(--ly-cream);color:var(--ly-mid)}
+
+/* v1.0.4 — heads up */
+.ipp-ly-k--hu{margin-top:14px}
+.ipp-ly-check .ipp-ly-hu li button{color:var(--ly-mid)}
+.ipp-ly-check .ipp-ly-hu li button::before{background:var(--ly-mid)}
+
+/* v1.0.9 — Preview */
+.ipp-ly-pv{flex:1;min-height:320px;display:flex;flex-direction:column;gap:8px;padding:12px 14px}
+.ipp-ly-pvh{display:flex;align-items:center;gap:10px;flex:none}
+.ipp-ly-pvt{font-size:12px;color:var(--ly-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ipp-ly-seg{display:inline-flex;gap:2px;padding:3px;border-radius:8px;background:#E7E2D4;flex:none}
+.ipp-ly-seg button{box-sizing:border-box;height:26px;border:0;background:transparent;font:600 11px var(--ix-font-body,'DM Sans',sans-serif);
+  color:var(--ly-mid);padding:0 10px;border-radius:6px;cursor:pointer}
+.ipp-ly-seg button[aria-pressed="true"]{background:#fff;color:var(--ly-ink);box-shadow:0 1px 2px rgba(30,42,58,.12)}
+.ipp-ly .ix-btn.ipp-ly-pvgo{flex:none;height:30px;padding:0 14px;font-size:13px}
+.ipp-ly-pvnote{flex:none;margin:0;padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.45}
+.ipp-ly-pvnote.is-behind{background:#FBF4E2;border:1.5px solid var(--ly-gold);color:var(--ly-ink)}
+.ipp-ly-pvnote.is-bad{background:#FDEEEA;border:1.5px solid var(--ly-salmon);color:var(--ly-salmon-ink)}
+.ipp-ly-panes{flex:1;min-height:0;display:flex;gap:12px}
+.ipp-ly-pane{flex:1 1 0;min-width:0;min-height:0;display:flex;flex-direction:column;gap:4px}
+.ipp-ly-panes[data-split="email"] .ipp-ly-pane[data-pv="web"],
+.ipp-ly-panes[data-split="web"] .ipp-ly-pane[data-pv="email"]{display:none}
+.ipp-ly-pnh{flex:none;display:flex;align-items:center;height:20px;font:600 11px var(--ix-font-body,'DM Sans',sans-serif)}
+.ipp-ly-pnh span:first-child{flex:1}
+.ipp-ly-pnm{font:500 10px var(--ix-font-mono,'DM Mono',ui-monospace,monospace);color:var(--ly-mid)}
+.ipp-ly-pvs{flex:1;min-height:0;overflow:auto;background:#E9E5DA;border:1px solid var(--ix-border-input,#DDD9C8);border-radius:8px}
+.ipp-ly-pvs::-webkit-scrollbar{width:8px}
+.ipp-ly-pvs::-webkit-scrollbar-thumb{background:var(--ix-border-input,#DDD9C8);border-radius:4px}
+.ipp-ly-pvz{position:relative;overflow:hidden}
+.ipp-ly-pvf{display:block;border:0;background:#fff;transform-origin:0 0}
+.ipp-ly-pvempty{margin:0;padding:24px 16px;font-size:12px;line-height:1.45;color:var(--ly-mid);text-align:center}
+.ipp-ly-pvempty.is-bad{color:var(--ly-salmon-ink);font-weight:600}
+.ipp-ly-pvsel{flex:none;margin:0;font-size:12px;color:var(--ly-salmon-ink);font-weight:600}
+.ipp-ly-pvsel[hidden]{display:none}
+.ipp-ly-pvfoot{flex:none;margin:0;font-size:11px;color:var(--ly-mid)}
