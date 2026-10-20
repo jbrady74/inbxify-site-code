@@ -758,7 +758,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '2.40';
+  var VERSION = '2.41';
   var DEFAULT_SEND_TIME = '08:00'; // HC-P-S7-17
   var FILE = 'ipp-publish-v2.41.js';
   var MOUNTED = 'data-publish-mounted';
