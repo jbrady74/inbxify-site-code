@@ -1,0 +1,396 @@
+// extract-event-v1.3.0.js
+/* ============================================================
+   INBXIFY — Cloudflare Worker: POST /extract-event
+
+   Purpose: the Create Event ASF posts { url, tz? }. This worker reads
+   the page, pulls the best signal it can (JSON-LD schema.org/Event →
+   OpenGraph meta → cleaned body text), hands it to Claude for
+   structured extraction, and returns event fields the ASF drops
+   straight into the form.
+
+   v1.3.0 (24 Oct 2026) — make thin pages work:
+     • Second try in a real browser. When the plain read comes back
+       thin (no JSON-LD Event and little text), or the model fills
+       fewer than three of name / start date / venue / description,
+       the page is read again through Cloudflare Browser Rendering
+       (/content), which runs the page's JavaScript, and extracted
+       again. At most one render per request.
+     • Normal browser identity instead of "INBXIFY-EventExtractor".
+     • Stronger model, set by env.EXTRACT_MODEL, default Sonnet.
+     • Text budget 6,000 → 20,000 characters, and whitespace, nav,
+       svg and footer are stripped first, so the budget holds words.
+     • Time zone comes from the request's tz (the title's zone) when
+       the ASF sends it; America/New_York only as the fallback.
+     • Today's date goes to the model, so "Sat, Nov 21" with no year
+       becomes the next Nov 21, not a guess.
+     • Response adds rendered, filled and note.
+
+   Deploy:
+     • wrangler deploy (module worker)
+     • Secrets: ANTHROPIC_API_KEY (existing)
+                CF_ACCOUNT_ID, CF_BROWSER_TOKEN (new; an API token
+                with "Browser Rendering - Edit")
+     • Optional var: EXTRACT_MODEL
+     Without the two new secrets the worker still runs, does no
+     second try, and says so in note.
+
+   Response shape:
+     { ok:true, source:'json-ld'|'og+text'|'text', rendered:bool,
+       filled:n, note:'',
+       fields:{ eventName, eventDescription, eventLocation,
+                eventVenueRoom, eventVenueStreetAddress, eventVenueCity,
+                eventVenueState, eventVenueZip,
+                eventStartDate, eventStartTime,
+                eventEndDate, eventEndTime, eventRedirectLink },
+       images:[], imageUrl:'' }
+   Dates are YYYY-MM-DD, times HH:mm (24h), wall-clock in tz.
+
+   Hardcoding (for the doc-maintenance chat):
+     HC-W-EE13-1  DEFAULT_MODEL
+     HC-W-EE13-2  DEFAULT_TZ fallback when the request sends no tz
+     HC-W-EE13-3  thin thresholds (THIN_TEXT, CORE_MIN) and TEXT_BUDGET
+     HC-W-EE13-4  BROWSER_UA string
+   ============================================================ */
+
+const DEFAULT_MODEL = 'claude-sonnet-5-5';                 // HC-W-EE13-1
+const DEFAULT_TZ    = 'America/New_York';                  // HC-W-EE13-2
+const TEXT_BUDGET   = 20000;                               // HC-W-EE13-3
+const THIN_TEXT     = 1500;                                // HC-W-EE13-3
+const CORE_MIN      = 3;                                   // HC-W-EE13-3
+const BROWSER_UA    = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
+                      '(KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36';   // HC-W-EE13-4
+const ALLOW_ORIGINS = ['*']; // tighten to your Webflow origin(s) if desired
+
+export default {
+  async fetch(request, env) {
+    const origin = request.headers.get('Origin') || '*';
+    const allow = ALLOW_ORIGINS.includes('*') ? (origin || '*')
+                : (ALLOW_ORIGINS.includes(origin) ? origin : ALLOW_ORIGINS[0]);
+
+    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(allow) });
+    if (request.method !== 'POST')    return json({ ok:false, error:'POST only' }, 405, allow);
+
+    let body;
+    try { body = await request.json(); } catch { return json({ ok:false, error:'Invalid JSON body' }, 400, allow); }
+    const url = (body && body.url ? String(body.url) : '').trim();
+    if (!url) return json({ ok:false, error:'Missing url' }, 400, allow);
+
+    // ---- SSRF guard ----
+    let u;
+    try { u = new URL(url); } catch { return json({ ok:false, error:'Invalid URL' }, 400, allow); }
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return json({ ok:false, error:'URL must be http(s)' }, 400, allow);
+    if (isBlockedHost(u.hostname)) return json({ ok:false, error:'Host not allowed' }, 400, allow);
+
+    const tz    = validTz(body && body.tz) ? String(body.tz) : DEFAULT_TZ;
+    const model = (env.EXTRACT_MODEL && String(env.EXTRACT_MODEL).trim()) || DEFAULT_MODEL;
+    const key = env.ANTHROPIC_API_KEY;
+    if (!key) return json({ ok:false, error:'ANTHROPIC_API_KEY not configured' }, 500, allow);
+    const canRender = !!(env.CF_ACCOUNT_ID && env.CF_BROWSER_TOKEN);
+
+    // ---- first read: plain fetch, as a normal browser ----
+    let html = '', fetchErr = '';
+    try {
+      const res = await fetch(u.toString(), {
+        headers: { 'User-Agent': BROWSER_UA,
+                   'Accept': 'text/html,application/xhtml+xml,*/*;q=0.8',
+                   'Accept-Language': 'en-US,en;q=0.9' },
+        redirect: 'follow'
+      });
+      if (res.ok) html = await res.text();
+      else fetchErr = 'Page returned HTTP ' + res.status;
+    } catch { fetchErr = 'Could not fetch the page'; }
+
+    let rendered = false, note = '';
+    const render = async () => {
+      if (!canRender) { note = 'Page looked thin and the browser read is not set up (CF_ACCOUNT_ID / CF_BROWSER_TOKEN).'; return false; }
+      try {
+        const r = await renderPage(env, u.toString());
+        if (r) { html = r; rendered = true; return true; }
+        note = 'Browser read returned nothing.';
+      } catch (e) { note = 'Browser read failed: ' + (e && e.message ? e.message : 'unknown'); }
+      return false;
+    };
+
+    // Blocked or failed plain read: go straight to the browser.
+    if (!html) {
+      if (!(await render())) return json({ ok:false, error: fetchErr || 'Could not read the page', note }, 502, allow);
+    }
+
+    let sig = signalsFrom(html, u);
+    if (!rendered && isThin(sig) && await render()) sig = signalsFrom(html, u);
+
+    let fields;
+    try { fields = await callClaude(key, model, tz, sig); }
+    catch (e) { return json({ ok:false, error:'Extraction model error: ' + (e && e.message ? e.message : 'unknown') }, 502, allow); }
+
+    // Model still came back short and we haven't rendered yet: one more try.
+    if (!rendered && coreFilled(fields) < CORE_MIN && await render()) {
+      const sig2 = signalsFrom(html, u);
+      try {
+        const f2 = await callClaude(key, model, tz, sig2);
+        if (filledCount(f2) >= filledCount(fields)) { fields = f2; sig = mergeImages(sig2, sig); }
+      } catch (e) { note = 'Browser read worked but the second extraction failed.'; }
+    }
+
+    // v1.2 — always force the operator-pasted URL as the redirect link.
+    fields.eventRedirectLink = u.toString();
+
+    return json({
+      ok: true,
+      source: sig.jsonld ? 'json-ld' : (sig.og.title ? 'og+text' : 'text'),
+      rendered,
+      filled: filledCount(fields),
+      note,
+      fields,
+      images: sig.images,             // v1.1 — ALL candidate images, best guess first
+      imageUrl: sig.images[0] || ''   // back-compat
+    }, 200, allow);
+  }
+};
+
+/* ---------------- v1.3 helpers ---------------- */
+
+function signalsFrom(html, baseUrl) {
+  const jsonld = extractJsonLdEvent(html);
+  const og     = extractMeta(html);
+  const text   = htmlToText(html);
+  return { jsonld, og, text: text.slice(0, TEXT_BUDGET), textLen: text.length,
+           images: collectImages(html, jsonld, og, baseUrl) };
+}
+function isThin(sig) { return !sig.jsonld && sig.textLen < THIN_TEXT; }
+
+const CORE_KEYS = ['eventName', 'eventStartDate', 'eventLocation', 'eventDescription'];
+function coreFilled(f) { return CORE_KEYS.filter(k => String(f[k] || '').trim()).length; }
+function filledCount(f) {
+  return Object.keys(f).filter(k => k !== 'eventRedirectLink' && String(f[k] || '').trim()).length;
+}
+function mergeImages(a, b) {
+  const seen = new Set(), out = [];
+  a.images.concat(b.images).forEach(x => { if (!seen.has(x)) { seen.add(x); out.push(x); } });
+  return Object.assign({}, a, { images: out.slice(0, 16) });
+}
+
+function validTz(tz) {
+  if (!tz || typeof tz !== 'string') return false;
+  try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); return true; } catch { return false; }
+}
+function todayIn(tz) {
+  const p = {};
+  new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' })
+    .formatToParts(new Date()).forEach(x => { p[x.type] = x.value; });
+  return p.year + '-' + p.month + '-' + p.day;
+}
+
+// Cloudflare Browser Rendering REST API, /content: the page's HTML
+// after its JavaScript has run.
+async function renderPage(env, url) {
+  const res = await fetch('https://api.cloudflare.com/client/v4/accounts/' +
+      encodeURIComponent(env.CF_ACCOUNT_ID) + '/browser-rendering/content', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + env.CF_BROWSER_TOKEN },
+    body: JSON.stringify({
+      url,
+      userAgent: BROWSER_UA,
+      gotoOptions: { waitUntil: 'networkidle2', timeout: 30000 },
+      rejectResourceTypes: ['media', 'font']
+    })
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if (!data || data.success === false) throw new Error('render not successful');
+  return typeof data.result === 'string' ? data.result : '';
+}
+
+/* ---------------- helpers ---------------- */
+
+function cors(origin) {
+  return {
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Max-Age': '86400'
+  };
+}
+function json(obj, status, origin) {
+  return new Response(JSON.stringify(obj), {
+    status: status || 200,
+    headers: Object.assign({ 'Content-Type': 'application/json' }, cors(origin))
+  });
+}
+
+function isBlockedHost(host) {
+  host = (host || '').toLowerCase();
+  if (!host) return true;
+  if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.internal')) return true;
+  // literal IPv4
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+    const p = host.split('.').map(Number);
+    if (p[0] === 10) return true;
+    if (p[0] === 127) return true;
+    if (p[0] === 0) return true;
+    if (p[0] === 169 && p[1] === 254) return true;          // link-local / cloud metadata
+    if (p[0] === 192 && p[1] === 168) return true;
+    if (p[0] === 172 && p[1] >= 16 && p[1] <= 31) return true;
+  }
+  if (host === '::1' || host.startsWith('fc') || host.startsWith('fd')) return true; // IPv6 loopback / ULA
+  return false;
+}
+
+function extractJsonLdEvent(html) {
+  const blocks = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi) || [];
+  for (const block of blocks) {
+    const inner = block.replace(/<script[^>]*>/i, '').replace(/<\/script>/i, '').trim();
+    let data;
+    try { data = JSON.parse(inner); } catch { continue; }
+    const candidates = [];
+    const push = (x) => { if (x && typeof x === 'object') candidates.push(x); };
+    if (Array.isArray(data)) data.forEach(push);
+    else { push(data); if (Array.isArray(data['@graph'])) data['@graph'].forEach(push); }
+    for (const c of candidates) {
+      const t = c['@type'];
+      const types = Array.isArray(t) ? t : [t];
+      if (types.some(x => typeof x === 'string' && /event/i.test(x))) return c;
+    }
+  }
+  return null;
+}
+
+function extractMeta(html) {
+  const meta = (prop) => {
+    const re = new RegExp('<meta[^>]+(?:property|name)=["\']' + prop + '["\'][^>]+content=["\']([^"\']*)["\']', 'i');
+    const m = html.match(re); if (m) return decodeEntities(m[1]);
+    const re2 = new RegExp('<meta[^>]+content=["\']([^"\']*)["\'][^>]+(?:property|name)=["\']' + prop + '["\']', 'i');
+    const m2 = html.match(re2); return m2 ? decodeEntities(m2[1]) : '';
+  };
+  const titleTag = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || '';
+  return {
+    title:       meta('og:title') || decodeEntities(titleTag).trim(),
+    description: meta('og:description') || meta('description'),
+    image:       meta('og:image') || meta('twitter:image')
+  };
+}
+
+function collectImages(html, jsonld, og, baseUrl) {
+  // v1.1 — return EVERY candidate image, not just the first. The event
+  // photo is often NOT the JSON-LD/OG image (those skew to logos), so we
+  // gather priority sources first, then every <img> on the page, dedupe,
+  // resolve to absolute, and let the operator pick in the form.
+  const out = [];
+  const seen = new Set();
+  const add = (raw) => {
+    if (!raw || typeof raw !== 'string') return;
+    raw = raw.trim();
+    if (!raw || /^data:/i.test(raw)) return;          // skip inline data URIs
+    let abs;
+    try { abs = new URL(raw, baseUrl).toString(); } catch { return; }
+    if (seen.has(abs)) return;
+    seen.add(abs);
+    out.push(abs);
+  };
+
+  // priority: JSON-LD Event image(s)
+  if (jsonld && jsonld.image) {
+    const i = jsonld.image;
+    if (typeof i === 'string') add(i);
+    else if (Array.isArray(i)) i.forEach(x => add(typeof x === 'string' ? x : (x && x.url)));
+    else if (i.url) add(i.url);
+  }
+  // then OG / twitter image
+  add(og.image);
+  // then <link rel="image_src">
+  const linkSrc = (html.match(/<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)["']/i) || [])[1];
+  add(linkSrc);
+
+  // then every <img> on the page: src, common lazy attrs, first srcset entry
+  const tags = html.match(/<img\b[^>]*>/gi) || [];
+  for (const tag of tags) {
+    add((tag.match(/\bsrc=["']([^"']+)["']/i) || [])[1]);
+    add((tag.match(/\bdata-src=["']([^"']+)["']/i) || [])[1]);
+    add((tag.match(/\bdata-lazy-src=["']([^"']+)["']/i) || [])[1]);
+    const ss = (tag.match(/\bsrcset=["']([^"']+)["']/i) || [])[1];
+    if (ss) add(ss.split(',')[0].trim().split(/\s+/)[0]);
+    if (out.length >= 24) break;
+  }
+  return out.slice(0, 16);
+}
+
+function htmlToText(html) {
+  // v1.3 — strip more chrome and collapse whitespace, so the text
+  // budget holds words rather than indentation.
+  return decodeEntities(String(html || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<svg[\s\S]*?<\/svg>/gi, ' ')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
+    .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/tr)\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' '))
+    .replace(/[ \t\f\v]+/g, ' ')
+    .replace(/\s*\n\s*/g, '\n')
+    .trim();
+}
+
+function decodeEntities(s) {
+  return String(s || '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x27;/gi, "'");
+}
+
+async function callClaude(key, model, tz, signals) {
+  const system =
+    'You extract structured event data from a web page for a local community newsletter. ' +
+    'Output ONLY a JSON object — no prose, no markdown, no code fences. Keys (all required, use "" when unknown): ' +
+    'eventName, eventDescription, eventLocation, eventVenueRoom, eventVenueStreetAddress, ' +
+    'eventVenueCity, eventVenueState, eventVenueZip, eventStartDate, eventStartTime, ' +
+    'eventEndDate, eventEndTime, eventRedirectLink. Rules: ' +
+    'eventLocation = venue NAME only (e.g. "Memorial Hall"). ' +
+    'eventVenueRoom = room/suite within the venue if specified (e.g. "Banquet Room A"); else "". ' +
+    'eventVenueStreetAddress = street line only (e.g. "12 Main St"); no city/state/zip. ' +
+    'eventVenueCity = city name only. ' +
+    'eventVenueState = 2-letter US state abbreviation (e.g. "NJ"); else "". ' +
+    'eventVenueZip = 5-digit US ZIP code; else "". ' +
+    'Split US-style addresses cleanly into the parts above; if a part is not present, use "". ' +
+    'eventStartDate / eventEndDate = YYYY-MM-DD. eventStartTime / eventEndTime = HH:mm 24-hour. ' +
+    'Interpret ALL dates and times as ' + tz + ' wall-clock; do not convert to UTC. ' +
+    'Today is ' + todayIn(tz) + ' in that zone. If a date has no year, use the next occurrence on or after today. ' +
+    'If no end date is given, leave eventEndDate as "". Never invent a time the page does not state. ' +
+    'eventDescription = 1-3 plain-text sentences. ' +
+    'Prefer the JSON-LD Event object when present; fall back to the meta/text.';
+
+  const user =
+    'JSON-LD Event (may be null):\n' + JSON.stringify(signals.jsonld) + '\n\n' +
+    'OpenGraph/meta:\n' + JSON.stringify(signals.og) + '\n\n' +
+    'Page text' + (signals.textLen > TEXT_BUDGET ? ' (truncated)' : '') + ':\n' + signals.text;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: model,
+      max_tokens: 1024,
+      system: system,
+      messages: [{ role: 'user', content: user }]
+    })
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  const txt = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim();
+  const clean = txt.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
+  let parsed;
+  try { parsed = JSON.parse(clean); } catch { throw new Error('model did not return valid JSON'); }
+
+  const keys = ['eventName','eventDescription','eventLocation',
+                'eventVenueRoom','eventVenueStreetAddress','eventVenueCity',
+                'eventVenueState','eventVenueZip',
+                'eventStartDate','eventStartTime','eventEndDate','eventEndTime',
+                'eventRedirectLink'];
+  const out = {};
+  keys.forEach(k => { out[k] = (parsed[k] == null) ? '' : String(parsed[k]); });
+  return out;
+}
