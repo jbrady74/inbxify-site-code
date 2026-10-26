@@ -1,0 +1,39 @@
+<!-- templates/ix/web-ev-cards-v9.html -->
+<!-- v9 (26 Oct 2026, November Build): THE WEB COPIES THE EMAIL. Jeff: web
+     must look like email (email-ev-cards-v12); one chip size everywhere; rows
+     carry no picture. Built on its own class names (.nlw-evm-*), styled by
+     web-blocks-v72, so none of the older event rules reach it.
+     THE LEAD: the whole photo across the top, then the 72px date chip beside
+     the title, day, time and place, two lines of description and Details.
+     EVERY OTHER EVENT: the same chip, title, time and place, chevron.
+     Needs ix-issue-data v1.0.82+ (x_lead, photoLead, teaserShort).
+     Block tokens: rubric franchiseArt franchiseName sponsorName sponsorAd evCount -->
+<div class="nlw-ev nlw-evm nlw-ev--n{{evCount}}">
+  {{#franchiseArt}}<div class="nlw-franchise"><img src="{{franchiseArt}}" alt="{{franchiseName}}" loading="lazy"></div>{{/franchiseArt}}
+  {{#rubric}}<div class="nlw-rubric">{{rubric}}</div>{{/rubric}}
+
+  <div class="nlw-evm-list">
+    {{#each cards}}
+    <div class="nlw-evm-card{{#x_lead}} is-lead{{/x_lead}}">
+      {{#x_lead}}{{#photoLead}}<a class="nlw-evm-photo" href="{{link}}" target="_blank" rel="noopener"><img src="{{photoLead}}" alt="{{title}}" loading="lazy"></a>{{/photoLead}}{{/x_lead}}
+      <div class="nlw-evm-row">
+        <a class="nlw-evm-chip" href="{{link}}" target="_blank" rel="noopener"><span class="nlw-evm-mo">{{dtMonth}}</span><span class="nlw-evm-day">{{dtDay}}</span><span class="nlw-evm-dow">{{dtDow}}</span></a>
+        <div class="nlw-evm-body">
+          {{#x_lead}}{{#eyebrow}}<p class="nlw-evm-eyebrow">{{eyebrow}}</p>{{/eyebrow}}{{/x_lead}}
+          <h3 class="nlw-evm-title"><a href="{{link}}" target="_blank" rel="noopener">{{title}}</a></h3>
+          <p class="nlw-evm-meta">{{#x_lead}}<b>{{dtDow}}</b><span class="nlw-evm-sep">&middot;</span>{{/x_lead}}{{dtTime}}{{#venue}}<span class="nlw-evm-sep">&middot;</span>{{venue}}{{/venue}}</p>
+          {{#x_lead}}{{#teaserShort}}<p class="nlw-evm-teaser">{{teaserShort}}</p>{{/teaserShort}}<a class="nlw-evm-more" href="{{link}}" target="_blank" rel="noopener">Details &rarr;</a>{{/x_lead}}
+        </div>
+        {{^x_lead}}<a class="nlw-evm-chev" href="{{link}}" target="_blank" rel="noopener" aria-label="Details">&rsaquo;</a>{{/x_lead}}
+      </div>
+    </div>
+    {{/each}}
+  </div>
+
+  {{#hasSponsor}}
+  <div class="nlw-ev-sponsor">
+    <div class="nlw-ev-sponsor-label">Presented by {{sponsorName}}</div>
+    {{#sponsorAd}}<img class="nlw-ev-sponsor-ad" src="{{sponsorAd}}" alt="{{sponsorName}}" loading="lazy">{{/sponsorAd}}
+  </div>
+  {{/hasSponsor}}
+</div>
