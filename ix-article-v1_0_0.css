@@ -1,0 +1,109 @@
+/* ix-article-v1_0_0.css
+   INBXIFY · Article page, built in code (Page Frame, 27 Oct 2026).
+   Pairs with ix-article-v1_0_0.js. Colours come from the title's colour
+   line (--ix-t-main, --ix-t-accent, --ix-t-paper) and Site Chrome's
+   derived values; no title colour is typed here. The 760 reading column,
+   plate and headline colour are Site Chrome's (v1.2.1).
+
+   HARDCODING: HC-P-AR2-5 the sponsor banner's width, 600px. Ruled
+   3 Oct: every banner renders at one width everywhere; set this to the
+   issue page's banner width when that number is settled.
+
+   LOAD (Articles template, Page settings, Inside <head>, after the
+   colour line)
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jbrady74/inbxify-site-code@main/ix-article-v1_0_0.css">
+*/
+
+.inner-wrapper.article{
+  --ixr-ui: var(--ix-c-font, 'Jost', 'Avenir Next', Avenir, 'Segoe UI', Arial, sans-serif);
+  --ixr-disp: var(--ixc-display, Georgia, 'Times New Roman', serif);
+  --ixr-ink: var(--ix-t-text, #333333);
+  --ixr-mute: color-mix(in srgb, var(--ixr-ink) 62%, transparent);
+  --ixr-line: color-mix(in srgb, var(--ix-t-main) 14%, transparent);
+  --ixr-on: var(--ix-c-on, #F4F0E4);
+  --ixr-banner-w: 600px;   /* HC-P-AR2-5 */
+}
+.ixr-top *, .ixr-tail *, .ixr-badge, .ixr-presented{ box-sizing: border-box; }
+.ixr-top a:focus-visible, .ixr-tail a:focus-visible, a.ixr-badge:focus-visible{ outline: 2px solid var(--ix-t-accent); outline-offset: 3px; }
+
+/* ── FA badge (T1 B): a small filled pill above the headline ── */
+.ixr-badge{
+  display: table; margin: 0 auto 18px; padding: 8px 16px; border-radius: 999px;
+  background: var(--ix-t-main); color: var(--ixr-on) !important; text-decoration: none !important;
+  font: 600 12px/1 var(--ixr-ui); letter-spacing: .2em; text-transform: uppercase;
+}
+
+/* ── TS banner (T2 A): joined under the plate, full column width ── */
+.ixr-top{ margin: 0 0 30px; }
+/* Joined to the plate: cancel the plate's bottom gap and the column's side
+   padding, as Site Chrome v1.2.1 sets them (40 / 48 desktop, 28 / 18 phone). */
+html.ixc-art .inner-wrapper.article > .ixr-top{ margin: -40px -48px 30px !important; }
+.ixr-top .ixr-presented{ background: var(--ix-t-paper, #F0EDE6); }
+.ixr-ts{ display: block; line-height: 0; text-decoration: none !important; background: var(--ix-t-main); }
+.ixr-ts-img{ display: block; width: 100%; height: auto; }
+.ixr-ts.is-words{
+  line-height: 1; padding: 34px 24px; text-align: center;
+  background: var(--ix-c-deep, color-mix(in srgb, var(--ix-t-main), #000 35%));
+  border-top: 1px solid color-mix(in srgb, var(--ix-t-accent) 45%, transparent);
+  border-bottom: 3px solid var(--ix-t-accent);
+}
+.ixr-ts-name{ font: italic 600 40px/1.05 var(--ixr-disp); color: var(--ixr-on); }
+
+/* ── Presented by ── */
+.ixr-presented{
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 4px 10px;
+  padding: 12px 16px; border-bottom: 1px solid var(--ixr-line);
+}
+.ixr-al-gap, .al-title > .ixr-presented{ border-bottom: 0; padding-top: 0; margin-bottom: 14px; }
+.ixr-presented-l{ font: 600 11px/1.2 var(--ixr-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--ixr-mute); }
+.ixr-presented-n{ font: 600 15px/1.2 var(--ixr-ui); color: var(--ixr-ink) !important; text-decoration: none !important; }
+a.ixr-presented-n:hover{ text-decoration: underline !important; text-decoration-color: var(--ix-t-accent) !important; }
+
+/* ── End of the article ── */
+.ixr-tail{ margin: 40px 0 0; display: flex; flex-direction: column; gap: 40px; }
+
+/* Sponsor banner ad (T3 A) */
+.ixr-sponsor{ padding: 20px; border: 1px solid var(--ixr-line); border-radius: 8px; background: #fff; }
+.ixr-sponsor-l{
+  margin-bottom: 14px; text-align: center;
+  font: 600 11px/1.4 var(--ixr-ui); letter-spacing: .2em; text-transform: uppercase; color: var(--ixr-mute);
+}
+.ixr-sponsor-a{ display: block; width: 100%; max-width: var(--ixr-banner-w); margin: 0 auto; line-height: 0; }
+.ixr-sponsor-img{ display: block; width: 100%; height: auto; border: 1px solid var(--ixr-line); }
+
+/* More from this franchise (T4 A) */
+.ixr-more{ border-top: 2px solid var(--ix-t-accent); padding-top: 26px; }
+.ixr-more-h{ margin: 0 0 20px; text-align: center; font: 600 26px/1.2 var(--ixr-disp); color: var(--ix-t-main); }
+.ixr-more-grid{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.ixr-card{
+  display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; background: #fff;
+  border: 1px solid var(--ixr-line); text-decoration: none !important; color: inherit;
+}
+.ixr-card-img{ display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.ixr-noimg{ aspect-ratio: 4 / 3; background: color-mix(in srgb, var(--ix-t-main) 10%, var(--ix-t-paper, #F0EDE6)); }
+.ixr-sponsor .ixr-noimg{ aspect-ratio: 6 / 1; }
+.ixr-card-bd{ display: flex; flex-direction: column; gap: 6px; padding: 12px 14px 14px; flex: 1 1 auto; }
+.ixr-card-h{ margin: 0; font: 600 17px/1.25 var(--ixr-disp); color: var(--ix-t-main); text-align: left; }
+.ixr-card-m{ margin-top: auto; padding-top: 4px; font: 500 12.5px/1.3 var(--ixr-ui); color: var(--ixr-mute); text-align: left; }
+.ixr-card:hover .ixr-card-h{ text-decoration: underline; text-decoration-color: var(--ix-t-accent); text-underline-offset: 4px; }
+.ixr-seemore{
+  display: flex; align-items: center; justify-content: center; width: 260px; height: 44px; margin: 24px auto 0;
+  border: 1.5px solid var(--ix-t-main); border-radius: 999px; text-decoration: none !important;
+  font: 600 12.5px/1 var(--ixr-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--ix-t-main) !important;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 16px;
+}
+.ixr-seemore:hover{ background: var(--ix-t-main); color: var(--ixr-on) !important; }
+
+/* ── Phone ── */
+@media (max-width: 991px){
+  html.ixc-art .inner-wrapper.article > .ixr-top{ margin: -28px -18px 24px !important; }
+}
+@media (max-width: 767px){
+  .ixr-ts-name{ font-size: 30px; }
+  .ixr-ts.is-words{ padding: 24px 16px; }
+  .ixr-tail{ gap: 30px; margin-top: 30px; }
+  .ixr-sponsor{ padding: 14px; }
+  .ixr-more-h{ font-size: 22px; }
+  .ixr-more-grid{ grid-template-columns: 1fr; gap: 14px; }
+  .ixr-seemore{ width: 100%; }
+}
