@@ -1,0 +1,63 @@
+<!-- templates/ix/email-gr-publisher-v5.html -->
+<!--
+  v5 = email-gr-publisher-v4 for Title Design S1 (26 Oct 2026).
+  - The card sits on paper under the masthead B nameplate (masthead review
+    v0.5, L2 accepted, L1 rejected): a light-paper card (ctx.cream) with a
+    hairline border (ctx.border), salutation and signature in Main
+    (ctx.ink), the letter in Text (ctx.text). The dot rule and the headshot
+    ring stay Accent. Two dark blocks in a row are gone.
+  - The card no longer closes the header stack: the nameplate does. It has
+    all four corners rounded and 16px of paper above it.
+  - The role word after the publisher's name is the title's Sign-off Role
+    (TITLES, ctx.signoff-role), no longer typed (closes HC-P-GR4-1).
+  Fields: greetingSalutation greetingSupershort greetingBody
+  Context: ctx.publisherHeadshot ctx.publisherPerson ctx.signoff-role
+  Needs render Worker v1.22.0 and ix/email-tokens-v19.json.
+-->
+<tr>
+<td style="padding:16px 0 20px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="{{ctx.cream}}"
+       style="background-color:{{ctx.cream}};border:1px solid {{ctx.border}};border-radius:{{ctx.header-radius}};">
+
+  <!-- accent dot rule -->
+  <tr>
+    <td style="padding:14px 22px 0;" class="mobile-padding">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td width="6" style="width:6px;height:6px;border-radius:50%;background:{{ctx.accent}};font-size:0;line-height:0;">&#8203;</td>
+          <td valign="middle" style="font-size:0;line-height:0;"><div style="height:1px;line-height:1px;font-size:0;background:{{ctx.accent-soft}};mso-line-height-rule:exactly;">&#8203;</div></td>
+          <td width="6" style="width:6px;height:6px;border-radius:50%;background:{{ctx.accent}};font-size:0;line-height:0;">&#8203;</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="padding:14px 22px 18px;" class="mobile-padding">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td width="50" valign="top" style="width:50px;">
+            <img src="{{ctx.publisherHeadshot}}" width="50" height="50" alt="{{ctx.publisherPerson}}"
+                 style="display:block;width:50px;height:50px;border-radius:50%;border:2px solid {{ctx.accent}};">
+          </td>
+          <td valign="middle" style="padding-left:18px;">
+
+            <p style="margin:0 0 6px;font-family:{{&ctx.font-display}};font-size:{{ctx.gr-title-size}};font-weight:600;font-style:italic;color:{{ctx.ink}};line-height:1.25;">{{greetingSalutation}}</p>
+
+            {{#greetingSupershort}}
+            <p style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.gr-body-size}};font-style:italic;color:{{ctx.text}};line-height:{{ctx.body-lh}};">{{greetingSupershort}}</p>
+            {{/greetingSupershort}}
+            {{^greetingSupershort}}
+            <p style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.gr-body-size}};line-height:{{ctx.body-lh}};color:{{ctx.text}};">{{greetingBody}}</p>
+            {{/greetingSupershort}}
+
+            <p style="margin:8px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:{{ctx.ink}};">{{ctx.publisherPerson}}, {{ctx.signoff-role}}</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+</table>
+</td>
+</tr>

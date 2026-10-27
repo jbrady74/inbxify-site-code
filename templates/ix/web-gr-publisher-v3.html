@@ -1,0 +1,19 @@
+<!-- templates/ix/web-gr-publisher-v3.html -->
+<!-- v3 = web-gr-publisher-v2 for Title Design S1 (26 Oct 2026).
+     - The role word after the publisher's name is the title's Sign-off Role (TITLES, ctx.signoff-role), no longer typed (closes HC-P-GR4-1).
+     - The card's paper look (masthead review v0.5, L2) is in web-blocks-v73.css; the markup is otherwise unchanged from v2.
+     Needs render Worker v1.22.0, web-blocks-v73.css and the platform web shell (templates/ix/web-shell-v1.html). -->
+<div class="nlw-gr">
+  <div class="nlw-gr-dots" aria-hidden="true"><span></span></div>
+  <div class="nlw-gr-row">
+    {{#ctx.publisherHeadshot}}<img class="nlw-gr-head" src="{{ctx.publisherHeadshot}}" alt="{{ctx.publisherPerson}}" loading="lazy">{{/ctx.publisherHeadshot}}
+    <div class="nlw-gr-text">
+      <h2 class="nlw-gr-title">{{greetingSalutation}}</h2>
+      <div class="nlw-gr-body">
+        {{#greetingBody}}<p>{{greetingBody}}</p>{{/greetingBody}}
+        {{^greetingBody}}<p><em>{{greetingSupershort}}</em></p>{{/greetingBody}}
+      </div>
+      <p class="nlw-gr-sign">{{ctx.publisherPerson}}, {{ctx.signoff-role}}</p>
+    </div>
+  </div>
+</div>
