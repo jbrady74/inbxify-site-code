@@ -1,0 +1,272 @@
+<!-- templates/ix/email-shell-v1.html -->
+<!-- v1 (Title Design S1, 26 Oct 2026): the platform email shell. No title file.
+     Built from templates/bnm-wln/email-shell-v16.html, which it replaces for WLN.
+     Every colour, font and the logo come from the title's TITLES record through
+     the render Worker (v1.22.0 or later; earlier Workers leave them empty).
+     1 · Masthead B (ruled 26 Oct). One nameplate in Main (ctx.ink): Logo on Main
+         (ctx.logo-on-main), an Accent dot rule, then the issue number in a ring,
+         the headline and the date. Replaces the accent issue bar and the
+         masthead picture (TITLES-ADMIN email-masthead art is no longer read; G3).
+         No faded date watermark: Outlook cannot layer text behind text.
+         The weather strip (when the Worker sends ctx.weather) closes the plate.
+     2 · The greeting card follows on paper (L2); see email-gr-publisher-v5.
+     3 · Sign-off: the issue's Closing Note, else the platform sentence
+         ctx.signoff-default (HC-033, G5).
+     4 · Footer: Footer Color (ctx.end-bg), Logo on Main, "Published by" the
+         PUBLISHERS name, the person and the Sign-off Role, phone, email, and
+         the year from the publish date (HC-036, G6). No typed logo, no typed
+         role word.
+     5 · Fonts: one Google Fonts link built by the Worker (ctx.font-link).
+     Needs ix/email-tokens-v19.json (or a title file extending it).
+     Standing rule: shell changes ALWAYS bump the filename. -->
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<title>{{emailTitle}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="{{ctx.font-link}}" rel="stylesheet">
+
+<!--[if mso]>
+<noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+<![endif]-->
+<style type="text/css">
+/* RESET */
+body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
+img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none}
+body{height:100%!important;margin:0!important;padding:0!important;width:100%!important;background-color:{{ctx.page-bg}}}
+a{color:{{ctx.ink}};text-decoration:none}
+/* MOBILE */
+@media screen and (max-width:620px){
+.wrapper{width:100%!important}
+.mobile-padding{padding-left:10px!important;padding-right:10px!important}
+.mobile-stack{display:block!important;width:100%!important;padding-right:0!important;padding-bottom:12px!important}
+.mobile-stack-text{box-sizing:border-box!important;padding:28px 20px!important}
+.mobile-full{width:100%!important;height:auto!important}
+.outer-padding{padding-left:4px!important;padding-right:4px!important}
+.fa-title{font-size:{{ctx.t-headline-phone}}!important;line-height:{{ctx.headline-lh-phone}}!important}
+.fa-excerpt{font-size:{{ctx.t-body-phone}}!important;line-height:{{ctx.body-lh-phone}}!important}
+/* Nameplate (ix/email-shell-v1) */
+.plate-pad{padding-left:14px!important;padding-right:14px!important}
+.plate-logo{width:220px!important}
+.plate-ring{width:60px!important;height:60px!important}
+.plate-ring-cell{width:72px!important}
+.plate-num{font-size:24px!important}
+.plate-h{font-size:19px!important}
+.plate-date{font-size:10px!important;letter-spacing:2px!important}
+/* Email Pass (v10): one content edge, tiles, panels, openers */
+.col-pad{padding-left:8px!important;padding-right:8px!important}
+.grp-pad{padding:18px 12px 0 12px!important}
+.tile-pad{padding:20px 16px 20px!important}
+.ad-pad{padding:16px 8px!important}
+.sp-pad{padding:18px 16px 20px!important}
+.at-title{font-size:{{ctx.at-title-size-phone}}!important}
+.cn-title{font-size:{{ctx.atc-title-size-phone}}!important}
+.sp-title{font-size:{{ctx.sp-title-size-phone}}!important}
+.split-h{font-size:{{ctx.split-headline-size-phone}}!important;line-height:1.15!important}
+.split-text{padding:16px 0 0!important}
+.split-img{max-width:100%!important}
+.art-img{height:{{ctx.art-h-phone}}!important}
+.mobile-hide{display:none!important;width:0!important;max-height:0!important;overflow:hidden!important}
+.txa-kicker{font-size:{{ctx.txa-kicker-size-phone}}!important}
+.txa-name{font-size:{{ctx.txa-name-size-phone}}!important}
+.re-addr{font-size:{{ctx.re-addr-size-phone}}!important}
+/* House ads (v11) — the split card stacks, art on top */
+.ha-cell{display:block!important;width:100%!important;box-sizing:border-box!important}
+.ha-art{border-radius:{{ctx.ha-art-radius}} {{ctx.ha-art-radius}} 0 0!important}
+.ha-art img{border-radius:{{ctx.ha-art-radius}} {{ctx.ha-art-radius}} 0 0!important;max-width:100%!important}
+.ha-type{padding-left:14px!important;padding-right:14px!important}
+.ha-h{font-size:{{ctx.ha-headline-size-phone}}!important}
+/* EV rows — the date tile becomes the row's left edge */
+.ev-card{border-radius:0!important}
+.ev-chip-cell{width:56px!important;padding:0!important;background-color:{{ctx.ev-chip-bg}}!important}
+.ev-chip-tile{width:56px!important}
+.ev-chip-tile td{border-radius:0!important;padding:10px 4px 11px!important}
+.ev-body{padding:12px 30px 12px 12px!important}
+.ev-title{font-size:{{ctx.ev-title-size-m}}!important;line-height:{{ctx.ev-title-lh-m}}!important}
+.ev-meta{line-height:{{ctx.ev-meta-lh-m}}!important}
+.ev-meta-time{display:block!important}
+.ev-meta-sep{display:none!important}
+.ev-meta-venue{display:block!important}
+/* RE list — image-forward on a phone */
+.re-thumb{display:block!important;width:100%!important;padding:0 0 10px!important}
+.re-img{width:100%!important;height:auto!important;max-height:none!important;border-radius:4px!important}
+.re-body{display:block!important;width:100%!important;padding:0!important}
+.re-price{display:block!important;width:100%!important;text-align:left!important;padding:6px 0 0!important;font-size:19px!important}
+}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:{{ctx.page-bg}};">
+
+<!-- OUTER WRAPPER -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:{{ctx.page-bg}};">
+<tr>
+<td align="center" style="padding:24px 0 30px;" class="outer-padding">
+
+<!-- MAIN CONTAINER 600px -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="wrapper" bgcolor="{{ctx.paper}}" style="max-width:600px;background-color:{{ctx.paper}};">
+
+
+<!-- ============================================
+     NAMEPLATE (masthead B): logo, rule, issue number, headline, date
+     ============================================ -->
+<tr><td style="background-color:{{ctx.paper}};height:16px;line-height:16px;font-size:0;mso-line-height-rule:exactly;">&nbsp;</td></tr>
+
+<tr>
+<td class="col-pad" style="background-color:{{ctx.paper}};padding:0 {{ctx.col-pad}};">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="{{ctx.ink}}" style="background-color:{{ctx.ink}};border-radius:{{ctx.header-radius}};overflow:hidden;">
+
+<tr>
+  <td align="center" bgcolor="{{ctx.ink}}" style="background-color:{{ctx.ink}};padding:28px 24px 0;border-radius:{{ctx.header-radius}} {{ctx.header-radius}} 0 0;" class="plate-pad">
+    <a href="{{issueUrl}}{{utm}}&amp;utm_content=masthead-logo" target="_blank" style="display:inline-block;">
+      <img src="{{ctx.logo-on-main}}" alt="{{titleName}}" width="320" class="plate-logo" style="display:block;width:320px;max-width:100%;height:auto;border:0;">
+    </a>
+  </td>
+</tr>
+
+<tr>
+  <td align="center" bgcolor="{{ctx.ink}}" style="background-color:{{ctx.ink}};padding:18px 24px 20px;" class="plate-pad">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="62%" style="width:62%;">
+      <tr>
+        <td width="6" style="width:6px;height:6px;border-radius:50%;background:{{ctx.accent}};font-size:0;line-height:0;">&#8203;</td>
+        <td valign="middle" style="font-size:0;line-height:0;"><div style="height:2px;line-height:2px;font-size:0;background:{{ctx.accent-soft}};mso-line-height-rule:exactly;">&#8203;</div></td>
+        <td width="6" style="width:6px;height:6px;border-radius:50%;background:{{ctx.accent}};font-size:0;line-height:0;">&#8203;</td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<tr>
+  <td bgcolor="{{ctx.ink}}" style="background-color:{{ctx.ink}};padding:0 24px 26px;" class="plate-pad">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      <tr>
+        <td width="104" valign="middle" class="plate-ring-cell" style="width:104px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="88" height="88" class="plate-ring" style="width:88px;height:88px;border:3px solid {{ctx.accent}};border-radius:50%;">
+            <tr><td align="center" valign="middle" style="text-align:center;">
+              <span style="display:block;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:2px;line-height:1.2;color:{{ctx.accent}};">NO.</span>
+              <span class="plate-num" style="display:block;font-family:{{&ctx.font-ui}};font-size:32px;font-weight:700;line-height:1;color:{{ctx.inv-ink}};">{{issueNo}}</span>
+            </td></tr>
+          </table>
+        </td>
+        <td valign="middle" style="padding-left:6px;">
+          <h1 class="plate-h" style="margin:0;font-family:{{&ctx.font-ui}};font-size:24px;font-weight:700;line-height:1.2;color:{{ctx.inv-ink}};">{{issueTitle}}</h1>
+          <p class="plate-date" style="margin:10px 0 0;font-family:{{&ctx.font-ui}};font-size:12px;font-weight:600;letter-spacing:3px;text-transform:uppercase;line-height:1.2;color:{{ctx.accent}};">{{publishDate}}</p>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<!-- ============================================
+     SECTION 1c: WEATHER (when 206 sends ctx.weather)
+     ============================================ -->
+{{#weather}}
+<tr>
+  <td bgcolor="{{ctx.weather-bg}}" style="background-color:{{ctx.weather-bg}};padding:10px 14px 2px;" class="mobile-padding">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr>
+    {{#each weather}}
+      <td align="center" valign="middle"{{#phoneHide}} class="mobile-hide"{{/phoneHide}} style="padding:4px 2px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+          <td style="padding:0 5px 0 0;"><p style="margin:0;font-size:{{#first}}22px{{/first}}{{^first}}18px{{/first}};line-height:1;">{{.icon}}</p></td>
+          <td>
+            <p style="margin:0;font-family:{{&ctx.font-ui}};font-size:9px;font-weight:{{#first}}700{{/first}}{{^first}}600{{/first}};letter-spacing:1px;text-transform:uppercase;color:{{#first}}{{ctx.weather-today}}{{/first}}{{^first}}{{ctx.weather-day}}{{/first}};">{{.day}}</p>
+            <p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{#first}}15px{{/first}}{{^first}}14px{{/first}};font-weight:700;line-height:1.1;white-space:nowrap;color:{{ctx.weather-temp}};">{{.hi}}<span style="font-size:{{#first}}11px{{/first}}{{^first}}10px{{/first}};font-weight:400;color:{{ctx.weather-lo}};"> {{#first}}/ {{/first}}{{.lo}}</span></p>
+          </td>
+        </tr></table>
+      </td>
+    {{/each}}
+    </tr></table>
+  </td>
+</tr>
+{{/weather}}
+
+</table>
+</td>
+</tr>
+
+<!-- ============================================
+     BLOCKS · one content edge (ctx.col-pad)
+     ============================================ -->
+<tr>
+<td class="col-pad" style="background-color:{{ctx.paper}};padding:0 {{ctx.col-pad}};">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+
+{{BLOCKS}}
+
+<!-- ══════════════════════════════════════════════
+     SECTION 24: SIGN-OFF — Closing Note, or the fixed sentence
+     ══════════════════════════════════════════════ -->
+<tr>
+<td style="padding:4px 0 26px;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:{{ctx.surface}};border-radius:14px;border:2px solid {{ctx.signoff-border}};overflow:hidden;">
+  <tr><td style="padding:28px 20px;text-align:center;" class="mobile-padding">
+    <p style="margin:0;font-family:{{&ctx.font-display}};font-size:{{ctx.signoff-size}};font-style:italic;line-height:1.45;color:{{ctx.signoff-ink}};">{{#closingNote}}{{closingNote}}{{/closingNote}}{{^closingNote}}{{ctx.signoff-default}}{{/closingNote}}</p>
+  </td></tr>
+  </table>
+</td>
+</tr>
+
+</table>
+</td>
+</tr>
+<!-- END BLOCKS column -->
+
+<!-- ══════════════════════════════════════════════
+     MEGA-FOOTER: White wrapper (full width)
+     Contains: Footer
+     ══════════════════════════════════════════════ -->
+<tr>
+<td style="padding: 0 0 10px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:{{ctx.surface}}; border-radius: 14px; overflow: hidden;">
+ 
+ 
+<!-- ── FOOTER — Orange background, +2px fonts ── -->
+<tr><td style="padding: 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:{{ctx.end-bg}}; border-radius: 0 0 14px 14px; overflow: hidden;">
+    <!-- Gold accent line -->
+    <tr><td style="height:3px; background:linear-gradient(90deg,{{ctx.accent}},{{ctx.accent-soft}},{{ctx.accent}}); font-size:1px; line-height:1px;">&nbsp;</td></tr>
+    <tr><td style="padding: 28px 20px; text-align: center;">
+      <!-- Logo -->
+      <img src="{{ctx.logo-on-main}}" alt="{{titleName}}" width="160" style="display:block; width:160px; height:auto; margin:0 auto 12px; opacity:0.9;">
+      <!-- Publisher line -->
+      <p style="margin:0 0 12px; font-family:{{&ctx.font-ui}}; font-size:15px; color:{{ctx.end-ink-soft}};">Published by <span style="color:{{ctx.end-ink}}; font-weight:600; text-transform:uppercase;">{{publisherName}}</span> &middot; {{publisherPerson}}, {{ctx.signoff-role}}</p>
+      <!-- Contact -->
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+      <tr>
+        <td style="padding:0 10px;"><a href="tel:{{publisherPhoneTel}}" style="font-family:{{&ctx.font-ui}}; font-size:16px; color:{{ctx.end-ink}}; text-decoration:none;">&#128222; {{publisherPhone}}</a></td>
+        <td style="padding:0 10px;"><a href="mailto:{{publisherEmail}}" style="font-family:{{&ctx.font-ui}}; font-size:16px; color:{{ctx.end-ink}}; text-decoration:none;">✉️ Email Us</a></td>
+      </tr>
+      </table>
+      
+      <p style="margin:10px 0 0; font-family:{{&ctx.font-ui}}; font-size:13px; color:{{ctx.accent}}; text-transform:uppercase;">&copy; {{publishYear}} {{publisherName}}. All Rights Reserved.</p>
+    </td></tr>
+  </table>
+</td></tr>
+ 
+</table>
+<!-- END mega-footer white wrapper -->
+</td>
+</tr>
+ 
+ 
+</table>
+<!-- END CONTENT AREA -->
+</td>
+</tr>
+ 
+ 
+</table>
+<!-- END MAIN CONTAINER -->
+ 
+</td>
+</tr>
+</table>
+<!-- END OUTER WRAPPER -->
+ 
+</body>
+</html>
