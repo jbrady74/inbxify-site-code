@@ -1,0 +1,89 @@
+/* ix-franchise-v1_1_0.css
+   INBXIFY · Franchise page on the site shell. Pairs with ix-franchise-v1_1_0.js.
+   Code-Built Site S6, 28 Oct 2026 (mockup D v0.3): standfirst in the
+   display face, one tool row, a dark hero in Main, cards four across
+   (headline leads, issue line under it), the sponsor after the first row;
+   on phones the cards are a list (thumbnail left, headline, dek, line).
+   Every colour and font comes from the shell's variables (the title's TITLES
+   values): --ix-t-main, --ix-t-accent, --ix-t-paper, --ixs-text-c, --ixs-ui,
+   --ixs-display, --ixs-on. Sizes are platform values (HC-P-CB-10).
+
+   LOAD (PRODUCT LIBRARY template, Inside <head>, after the shell CSS)
+     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jbrady74/inbxify-site-code@main/ix-franchise-v1_1_0.css">
+*/
+#ix-root .ixf{
+  --ixf-main: var(--ix-t-main);
+  --ixf-acc: var(--ix-t-accent);
+  --ixf-text: var(--ixs-text-c, #333333);
+  --ixf-mute: color-mix(in srgb, var(--ixf-text) 66%, transparent);
+  --ixf-line: color-mix(in srgb, var(--ix-t-main) 16%, transparent);
+  --ixf-card: color-mix(in srgb, var(--ix-t-paper) 70%, #fff);
+  --ixf-on: var(--ixs-on, #ffffff);
+  display: block; color: var(--ixf-text);
+}
+/* standfirst */
+#ix-root .ixf-stand{ max-width: 680px; margin: 0 auto 24px; text-align: center; font: 400 20px/1.5 var(--ixs-display); color: var(--ixf-text); }
+/* tool row */
+#ix-root .ixf-tools{ display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 11px 0; margin: 0 0 26px; border-top: 1px solid var(--ixf-line); border-bottom: 1px solid var(--ixf-line); font: 500 11.5px/1 var(--ixs-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--ixf-mute); }
+#ix-root .ixf-t-count{ color: var(--ixf-mute); white-space: nowrap; }
+#ix-root .ixf-t-sep{ width: 1px; height: 16px; background: var(--ixf-line); }
+#ix-root .ixf-t-sort{ display: inline-flex; align-items: center; gap: 6px; padding: 8px 2px; border: 0; background: none; font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--ixf-main); cursor: pointer; }
+#ix-root .ixf-t-sort svg{ width: 10px; height: 10px; }
+#ix-root .ixf-t-years{ display: flex; gap: 4px; }
+#ix-root .ixf-t-year{ padding: 8px 10px; border: 0; border-radius: 3px; background: none; font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--ixf-mute); cursor: pointer; }
+#ix-root .ixf-t-year:hover{ color: var(--ixf-main); }
+#ix-root .ixf-t-year.ixf-t-on{ background: var(--ixf-main); color: var(--ixf-on); }
+#ix-root .ixf-t-search{ display: flex; align-items: center; gap: 8px; margin-left: auto; min-width: 240px; padding: 7px 12px; border: 1px solid var(--ixf-line); border-radius: 3px; background: var(--ixf-card); color: var(--ixf-mute); }
+#ix-root .ixf-t-search svg{ width: 14px; height: 14px; flex: 0 0 14px; }
+#ix-root .ixf-t-search input{ width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; font: 400 14px/1.2 var(--ixs-ui); letter-spacing: 0; text-transform: none; color: var(--ixf-text); }
+#ix-root .ixf-t-search input::placeholder{ color: var(--ixf-mute); }
+/* hero */
+#ix-root .ixf-hero{ display: grid; grid-template-columns: 3fr 2fr; margin: 0 0 28px; border-radius: 8px; overflow: hidden; background: var(--ixf-main); color: var(--ixf-on); text-decoration: none; }
+#ix-root .ixf-hero-img{ display: block; width: 100%; height: 100%; aspect-ratio: 3 / 2; object-fit: cover; background: color-mix(in srgb, var(--ix-t-main) 10%, var(--ix-t-paper)); }
+#ix-root .ixf-hero .ixf-noimg{ aspect-ratio: 3 / 2; }
+#ix-root .ixf-hero-t{ align-self: center; padding: 36px 40px; }
+#ix-root .ixf-kick{ margin-bottom: 12px; font: 600 11.5px/1.2 var(--ixs-ui); letter-spacing: .2em; text-transform: uppercase; color: var(--ixf-acc); }
+#ix-root .ixf-hero-m{ font: 500 11px/1.2 var(--ixs-ui); letter-spacing: .16em; text-transform: uppercase; color: var(--ixf-on); opacity: .72; }
+#ix-root .ixf-hero h2.ixf-hero-h{ margin: 8px 0 12px !important; font: 600 40px/1.05 var(--ixs-display) !important; color: var(--ixf-on) !important; letter-spacing: normal !important; text-transform: none !important; }
+#ix-root .ixf-hero-d{ margin: 0; font: 400 18px/1.5 var(--ixs-display); color: var(--ixf-on); opacity: .86; }
+#ix-root .ixf-hero:hover .ixf-hero-h{ text-decoration: underline; text-decoration-color: var(--ixf-acc); text-underline-offset: .12em; }
+/* cards */
+#ix-root .ixf-grid{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px 22px; margin-bottom: 26px; text-align: left; }
+#ix-root .ixf-card{ display: block; min-width: 0; color: inherit; text-decoration: none; }
+#ix-root .ixf-card-img{ display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 6px; background: color-mix(in srgb, var(--ix-t-main) 10%, var(--ix-t-paper)); }
+#ix-root .ixf-noimg{ aspect-ratio: 3 / 2; }
+#ix-root .ixf-card h3.ixf-card-h{ margin: 12px 0 0 !important; font: 600 20px/1.2 var(--ixs-display) !important; color: var(--ixf-main) !important; letter-spacing: normal !important; text-transform: none !important; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+#ix-root .ixf-card-d{ display: none; margin: 6px 0 0; font: 400 15px/1.45 var(--ixs-display); color: var(--ixf-text); }   /* deks show in the phone list */
+#ix-root .ixf-card-m{ margin-top: 8px; font: 500 10.5px/1.2 var(--ixs-ui); letter-spacing: .14em; text-transform: uppercase; color: var(--ixf-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#ix-root .ixf-card:hover .ixf-card-h{ text-decoration: underline; text-decoration-color: var(--ixf-acc); }
+/* sponsor */
+#ix-root .ixf-sponsor{ margin: 4px 0 26px; padding: 18px 20px 20px; border: 1px solid var(--ixf-line); border-radius: 8px; background: var(--ixf-card); }
+#ix-root .ixf-sponsor-l{ margin-bottom: 12px; font: 600 11px/1.3 var(--ixs-ui); letter-spacing: .2em; text-transform: uppercase; color: var(--ixf-mute); }
+#ix-root .ixf-sponsor-a{ display: block; line-height: 0; }
+#ix-root .ixf-sponsor-img{ display: block; width: 100%; height: auto; border-radius: 4px; }
+#ix-root .ixf-count{ padding-top: 14px; border-top: 1px solid var(--ixf-line); font: 500 12.5px/1.4 var(--ixs-ui); color: var(--ixf-mute); }
+#ix-root .ixf-empty{ margin: 8px 0 0; font: 400 17px/1.5 var(--ixs-ui); color: var(--ixf-mute); }
+@media (max-width: 1023px){
+  #ix-root .ixf-grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #ix-root .ixf-hero{ grid-template-columns: 1fr 1fr; }
+  #ix-root .ixf-hero-t{ padding: 26px 28px; }
+  #ix-root .ixf-hero h2.ixf-hero-h{ font-size: 30px !important; }
+}
+@media (max-width: 767px){
+  #ix-root .ixf-stand{ font-size: 17px; margin-bottom: 18px; }
+  #ix-root .ixf-tools{ gap: 8px 12px; margin-bottom: 18px; }
+  #ix-root .ixf-t-search{ flex: 1 1 100%; margin-left: 0; min-width: 0; }
+  #ix-root .ixf-hero{ grid-template-columns: 1fr; margin-bottom: 18px; }
+  #ix-root .ixf-hero-t{ padding: 18px 18px 22px; }
+  #ix-root .ixf-hero h2.ixf-hero-h{ font-size: 26px !important; }
+  #ix-root .ixf-hero-d{ font-size: 16px; }
+  #ix-root .ixf-grid{ grid-template-columns: 1fr; gap: 0; margin-bottom: 18px; }
+  #ix-root .ixf-card{ display: grid; grid-template-columns: 112px 1fr; column-gap: 14px; padding: 14px 0; border-top: 1px solid var(--ixf-line); }
+  #ix-root .ixf-grid + .ixf-grid .ixf-card:first-child, #ix-root .ixf-hero + .ixf-grid .ixf-card:first-child{ border-top: 0; padding-top: 0; }
+  #ix-root .ixf-card-img, #ix-root .ixf-card .ixf-noimg{ aspect-ratio: 3 / 2; height: auto; }
+  #ix-root .ixf-card-t{ min-width: 0; }
+  #ix-root .ixf-card h3.ixf-card-h{ margin-top: 0 !important; font-size: 18px !important; }
+  #ix-root .ixf-card-d{ font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  #ix-root .ixf-card-m{ margin-top: 6px; }
+  #ix-root .ixf-sponsor{ padding: 14px 14px 16px; }
+}
