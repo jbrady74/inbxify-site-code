@@ -1,0 +1,73 @@
+<!-- templates/ix/web-fa-photoLEFT-v9.html -->
+<!-- web-fa-photoLEFT-v9.html (30 Oct 2026, Franchise Bands S2) = web-fa-photoLEFT-v8.html with the franchise band (Mockup 1, option A, accepted).
+  1 · When the franchise has a mascot, newsletter-render v1.23.0 sets {{#banded}}: the band sits on the
+      paper (or the group panel) above the story tile, as on the ARTICLES page: the mascot in a white round
+      badge, the wordmark (or the name), on the Band Colour, one link to the franchise page. Styles:
+      web-blocks-v74.css (.nlw-band*), sizes from the platform tokens through --nl-band-* variables.
+  2 · With the band, the small section art and the in-tile sponsor line are not drawn; "Presented by
+      <sponsor>" sits under the band. Without a band both stay as before.
+  3 · Words (Jeff, 30 Oct): "Presented by" replaces "Sponsored by:"; the sponsor ad's label reads
+      "<franchise> is presented by" (or "Presented by" when the story has no franchise).
+  New fields: franchiseMascot franchiseWordmark franchiseBand franchiseBandInk franchiseLink.
+  New flags: banded franchiseBandDark.  Nothing else changed.
+-->
+<!-- web-fa-photoLEFT-v8.html (26 Oct 2026, November Build) = web-fa-photoLEFT-v7.html with the square crop face-aware (smart_faces instead of smart), as the centred stories got: heads stay in frame. Email already crops these face-aware (photoTall). Nothing else changed. -->
+<!-- v7 = web-fa-photoLEFT-v6.html printing the section sponsor itself (106 Gap Interview S3, 19 Oct 2026, D14 web half). Email has printed "Sponsored by: <name>" under the franchise art and the sponsor's banner at the foot since the sponsored flag; web only had the empty data-ix-ad-frame slot waiting for a hydration script that never resolves a Revenue sponsor, so web printed nothing. Now the same fields (sponsored, sponsorName, sponsorAd, sponsorLink) print as .nlw-sponsor-line and .nlw-sponsorad. The ad-frame div stays for the legacy script. Needs web-blocks-v67.css. Nothing else changed. -->
+<!-- v6 = web-fa-photoLEFT-v5.html with the writer's business printed only when the writer has no title (106 Gap Interview S3, 18 Oct 2026; closure S2 D9, ruling 6). The credit already prints as written and the byline already reads "By". Nothing else changed. -->
+<!-- v5 = web-fa-photoLEFT-v4.html without the trailing <hr class="nlw-divider">. The line between stories is now one rule for FA, TS and Compact, in web-blocks-v54.css (D171). Nothing else changed. -->
+<!-- v4 = web-fa-photoLEFT-v3.html with the story changes of Design Pass 2 S3 (D162 to D164).
+     1 · The section's art shows when the section has art. The name-only band
+         (the dark bar that printed "General") is gone (D162).
+     2 · The flag: ARTICLES banner-statement (f_flag), a pill above the
+         headline when set (D163).
+     3 · The story link: a text link with an accent underline (D164). Words,
+         in order of who wins: the article's own button text (ARTICLES
+         cta-button-text), the title's labels (ctx.lblReadStory), the
+         platform default "Read the story". 206 v1.31 stops filling in
+         "Read On" when the article has none.
+     Needs web-blocks-v53.css. Earlier history in web-fa-photoLEFT-v3.html. -->
+{{#banded}}<div class="nlw-band-wrap"><a class="nlw-band{{#franchiseBandDark}} nlw-band--dark{{/franchiseBandDark}}" href="{{franchiseLink}}" style="--nlw-band-bg:{{franchiseBand}};--nlw-band-ink:{{franchiseBandInk}}"><span class="nlw-band-badge"><img src="{{franchiseMascot}}" alt=""></span>{{#franchiseWordmark}}<img class="nlw-band-wm" src="{{franchiseWordmark}}" alt="{{franchiseName}}">{{/franchiseWordmark}}{{^franchiseWordmark}}<span class="nlw-band-name">{{franchiseName}}</span>{{/franchiseWordmark}}</a>{{#sponsored}}<div class="nlw-band-sponsor">Presented by <b>{{sponsorName}}</b></div>{{/sponsored}}</div>{{/banded}}
+<div class="nlw-fa nlw-fa--split nlw-fa--photoleft" style="{{&ctx.skinStyle}}">
+  {{^banded}}{{#franchiseArt}}<div class="nlw-franchise"><img src="{{franchiseArt}}" alt="{{franchiseName}}" loading="lazy"></div>{{/franchiseArt}}{{/banded}}
+  {{^banded}}{{#sponsored}}<div class="nlw-sponsor-line">Presented by <b>{{sponsorName}}</b></div>{{/sponsored}}{{/banded}}
+  {{#rubric}}<div class="nlw-rubric">{{rubric}}</div>{{/rubric}}
+  <div class="nlw-fa-cols">
+    <div class="nlw-fa-media">
+      {{#photoSrc}}
+      <div class="nlw-photo nlw-photo--sq"><img src="{{photoSrc}}-/scale_crop/800x800/smart_faces/-/format/auto/-/quality/smart/" alt="{{headline}}" loading="lazy"></div>
+      {{#photoCredit}}<div class="nlw-photo-credit">{{photoCredit}}</div>{{/photoCredit}}
+      {{/photoSrc}}
+    </div>
+    <div class="nlw-fa-copy">
+      {{#flag}}<div class="nlw-flag-wrap"><span class="nlw-flag">{{flag}}</span></div>{{/flag}}
+      {{#paidBy}}<div><span class="nlw-paid">PAID POST &middot; {{paidBy}}</span></div>{{/paidBy}}
+      <h2 class="nlw-headline">{{headline}}</h2>
+      {{#subhead}}<p class="nlw-subhead">{{subhead}}</p>{{/subhead}}
+      {{#author}}
+      <div class="nlw-byline">
+        By <span class="nlw-by-name">{{author}}</span>{{#authorTitle}}, {{authorTitle}}{{/authorTitle}}{{#coAuthor}} &amp; <span class="nlw-by-name">{{coAuthor}}</span>{{#coAuthorTitle}}, {{coAuthorTitle}}{{/coAuthorTitle}}{{/coAuthor}}
+        {{^authorTitle}}{{#authorBusiness}}<span class="nlw-by-biz">{{authorBusiness}}</span>{{/authorBusiness}}{{/authorTitle}}
+      </div>
+      {{/author}}
+    </div>
+  </div>
+  <div class="nlw-split-below">
+    <div class="nlw-teaser"><p>{{teaserFull}}</p></div>
+    {{#linkDirect}}
+    <div class="nlw-cta nlw-cta--story"><a href="{{linkDirect}}">{{#ctaText}}{{ctaText}}{{/ctaText}}{{^ctaText}}{{#ctx.lblReadStory}}{{ctx.lblReadStory}}{{/ctx.lblReadStory}}{{^ctx.lblReadStory}}Read the story{{/ctx.lblReadStory}}{{/ctaText}} &rarr;</a></div>
+    {{/linkDirect}}
+  </div>
+  {{#paidAdLink}}
+  <div class="nlw-paidad">
+    {{#paidBy}}<div class="nlw-paidad-label">Paid for by {{paidBy}}</div>{{/paidBy}}
+    <a href="{{paidAdLink}}" target="_blank" rel="noopener"><img src="{{paidAd}}" alt="{{paidBy}}" loading="lazy"></a>
+  </div>
+  {{/paidAdLink}}
+  {{#sponsored}}{{#sponsorAd}}
+  <div class="nlw-sponsorad">
+    <div class="nlw-sponsorad-label">{{#hasFranchise}}{{franchiseName}} is presented by{{/hasFranchise}}{{^hasFranchise}}Presented by{{/hasFranchise}}</div>
+    <a href="{{#sponsorLink}}{{sponsorLink}}{{/sponsorLink}}{{^sponsorLink}}{{link}}{{/sponsorLink}}" target="_blank" rel="noopener"><img src="{{sponsorAd}}" alt="{{sponsorName}}" loading="lazy"></a>
+  </div>
+  {{/sponsorAd}}{{/sponsored}}
+  <div data-ix-ad-frame="section-sponsor" data-ix-franchise="{{franchiseName}}"></div>
+</div>
