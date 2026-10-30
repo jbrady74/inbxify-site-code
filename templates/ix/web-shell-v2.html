@@ -1,0 +1,43 @@
+<!-- templates/ix/web-shell-v2.html -->
+<!-- v2 (Franchise Bands S2, 30 Oct 2026) = v1 repointed to web-blocks-v74.css (the franchise band) and to ix/email-tokens-v20.json, which writes the --nl-band-* sizes. No value changed.
+     v1 (Title Design S1, 26 Oct 2026): the platform web shell. No title file.
+     Replaces templates/bnm-wln/web-shell-v58.html for WLN, and every title's own web shell after it.
+     1 · Values. The render Worker (v1.22.0 or later) resolves the title's TITLES values and the platform
+         mixes into ctx.web-vars ("--nl-ink:#142E2E;--nl-paper:…"), written below. Web and email read the
+         same resolved values. No colour, font or word is typed here.
+     2 · Fonts. ctx.font-link loads the title's three families plus Spectral (The Find).
+     3 · Masthead B (ruled 26 Oct). One nameplate in Main: Logo on Main (ctx.logo-on-main), an Accent
+         dot rule, then the issue number in a ring, the headline, the date, and the faded date behind
+         (web keeps the watermark; email drops it). Replaces the seal issue bar on Accent and, on issue
+         pages, Site Chrome's logo band (ix-site-chrome-v1_1_5.css hides that band when this nameplate is on
+         the page). The greeting card below it is on paper (L2, web-blocks-v73.css).
+     4 · Sign-off. The issue's Closing Note, else the platform sentence ctx.signoff-default (HC-033, G5);
+         the role word is the title's Sign-off Role (ctx.signoff-role).
+     Needs web-blocks-v74.css, render Worker v1.23.0, ix/email-tokens-v20.json.
+     Standing rule: shell changes ALWAYS bump the filename. -->
+<div class="ix-nl">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jbrady74/inbxify-site-code@main/web-blocks-v74.css">
+  <link rel="stylesheet" href="{{ctx.font-link}}">
+  <style>.ix-nl{ {{&ctx.web-vars}} }</style>
+  <header class="nlw-plate">
+    <a class="nlw-plate-logo" href="{{issueUrl}}"><img src="{{ctx.logo-on-main}}" alt="{{titleName}}"></a>
+    <div class="nlw-plate-rule" aria-hidden="true"><span></span></div>
+    <div class="nlw-issuebar nlw-issuebar--seal">
+      <span class="nlw-ib-ghost" aria-hidden="true">{{issueDateNumeric}}</span>
+      <span class="nlw-ib-seal"><span class="nlw-ib-no">No.</span><span class="nlw-ib-num">{{issueNo}}</span></span>
+      <div class="nlw-ib-text">
+        <h1 class="nlw-ib-headline">{{issueTitle}}</h1>
+        <div class="nlw-ib-date">{{publishDate}}</div>
+      </div>
+    </div>
+  </header>
+  {{BLOCKS}}
+  <div class="nlw-signoff nlw-signoff--card">
+    <p class="nlw-so-note">{{#closingNote}}{{closingNote}}{{/closingNote}}{{^closingNote}}{{ctx.signoff-default}}{{/closingNote}}</p>
+    <hr class="nlw-so-rule">
+    <div class="nlw-so-who">
+      {{#publisherHeadshot}}<img class="nlw-so-head" src="{{publisherHeadshot}}" alt="{{publisherPerson}}" loading="lazy">{{/publisherHeadshot}}
+      <div><span class="nlw-so-name">{{publisherPerson}}</span><span class="nlw-so-role">{{ctx.signoff-role}}, {{titleName}}</span></div>
+    </div>
+  </div>
+</div>
