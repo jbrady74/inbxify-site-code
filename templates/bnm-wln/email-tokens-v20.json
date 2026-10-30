@@ -1,0 +1,14 @@
+{
+  "_file": "templates/bnm-wln/email-tokens-v20.json",
+  "_about": "Wyckoff Living NOW. v20 (Title Design S1, 26 Oct 2026): every WLN colour, font and the logo now come from WLN's TITLES record (render Worker v1.22.0); the platform file mixes every other shade. What is left here is only the six house-ad pictures, which carry the town name. They move to each house ad's record in the ADS collection (title fields review G7); when they do, WLN's TITLES-ADMIN Email Tokens File points at templates/ix/email-tokens-v19.json directly and this file retires. The splash overrides are gone (G8): the splash takes WLN's own colours. Provisional HC-P-TD1-4.",
+  "extends": [
+    "ix/email-tokens-v19.json",
+    "bnm/email-tokens-v1.json"
+  ],
+  "ha-subscribe-art": "https://uyluucdnr2.ucarecd.net/e1c1193a-3c2c-4f19-b884-bf9dcee10b08/",
+  "ha-advertise-art": "https://uyluucdnr2.ucarecd.net/38ccd6a1-2378-407b-a645-3a06a62a7256/",
+  "ha-bookmark-art": "https://uyluucdnr2.ucarecd.net/18bffa29-ff3a-4d9f-956a-72138f102d11/",
+  "ha-subscribe-pm": "https://uyluucdnr2.ucarecd.net/b7b523cb-6d37-4a29-a176-7343e398e7e1/",
+  "ha-advertise-pm": "https://uyluucdnr2.ucarecd.net/3ef907ac-54f8-4ca4-bc41-5003364dd439/",
+  "ha-bookmark-pm": "https://uyluucdnr2.ucarecd.net/e577b061-d7df-450b-842a-13790a044607/"
+}
