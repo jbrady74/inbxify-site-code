@@ -1,0 +1,119 @@
+<!-- templates/ix/email-ts-photoLEFT-v6.html -->
+<!-- email-ts-photoLEFT-v6.html (30 Oct 2026) = email-ts-photoLEFT-v5.html with the Accent mark (Jeff, 30 Oct: "build").
+  A story with no band and no section art (General today) shows a short line in the
+  title's Accent, centred at the top of the tile (tokens accent-mark-w / accent-mark-h,
+  ix/email-tokens-v21). The same mark sits above the headline on the article page
+  (ix-article v1.0.13). Nothing else changed.
+-->
+<!-- email-ts-photoLEFT-v5.html (30 Oct 2026, Franchise Bands S2) = email-ts-photoLEFT-v4.html with the franchise band (Mockup 1, option A, accepted).
+  1 · When the franchise has a mascot (PRODUCT LIBRARY franchise-mascot), newsletter-render v1.23.0
+      sets {{#banded}}. The band sits on the paper (or the group panel) above the story tile: the mascot in a
+      white round badge, the wordmark beside it (or the name in the display face), on the Band Colour, one
+      link to the franchise page. Sizes are platform tokens (ix/email-tokens-v20: band-badge, band-badge-img,
+      band-gap, band-name-size); the Worker sends the wordmark's width (franchiseWordmarkW) and the pair's
+      width (franchiseBandW). Outlook desktop draws the round badge square.
+  2 · With the band, the small section art and the in-tile sponsor line are not drawn; the sponsor line
+      "Presented by <sponsor>" sits under the band. Without a band both stay as before.
+  3 · Words (Jeff, 30 Oct): "Presented by" replaces "Sponsored by:"; the sponsor ad's label reads
+      "<franchise> is presented by" (or "Presented by" when the story has no franchise), as on the article page.
+  New fields: franchiseMascot franchiseWordmark franchiseWordmarkW franchiseBand franchiseBandInk
+              franchiseBandW franchiseLink.  New flag: banded.
+  HARDCODING: provisional HC-P-FB2-1 (the band's white 5px edge, 14px corners, 12px/16px padding).
+  Nothing else changed.
+-->
+<!--
+  v4 = email-ts-photoLEFT-v3 rebuilt for the Email Pass (Design Pass 2 S4, review v0.3):
+  - a white tile (12px corners, 22px apart) on the paper or on its group panel (D174)
+  - photo and text side by side inside the tile; headline 27px, 22px on phones (D173)
+  - text left-aligned, as web; on a phone the photo stacks on top
+  - section art small and left, between a dot and a rule in the group colour (D178, D184)
+  - flag pill above the headline (D163); "Read the story →" text link (D164)
+  - the sponsor creative at the one banner width with a 1px border (D175, D176)
+  No side padding: the shell column (email-shell-v10) or the group panel sets it.
+  Block fields: headline subhead teaser link ctaText flag rubric photo photoSrc
+                photoTall photoCredit author authorTitle authorBusiness coAuthor
+                coAuthorTitle franchiseArt franchiseName sponsorName sponsorAd sponsorLink
+  Flags:        hasPhoto showPhotoCredit hasAuthor hasCoAuthor isEC hasFranchise sponsored
+  Context:      tokens (ix/email-tokens-v9), ctx.lblReadStory, and from
+                newsletter-render v1.12.0 ctx.art-dot / ctx.art-rule.
+-->
+<tr>
+<td style="padding:0 0 {{ctx.tile-gap}};">
+{{#banded}}<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td style="padding:0 0 12px;">
+<a href="{{franchiseLink}}" target="_blank" style="display:block;text-decoration:none;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="{{franchiseBand}}" style="background-color:{{franchiseBand}};border:5px solid #FFFFFF;border-radius:14px;"><tr><td align="center" style="padding:12px 16px;">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="width:100%;max-width:{{franchiseBandW}}px;margin:0 auto;table-layout:fixed;"><tr>
+<td width="{{ctx.band-badge}}" valign="middle" style="width:{{ctx.band-badge}}px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td width="{{ctx.band-badge}}" height="{{ctx.band-badge}}" align="center" valign="middle" bgcolor="#FFFFFF" style="width:{{ctx.band-badge}}px;height:{{ctx.band-badge}}px;background-color:#FFFFFF;border-radius:50%;"><img src="{{franchiseMascot}}" alt="" width="{{ctx.band-badge-img}}" height="{{ctx.band-badge-img}}" style="display:block;width:{{ctx.band-badge-img}}px;height:{{ctx.band-badge-img}}px;border:0;margin:0 auto;border-radius:50%;"></td></tr></table></td>
+<td width="{{ctx.band-gap}}" style="width:{{ctx.band-gap}}px;font-size:0;line-height:0;">&nbsp;</td>
+<td valign="middle" align="left">{{#franchiseWordmarkW}}<img src="{{franchiseWordmark}}" alt="{{franchiseName}}" width="{{franchiseWordmarkW}}" style="display:block;width:{{franchiseWordmarkW}}px;max-width:100%;height:auto;border:0;">{{/franchiseWordmarkW}}{{^franchiseWordmarkW}}<span style="font-family:{{&ctx.font-display}};font-size:{{ctx.band-name-size}}px;font-weight:600;line-height:1.1;color:{{franchiseBandInk}};">{{franchiseName}}</span>{{/franchiseWordmarkW}}</td>
+</tr></table>
+</td></tr></table></a></td></tr>{{#sponsored}}<tr><td align="center" style="padding:0 0 14px;"><span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:{{ctx.text-mid}};">Presented by</span><span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:{{ctx.text}};">&nbsp;{{sponsorName}}</span></td></tr>{{/sponsored}}</table>{{/banded}}
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" bgcolor="{{ctx.tile-bg}}" style="background-color:{{ctx.tile-bg}};border-radius:{{ctx.tile-radius}};">
+<tr><td class="tile-pad" style="padding:{{ctx.tile-pad}};">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+  {{^banded}}{{^franchiseArt}}<tr><td align="center" style="padding:0 0 18px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center"><tr><td width="{{ctx.accent-mark-w}}" height="{{ctx.accent-mark-h}}" style="width:{{ctx.accent-mark-w}}px;height:{{ctx.accent-mark-h}}px;background-color:{{ctx.accent}};font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td></tr></table></td></tr>{{/franchiseArt}}{{/banded}}
+  {{^banded}}{{#hasFranchise}}{{#franchiseArt}}
+  <tr><td style="padding:0 0 16px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr>
+    <td width="10" valign="middle" style="width:10px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td width="10" height="10" style="width:10px;height:10px;background-color:{{ctx.art-dot}};border-radius:50%;font-size:0;line-height:0;">&nbsp;</td></tr></table></td>
+    <td valign="middle" style="padding:0 12px;white-space:nowrap;width:1%;"><img class="art-img" src="{{franchiseArt}}" alt="{{franchiseName}}" height="40" style="display:block;height:{{ctx.art-h}};width:auto;border:0;"></td>
+    <td valign="middle" style="font-size:0;line-height:0;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"><tr><td height="2" style="height:2px;background-color:{{ctx.art-rule}};font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td></tr></table></td>
+  </tr></table></td></tr>
+  {{/franchiseArt}}{{/hasFranchise}}{{/banded}}
+  <tr><td>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td dir="ltr" width="46%" valign="top" class="mobile-stack" style="width:46%;padding:0;">
+        {{#hasPhoto}}
+        <a href="{{link}}" target="_blank" style="display:block;"><img src="{{photoTall}}" alt="{{headline}}" width="216" class="mobile-full split-img"
+             style="display:block;width:100%;max-width:216px;height:auto;border:0;border-radius:6px;"></a>
+        {{#showPhotoCredit}}{{#photoCredit}}<p style="margin:5px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:1.3px;text-transform:uppercase;color:{{ctx.text-light}};line-height:1.4;">{{photoCredit}}</p>{{/photoCredit}}{{/showPhotoCredit}}
+        {{/hasPhoto}}
+      </td>
+      <td dir="ltr" valign="middle" class="mobile-stack split-text" style="padding:0 0 0 22px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        {{^banded}}{{#sponsored}}<tr><td style="padding:0 0 10px;"><span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:{{ctx.text-mid}};">Presented by</span> <span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:{{ctx.ink}};">{{sponsorName}}</span></td></tr>{{/sponsored}}{{/banded}}
+        {{#rubric}}
+  <tr><td align="left" style="padding:0 0 8px;"><p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:{{ctx.label-ls}};text-transform:uppercase;color:{{ctx.highlight-ink}};">{{rubric}}</p></td></tr>
+  {{/rubric}}
+  {{#flag}}
+  <tr><td align="left" style="padding:0 0 10px;"><span style="display:inline-block;background-color:{{ctx.flag-bg}};color:{{ctx.flag-ink}};font-family:{{&ctx.font-ui}};font-size:{{ctx.flag-size}};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;line-height:1;padding:6px 10px 5px;border-radius:999px;">{{flag}}</span></td></tr>
+  {{/flag}}
+        <tr><td>
+          <h2 class="split-h" style="margin:0;font-family:{{&ctx.font-display}};font-size:{{ctx.split-headline-size}};font-weight:700;line-height:1.12;color:{{ctx.ink}};">
+            <a href="{{link}}" target="_blank" style="color:{{ctx.ink}};text-decoration:none;">{{headline}}</a>
+          </h2>
+        </td></tr>
+        {{#subhead}}<tr><td style="padding:10px 0 0;"><p style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.fa-subhead-size}};font-style:italic;line-height:{{ctx.subhead-lh}};color:{{ctx.text-mid}};">{{subhead}}</p></td></tr>{{/subhead}}
+  {{#hasAuthor}}
+  <tr><td align="left" style="padding:18px 0 0;">
+      {{#isEC}}<p style="margin:0 0 9px;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-micro}};font-weight:700;letter-spacing:1.6px;text-transform:uppercase;line-height:1;"><span style="display:inline-block;background:{{ctx.badge-bg}};border:1px solid {{ctx.accent-soft}};padding:4px 9px;border-radius:2px;color:{{ctx.badge-ink}};">Expert Contributor</span></p>{{/isEC}}
+      <p style="margin:0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-byline}};font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:{{ctx.text-light}};">By {{author}}{{#hasCoAuthor}} and {{coAuthor}}{{/hasCoAuthor}}</p>
+      {{#authorBusiness}}<p style="margin:3px 0 0;font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:{{ctx.ink}};">{{authorBusiness}}</p>{{/authorBusiness}}
+  </td></tr>
+  {{/hasAuthor}}
+        </table>
+      </td>
+    </tr>
+    </table>
+  </td></tr>
+  <tr><td style="padding:18px 0 0;">
+    <p class="fa-excerpt" style="margin:0;font-family:{{&ctx.font-body}};font-size:{{ctx.fa-teaser-size}};line-height:{{ctx.body-lh}};color:{{ctx.text}};">{{teaser}}</p>
+  </td></tr>
+  <tr><td align="left" style="padding:22px 0 0;">
+    <a href="{{link}}" target="_blank" style="display:inline-block;font-family:{{&ctx.font-ui}};font-size:{{ctx.story-link-size}};font-weight:600;letter-spacing:0.3px;color:{{ctx.story-link-color}};text-decoration:none;padding:0 0 2px;border-bottom:2px solid {{ctx.story-link-rule}};">{{#ctaText}}{{ctaText}}{{/ctaText}}{{^ctaText}}{{#ctx.lblReadStory}}{{ctx.lblReadStory}}{{/ctx.lblReadStory}}{{^ctx.lblReadStory}}Read the story{{/ctx.lblReadStory}}{{/ctaText}} &rarr;</a>
+  </td></tr>
+  {{#sponsored}}{{#sponsorAd}}
+  <tr><td align="center" style="padding:26px 0 8px;">
+    <span style="font-family:{{&ctx.font-ui}};font-size:{{ctx.t-label}};font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:{{ctx.highlight-ink}};">{{#hasFranchise}}{{franchiseName}} is presented by{{/hasFranchise}}{{^hasFranchise}}Presented by{{/hasFranchise}}</span>
+  </td></tr>
+  <tr><td align="center">
+    <a href="{{#sponsorLink}}{{sponsorLink}}{{/sponsorLink}}{{^sponsorLink}}{{link}}{{/sponsorLink}}" target="_blank" style="display:block;">
+      <img src="{{sponsorAd}}" alt="{{sponsorName}}" width="{{ctx.banner-w}}" class="mobile-full"
+           style="display:block;width:100%;max-width:{{ctx.banner-w}}px;height:auto;margin:0 auto;border:1px solid {{ctx.ad-border}};">
+    </a>
+  </td></tr>
+  {{/sponsorAd}}{{/sponsored}}
+</table>
+</td></tr>
+</table>
+</td>
+</tr>
