@@ -1,0 +1,102 @@
+/* ix-site-ads-v1_0_5.css
+   v1.0.5 (6 Nov 2026, SS-Fork A · Mechanics S5) Jeff: ads look too wide on a
+          tablet in portrait. Between 600 and 1079 wide, every top and list
+          banner is capped at 85% of its 700 (595px). Under 600 and at 1080
+          and wider unchanged. Pairs with ix-site-ads-v1_0_7.js.
+   v1.0.4 (6 Nov 2026, SS-Fork A · Mechanics S5) built to Site-Ads-Placement-
+          Rules-v0_5. Pairs with ix-site-ads-v1_0_6.js and ix-shell-v1_0_14.css.
+          1 · The Lead's top banner now sits in the shell's lead slot above the
+              card (.ixs-lead, ix-shell CSS); the ad inside is the same
+              .ixsa-spot--top.ixsa-spot--lead, centred, 560 wide on desktop,
+              full width under 1080. No tint, no panel.
+          2 · .ixsa-topslot (the v1.0.2 slot inside Archives and Directory) is
+              gone; those pages no longer draw one.
+          3 · List spots are phone-only now (the JS draws none at 1080 and
+              wider), so their desktop width rule is gone; under 1080 a list
+              banner is at most 700 wide, as before.
+   v1.0.3 (4 Nov 2026, S9c) Jeff: every banner the site runs is one width.
+          At 1080px and wider every top banner (the Lead's, a sponsor's or
+          a buyer's, on articles, franchise pages, Archives and Directory)
+          and every list ad is at most 560 wide. Under 1080 unchanged.
+   v1.0.2 (4 Nov 2026, S9c) Jeff: the ads were out of scale with the
+          masthead. At 1080px and wider the Lead's top banner and every list
+          ad are at most 560 wide; a buyer's or sponsor's top banner keeps
+          700. The top slot on Archives and Directory (.ixsa-topslot).
+   v1.0.1 (4 Nov 2026, S9c) the panel, house card and franchise slot styles
+          are gone; the top banner serves articles and franchise pages.
+   INBXIFY · Site ads · the look of every ad the site draws.
+   Code-Built Site S9b, 3 Nov 2026; top banner S9c, 4 Nov 2026. Pairs with
+   ix-site-ads-v1_0_2.js, ix-shell-v1_0_12.css (the rail's place on the page)
+   ix-article-v1_0_12.css and ix-franchise-v1_1_2.css (the top-banner slots).
+   Every ad gets its own ceremony: full spacing, never compressed. One label
+   heads the rail; each inline and list ad carries its own label.
+   Colours and fonts are the title's (the shell's variables); nothing typed
+   per title. Shapes: sidebar 480x400, banner 700x235, drawn at their own
+   proportion, never stretched or cropped.
+   HC-P-CBS9b-8  the sticky rail: 24px from the top (the JS decides when it fits).
+   HC-P-CBS9b-7  sizes: inline sidebar 336 wide, list banner 700 wide,
+                 28px between rail ads, 32px above and below inline and list ads.
+   HC-P-CBS9c-2  banner width: at 1080px and wider every banner (top and
+                 list, any holder, any page) at most 560 wide; under 1080
+                 at most 700. No label on the top banner (its slot's place
+                 is the page's CSS). The Archives/Directory slot 26px above
+                 the tools.
+*/
+#ix-root .ixsa-label{
+  display: flex; align-items: center; gap: 10px; margin: 0 0 10px;
+  font: 600 10.5px/1 var(--ixs-ui); letter-spacing: .24em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--ix-t-main) 62%, transparent);
+}
+#ix-root .ixsa-label::before, #ix-root .ixsa-label::after{
+  content: ""; flex: 1 1 auto; height: 1px; background: color-mix(in srgb, var(--ix-t-main) 18%, transparent);
+}
+#ix-root .ixsa-spot{ display: block; margin: 0; }
+#ix-root .ixsa-a{ display: block; line-height: 0; border-radius: 6px; overflow: hidden;
+  background: var(--ix-t-paper); box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 6px 18px rgba(0,0,0,.08);
+  transition: transform .15s ease, box-shadow .15s ease; }
+#ix-root a.ixsa-a:hover{ transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,.08), 0 10px 24px rgba(0,0,0,.12); }
+#ix-root .ixsa-img{ display: block; width: 100%; height: auto; }
+#ix-root .ixsa-spot--sidebar .ixsa-img{ aspect-ratio: 480 / 400; object-fit: contain; }
+#ix-root .ixsa-spot--banner .ixsa-img{ aspect-ratio: 700 / 235; object-fit: contain; }
+
+/* the rail: one label, then the ads with full spacing */
+#ix-root .ixsa-rail-stack{ display: flex; flex-direction: column; gap: 28px; }
+#ix-root .ixsa-rail-stack > .ixsa-label{ margin-bottom: -16px; }
+
+/* inline in an article (under 1080px) */
+#ix-root .ixsa-spot--inline{ width: min(336px, 100%); margin: 32px auto; clear: both; }
+/* a list spot: a full row of its own */
+#ix-root .ixsa-spot--list{ grid-column: 1 / -1; width: min(700px, 100%); margin: 32px auto; justify-self: center; }
+
+/* the rail stays in view on a long page when it fits the window (ix-site-ads adds the class) */
+@media (min-width: 1080px){
+  #ix-root .ixs-rail > .ixsa-rail-in{ display: flex; flex-direction: column; gap: 28px; }
+  #ix-root .ixs-rail > .ixsa-rail-in.ixsa-rail--stick{ position: sticky; top: 24px; }
+}
+/* inside the article body: ix-article's body rules set every div, link and img
+   with !important, so the ad's own look is restated here with !important */
+#ix-root .ixr-body .ixsa-spot{ margin: 34px auto !important; }
+#ix-root .ixr-body .ixsa-spot .ixsa-label{
+  margin: 0 0 10px !important; font: 600 10.5px/1 var(--ixs-ui) !important; letter-spacing: .24em !important;
+  color: color-mix(in srgb, var(--ix-t-main) 62%, transparent) !important; text-transform: uppercase !important; }
+#ix-root .ixr-body .ixsa-spot .ixsa-a{ text-decoration: none !important; line-height: 0 !important; }
+#ix-root .ixr-body .ixsa-spot .ixsa-img{ display: block !important; width: 100% !important; max-width: 100% !important; height: auto !important; margin: 0 !important; }
+
+/* S9c · the top banner on articles and franchise pages: the slot's place
+   is the page's (.ixr-topad in ix-article-v1_0_12.css, .ixf-topad in
+   ix-franchise-v1_1_2.css); this is the ad inside it. No label. */
+#ix-root .ixsa-spot--top{ width: 100%; max-width: 700px; margin: 0 auto; }
+#ix-root .ixsa-spot--top .ixsa-a{ text-decoration: none; }
+
+/* v1.0.4 · the Lead's banner in the shell's lead slot above the card */
+#ix-root .ixs-lead > .ixsa-spot--top{ margin: 0 auto; }
+/* v1.0.3 · desktop scale: every top banner at most 560 wide */
+@media (min-width: 1080px){
+  #ix-root .ixsa-spot--top{ max-width: 560px; }
+}
+
+/* v1.0.5 · tablet portrait: banners 15% narrower */
+@media (min-width: 600px) and (max-width: 1079px){
+  #ix-root .ixsa-spot--top{ max-width: 595px; }
+  #ix-root .ixsa-spot--list{ width: min(595px, 100%); }
+}
