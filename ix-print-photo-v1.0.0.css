@@ -1,0 +1,122 @@
+/* ix-print-photo-v1.0.0.css */
+/* ============================================================
+   ix-print-photo-v1.0.0.css
+   INBXIFY · ix component series · A PHOTO FROM THE PRINT PAGE
+   Pairs ix-print-photo-v1.0.0.js. These are the rules Create from
+   print v1.2.0 to v1.2.4 injected from JS (cfp-gap-*, cfp-gm-*),
+   moved into a real stylesheet and prefixed ixpp- so both hosts
+   (Create from print, the Edit Article print panel) share them.
+   Colours come from ix-tokens, with the old literal as fallback.
+   ============================================================ */
+
+/* The JS checks this to know the stylesheet is on the page. */
+.ixpp-probe { --ixpp-loaded: 1; }
+
+/* ── selecting on the page ─────────────────────────────── */
+.ixpp-page--select { position: relative; cursor: crosshair; }
+.ixpp-page--select img {
+  user-select: none; -webkit-user-drag: none;
+  outline: 2px dashed var(--ix-gold, #C4A35A); outline-offset: -2px;
+  cursor: crosshair !important;   /* beats a host's zoom-in cursor (ta-asf-article .asf-print-img) */
+}
+.ixpp-box {
+  position: absolute; pointer-events: none;
+  border: 2px solid var(--ix-gold, #C4A35A);
+  background: rgba(196, 163, 90, .15);
+}
+
+/* ── the panel under the page ──────────────────────────── */
+.ixpp-panel {
+  margin-top: 12px; padding: 12px;
+  border: 1px solid var(--ix-border, #E4E0D4); border-radius: 8px;
+  background: var(--ix-cream-warm, #FDFCF8);
+  font-size: 13px; color: var(--ix-text-dark, #1A3A3A);
+}
+.ixpp-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.ixpp-crop {
+  display: block; max-width: 100%; max-height: 220px; margin-top: 8px;
+  border-radius: 4px; border: 1px solid var(--ix-border, #E4E0D4);
+}
+.ixpp-hint { color: var(--ix-text-mid, #6B7280); margin: 6px 0 0; }
+.ixpp-err  { color: var(--ix-danger, #B3261E); margin-top: 6px; font-size: 13px; }
+.ixpp-selbtn { white-space: nowrap; }
+
+/* ── the Generate window ───────────────────────────────── */
+.ixpp-gm {
+  position: fixed; inset: 0; z-index: 100000;
+  background: rgba(26, 58, 58, .6);
+  display: flex; align-items: center; justify-content: center;
+  padding: 2vh 2vw;
+}
+.ixpp-gm-box {
+  background: var(--ix-surface, #FFFFFF); border-radius: 12px;
+  width: 96vw; max-width: 1500px; height: 94vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+  color: var(--ix-text-dark, #1A3A3A);
+}
+.ixpp-gm-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 22px; border-bottom: 1px solid var(--ix-border-soft, #EEE9DC);
+}
+.ixpp-gm-head h3 { margin: 0; font-size: 20px; }
+.ixpp-gm-head .ixpp-info { flex: 1; }
+.ixpp-gm-body {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
+  padding: 20px 22px;
+}
+.ixpp-col { display: flex; flex-direction: column; min-height: 0; gap: 10px; overflow-y: auto; }
+.ixpp-eb {
+  font: 600 11px/1 ui-monospace, Menlo, monospace;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ix-text-mid, #6B7280);
+}
+.ixpp-frame {
+  flex: 1; min-height: 160px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ix-cream-deep, #F1EDE2); border-radius: 8px;
+  overflow: hidden; position: relative;
+}
+.ixpp-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.ixpp-sees {
+  font-size: 13px; color: var(--ix-text-mid, #444);
+  background: var(--ix-cream-deep, #F1EDE2); border-radius: 6px; padding: 8px 10px;
+}
+.ixpp-sees--empty { margin: auto; background: transparent; }
+.ixpp-gm textarea {
+  width: 100%; min-height: 96px; flex: 0 0 auto;
+  font: inherit; font-size: 14px; line-height: 1.5;
+  padding: 10px 12px; box-sizing: border-box;
+  border: 2px solid var(--ix-gold, #C4A35A); border-radius: 6px;
+  resize: none; overflow: hidden;
+}
+.ixpp-gm-foot {
+  display: flex; gap: 10px; align-items: center;
+  padding: 14px 22px; border-top: 1px solid var(--ix-border-soft, #EEE9DC);
+}
+.ixpp-gm-foot .ixpp-err { margin-top: 0; }
+.ixpp-sp { flex: 1; }
+
+/* ── progress (every wait shows motion) ────────────────── */
+.ixpp-wait {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  color: var(--ix-teal, #1A3A3A); font-size: 15px;
+  background: linear-gradient(110deg, #EFE9D8 8%, #FAF6EA 18%, #EFE9D8 33%);
+  background-size: 200% 100%;
+  animation: ixppShim 1.4s linear infinite;
+}
+.ixpp-dots { display: inline-flex; gap: 8px; vertical-align: middle; }
+.ixpp-dots i {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--ix-gold, #C4A35A);
+  animation: ixppDot 1.2s ease-in-out infinite;
+}
+.ixpp-panel .ixpp-dots i { width: 7px; height: 7px; }
+.ixpp-dots i:nth-child(2) { animation-delay: .2s; }
+.ixpp-dots i:nth-child(3) { animation-delay: .4s; }
+.ixpp-res { animation: ixppIn .5s ease-out; }
+@keyframes ixppShim { to { background-position: -200% 0; } }
+@keyframes ixppDot  { 0%, 100% { transform: scale(.6); opacity: .4; } 50% { transform: scale(1); opacity: 1; } }
+@keyframes ixppIn   { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: none; } }
