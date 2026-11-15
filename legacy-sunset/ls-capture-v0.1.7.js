@@ -1,7 +1,11 @@
-/* ls-capture-v0.1.6.js */
+/* ls-capture-v0.1.7.js */
 /* ============================================================
-   ls-capture-v0.1.6.js — Legacy Sunset capture, compare and save
+   ls-capture-v0.1.7.js — Legacy Sunset capture, compare and save
    Legacy Sunset S1 (15 Nov 2026). Deleted with the series.
+
+   v0.1.7 (15 Nov 2026) — LIST TEXT SIZE. The newsletter names in the list
+     took the page's large serif link style. Links and buttons in the panel
+     now keep the panel's own font and size like the rest of its text.
 
    v0.1.6 (15 Nov 2026) — SAVED PAGES. On a page already saved (WLN-103),
      the panel stopped at "The old layout (data-legacy) is not on this
@@ -94,7 +98,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  var VERSION = '0.1.6';
+  var VERSION = '0.1.7';
   var WORKER = 'https://ix-legacy-sunset.jeff-2cd.workers.dev';               // HC-P-LS1-6
   var PFX = 'ls-';                                                              // HC-P-LS1-7
   var WF_RE = /^https?:\/\/(cdn\.prod\.website-files\.com|assets\.website-files\.com|assets-global\.website-files\.com|uploads-ssl\.webflow\.com|global-uploads\.webflow\.com)\//i; // HC-P-LS1-4
@@ -113,7 +117,7 @@
     '.lsx{position:fixed;right:16px;bottom:16px;z-index:2147483000;width:380px;max-height:80vh;overflow:auto;background:#fff;color:#1d2525;' +
     'border:1px solid #d9d4c7;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.18);font:13px/1.45 "DM Sans",system-ui,sans-serif}' +
     '.lsx *{box-sizing:border-box}' +
-    '.lsx,.lsx p,.lsx li,.lsx span,.lsx b,.lsx div,.lsx ul{font-family:"DM Sans",system-ui,sans-serif!important;font-size:13px!important;line-height:1.45!important;letter-spacing:normal!important}' +
+    '.lsx,.lsx p,.lsx li,.lsx span,.lsx b,.lsx div,.lsx ul,.lsx a,.lsx button{font-family:"DM Sans",system-ui,sans-serif!important;font-size:13px!important;line-height:1.45!important;letter-spacing:normal!important}' +
     '.lsx p{margin:8px 0!important}' +
     '.lsx .lsx-k,.lsx .lsx-k span{font-size:10px!important;letter-spacing:.08em!important}' +
     '.lsx .lsx-t{font-family:Fraunces,Georgia,serif!important;font-size:15px!important}' +
