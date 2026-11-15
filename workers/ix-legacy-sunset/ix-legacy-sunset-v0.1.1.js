@@ -1,5 +1,17 @@
-// ix-legacy-sunset-v0.1.0.js
+// ix-legacy-sunset-v0.1.1.js
 // INBXIFY · Cloudflare Worker · ix-legacy-sunset
+// v0.1.1 (15 Nov 2026) — PICTURE ADDRESSES WITH BRACKETS. The first Save
+//   (WLN-116B) stopped at "Could not download …/69543f7d00806dc74a12bcfc_line%20(2…
+//   (403)". Webflow file names keep brackets, e.g. "line (2).png", and the
+//   v0.1.0 address finder stopped at "(", so it asked Webflow for a file that
+//   does not exist (Webflow's file host answers 403 for a missing file).
+//   Now: an address runs to its closing quote (every address in a capture
+//   sits inside quotes), unmatched closing brackets are trimmed, the exact
+//   addresses the capture sends are used first, and a download that fails
+//   is retried once with the address re-encoded.
+//   Nothing was written to Webflow by the failed Save; any pictures it had
+//   already uploaded to Uploadcare before stopping are unused copies.
+//
 // Legacy Sunset S1 (15 Nov 2026). A short-lived Worker: deleted, with its KV
 // namespace, when the series closes. Nothing else reads it.
 //
@@ -54,14 +66,23 @@
 //   HC-P-LS1-4  The list of Webflow file hosts treated as "must rehost" (WF_HOSTS).
 //   HC-P-LS1-5  Allowed page origins (ORIGINS).
 
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 const ORIGINS = ['https://www.inbxify.com', 'https://inbxify.com'];          // HC-P-LS1-5
 const SITE_ID_DEFAULT = '64b64d17aa77f55568870489';                           // HC-P-LS1-3
 const UC_HOST_DEFAULT = 'uyluucdnr2.ucarecd.net';                             // HC-P-LS1-2
 const F = { web: 'web-render-html', legacy: 'uses-legacy' };                   // HC-P-LS1-1
 const WF_HOSTS = ['cdn.prod.website-files.com', 'assets.website-files.com',   // HC-P-LS1-4
   'assets-global.website-files.com', 'uploads-ssl.webflow.com', 'global-uploads.webflow.com'];
-const WF_URL_RE = new RegExp('https?://(?:' + WF_HOSTS.map(h => h.replace(/\./g, '\\.')).join('|') + ')/[^\\s"\'()<>]+', 'gi');
+const WF_URL_RE = new RegExp('https?://(?:' + WF_HOSTS.map(h => h.replace(/\./g, '\\.')).join('|') + ')/[^\\s"\'<>{}]+', 'gi');
+// An address found by WF_URL_RE, cut back to the address itself: it ends at
+// the first HTML-escaped quote, and closing brackets that have no opening
+// bracket in the address belong to a CSS url( … ) around it.
+function cleanWf(u) {
+  u = u.split('&quot;')[0].split('&#39;')[0].split('&#x27;')[0].replace(/&amp;/g, '&');
+  let open = (u.match(/\(/g) || []).length, close = (u.match(/\)/g) || []).length;
+  while (close > open && u.endsWith(')')) { u = u.slice(0, -1); close--; }
+  return u.replace(/[;,]+$/, '');
+}
 const MARK = 'data-ls-capture';
 const API = 'https://api.webflow.com/v2';
 const GAP_MS = 650;            // Webflow pacing between calls
@@ -322,8 +343,13 @@ async function writeItem(run, col, id, fieldData, published) {
 async function rehost(run, srcUrl, width) {
   const key = run.env.UPLOADCARE_PUB_KEY;
   if (!key) throw httpErr(500, 'UPLOADCARE_PUB_KEY is not set on this Worker.');
-  const res = await fetch(srcUrl);
-  if (!res.ok) throw httpErr(502, 'Could not download ' + srcUrl + ' (' + res.status + ').');
+  let res = await fetch(srcUrl);
+  if (!res.ok) {
+    let alt = srcUrl;
+    try { alt = encodeURI(decodeURI(srcUrl)); } catch (e) {}
+    if (alt !== srcUrl) res = await fetch(alt);
+  }
+  if (!res.ok) throw httpErr(502, 'Could not download ' + srcUrl + ' (' + res.status + '). Nothing was written to Webflow.');
   const type = (res.headers.get('Content-Type') || 'application/octet-stream').split(';')[0];
   const bytes = await res.arrayBuffer();
   const name = fileTail(srcUrl).replace(/^[0-9a-f]{24}_/, '').replace(/[^\w.-]+/g, '_').slice(0, 80) || 'image';
@@ -355,15 +381,17 @@ async function save(run, body) {
   // 1 · Rehost every Webflow-hosted picture the capture still points at.
   const widths = new Map();
   for (const im of (Array.isArray(body.images) ? body.images : [])) if (im && im.url) widths.set(im.url, Math.max(widths.get(im.url) || 0, Math.round(+im.w || 0)));
-  const urls = [...new Set((html.match(WF_URL_RE) || []).map(u => u.replace(/&amp;/g, '&').replace(/&quot;$/, '')))];
+  const urls = [...new Set([...widths.keys()].filter(u => html.includes(u) || html.includes(u.replace(/&/g, '&amp;')))
+    .concat((html.match(WF_URL_RE) || []).map(cleanWf)))]
+    .sort((a, b) => b.length - a.length);   // longest first, so no address is replaced inside a longer one
   const rehosted = [];
   for (const u of urls) {
     const r = await rehost(run, u, Math.min(widths.get(u) || 0, 3000));
     rehosted.push(r);
     html = html.split(u).join(r.to).split(u.replace(/&/g, '&amp;')).join(r.to);
   }
-  const left = html.match(WF_URL_RE);
-  if (left) throw httpErr(500, 'Webflow-hosted links are still in the capture after rehosting: ' + left.slice(0, 3).join(', ') + '. Nothing was saved.');
+  const left = (html.match(WF_URL_RE) || []).map(cleanWf);
+  if (left.length) throw httpErr(500, 'Webflow-hosted links are still in the capture after rehosting: ' + left.slice(0, 3).join(', ') + '. Nothing was saved.');
 
   // 2 · Write Web Render HTML, read it back.
   await writeItem(run, col, id, { [F.web]: html }, published);
