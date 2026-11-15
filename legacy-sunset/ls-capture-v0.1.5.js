@@ -1,7 +1,16 @@
-/* ls-capture-v0.1.4.js */
+/* ls-capture-v0.1.5.js */
 /* ============================================================
-   ls-capture-v0.1.4.js — Legacy Sunset capture, compare and save
+   ls-capture-v0.1.5.js — Legacy Sunset capture, compare and save
    Legacy Sunset S1 (15 Nov 2026). Deleted with the series.
+
+   v0.1.5 (15 Nov 2026) — CSS PICTURE ADDRESSES WITH BRACKETS. WLN-103:
+     "…Ramapo%20College%20campus%20(1 … (403)". A background picture whose
+     file name holds brackets ("campus (1).jpg") was cut at its ")" when the
+     capture read url( … ), in three places (inline backgrounds, copied
+     style rules, Webflow fonts). The cut address went to the Worker and
+     the copied rule was broken too. All three now read url("…"), url('…')
+     and url(…) whole (CSS_URL). Re-capture any page captured with v0.1.4
+     or older before saving it. Needs ix-legacy-sunset v0.1.3 (unchanged).
 
    v0.1.4 (15 Nov 2026) — PICTURES THE WORKER CANNOT FETCH. Needs
      ix-legacy-sunset v0.1.3. When Save answers needBytes (the Worker could
@@ -79,12 +88,15 @@
    ============================================================ */
 (function () {
   'use strict';
-  var VERSION = '0.1.4';
+  var VERSION = '0.1.5';
   var WORKER = 'https://ix-legacy-sunset.jeff-2cd.workers.dev';               // HC-P-LS1-6
   var PFX = 'ls-';                                                              // HC-P-LS1-7
   var WF_RE = /^https?:\/\/(cdn\.prod\.website-files\.com|assets\.website-files\.com|assets-global\.website-files\.com|uploads-ssl\.webflow\.com|global-uploads\.webflow\.com)\//i; // HC-P-LS1-4
   var UC_RE = /^(https?:\/\/[a-z0-9.-]*(?:ucarecd\.net|ucarecdn\.com))\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\//i;
   var MIN_W = 992;
+  // url("…") | url('…') | url(…): group 1, 2 or 3 is the address, brackets inside quotes kept.
+  var CSS_URL = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s'"]*))\s*\)/gi;
+  function cssUrl(text) { CSS_URL.lastIndex = 0; var m = CSS_URL.exec(text || ''); return m ? (m[1] != null ? m[1] : m[2] != null ? m[2] : m[3]) : ''; }
 
   if (window.__lsCapture) { window.__lsCapture.toggle(); return; }
 
@@ -270,8 +282,8 @@
       if (live.tagName === 'SOURCE') c.removeAttribute('srcset');
       var bg = live.style && live.style.backgroundImage;
       if (bg && bg !== 'none') {
-        var m = /url\(["']?([^"')]+)["']?\)/i.exec(bg);
-        if (m) picture(live, m[1], sizeFor(live, 0), function (v) { c.style.backgroundImage = 'url("' + v + '")'; });
+        var bgu = cssUrl(bg);
+        if (bgu) picture(live, bgu, sizeFor(live, 0), function (v) { c.style.backgroundImage = 'url("' + v + '")'; });
       }
     });
 
@@ -334,7 +346,9 @@
       return false;
     }
     function fixUrls(text) {
-      return text.replace(/url\(\s*["']?([^"')]+)["']?\s*\)/gi, function (m, u) {
+      return text.replace(CSS_URL, function (m, q1, q2, q3) {
+        var u = q1 != null ? q1 : q2 != null ? q2 : q3;
+        if (!u) return m;
         if (WF_RE.test(u)) { if (!wfImages.has(u)) wfImages.set(u, 0); return 'url("' + u + '")'; }
         var uc = ucShown(u, 0); return uc ? 'url("' + uc.url + '")' : m;
       });
@@ -366,7 +380,7 @@
       var ff = [];
       fontFaces.forEach(function (r) {
         var fam = (r.style.getPropertyValue('font-family') || '').replace(/^["']|["']$/g, '').trim().toLowerCase();
-        if (fam && usedFamilies.has(fam) && WF_RE.test((/url\(["']?([^"')]+)/.exec(r.cssText) || [])[1] || '')) ff.push(fixUrls(r.cssText));
+        if (fam && usedFamilies.has(fam) && WF_RE.test(cssUrl(r.cssText))) ff.push(fixUrls(r.cssText));
       });
       // CSS variables the rules read, frozen at today's values on the capture's wrapper.
       var vars = {}, rs = getComputedStyle(document.documentElement), m, vre = /var\(\s*(--[\w-]+)/g;
