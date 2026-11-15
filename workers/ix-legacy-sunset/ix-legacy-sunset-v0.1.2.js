@@ -1,5 +1,15 @@
-// ix-legacy-sunset-v0.1.1.js
+// ix-legacy-sunset-v0.1.2.js
 // INBXIFY · Cloudflare Worker · ix-legacy-sunset
+// v0.1.2 (15 Nov 2026) — CMS FIELD LIST IN STEPS. On WLN-116B the panel's
+//   "CMS fields shown" never came back: /fields read up to 160 linked items
+//   in one request, paced for Webflow's rate limit, and the request never
+//   answered. Now /fields works in steps of about 20 seconds; its progress is
+//   kept in KV (fieldsjob:<id>) and the page calls again until it is done.
+//   Webflow collection layouts are kept in KV (schema:<id>) for the series.
+//   The capture no longer has to be sent: without html, /fields reads the
+//   saved Web Render HTML, so a newsletter saved before its list finished
+//   can still get one. /lookup now says whether a list is still running.
+//   Save, Undo and the rest are unchanged from v0.1.1.
 // v0.1.1 (15 Nov 2026) — PICTURE ADDRESSES WITH BRACKETS. The first Save
 //   (WLN-116B) stopped at "Could not download …/69543f7d00806dc74a12bcfc_line%20(2…
 //   (403)". Webflow file names keep brackets, e.g. "line (2).png", and the
@@ -40,9 +50,12 @@
 //                                plus every item already saved here.
 //   GET  /lookup?slug=           one NEWSLETTERS item by slug, with its
 //                                save and fields status.
-//   POST /fields  {id, html}     the CMS fields whose values appear in the
+//   POST /fields  {id, html?}    the CMS fields whose values appear in the
 //                                capture, by collection (follows references
-//                                two levels). Stored in KV for /report.
+//                                two levels). Works in steps: answers
+//                                {done:false, itemsRead, queued} until done.
+//                                Without html it reads the saved Web Render
+//                                HTML. Stored in KV for /report.
 //   POST /save    {id, html, images:[{url,w}]}
 //                                rehost Webflow-hosted pictures, write
 //                                web-render-html, read back, turn
@@ -66,7 +79,7 @@
 //   HC-P-LS1-4  The list of Webflow file hosts treated as "must rehost" (WF_HOSTS).
 //   HC-P-LS1-5  Allowed page origins (ORIGINS).
 
-const VERSION = '0.1.1';
+const VERSION = '0.1.2';
 const ORIGINS = ['https://www.inbxify.com', 'https://inbxify.com'];          // HC-P-LS1-5
 const SITE_ID_DEFAULT = '64b64d17aa77f55568870489';                           // HC-P-LS1-3
 const UC_HOST_DEFAULT = 'uyluucdnr2.ucarecd.net';                             // HC-P-LS1-2
@@ -87,6 +100,7 @@ const MARK = 'data-ls-capture';
 const API = 'https://api.webflow.com/v2';
 const GAP_MS = 650;            // Webflow pacing between calls
 const MAX_ITEMS_FIELDS = 160;  // cap on items read by /fields
+const STEP_MS = 20000;         // one /fields step works this long, then hands back
 
 export default {
   async fetch(request, env) {
@@ -236,7 +250,10 @@ async function lookup(run, slug) {
   if (!it) throw httpErr(404, 'No NEWSLETTERS item has the slug "' + slug + '".');
   const row = nlRow(it, await kvGet(run, 'saved:' + it.id));
   const fr = await kvGet(run, 'fields:' + it.id);
-  return { ok: true, collectionId: col, item: row, fieldsReport: fr ? { at: fr.at, collections: fr.collections.length } : null };
+  const job = await kvGet(run, 'fieldsjob:' + it.id);
+  return { ok: true, collectionId: col, item: row,
+    fieldsReport: fr ? { at: fr.at, collections: fr.collections.length, fields: fr.collections.reduce((n, c) => n + c.fields.length, 0) } : null,
+    fieldsRunning: job ? { itemsRead: job.itemsRead, queued: job.queue.length } : null };
 }
 
 // ── /fields : which CMS fields show in the capture ─────────────────────────
@@ -263,49 +280,76 @@ function valueHits(field, val, hay) {
 }
 function fileTail(u) { try { return decodeURIComponent(new URL(u).pathname.split('/').pop()); } catch (e) { return String(u); } }
 
+async function schemaOf(run, cid) {
+  const key = 'schema:' + cid;
+  let sc = await kvGet(run, key);
+  if (!sc) {
+    const j = await wf(run, '/collections/' + cid);
+    sc = { displayName: j.displayName, fields: (j.fields || []).map(f => ({ slug: f.slug, displayName: f.displayName, type: f.type,
+      validations: { collectionId: (f.validations || {}).collectionId, options: (f.validations || {}).options } })) };
+    await kvPut(run, key, sc);
+  }
+  return sc;
+}
+
 async function fields(run, body) {
-  const id = String(body.id || ''), html = String(body.html || '');
+  const t0 = Date.now();
+  const id = String(body.id || '');
   if (!/^[0-9a-f]{24}$/.test(id)) throw httpErr(400, 'Give the NEWSLETTERS item id.');
-  if (!html.includes(MARK)) throw httpErr(400, 'That is not a capture (no ' + MARK + ' marker).');
-  const hay = { raw: html + ' ' + decodeURIComponent(html.replace(/%(?![0-9a-f]{2})/gi, '%25')), text: norm(html) };
   const nlCol = await nlCollection(run);
-  const schemas = new Map();
-  const schema = async cid => { if (!schemas.has(cid)) schemas.set(cid, await wf(run, '/collections/' + cid)); return schemas.get(cid); };
-  const found = new Map();   // colId -> Map(slug -> {name,type,hits})
-  const seen = new Set(); let itemsRead = 0, capped = false;
-  const queue = [{ col: nlCol, id, depth: 0 }];
-  while (queue.length) {
-    const q = queue.shift();
+  let html = String(body.html || '');
+  if (!html) {
+    const it = await readItem(run, nlCol, id);
+    html = String(((it && it.fieldData) || {})[F.web] || '');
+  }
+  if (!html.includes(MARK)) throw httpErr(400, 'No capture to read: send the capture, or save one into Web Render HTML first.');
+  let raw2 = '';
+  try { raw2 = decodeURIComponent(html.replace(/%(?![0-9a-f]{2})/gi, '%25')); } catch (e) { raw2 = ''; }
+  const hay = { raw: html + ' ' + raw2, text: norm(html) };
+
+  const jobKey = 'fieldsjob:' + id;
+  let job = body.restart ? null : await kvGet(run, jobKey);
+  if (!job) job = { id, queue: [{ col: nlCol, id, depth: 0 }], seen: [], found: {}, names: {}, itemsRead: 0, capped: false, started: new Date().toISOString() };
+  const seen = new Set(job.seen);
+
+  while (job.queue.length && Date.now() - t0 < STEP_MS) {
+    const q = job.queue.shift();
     const key = q.col + '/' + q.id;
     if (seen.has(key)) continue;
     seen.add(key);
-    if (itemsRead >= MAX_ITEMS_FIELDS) { capped = true; break; }
+    if (job.itemsRead >= MAX_ITEMS_FIELDS) { job.capped = true; job.queue = []; break; }
     let it;
     try { it = await wf(run, '/collections/' + q.col + '/items/' + q.id); } catch (e) { continue; }
-    itemsRead++;
-    const sc = await schema(q.col), fd = (it && it.fieldData) || {};
+    job.itemsRead++;
+    const sc = await schemaOf(run, q.col), fd = (it && it.fieldData) || {};
+    job.names[q.col] = sc.displayName || q.col;
     for (const f of (sc.fields || [])) {
       const v = fd[f.slug];
       if (q.depth < 2 && (f.type === 'Reference' || f.type === 'MultiReference')) {
         const target = (f.validations || {}).collectionId;
         const ids = Array.isArray(v) ? v : v ? [v] : [];
-        if (target) for (const rid of ids) queue.push({ col: target, id: rid, depth: q.depth + 1 });
+        if (target) for (const rid of ids) if (!seen.has(target + '/' + rid)) job.queue.push({ col: target, id: rid, depth: q.depth + 1 });
       }
-      if (valueHits(f, v, hay)) {
-        if (!found.has(q.col)) found.set(q.col, new Map());
-        const m = found.get(q.col);
-        const cur = m.get(f.slug) || { slug: f.slug, name: f.displayName, type: f.type, hits: 0 };
-        cur.hits++; m.set(f.slug, cur);
+      if (f.slug !== F.web && valueHits(f, v, hay)) {   // the capture itself is not a field it shows
+        const m = job.found[q.col] || (job.found[q.col] = {});
+        const cur = m[f.slug] || { slug: f.slug, name: f.displayName, type: f.type, hits: 0 };
+        cur.hits++; m[f.slug] = cur;
       }
     }
   }
-  const collections = [];
-  for (const [cid, m] of found) collections.push({ collectionId: cid, name: (schemas.get(cid) || {}).displayName || cid,
-    fields: [...m.values()].sort((a, b) => a.slug.localeCompare(b.slug)) });
-  collections.sort((a, b) => a.name.localeCompare(b.name));
-  const rep = { ok: true, id, at: new Date().toISOString(), itemsRead, capped, collections,
+  job.seen = [...seen];
+
+  if (job.queue.length) {
+    await kvPut(run, jobKey, job);
+    return { ok: true, done: false, id, itemsRead: job.itemsRead, queued: job.queue.length, calls: run.calls };
+  }
+  const collections = Object.keys(job.found).map(cid => ({ collectionId: cid, name: job.names[cid] || cid,
+    fields: Object.values(job.found[cid]).sort((a, b) => a.slug.localeCompare(b.slug)) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const rep = { ok: true, done: true, id, at: new Date().toISOString(), itemsRead: job.itemsRead, capped: job.capped, collections,
     note: 'Found by value: a field counts when its value appears in the capture. Fields used only for conditional visibility, filters or sorting print nothing and cannot be seen here; switches, numbers and dates are not matched.' };
   await kvPut(run, 'fields:' + id, rep);
+  if (run.env.LS_KV) await run.env.LS_KV.delete(jobKey);
   rep.calls = run.calls;
   return rep;
 }

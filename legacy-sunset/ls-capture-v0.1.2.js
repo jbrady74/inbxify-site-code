@@ -1,7 +1,16 @@
-/* ls-capture-v0.1.1.js */
+/* ls-capture-v0.1.2.js */
 /* ============================================================
-   ls-capture-v0.1.1.js — Legacy Sunset capture, compare and save
+   ls-capture-v0.1.2.js — Legacy Sunset capture, compare and save
    Legacy Sunset S1 (15 Nov 2026). Deleted with the series.
+
+   v0.1.2 (15 Nov 2026) — CMS FIELD LIST IN STEPS. Needs ix-legacy-sunset
+     v0.1.2. "CMS fields shown" stayed at "…" on WLN-116B: the one long
+     request never answered. The panel now calls /fields again and again
+     (each call about 20 seconds) and shows "reading N items" until the
+     list is done. On a newsletter already saved without a list, the panel
+     starts the list on its own from the saved Web Render HTML. A failed
+     list shows "failed" with the reason under the list. Capture, compare,
+     save and the phone view are unchanged from v0.1.1.
 
    v0.1.1 (15 Nov 2026) — PHONE CHECK. Jeff: in phone view the panel
      covered the page, and the page's own text styles leaked into the
@@ -56,7 +65,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  var VERSION = '0.1.1';
+  var VERSION = '0.1.2';
   var WORKER = 'https://ix-legacy-sunset.jeff-2cd.workers.dev';               // HC-P-LS1-6
   var PFX = 'ls-';                                                              // HC-P-LS1-7
   var WF_RE = /^https?:\/\/(cdn\.prod\.website-files\.com|assets\.website-files\.com|assets-global\.website-files\.com|uploads-ssl\.webflow\.com|global-uploads\.webflow\.com)\//i; // HC-P-LS1-4
@@ -397,12 +406,15 @@
       var warn = [];
       if (s.other.length) warn.push(s.other.length + ' picture(s) on another host stay as they are: ' + esc(s.other.slice(0, 2).join(', ')));
       if (s.svg) warn.push(s.svg + ' Uploadcare SVG(s) left as stored (SVG gets no size).');
+      if (S.fieldsErr) warn.push('CMS field list: ' + esc(S.fieldsErr));
       if (c.css.unreadable.length) warn.push('Stylesheet(s) that could not be read: ' + esc(c.css.unreadable.join(', ')));
       if (warn.length) h += '<p class="lsx-w">' + warn.join('<br>') + '</p>';
       h += '<p>Check it: toggle <b>Show live</b> / <b>Show capture</b> and scroll the whole issue. For phone width: open DevTools (Cmd+Option+I), then click the phone-and-tablet icon at its top left. This panel shrinks to the pill at the bottom left; tap the pill to swap live and capture. Tap <b>Panel</b> to bring this back.</p>';
     } else if (it && it.usesLegacy) {
       h += '<p>Capture takes the old layout as it shows now and puts it in its place, so you can compare on this page. Nothing is saved until you press Save.</p>';
     }
+    if (!c && it && !it.usesLegacy && S.fieldsCount != null) h += '<ul class="lsx-l"><li><span>CMS fields shown (by value)</span><span>' + esc(S.fieldsCount) + '</span></li></ul>' +
+      (S.fieldsErr ? '<p class="lsx-w">CMS field list: ' + esc(S.fieldsErr) + '</p>' : '');
     if (it && !it.usesLegacy && it.saved && !it.saved.undoneAt) h += '<p>Saved ' + esc(new Date(it.saved.at).toLocaleString()) + '. <button class="lsx-a" data-a="undo">Undo (turn uses-legacy back on)</button></p>';
     h += '</div>';
     panel.innerHTML = h;
@@ -427,10 +439,29 @@
     p.then(function () {
       S.busy = false; msg = null; showCap();
       say('ok', 'Captured. The page now shows the capture in place of the old layout.');
-      return call('/fields', { id: S.item.id, html: S.cap.html }).then(function (j) {
-        S.fieldsCount = j.collections.reduce(function (n, c) { return n + c.fields.length; }, 0); render();
-      }, function (e) { S.fieldsCount = 'failed'; render(); console.warn('[ls-capture] /fields:', e.message); });
+      return runFields(S.cap.html, true);
     }).catch(function (e) { S.busy = false; say('bad', 'Capture failed: ' + esc(e.message)); });
+  }
+
+  // CMS field list, in steps (Worker /fields answers done:false until it is done).
+  var fieldsRun = 0;
+  function runFields(html, restart) {
+    var my = ++fieldsRun;
+    S.fieldsCount = 'starting…'; S.fieldsErr = ''; render();
+    function step(first) {
+      if (my !== fieldsRun) return;                          // a newer run took over
+      var body = { id: S.item.id }; if (html) body.html = html; if (first && restart) body.restart = true;
+      return call('/fields', body).then(function (j) {
+        if (my !== fieldsRun) return;
+        if (!j.done) { S.fieldsCount = 'reading ' + j.itemsRead + ' items…'; render(); return step(false); }
+        S.fieldsCount = j.collections.reduce(function (n, c) { return n + c.fields.length; }, 0) + (j.capped ? ' (capped)' : '');
+        render();
+      }, function (e) {
+        if (my !== fieldsRun) return;
+        S.fieldsCount = 'failed'; S.fieldsErr = e.message; render(); console.warn('[ls-capture] /fields:', e.message);
+      });
+    }
+    return step(true);
   }
 
   function confirmSave() {
@@ -481,7 +512,11 @@
   call('/lookup?slug=' + encodeURIComponent(slug)).then(function (j) {
     S.busy = false; S.item = j.item; msg = null;
     if (!j.item.usesLegacy && !(j.item.saved && !j.item.saved.undoneAt)) say('bad', 'uses-legacy is off on this newsletter, so there is nothing to capture.');
-    else if (!j.item.usesLegacy) say('ok', 'Already saved.');
+    else if (!j.item.usesLegacy) {
+      say('ok', 'Already saved.');
+      if (j.fieldsReport) { S.fieldsCount = j.fieldsReport.fields; render(); }
+      else runFields('', false);                                // saved before its list finished: read the saved copy
+    }
     else render();
   }, function (e) { S.busy = false; say('bad', esc(e.message)); });
 })();
