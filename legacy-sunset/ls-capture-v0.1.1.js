@@ -1,7 +1,20 @@
-/* ls-capture-v0.1.0.js */
+/* ls-capture-v0.1.1.js */
 /* ============================================================
-   ls-capture-v0.1.0.js — Legacy Sunset capture, compare and save
+   ls-capture-v0.1.1.js — Legacy Sunset capture, compare and save
    Legacy Sunset S1 (15 Nov 2026). Deleted with the series.
+
+   v0.1.1 (15 Nov 2026) — PHONE CHECK. Jeff: in phone view the panel
+     covered the page, and the page's own text styles leaked into the
+     panel (large serif list text).
+     · The panel shrinks to the pill (bottom left) with its "–" button, and
+       on its own when the window is narrower than 700 px (phone view). It
+       comes back when the window is wide again, unless Jeff shrank it.
+     · The pill is the Live / Capture switch: tap it to swap. Its "Panel"
+       part reopens the panel.
+     · Panel text is fixed to its own font and size (!important), so page
+       styles cannot reach it.
+     · The phone-view how-to names the DevTools step first.
+     Capture, compare and save logic are unchanged from v0.1.0.
 
    HOW IT IS RUN
      Not on any page by default. Jeff opens an old newsletter (NEWSLETTERS
@@ -43,7 +56,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  var VERSION = '0.1.0';
+  var VERSION = '0.1.1';
   var WORKER = 'https://ix-legacy-sunset.jeff-2cd.workers.dev';               // HC-P-LS1-6
   var PFX = 'ls-';                                                              // HC-P-LS1-7
   var WF_RE = /^https?:\/\/(cdn\.prod\.website-files\.com|assets\.website-files\.com|assets-global\.website-files\.com|uploads-ssl\.webflow\.com|global-uploads\.webflow\.com)\//i; // HC-P-LS1-4
@@ -59,6 +72,10 @@
     '.lsx{position:fixed;right:16px;bottom:16px;z-index:2147483000;width:380px;max-height:80vh;overflow:auto;background:#fff;color:#1d2525;' +
     'border:1px solid #d9d4c7;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.18);font:13px/1.45 "DM Sans",system-ui,sans-serif}' +
     '.lsx *{box-sizing:border-box}' +
+    '.lsx,.lsx p,.lsx li,.lsx span,.lsx b,.lsx div,.lsx ul{font-family:"DM Sans",system-ui,sans-serif!important;font-size:13px!important;line-height:1.45!important;letter-spacing:normal!important}' +
+    '.lsx p{margin:8px 0!important}' +
+    '.lsx .lsx-k,.lsx .lsx-k span{font-size:10px!important;letter-spacing:.08em!important}' +
+    '.lsx .lsx-t{font-family:Fraunces,Georgia,serif!important;font-size:15px!important}' +
     '.lsx-h{padding:12px 14px 8px;border-bottom:1px solid #eee9dc}' +
     '.lsx-k{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#8a8170;display:flex;justify-content:space-between}' +
     '.lsx-t{font:600 15px/1.3 Fraunces,Georgia,serif;color:#1A3A3A;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
@@ -83,12 +100,37 @@
     '.lsx-m{width:440px;background:#fff;border-radius:12px;padding:18px 20px;font:13px/1.5 "DM Sans",system-ui,sans-serif;color:#1d2525;box-shadow:0 20px 60px rgba(0,0,0,.3)}' +
     '.lsx-m h3{margin:0 0 8px;font:600 17px Fraunces,Georgia,serif;color:#1A3A3A}' +
     '.lsx-m ul{margin:6px 0 12px 18px;padding:0}' +
-    '.lsx-flag{position:fixed;left:16px;bottom:16px;z-index:2147483000;padding:6px 12px;border-radius:999px;font:600 12px "DM Sans",system-ui,sans-serif;color:#fff;background:#1A3A3A}' +
-    '.lsx-flag.live{background:#8a8170}';
+    '.lsx-flag{position:fixed;left:12px;bottom:12px;z-index:2147483000;display:flex;border-radius:999px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.25);font:600 12px/1 "DM Sans",system-ui,sans-serif!important}' +
+    '.lsx-flag button{border:0;margin:0;height:32px;padding:0 12px;cursor:pointer;color:#fff;font:600 12px/1 "DM Sans",system-ui,sans-serif!important;white-space:nowrap}' +
+    '.lsx-flag .lsx-sw{width:136px;background:#1A3A3A}' +
+    '.lsx-flag.live .lsx-sw{background:#8a8170}' +
+    '.lsx-flag .lsx-sw[disabled]{cursor:default}' +
+    '.lsx-flag .lsx-op{width:64px;background:#C4A35A;color:#1A3A3A}';
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
   var panel = document.createElement('div'); panel.className = 'lsx';
-  var flag = document.createElement('div'); flag.className = 'lsx-flag live'; flag.textContent = 'Showing: live old layout';
+  var flag = document.createElement('div'); flag.className = 'lsx-flag live';
+  flag.innerHTML = '<button class="lsx-sw" data-f="sw" disabled>Live</button><button class="lsx-op" data-f="op">Panel</button>';
+  var swBtn = flag.firstChild, opBtn = flag.lastChild;
+  var mini = { user: false, auto: false };
+  function setMini(on) { panel.style.display = on ? 'none' : ''; opBtn.style.display = on ? '' : 'none'; }
+  function fit() {
+    var narrow = window.innerWidth < 700;
+    if (narrow && !mini.auto) { mini.auto = true; setMini(true); }
+    else if (!narrow && mini.auto) { mini.auto = false; setMini(mini.user); }
+  }
+  function paintFlag() {
+    flag.className = 'lsx-flag' + (S.showing === 'cap' ? '' : ' live');
+    swBtn.textContent = S.showing === 'cap' ? 'Capture ⇄ live' : 'Live ⇄ capture';
+    swBtn.disabled = !S.cap;
+    swBtn.title = S.cap ? 'Tap to swap between the live old layout and the capture' : 'Capture first';
+  }
+  flag.addEventListener('click', function (e) {
+    var f = e.target.getAttribute && e.target.getAttribute('data-f');
+    if (f === 'sw' && S.cap) { if (S.showing === 'cap') showLive(); else showCap(); }
+    if (f === 'op') { mini.user = false; mini.auto = false; setMini(false); }
+  });
+  setMini(false);
   document.body.appendChild(panel); document.body.appendChild(flag);
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -316,7 +358,7 @@
     if (S.lstyle === undefined) S.lstyle = p.legacy.getAttribute('style');
     p.legacy.style.display = 'none';
     S.showing = 'cap';
-    flag.className = 'lsx-flag'; flag.textContent = 'Showing: capture (saved state)';
+    paintFlag();
     render();
   }
   function showLive() {
@@ -324,7 +366,7 @@
     if (S.holder) S.holder.style.display = 'none';
     if (S.lstyle === undefined || S.lstyle === null) p.legacy.removeAttribute('style'); else p.legacy.setAttribute('style', S.lstyle);
     S.showing = 'live';
-    flag.className = 'lsx-flag live'; flag.textContent = 'Showing: live old layout';
+    paintFlag();
     render();
   }
 
@@ -332,7 +374,7 @@
   var msg = null;   // { kind: ''|'ok'|'bad', html }
   function render() {
     var it = S.item, c = S.cap;
-    var h = '<div class="lsx-h"><div class="lsx-k"><span>Legacy Sunset · v' + VERSION + '</span><button class="lsx-x" data-a="close" title="Close">✕</button></div>' +
+    var h = '<div class="lsx-h"><div class="lsx-k"><span>Legacy Sunset · v' + VERSION + '</span><span><button class="lsx-x" data-a="mini" title="Shrink to the pill">–</button> <button class="lsx-x" data-a="close" title="Close">✕</button></span></div>' +
       '<div class="lsx-t">' + esc(it ? it.name : 'Old newsletter') + '</div></div><div class="lsx-b">';
     if (msg) h += '<div class="lsx-st ' + (msg.kind || '') + '">' + msg.html + '</div>';
     if (S.busy) h += '<div class="lsx-bar"><i></i></div>';
@@ -357,7 +399,7 @@
       if (s.svg) warn.push(s.svg + ' Uploadcare SVG(s) left as stored (SVG gets no size).');
       if (c.css.unreadable.length) warn.push('Stylesheet(s) that could not be read: ' + esc(c.css.unreadable.join(', ')));
       if (warn.length) h += '<p class="lsx-w">' + warn.join('<br>') + '</p>';
-      h += '<p>Check it: toggle <b>Show live</b> / <b>Show capture</b> and scroll the whole issue. For phone width, turn on Chrome’s device toolbar (Cmd+Shift+M) and toggle again.</p>';
+      h += '<p>Check it: toggle <b>Show live</b> / <b>Show capture</b> and scroll the whole issue. For phone width: open DevTools (Cmd+Option+I), then click the phone-and-tablet icon at its top left. This panel shrinks to the pill at the bottom left; tap the pill to swap live and capture. Tap <b>Panel</b> to bring this back.</p>';
     } else if (it && it.usesLegacy) {
       h += '<p>Capture takes the old layout as it shows now and puts it in its place, so you can compare on this page. Nothing is saved until you press Save.</p>';
     }
@@ -371,6 +413,7 @@
     var b = e.target.closest('[data-a]'); if (!b || b.disabled) return;
     var a = b.getAttribute('data-a');
     if (a === 'close') return api.toggle();
+    if (a === 'mini') { mini.user = true; return setMini(true); }
     if (a === 'toggle') return S.showing === 'cap' ? showLive() : showCap();
     if (a === 'capture') return doCapture();
     if (a === 'save') return confirmSave();
@@ -425,11 +468,12 @@
     }, function (e) { S.busy = false; say('bad', 'Undo failed: ' + esc(e.message)); });
   }
 
-  var api = { toggle: function () { var hide = panel.style.display !== 'none'; panel.style.display = hide ? 'none' : ''; flag.style.display = hide ? 'none' : ''; } };
+  var api = { toggle: function () { var hide = flag.style.display !== 'none'; panel.style.display = hide ? 'none' : (mini.user || mini.auto ? 'none' : ''); flag.style.display = hide ? 'none' : ''; } };
+  window.addEventListener('resize', fit);
   window.__lsCapture = api;
 
   // ── start ─────────────────────────────────────────────────────────────────
-  render();
+  render(); paintFlag(); fit();
   var p0 = parts();
   if (p0.err) { say('bad', esc(p0.err)); return; }
   var slug = location.pathname.split('/').filter(Boolean).pop() || '';
