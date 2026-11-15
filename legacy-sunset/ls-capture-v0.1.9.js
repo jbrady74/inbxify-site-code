@@ -1,7 +1,21 @@
-/* ls-capture-v0.1.8.js */
+/* ls-capture-v0.1.9.js */
 /* ============================================================
-   ls-capture-v0.1.8.js — Legacy Sunset capture, compare and save
+   ls-capture-v0.1.9.js — Legacy Sunset capture, compare and save
    Legacy Sunset S1 (15 Nov 2026). Deleted with the series.
+
+   v0.1.9 (15 Nov 2026) — FRANCHISE SPONSOR LABELS; PAGE NOT YET UPDATED.
+     · WLN-122B showed how the old layout marks a franchise sponsor: a text
+       label "SPONSORED by: Top Level Soccer" (.paid-attribution-label) in
+       the section header next to the franchise art (.ts-section-img). It is
+       now tagged data-ls-ad="sponsor", with data-ls-art = the franchise
+       art's Webflow file name (e.g. 69500335bd35dad16f2c957a_WYCKOFF-
+       SPORTS.png) so the current-week fill can tell which franchise it is.
+       WLN ran no paid articles on the old layout, so every shown label of
+       that class is a franchise sponsor.
+     · After Undo, Webflow can keep serving the saved page for a minute or
+       so. The panel now says so (instead of "the old layout is not on this
+       page") when uses-legacy is back on but the page still shows a
+       capture.
 
    v0.1.8 (15 Nov 2026) — AD SLOTS TAGGED. Jeff ruled (15 Nov) that on a
      past issue, old or new path, banner ads, franchise sponsors, house ads
@@ -114,7 +128,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  var VERSION = '0.1.8';
+  var VERSION = '0.1.9';
   var WORKER = 'https://ix-legacy-sunset.jeff-2cd.workers.dev';               // HC-P-LS1-6
   var PFX = 'ls-';                                                              // HC-P-LS1-7
   var WF_RE = /^https?:\/\/(cdn\.prod\.website-files\.com|assets\.website-files\.com|assets-global\.website-files\.com|uploads-ssl\.webflow\.com|global-uploads\.webflow\.com)\//i; // HC-P-LS1-4
@@ -294,11 +308,16 @@
         if (lead) stats.lead = true; else stats.banners++;
         c.setAttribute('data-ls-ad', 'banner');
         c.setAttribute('data-ls-slot', lead ? 'lead' : String(stats.banners));
-      } else if (live.classList && Array.prototype.some.call(live.classList, function (k) { return /sponsor/i.test(k); }) &&
-                 !live.parentElement.closest('[class*="sponsor"]')) {
+      } else if (live.classList && (live.classList.contains('paid-attribution-label') ||
+                 (Array.prototype.some.call(live.classList, function (k) { return /sponsor/i.test(k); }) &&
+                  !live.parentElement.closest('[class*="sponsor"], .paid-attribution-label')))) {
         stats.sponsors++;
         c.setAttribute('data-ls-ad', 'sponsor');
         c.setAttribute('data-ls-slot', String(stats.sponsors));
+        var hdr = live.closest('.ts-section-header') || live.parentElement;
+        var art = hdr && hdr.querySelector('img');
+        var artSrc = art ? (art.getAttribute('src') || '') : '';
+        if (artSrc) c.setAttribute('data-ls-art', decodeURIComponent(artSrc.split('?')[0].split('/').pop()));
       }
       if (live.id) stats.ids++;
       // classes
@@ -648,7 +667,9 @@
   call('/lookup?slug=' + encodeURIComponent(slug)).then(function (j) {
     S.busy = false; S.item = j.item; msg = null;
     var p0 = parts();
-    if (j.item.usesLegacy && p0.err) say('bad', esc(p0.err));
+    if (j.item.usesLegacy && p0.err && document.querySelector('[data-ls-capture]'))
+      say('bad', 'uses-legacy is back on, but this page is still the saved copy: Webflow takes a minute or so to update the page. Wait a minute, reload (Cmd+Shift+R), then click the bookmark again.');
+    else if (j.item.usesLegacy && p0.err) say('bad', esc(p0.err));
     else if (!j.item.usesLegacy && !(j.item.saved && !j.item.saved.undoneAt)) say('bad', 'uses-legacy is off on this newsletter, so there is nothing to capture.');
     else if (!j.item.usesLegacy) {
       say('ok', 'Already saved.');
