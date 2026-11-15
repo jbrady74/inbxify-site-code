@@ -1,7 +1,14 @@
-/* ls-capture-v0.1.2.js */
+/* ls-capture-v0.1.3.js */
 /* ============================================================
-   ls-capture-v0.1.2.js — Legacy Sunset capture, compare and save
+   ls-capture-v0.1.3.js — Legacy Sunset capture, compare and save
    Legacy Sunset S1 (15 Nov 2026). Deleted with the series.
+
+   v0.1.3 (15 Nov 2026) — THE LIST. After WLN-116B passed (first save),
+     Jeff needs the other old newsletters. "All old newsletters" under the
+     panel title opens the list from ix-legacy-sunset /inventory: counts,
+     then one row per newsletter (to do first), each with its status and a
+     link to its page. "Back" returns to this page's panel. Needs
+     ix-legacy-sunset v0.1.2 (unchanged). Nothing else changes.
 
    v0.1.2 (15 Nov 2026) — CMS FIELD LIST IN STEPS. Needs ix-legacy-sunset
      v0.1.2. "CMS fields shown" stayed at "…" on WLN-116B: the one long
@@ -65,7 +72,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  var VERSION = '0.1.2';
+  var VERSION = '0.1.3';
   var WORKER = 'https://ix-legacy-sunset.jeff-2cd.workers.dev';               // HC-P-LS1-6
   var PFX = 'ls-';                                                              // HC-P-LS1-7
   var WF_RE = /^https?:\/\/(cdn\.prod\.website-files\.com|assets\.website-files\.com|assets-global\.website-files\.com|uploads-ssl\.webflow\.com|global-uploads\.webflow\.com)\//i; // HC-P-LS1-4
@@ -102,6 +109,16 @@
     '.lsx-l li span:last-child{font-variant-numeric:tabular-nums;color:#1A3A3A;font-weight:600;text-align:right}' +
     '.lsx-w{color:#a0521d}' +
     '.lsx-a{color:#1A3A3A;text-decoration:underline;cursor:pointer;background:none;border:0;padding:0;font:inherit}' +
+    '.lsx .lsx-nav{margin-top:4px;font-size:12px!important}' +
+    '.lsx-inv{list-style:none;margin:0;padding:0}' +
+    '.lsx-inv li{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dotted #eee9dc}' +
+    '.lsx-inv a{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1A3A3A;text-decoration:none;font-weight:600}' +
+    '.lsx-inv a:hover{text-decoration:underline}' +
+    '.lsx-inv a.here{color:#a0521d}' +
+    '.lsx-chip{flex:0 0 96px;width:96px;text-align:center;border-radius:999px;padding:2px 0;font-size:11px!important;font-weight:600;white-space:nowrap}' +
+    '.lsx-chip.todo{background:#FAF3E3;color:#8a6a1e}' +
+    '.lsx-chip.done{background:#eef7f2;color:#2e7d5b}' +
+    '.lsx-chip.off{background:#f1efea;color:#8a8170}' +
     '.lsx-bar{height:6px;border-radius:3px;background:#eee9dc;overflow:hidden;margin:8px 0}' +
     '.lsx-bar i{display:block;height:100%;width:40%;background:linear-gradient(90deg,#C4A35A,#1A3A3A,#C4A35A);animation:lsxrun 1.1s linear infinite}' +
     '@keyframes lsxrun{from{transform:translateX(-100%)}to{transform:translateX(250%)}}' +
@@ -384,7 +401,10 @@
   function render() {
     var it = S.item, c = S.cap;
     var h = '<div class="lsx-h"><div class="lsx-k"><span>Legacy Sunset · v' + VERSION + '</span><span><button class="lsx-x" data-a="mini" title="Shrink to the pill">–</button> <button class="lsx-x" data-a="close" title="Close">✕</button></span></div>' +
-      '<div class="lsx-t">' + esc(it ? it.name : 'Old newsletter') + '</div></div><div class="lsx-b">';
+      '<div class="lsx-t">' + esc(S.view === 'list' ? 'All old newsletters' : (it ? it.name : 'Old newsletter')) + '</div>' +
+      '<div class="lsx-nav"><button class="lsx-a" data-a="' + (S.view === 'list' ? 'back' : 'list') + '">' +
+      (S.view === 'list' ? 'Back to this page' : 'All old newsletters') + '</button></div></div><div class="lsx-b">';
+    if (S.view === 'list') { panel.innerHTML = h + listHtml() + '</div>'; return; }
     if (msg) h += '<div class="lsx-st ' + (msg.kind || '') + '">' + msg.html + '</div>';
     if (S.busy) h += '<div class="lsx-bar"><i></i></div>';
     var canSave = !!(it && it.usesLegacy && c && !S.busy);
@@ -421,6 +441,35 @@
   }
   function say(kind, html) { msg = { kind: kind, html: html }; render(); }
 
+  // ── the list (/inventory) ────────────────────────────────────────────────
+  function rowState(r) {
+    if (!r.usesLegacy && r.saved && !r.saved.undoneAt) return { k: 'done', t: 'Saved' };
+    if (!r.published || r.draft || r.archived) return { k: 'off', t: r.draft ? 'Draft' : r.archived ? 'Archived' : 'Not published' };
+    return { k: 'todo', t: 'To do' };
+  }
+  function listHtml() {
+    if (S.invErr) return '<div class="lsx-st bad">' + esc(S.invErr) + '</div>';
+    if (!S.inv) return '<div class="lsx-bar"><i></i></div><p>Reading NEWSLETTERS…</p>';
+    var rows = S.inv.rows.slice(), order = { todo: 0, off: 1, done: 2 }, here = (S.item || {}).id;
+    rows.sort(function (a, b) { return order[rowState(a).k] - order[rowState(b).k] || a.name.localeCompare(b.name); });
+    var todo = rows.filter(function (r) { return rowState(r).k === 'todo'; }).length;
+    var h = '<ul class="lsx-l"><li><span>Old newsletters</span><span>' + rows.length + '</span></li>' +
+      '<li><span>To do</span><span>' + todo + '</span></li>' +
+      '<li><span>Saved</span><span>' + rows.filter(function (r) { return rowState(r).k === 'done'; }).length + '</span></li>' +
+      '<li><span>Not published, draft or archived</span><span>' + rows.filter(function (r) { return rowState(r).k === 'off'; }).length + '</span></li></ul>';
+    h += '<ul class="lsx-inv" style="margin-top:10px">' + rows.map(function (r) {
+      var st = rowState(r);
+      return '<li><a href="' + esc(r.url) + '"' + (r.id === here ? ' class="here" title="This page"' : '') + '>' + esc(r.name || r.slug) + '</a>' +
+        '<span class="lsx-chip ' + st.k + '">' + st.t + '</span></li>';
+    }).join('') + '</ul>';
+    h += '<p>Open a newsletter from the list, then click the bookmark on its page. Not published, draft and archived ones have no live page to capture.</p>';
+    return h;
+  }
+  function openList() {
+    S.view = 'list'; S.inv = null; S.invErr = ''; render();
+    call('/inventory').then(function (j) { S.inv = j; render(); }, function (e) { S.invErr = e.message; render(); });
+  }
+
   panel.addEventListener('click', function (e) {
     var b = e.target.closest('[data-a]'); if (!b || b.disabled) return;
     var a = b.getAttribute('data-a');
@@ -430,6 +479,8 @@
     if (a === 'capture') return doCapture();
     if (a === 'save') return confirmSave();
     if (a === 'undo') return doUndo();
+    if (a === 'list') return openList();
+    if (a === 'back') { S.view = 'issue'; return render(); }
   });
 
   function doCapture() {
