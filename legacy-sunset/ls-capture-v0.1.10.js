@@ -1,7 +1,20 @@
-/* ls-capture-v0.1.9.js */
+/* ls-capture-v0.1.10.js */
 /* ============================================================
-   ls-capture-v0.1.9.js — Legacy Sunset capture, compare and save
+   ls-capture-v0.1.10.js — Legacy Sunset capture, compare and save
    Legacy Sunset S1 (15 Nov 2026). Deleted with the series.
+
+   v0.1.10 (15 Nov 2026) — EMPTY CARDS. WLN-118B would not save: its empty
+     article cards carry Webflow's grey placeholder picture
+     (/plugins/Basic/assets/placeholder…svg), which no one can download.
+     · The capture now leaves Webflow placeholder pictures out (counted).
+     · "Remove blocks" lets Jeff take blocks out of the capture before
+       Save (Jeff, 15 Nov: some old issues have empty articles he wants
+       gone). Turn it on, click anything in the capture; "Larger" widens the
+       pick to the block around it; "Remove" takes it out; "Undo remove"
+       puts the last one back. The removal is part of what Save stores.
+       Capture again starts over from the live page.
+     · After Undo on the Worker side, the panel no longer claims the old
+       layout is missing while Webflow is still updating the page.
 
    v0.1.9 (15 Nov 2026) — FRANCHISE SPONSOR LABELS; PAGE NOT YET UPDATED.
      · WLN-122B showed how the old layout marks a franchise sponsor: a text
@@ -128,7 +141,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  var VERSION = '0.1.9';
+  var VERSION = '0.1.10';
   var WORKER = 'https://ix-legacy-sunset.jeff-2cd.workers.dev';               // HC-P-LS1-6
   var PFX = 'ls-';                                                              // HC-P-LS1-7
   var WF_RE = /^https?:\/\/(cdn\.prod\.website-files\.com|assets\.website-files\.com|assets-global\.website-files\.com|uploads-ssl\.webflow\.com|global-uploads\.webflow\.com)\//i; // HC-P-LS1-4
@@ -185,6 +198,10 @@
     '.lsx-m{width:440px;background:#fff;border-radius:12px;padding:18px 20px;font:13px/1.5 "DM Sans",system-ui,sans-serif;color:#1d2525;box-shadow:0 20px 60px rgba(0,0,0,.3)}' +
     '.lsx-m h3{margin:0 0 8px;font:600 17px Fraunces,Georgia,serif;color:#1A3A3A}' +
     '.lsx-m ul{margin:6px 0 12px 18px;padding:0}' +
+    '.lsx-pick{position:fixed;z-index:2147482999;pointer-events:none;border:2px dashed #C4A35A;background:rgba(196,163,90,.12);border-radius:4px;display:none}' +
+    '.lsx-pick.sel{border-style:solid;border-color:#c0392b;background:rgba(192,57,43,.12)}' +
+    '.lsx-row2{display:flex;gap:8px;align-items:center;margin:-2px 0 10px}' +
+    '.lsx-row2 .lsx-btn{flex:0 0 108px}' +
     '.lsx-flag{position:fixed;left:12px;bottom:12px;z-index:2147483000;display:flex;border-radius:999px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.25);font:600 12px/1 "DM Sans",system-ui,sans-serif!important}' +
     '.lsx-flag button{border:0;margin:0;height:32px;padding:0 12px;cursor:pointer;color:#fff;font:600 12px/1 "DM Sans",system-ui,sans-serif!important;white-space:nowrap}' +
     '.lsx-flag .lsx-sw{width:136px;background:#1A3A3A}' +
@@ -283,6 +300,7 @@
       var tag = live.tagName.toLowerCase();
       if (tag === 'script' || tag === 'noscript') { stats.scripts++; return null; }
       if (live.classList && live.classList.contains('w-condition-invisible')) { stats.hidden++; return null; }
+      if (tag === 'img' && /\/plugins\/[^/]+\/assets\/placeholder/i.test(live.getAttribute('src') || '')) { stats.placeholders = (stats.placeholders || 0) + 1; return null; }
       var c = live.cloneNode(false);
       pairs.push([live, c]); keptLive.add(live);
       for (var i = 0; i < live.childNodes.length; i++) { var k = cl(live.childNodes[i]); if (k) c.appendChild(k); }
@@ -468,10 +486,60 @@
   function showLive() {
     var p = parts(); if (p.err) return;
     if (S.holder) S.holder.style.display = 'none';
+    S.edit = false; S.sel = null; place(selBox, null); place(hoverBox, null);
     if (S.lstyle === undefined || S.lstyle === null) p.legacy.removeAttribute('style'); else p.legacy.setAttribute('style', S.lstyle);
     S.showing = 'live';
     paintFlag();
     render();
+  }
+
+  // ── remove blocks (edit mode) ─────────────────────────────────────────────
+  var hoverBox = document.createElement('div'); hoverBox.className = 'lsx-pick'; document.body.appendChild(hoverBox);
+  var selBox = document.createElement('div'); selBox.className = 'lsx-pick sel'; document.body.appendChild(selBox);
+  S.edit = false; S.sel = null; S.undo = [];
+  function capRoot() { return S.holder && S.holder.querySelector('[data-ls-capture]'); }
+  function pickable(el) {
+    var root = capRoot();
+    return el && root && el !== root && root.contains(el) && el.tagName !== 'STYLE';
+  }
+  function place(box, el) {
+    if (!el) { box.style.display = 'none'; return; }
+    var r = el.getBoundingClientRect();
+    box.style.display = 'block'; box.style.left = r.left + 'px'; box.style.top = r.top + 'px';
+    box.style.width = r.width + 'px'; box.style.height = r.height + 'px';
+  }
+  function describe(el) {
+    var cls = (el.getAttribute('class') || '').split(/\s+/).filter(Boolean).map(function (k) { return k.replace(/^ls-/, ''); }).slice(0, 2).join('.');
+    var txt = (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    return el.tagName.toLowerCase() + (cls ? '.' + cls : '') + (txt ? ' · “' + txt + '”' : ' · (no text)');
+  }
+  function setEdit(on) {
+    S.edit = on; S.sel = null; place(hoverBox, null); place(selBox, null); render();
+  }
+  document.addEventListener('mousemove', function (e) {
+    if (!S.edit || S.showing !== 'cap') return;
+    place(hoverBox, pickable(e.target) ? e.target : null);
+  }, true);
+  document.addEventListener('click', function (e) {
+    if (!S.edit || S.showing !== 'cap' || !pickable(e.target)) return;
+    e.preventDefault(); e.stopPropagation();
+    S.sel = e.target; place(selBox, S.sel); render();
+  }, true);
+  window.addEventListener('scroll', function () { if (S.sel) place(selBox, S.sel); place(hoverBox, null); }, true);
+  function larger() { if (S.sel && pickable(S.sel.parentElement)) { S.sel = S.sel.parentElement; place(selBox, S.sel); render(); } }
+  function removeSel() {
+    if (!S.sel) return;
+    S.undo.push(S.cap.html);
+    S.sel.parentNode.removeChild(S.sel);
+    S.cap.html = S.holder.innerHTML;
+    S.cap.removed = (S.cap.removed || 0) + 1;
+    S.cap.images = S.cap.images.filter(function (im) { return S.cap.html.indexOf(im.url) !== -1; });
+    S.sel = null; place(selBox, null); place(hoverBox, null); render();
+  }
+  function undoRemove() {
+    if (!S.undo.length) return;
+    S.cap.html = S.undo.pop(); S.cap.removed = Math.max(0, (S.cap.removed || 1) - 1);
+    S.holder.innerHTML = S.cap.html; S.sel = null; place(selBox, null); render();
   }
 
   // ── panel ─────────────────────────────────────────────────────────────────
@@ -489,7 +557,18 @@
     h += '<div class="lsx-row">' +
       '<button class="lsx-btn" data-a="capture"' + (S.busy || !it || !it.usesLegacy ? ' disabled' : '') + '>' + (c ? 'Capture again' : 'Capture') + '</button>' +
       '<button class="lsx-btn" data-a="toggle"' + (!c || S.busy ? ' disabled' : '') + '>' + (S.showing === 'cap' ? 'Show live' : 'Show capture') + '</button>' +
-      '<button class="lsx-btn pri" data-a="save"' + (canSave ? '' : ' disabled') + '>Save</button></div>';
+      '<button class="lsx-btn pri" data-a="save"' + (canSave && !S.edit ? '' : ' disabled') + '>Save</button></div>';
+    if (c && it && it.usesLegacy && S.showing === 'cap') {
+      h += '<div class="lsx-row2"><button class="lsx-btn" data-a="edit">' + (S.edit ? 'Done removing' : 'Remove blocks') + '</button>' +
+        (S.undo.length ? '<button class="lsx-a" data-a="unrem">Undo remove</button>' : '') +
+        (c.removed ? '<span>' + c.removed + ' removed</span>' : '') + '</div>';
+      if (S.edit) {
+        h += S.sel
+          ? '<div class="lsx-st">Picked: ' + esc(describe(S.sel)) + '<div class="lsx-row" style="margin:8px 0 0"><button class="lsx-btn" data-a="larger">Larger</button>' +
+            '<button class="lsx-btn pri" data-a="remove">Remove</button><button class="lsx-btn" data-a="unpick">Cancel</button></div></div>'
+          : '<div class="lsx-st">Click the block to take out. “Larger” widens the pick to the block around it.</div>';
+      }
+    }
     if (c) {
       var s = c.stats;
       h += '<ul class="lsx-l">' +
@@ -497,7 +576,7 @@
         '<li><span>Style rules copied</span><span>' + c.css.rules + '</span></li>' +
         '<li><span>Uploadcare pictures (raw + size)</span><span>' + s.uc + '</span></li>' +
         '<li><span>Webflow-hosted pictures to rehost</span><span>' + c.images.length + '</span></li>' +
-        '<li><span>Hidden blocks left out</span><span>' + s.hidden + '</span></li>' +
+        '<li><span>Hidden blocks left out</span><span>' + s.hidden + (s.placeholders ? ' + ' + s.placeholders + ' placeholder pictures' : '') + '</span></li>' +
         '<li><span>Scripts left out</span><span>' + s.scripts + '</span></li>' +
         '<li><span>Forms / interactions kept</span><span>' + s.forms + ' / ' + s.interactions + '</span></li>' +
         '<li><span>Ad slots tagged (banners / sponsors)</span><span>' + s.banners + (s.lead ? ' + Lead' : '') + ' / ' + s.sponsors + '</span></li>' +
@@ -560,10 +639,15 @@
     if (a === 'undo') return doUndo();
     if (a === 'list') return openList();
     if (a === 'back') { S.view = 'issue'; return render(); }
+    if (a === 'edit') return setEdit(!S.edit);
+    if (a === 'larger') return larger();
+    if (a === 'remove') return removeSel();
+    if (a === 'unpick') { S.sel = null; place(selBox, null); return render(); }
+    if (a === 'unrem') return undoRemove();
   });
 
   function doCapture() {
-    S.busy = true; S.fieldsCount = null; say('', 'Capturing…');
+    S.busy = true; S.fieldsCount = null; S.undo = []; S.edit = false; S.sel = null; place(selBox, null); place(hoverBox, null); say('', 'Capturing…');
     var p;
     try { p = capture(); } catch (e) { S.busy = false; return say('bad', esc(e.message)); }
     p.then(function () {
@@ -669,7 +753,7 @@
     var p0 = parts();
     if (j.item.usesLegacy && p0.err && document.querySelector('[data-ls-capture]'))
       say('bad', 'uses-legacy is back on, but this page is still the saved copy: Webflow takes a minute or so to update the page. Wait a minute, reload (Cmd+Shift+R), then click the bookmark again.');
-    else if (j.item.usesLegacy && p0.err) say('bad', esc(p0.err));
+    else if (j.item.usesLegacy && p0.err) say('bad', 'uses-legacy is on, but the old layout is not on this page yet: Webflow is probably still updating it. Wait a minute or two, reload (Cmd+Shift+R), then click the bookmark again. If it stays like this, send a screenshot of the page.');
     else if (!j.item.usesLegacy && !(j.item.saved && !j.item.saved.undoneAt)) say('bad', 'uses-legacy is off on this newsletter, so there is nothing to capture.');
     else if (!j.item.usesLegacy) {
       say('ok', 'Already saved.');
