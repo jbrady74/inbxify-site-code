@@ -1,7 +1,23 @@
-/* ls-capture-v0.1.7.js */
+/* ls-capture-v0.1.8.js */
 /* ============================================================
-   ls-capture-v0.1.7.js — Legacy Sunset capture, compare and save
+   ls-capture-v0.1.8.js — Legacy Sunset capture, compare and save
    Legacy Sunset S1 (15 Nov 2026). Deleted with the series.
+
+   v0.1.8 (15 Nov 2026) — AD SLOTS TAGGED. Jeff ruled (15 Nov) that on a
+     past issue, old or new path, banner ads, franchise sponsors, house ads
+     and the splash ad show the CURRENT week's set, while an article's paid
+     ad and the text ads (The Find topic and its businesses) keep the
+     issue's own. The capture now tags the slots that change, so the site
+     ad script can fill them with the current set when the page loads:
+       data-ls-ad="banner"   each banner (a.ad-only-lb), in page order;
+                             data-ls-slot="lead" on the Lead's, else 1, 2, …
+       data-ls-ad="sponsor"  each shown element whose class names a sponsor
+                             (e.g. ev-sponsor-upper), data-ls-slot 1, 2, …
+     The original ad stays in the slot until a fill replaces it. Paid
+     article ads and text ads are not tagged. House ads and the splash ad
+     are not inside the old layout (they sit on the template / splash page).
+     The panel counts the tagged slots. HC-P-LS1-8: the old layout's
+     banner and sponsor class names, typed here (old WLN template only).
 
    v0.1.7 (15 Nov 2026) — LIST TEXT SIZE. The newsletter names in the list
      took the page's large serif link style. Links and buttons in the panel
@@ -98,7 +114,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  var VERSION = '0.1.7';
+  var VERSION = '0.1.8';
   var WORKER = 'https://ix-legacy-sunset.jeff-2cd.workers.dev';               // HC-P-LS1-6
   var PFX = 'ls-';                                                              // HC-P-LS1-7
   var WF_RE = /^https?:\/\/(cdn\.prod\.website-files\.com|assets\.website-files\.com|assets-global\.website-files\.com|uploads-ssl\.webflow\.com|global-uploads\.webflow\.com)\//i; // HC-P-LS1-4
@@ -244,7 +260,7 @@
     var p = parts(); if (p.err) throw new Error(p.err);
     if (window.innerWidth < MIN_W) throw new Error('Capture at desktop width: make the window at least ' + MIN_W + ' px wide (it is ' + window.innerWidth + ').');
     if (S.showing === 'cap') showLive();
-    var legacy = p.legacy, stats = { scripts: 0, hidden: 0, uc: 0, wf: 0, other: [], svg: 0, interactions: 0, forms: 0, ids: 0 };
+    var legacy = p.legacy, stats = { scripts: 0, hidden: 0, uc: 0, wf: 0, other: [], svg: 0, interactions: 0, forms: 0, ids: 0, banners: 0, sponsors: 0 };
     var pairs = [], keptLive = new Set(), classes = new Set(), wfImages = new Map();
 
     function cl(live) {
@@ -272,6 +288,18 @@
       var live = pr[0], c = pr[1];
       if (live.hasAttribute('data-w-id')) stats.interactions++;
       if (live.tagName === 'FORM') stats.forms++;
+      // Ad slots that take the current week's set (HC-P-LS1-8).
+      if (live.classList && live.classList.contains('ad-only-lb')) {
+        var lead = !!live.closest('.ba-controller.lead');
+        if (lead) stats.lead = true; else stats.banners++;
+        c.setAttribute('data-ls-ad', 'banner');
+        c.setAttribute('data-ls-slot', lead ? 'lead' : String(stats.banners));
+      } else if (live.classList && Array.prototype.some.call(live.classList, function (k) { return /sponsor/i.test(k); }) &&
+                 !live.parentElement.closest('[class*="sponsor"]')) {
+        stats.sponsors++;
+        c.setAttribute('data-ls-ad', 'sponsor');
+        c.setAttribute('data-ls-slot', String(stats.sponsors));
+      }
       if (live.id) stats.ids++;
       // classes
       if (c.classList && c.classList.length) {
@@ -453,6 +481,7 @@
         '<li><span>Hidden blocks left out</span><span>' + s.hidden + '</span></li>' +
         '<li><span>Scripts left out</span><span>' + s.scripts + '</span></li>' +
         '<li><span>Forms / interactions kept</span><span>' + s.forms + ' / ' + s.interactions + '</span></li>' +
+        '<li><span>Ad slots tagged (banners / sponsors)</span><span>' + s.banners + (s.lead ? ' + Lead' : '') + ' / ' + s.sponsors + '</span></li>' +
         '<li><span>CMS fields shown (by value)</span><span>' + (S.fieldsCount == null ? '…' : S.fieldsCount) + '</span></li></ul>';
       var warn = [];
       if (s.other.length) warn.push(s.other.length + ' picture(s) on another host stay as they are: ' + esc(s.other.slice(0, 2).join(', ')));
