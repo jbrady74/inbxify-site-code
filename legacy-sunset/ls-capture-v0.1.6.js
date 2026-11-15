@@ -1,7 +1,13 @@
-/* ls-capture-v0.1.5.js */
+/* ls-capture-v0.1.6.js */
 /* ============================================================
-   ls-capture-v0.1.5.js — Legacy Sunset capture, compare and save
+   ls-capture-v0.1.6.js — Legacy Sunset capture, compare and save
    Legacy Sunset S1 (15 Nov 2026). Deleted with the series.
+
+   v0.1.6 (15 Nov 2026) — SAVED PAGES. On a page already saved (WLN-103),
+     the panel stopped at "The old layout (data-legacy) is not on this
+     page" before looking the newsletter up, so it never said "Already
+     saved". Now it always looks the newsletter up; the page check only
+     matters when there is something to capture (uses-legacy on).
 
    v0.1.5 (15 Nov 2026) — CSS PICTURE ADDRESSES WITH BRACKETS. WLN-103:
      "…Ramapo%20College%20campus%20(1 … (403)". A background picture whose
@@ -88,7 +94,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  var VERSION = '0.1.5';
+  var VERSION = '0.1.6';
   var WORKER = 'https://ix-legacy-sunset.jeff-2cd.workers.dev';               // HC-P-LS1-6
   var PFX = 'ls-';                                                              // HC-P-LS1-7
   var WF_RE = /^https?:\/\/(cdn\.prod\.website-files\.com|assets\.website-files\.com|assets-global\.website-files\.com|uploads-ssl\.webflow\.com|global-uploads\.webflow\.com)\//i; // HC-P-LS1-4
@@ -603,13 +609,14 @@
 
   // ── start ─────────────────────────────────────────────────────────────────
   render(); paintFlag(); fit();
-  var p0 = parts();
-  if (p0.err) { say('bad', esc(p0.err)); return; }
+  if (!document.getElementById('ix-page')) { say('bad', 'This is not a newsletter page. Open one from All old newsletters.'); return; }
   var slug = location.pathname.split('/').filter(Boolean).pop() || '';
   S.busy = true; say('', 'Looking up this newsletter…');
   call('/lookup?slug=' + encodeURIComponent(slug)).then(function (j) {
     S.busy = false; S.item = j.item; msg = null;
-    if (!j.item.usesLegacy && !(j.item.saved && !j.item.saved.undoneAt)) say('bad', 'uses-legacy is off on this newsletter, so there is nothing to capture.');
+    var p0 = parts();
+    if (j.item.usesLegacy && p0.err) say('bad', esc(p0.err));
+    else if (!j.item.usesLegacy && !(j.item.saved && !j.item.saved.undoneAt)) say('bad', 'uses-legacy is off on this newsletter, so there is nothing to capture.');
     else if (!j.item.usesLegacy) {
       say('ok', 'Already saved.');
       if (j.fieldsReport) { S.fieldsCount = j.fieldsReport.fields; render(); }
