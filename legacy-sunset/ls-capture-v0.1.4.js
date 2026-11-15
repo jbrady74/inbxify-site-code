@@ -1,7 +1,14 @@
-/* ls-capture-v0.1.3.js */
+/* ls-capture-v0.1.4.js */
 /* ============================================================
-   ls-capture-v0.1.3.js — Legacy Sunset capture, compare and save
+   ls-capture-v0.1.4.js — Legacy Sunset capture, compare and save
    Legacy Sunset S1 (15 Nov 2026). Deleted with the series.
+
+   v0.1.4 (15 Nov 2026) — PICTURES THE WORKER CANNOT FETCH. Needs
+     ix-legacy-sunset v0.1.3. When Save answers needBytes (the Worker could
+     not download some Webflow-hosted pictures), the page downloads those
+     pictures itself, since the browser is already showing them, and sends
+     Save again with their bytes. Status messages wrap long addresses
+     instead of running off the panel. Nothing else changes.
 
    v0.1.3 (15 Nov 2026) — THE LIST. After WLN-116B passed (first save),
      Jeff needs the other old newsletters. "All old newsletters" under the
@@ -72,7 +79,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  var VERSION = '0.1.3';
+  var VERSION = '0.1.4';
   var WORKER = 'https://ix-legacy-sunset.jeff-2cd.workers.dev';               // HC-P-LS1-6
   var PFX = 'ls-';                                                              // HC-P-LS1-7
   var WF_RE = /^https?:\/\/(cdn\.prod\.website-files\.com|assets\.website-files\.com|assets-global\.website-files\.com|uploads-ssl\.webflow\.com|global-uploads\.webflow\.com)\//i; // HC-P-LS1-4
@@ -101,7 +108,7 @@
     '.lsx-btn{flex:0 0 108px;width:108px;height:32px;border-radius:8px;border:1px solid #1A3A3A;background:#fff;color:#1A3A3A;font:600 12px "DM Sans",system-ui,sans-serif;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
     '.lsx-btn.pri{background:#1A3A3A;color:#fff}' +
     '.lsx-btn[disabled]{opacity:.35;cursor:default}' +
-    '.lsx-st{padding:8px 10px;border-radius:8px;background:#FAF9F5;border-left:3px solid #C4A35A;margin-bottom:8px}' +
+    '.lsx-st{padding:8px 10px;border-radius:8px;background:#FAF9F5;border-left:3px solid #C4A35A;margin-bottom:8px;overflow-wrap:anywhere;word-break:break-word}' +
     '.lsx-st.bad{border-left-color:#c0392b;background:#fdf1ef}' +
     '.lsx-st.ok{border-left-color:#2e7d5b;background:#eef7f2}' +
     '.lsx-l{margin:0;padding:0;list-style:none}' +
@@ -181,7 +188,7 @@
         body: body ? JSON.stringify(body) : undefined });
     }).then(function (r) {
       return r.json().catch(function () { return null; }).then(function (j) {
-        if (!r.ok || !j || !j.ok) throw new Error((j && j.error) || ('The Worker answered ' + r.status + '.'));
+        if (!r.ok || !j || !j.ok) { var err = new Error((j && j.error) || ('The Worker answered ' + r.status + '.')); err.data = j; err.status = r.status; throw err; }
         return j;
       });
     });
@@ -533,13 +540,39 @@
     });
   }
 
+  // Download pictures in the browser (it is already showing them) as base64.
+  function grab(urls) {
+    return Promise.all(urls.map(function (u) {
+      return fetch(u, { mode: 'cors', credentials: 'omit' }).then(function (r) {
+        if (!r.ok) throw new Error('The browser could not download ' + u + ' either (' + r.status + ').');
+        var type = (r.headers.get('Content-Type') || 'application/octet-stream').split(';')[0];
+        return r.blob().then(function (b) {
+          return new Promise(function (res, rej) {
+            var fr = new FileReader();
+            fr.onload = function () { res([u, { b64: String(fr.result).split(',')[1] || '', type: type }]); };
+            fr.onerror = function () { rej(new Error('Could not read ' + u)); };
+            fr.readAsDataURL(b);
+          });
+        });
+      });
+    })).then(function (pairs) { var o = {}; pairs.forEach(function (p) { o[p[0]] = p[1]; }); return o; });
+  }
+
   function doSave() {
     S.busy = true; say('', 'Saving: rehosting pictures, writing Web Render HTML, reading it back, then turning uses-legacy off…');
-    call('/save', { id: S.item.id, html: S.cap.html, images: S.cap.images }).then(function (j) {
+    var body = { id: S.item.id, html: S.cap.html, images: S.cap.images };
+    function done(j) {
       S.busy = false; S.item.usesLegacy = false; S.item.saved = j.saved;
       say('ok', 'Saved and read back: ' + j.readBack.webHtmlCharacters.toLocaleString() + ' characters, ' + j.saved.rehosted.length +
         ' picture(s) rehosted, uses-legacy off. Reload the page to see what readers now get.');
-    }, function (e) { S.busy = false; say('bad', 'Not saved: ' + esc(e.message)); });
+    }
+    function fail(e) { S.busy = false; say('bad', 'Not saved: ' + esc(e.message)); }
+    call('/save', body).then(done, function (e) {
+      var need = e.data && e.data.needBytes;
+      if (!need || !need.length) return fail(e);
+      say('', 'The Worker could not download ' + need.length + ' picture(s); downloading them here and saving again…');
+      return grab(need).then(function (files) { body.files = files; return call('/save', body); }).then(done, fail);
+    });
   }
 
   function doUndo() {

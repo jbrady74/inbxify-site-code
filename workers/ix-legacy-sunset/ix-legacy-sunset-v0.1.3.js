@@ -1,5 +1,18 @@
-// ix-legacy-sunset-v0.1.2.js
+// ix-legacy-sunset-v0.1.3.js
 // INBXIFY · Cloudflare Worker · ix-legacy-sunset
+// v0.1.3 (15 Nov 2026) — PICTURES THE WORKER CANNOT FETCH. WLN-103 stopped at
+//   "Could not download …/6978c98bc764ff5… (403)". Two causes are handled:
+//   · An apostrophe in a Webflow file name (e.g. "Doug's.jpg") ended the
+//     address in v0.1.1/v0.1.2's scan, so a cut-short address was fetched
+//     even though the exact one, sent by the page, had already been done.
+//     Now the exact addresses go first, and only what is still in the
+//     capture after that is scanned for; apostrophes stay in an address.
+//   · If the Worker still cannot download a picture, /save answers 422 with
+//     needBytes: [addresses]; the page downloads those itself (the browser
+//     is already showing them) and sends Save again with their bytes.
+//   Every upload is remembered in KV (up:<hash of the address>), so a
+//   second Save never uploads the same picture twice.
+//   Any error now carries the full address.
 // v0.1.2 (15 Nov 2026) — CMS FIELD LIST IN STEPS. On WLN-116B the panel's
 //   "CMS fields shown" never came back: /fields read up to 160 linked items
 //   in one request, paced for Webflow's rate limit, and the request never
@@ -79,14 +92,14 @@
 //   HC-P-LS1-4  The list of Webflow file hosts treated as "must rehost" (WF_HOSTS).
 //   HC-P-LS1-5  Allowed page origins (ORIGINS).
 
-const VERSION = '0.1.2';
+const VERSION = '0.1.3';
 const ORIGINS = ['https://www.inbxify.com', 'https://inbxify.com'];          // HC-P-LS1-5
 const SITE_ID_DEFAULT = '64b64d17aa77f55568870489';                           // HC-P-LS1-3
 const UC_HOST_DEFAULT = 'uyluucdnr2.ucarecd.net';                             // HC-P-LS1-2
 const F = { web: 'web-render-html', legacy: 'uses-legacy' };                   // HC-P-LS1-1
 const WF_HOSTS = ['cdn.prod.website-files.com', 'assets.website-files.com',   // HC-P-LS1-4
   'assets-global.website-files.com', 'uploads-ssl.webflow.com', 'global-uploads.webflow.com'];
-const WF_URL_RE = new RegExp('https?://(?:' + WF_HOSTS.map(h => h.replace(/\./g, '\\.')).join('|') + ')/[^\\s"\'<>{}]+', 'gi');
+const WF_URL_RE = new RegExp('https?://(?:' + WF_HOSTS.map(h => h.replace(/\./g, '\\.')).join('|') + ')/[^\\s"<>{}]+', 'gi');
 // An address found by WF_URL_RE, cut back to the address itself: it ends at
 // the first HTML-escaped quote, and closing brackets that have no opening
 // bracket in the address belong to a CSS url( … ) around it.
@@ -94,7 +107,7 @@ function cleanWf(u) {
   u = u.split('&quot;')[0].split('&#39;')[0].split('&#x27;')[0].replace(/&amp;/g, '&');
   let open = (u.match(/\(/g) || []).length, close = (u.match(/\)/g) || []).length;
   while (close > open && u.endsWith(')')) { u = u.slice(0, -1); close--; }
-  return u.replace(/[;,]+$/, '');
+  return u.replace(/[;,']+$/, '');
 }
 const MARK = 'data-ls-capture';
 const API = 'https://api.webflow.com/v2';
@@ -127,7 +140,7 @@ export default {
       }
       return json(run, 404, { ok: false, error: 'No such route.' });
     } catch (e) {
-      return json(run, e.status || 500, { ok: false, error: (e && e.message) || String(e), calls: run.calls });
+      return json(run, e.status || 500, Object.assign({ ok: false, error: (e && e.message) || String(e), calls: run.calls }, (e && e.extra) || {}));
     }
   }
 };
@@ -384,30 +397,49 @@ async function writeItem(run, col, id, fieldData, published) {
   return wf(run, path, { method: 'PATCH', body: JSON.stringify({ fieldData }) });
 }
 
-async function rehost(run, srcUrl, width) {
+async function sha(text) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function b64ToBytes(b64) { const bin = atob(b64); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }
+function shownLink(run, up, width) {
+  const raw = 'https://' + (run.env.UC_HOST || UC_HOST_DEFAULT) + '/' + up.uuid + '/';
+  // SVG is not processed by Uploadcare, so it gets no size or format.
+  return up.svg ? raw : raw + (width > 0 ? '-/resize/' + width + 'x/' : '') + '-/format/auto/';
+}
+
+// Upload one Webflow-hosted picture to Uploadcare (once: remembered in KV).
+// given = { b64, type } when the page sent the bytes itself.
+async function rehost(run, srcUrl, width, given) {
   const key = run.env.UPLOADCARE_PUB_KEY;
   if (!key) throw httpErr(500, 'UPLOADCARE_PUB_KEY is not set on this Worker.');
-  let res = await fetch(srcUrl);
-  if (!res.ok) {
-    let alt = srcUrl;
-    try { alt = encodeURI(decodeURI(srcUrl)); } catch (e) {}
-    if (alt !== srcUrl) res = await fetch(alt);
+  const memo = 'up:' + await sha(srcUrl);
+  let up = await kvGet(run, memo);
+  if (!up) {
+    let bytes, type;
+    if (given && given.b64) { bytes = b64ToBytes(given.b64); type = given.type || 'application/octet-stream'; }
+    else {
+      let res = await fetch(srcUrl);
+      if (!res.ok) {
+        let alt = srcUrl;
+        try { alt = encodeURI(decodeURI(srcUrl)); } catch (e) {}
+        if (alt !== srcUrl) res = await fetch(alt);
+      }
+      if (!res.ok) { const e = httpErr(502, 'Could not download ' + srcUrl + ' (' + res.status + ').'); e.download = true; throw e; }
+      type = (res.headers.get('Content-Type') || 'application/octet-stream').split(';')[0];
+      bytes = await res.arrayBuffer();
+    }
+    const name = fileTail(srcUrl).replace(/^[0-9a-f]{24}_/, '').replace(/[^\w.-]+/g, '_').slice(0, 80) || 'image';
+    const form = new FormData();
+    form.append('UPLOADCARE_PUB_KEY', key); form.append('UPLOADCARE_STORE', '1');
+    form.append('file', new Blob([bytes], { type }), name);
+    const r = await fetch('https://upload.uploadcare.com/base/', { method: 'POST', body: form });
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !j || !j.file) throw httpErr(502, 'Uploadcare refused ' + srcUrl + ': ' + r.status + ' ' + JSON.stringify(j).slice(0, 200));
+    up = { uuid: j.file, type, svg: type === 'image/svg+xml' || /\.svg$/i.test(name), bytes: bytes.byteLength || bytes.length, from: srcUrl };
+    await kvPut(run, memo, up);
   }
-  if (!res.ok) throw httpErr(502, 'Could not download ' + srcUrl + ' (' + res.status + '). Nothing was written to Webflow.');
-  const type = (res.headers.get('Content-Type') || 'application/octet-stream').split(';')[0];
-  const bytes = await res.arrayBuffer();
-  const name = fileTail(srcUrl).replace(/^[0-9a-f]{24}_/, '').replace(/[^\w.-]+/g, '_').slice(0, 80) || 'image';
-  const up = new FormData();
-  up.append('UPLOADCARE_PUB_KEY', key); up.append('UPLOADCARE_STORE', '1');
-  up.append('file', new Blob([bytes], { type }), name);
-  const r = await fetch('https://upload.uploadcare.com/base/', { method: 'POST', body: up });
-  const j = await r.json().catch(() => null);
-  if (!r.ok || !j || !j.file) throw httpErr(502, 'Uploadcare refused ' + name + ': ' + r.status + ' ' + JSON.stringify(j).slice(0, 200));
-  const raw = 'https://' + (run.env.UC_HOST || UC_HOST_DEFAULT) + '/' + j.file + '/';
-  const svg = type === 'image/svg+xml' || /\.svg$/i.test(name);
-  // SVG is not processed by Uploadcare, so it gets no size or format.
-  const shown = svg ? raw : raw + (width > 0 ? '-/resize/' + width + 'x/' : '') + '-/format/auto/';
-  return { from: srcUrl, to: shown, uuid: j.file, bytes: bytes.byteLength, type };
+  return { from: srcUrl, to: shownLink(run, up, width), uuid: up.uuid, bytes: up.bytes, type: up.type };
 }
 
 async function save(run, body) {
@@ -422,20 +454,29 @@ async function save(run, body) {
   if (fd0[F.legacy] !== true) throw httpErr(409, 'uses-legacy is already off on ' + (fd0.name || id) + '. Use Undo first to capture it again.');
   const published = !!before.lastPublished;
 
-  // 1 · Rehost every Webflow-hosted picture the capture still points at.
+  // 1 · Rehost every Webflow-hosted picture: first the exact addresses the
+  //     page sent, then whatever a scan still finds in what is left.
   const widths = new Map();
   for (const im of (Array.isArray(body.images) ? body.images : [])) if (im && im.url) widths.set(im.url, Math.max(widths.get(im.url) || 0, Math.round(+im.w || 0)));
-  const urls = [...new Set([...widths.keys()].filter(u => html.includes(u) || html.includes(u.replace(/&/g, '&amp;')))
-    .concat((html.match(WF_URL_RE) || []).map(cleanWf)))]
-    .sort((a, b) => b.length - a.length);   // longest first, so no address is replaced inside a longer one
-  const rehosted = [];
-  for (const u of urls) {
-    const r = await rehost(run, u, Math.min(widths.get(u) || 0, 3000));
-    rehosted.push(r);
-    html = html.split(u).join(r.to).split(u.replace(/&/g, '&amp;')).join(r.to);
+  const given = (body.files && typeof body.files === 'object') ? body.files : {};
+  const amp = u => u.replace(/&/g, '&amp;');
+  const rehosted = [], need = [];
+  async function one(u) {
+    try {
+      const r = await rehost(run, u, Math.min(widths.get(u) || 0, 3000), given[u]);
+      rehosted.push(r);
+      html = html.split(u).join(r.to).split(amp(u)).join(r.to);
+    } catch (e) { if (e.download) need.push(u); else throw e; }
+  }
+  const byLength = (a, b) => b.length - a.length;   // longest first, so no address is replaced inside a longer one
+  for (const u of [...widths.keys()].filter(u => html.includes(u) || html.includes(amp(u))).sort(byLength)) await one(u);
+  for (const u of [...new Set((html.match(WF_URL_RE) || []).map(cleanWf))].sort(byLength)) if (!need.includes(u)) await one(u);
+  if (need.length) {
+    const e = httpErr(422, 'The Worker could not download ' + need.length + ' picture(s): ' + need.join(' , ') + '. Nothing was written to Webflow.');
+    e.extra = { needBytes: need }; throw e;
   }
   const left = (html.match(WF_URL_RE) || []).map(cleanWf);
-  if (left.length) throw httpErr(500, 'Webflow-hosted links are still in the capture after rehosting: ' + left.slice(0, 3).join(', ') + '. Nothing was saved.');
+  if (left.length) throw httpErr(500, 'Webflow-hosted links are still in the capture after rehosting: ' + left.slice(0, 3).join(' , ') + '. Nothing was written to Webflow.');
 
   // 2 · Write Web Render HTML, read it back.
   await writeItem(run, col, id, { [F.web]: html }, published);
