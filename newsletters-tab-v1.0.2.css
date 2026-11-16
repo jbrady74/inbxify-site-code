@@ -1,0 +1,92 @@
+/* newsletters-tab-v1.0.2.css */
+/* ============================================================
+   INBXIFY — Newsletters Tab · CSS v1.0.2
+   Goes with newsletters-tab-v1.0.4.js (16 Nov 2026, Legacy Sunset S2).
+   The card styles of v1.0.1 are gone with the cards: the tab is a
+   bare list now. Fixed column widths, one line per row, no wrapping.
+   Colours come from ix-tokens (fallbacks for safety).
+   ============================================================ */
+
+.nlb-root { width: 100%; padding: 16px 0 32px; }
+
+.nlb-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 28px; height: 22px; padding: 0 8px; border-radius: 11px;
+  background: var(--ix-cream-deep, #efe9dc); color: var(--ix-teal, #1a3a3a);
+  font: 600 12px/1 'DM Sans', system-ui, sans-serif;
+}
+
+.nlb-scroll {
+  margin-top: 14px;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  border: 1px solid var(--ix-cream-deep, #e6e0d2);
+  border-radius: 10px;
+  background: var(--ix-white, #fff);
+}
+
+.nlb-table {
+  width: 100%; table-layout: fixed; border-collapse: collapse;
+  font: 400 14px/1.3 'DM Sans', system-ui, sans-serif;
+  color: var(--ix-text, #1f2a2a);
+}
+
+/* fixed widths: the name takes what is left */
+.nlb-w-no     { width: 72px; }
+.nlb-w-name   { width: auto; }
+.nlb-w-date   { width: 190px; }
+.nlb-w-status { width: 120px; }
+.nlb-w-sends  { width: 90px; }
+.nlb-w-open   { width: 96px; }
+
+.nlb-table th {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--ix-cream, #faf9f5);
+  text-align: left; vertical-align: top;
+  padding: 10px 14px;
+  font: 600 11px/1.2 'DM Sans', system-ui, sans-serif;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ix-text-light, #7a7f7a);
+  border-bottom: 1px solid var(--ix-cream-deep, #e6e0d2);
+}
+
+.nlb-table td {
+  padding: 10px 14px; vertical-align: middle;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  border-bottom: 1px solid var(--ix-cream, #f3efe6);
+}
+.nlb-row:last-child td { border-bottom: 0; }
+.nlb-row:hover td { background: var(--ix-cream, #faf9f5); }
+
+.nlb-c-no    { font-weight: 600; color: var(--ix-teal, #1a3a3a); }
+.nlb-c-name  { font-weight: 600; }
+.nlb-c-date  { color: var(--ix-text-mid, #4f5a58); }
+.nlb-c-sends { text-align: right; font-variant-numeric: tabular-nums; }
+.nlb-table th.nlb-c-sends { text-align: right; }
+.nlb-c-open  { text-align: right; }
+
+/* status pill: fixed width so the column lines up */
+.nlb-pill {
+  display: inline-block; width: 84px; text-align: center;
+  padding: 3px 0; border-radius: 11px;
+  font: 600 11px/1.3 'DM Sans', system-ui, sans-serif;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nlb-pill--draft    { background: #ecebe6; color: #5d625e; }
+.nlb-pill--building { background: #fbf1d8; color: #8a6a1c; }
+.nlb-pill--ready    { background: #e3eefa; color: #2b5d95; }
+.nlb-pill--live     { background: #dcefe3; color: #23663f; }
+.nlb-pill--sent     { background: var(--ix-teal, #1a3a3a); color: #fff; }
+
+.nlb-open {
+  font: 600 13px/1 'DM Sans', system-ui, sans-serif;
+  color: var(--ix-blue, #2b5d95); text-decoration: none;
+}
+.nlb-open:hover { text-decoration: underline; }
+.nlb-open--none { color: var(--ix-text-light, #9a9f9a); font-weight: 400; }
+
+.nlb-empty {
+  margin-top: 14px; padding: 28px; text-align: center;
+  color: var(--ix-text-light, #7a7f7a);
+  border: 1px dashed var(--ix-cream-deep, #e6e0d2); border-radius: 10px;
+}
