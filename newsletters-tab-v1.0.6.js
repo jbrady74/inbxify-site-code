@@ -1,8 +1,26 @@
-// newsletters-tab-v1.0.4.js
+// newsletters-tab-v1.0.6.js
 /* ============================================================
    INBXIFY — Newsletters Tab
-   newsletters-tab-v1.0.4.js
+   newsletters-tab-v1.0.6.js
    Mounts into: #newsletters-mount on the TITLES-ADMIN Template
+
+   v1.0.6 (16 Nov 2026, Legacy Sunset S2): ZEBRA YOU CAN SEE.
+     Jeff, live check: the rows did not alternate. The odd-row tint
+     (#fbfaf6) was too close to white to see, and a site rule could win.
+     Every second row is now #f6f3ea, hover #efe9da, both !important so
+     the page's styles cannot flatten them. Nothing else changed.
+
+   v1.0.5 (16 Nov 2026, Legacy Sunset S2): THE T-A TABLE STANDARD.
+     Jeff, first live look at v1.0.4: "format this to our standard". The
+     v1.0.4 stylesheet never took hold on the page (plain table, serif links).
+     The list now uses the Asset Library's table look (content-library):
+     beige header row with a gold 2px rule, DM Mono caps labels, white rows
+     with zebra and a hover tint, fixed-width DM Mono status pills, and Open
+     as the shared ix-btn secondary button. Built from grid rows, not a
+     <table>, and its CSS is injected by this file (style#nlb-style), as the
+     Asset Library does, so no page rule or missing head line can undo it.
+     The page grows with the list; no box scrolls inside the page (design
+     rule, 12 Nov). newsletters-tab-v1.0.2.css is no longer needed.
 
    v1.0.4 (16 Nov 2026, Legacy Sunset S2): A BARE LIST.
      The picker collections are gone, and with them every value the
@@ -25,7 +43,7 @@
    removed from newsletter-wrapper in the Designer the same day.
 
    Nothing writes. No Make scenario, no Worker.
-   CSS: newsletters-tab-v1.0.2.css
+   CSS: injected by this file (style#nlb-style). No separate stylesheet.
    HARDCODING: HC-P-LS2-1 the status words map (STATUS_MAP below);
                NL_URL_PREFIX '/nl/' (the NEWSLETTERS Template path, site-wide).
    ============================================================ */
@@ -33,7 +51,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.0.4';
+  var VERSION = '1.0.6';
   var MOUNT_SEL = '#newsletters-mount';
   var SOURCE_SEL = '.newsletter-source .w-dyn-items';
   var NL_URL_PREFIX = '/nl/';   // NEWSLETTERS Template path (site-level, not tenant-specific)
@@ -113,7 +131,7 @@
              'Open shows the newsletter’s own page in a new tab.\n\n' +
              'The list reads the page’s hidden NEWSLETTERS list. It changes nothing.',
       scenarios: [],
-      companions: 'newsletters-tab-v1.0.2.css · source: .newsletter-source (hidden list on the TITLES-ADMIN Template)'
+      companions: 'styles inside this file · source: .newsletter-source (hidden list on the TITLES-ADMIN Template)'
     }) : '';
     var countChip = '<span class="nlb-count">' + count + '</span>';
     return (window.IxHeader && IxHeader.render)
@@ -122,24 +140,59 @@
         '<div><h3>Newsletters</h3></div></div><div class="ix-hdr-right">' + info + countChip + '</div></div>';
   }
 
+  /* ── Styles (injected once; Asset Library table look) ── */
+  var GRID = 'grid-template-columns:72px minmax(180px,1fr) 200px 132px 96px 112px';
+  var CSS = [
+    '.nlb-root{width:100%;padding:16px 0 32px}',
+    '.nlb-count{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:24px;padding:0 9px;border-radius:12px;background:#f4f1ea;color:#1a3a3a;font-family:"DM Mono",monospace;font-size:11px;font-weight:600}',
+    '.nlb-wrap{margin-top:14px;overflow-x:auto;overflow-y:visible}',
+    '.nlb-head,.nlb-row{display:grid;' + GRID + ';min-width:792px;align-items:center}',
+    '.nlb-head{background:#f4f1ea;border-bottom:2px solid #c4a35a;border-radius:7px 7px 0 0}',
+    '.nlb-th{font-family:"DM Mono",monospace !important;font-size:10px !important;font-weight:600 !important;letter-spacing:.06em !important;text-transform:uppercase !important;color:#1a3a3a !important;padding:11px 12px;white-space:nowrap}',
+    '.nlb-row{background:#fff !important;border-bottom:1px solid #efece1;padding:9px 0}',
+    '.nlb-row:nth-child(even){background:#f6f3ea !important}',
+    '.nlb-row:hover{background:#efe9da !important}',
+    '.nlb-td{padding:0 12px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--ix-font-body,"DM Sans",sans-serif) !important;font-size:13.5px !important;line-height:1.3 !important;color:#1f2a2a !important}',
+    '.nlb-td.nlb-no{font-family:"DM Mono",monospace !important;font-size:12px !important;color:#5a6a5a !important}',
+    '.nlb-td.nlb-name{font-weight:600 !important;color:#1a3a3a !important}',
+    '.nlb-td.nlb-date{color:#4f5a58 !important}',
+    '.nlb-td.nlb-sends,.nlb-th.nlb-sends{text-align:right;font-variant-numeric:tabular-nums}',
+    '.nlb-td.nlb-open,.nlb-th.nlb-open{text-align:right}',
+    '.nlb-pill{display:inline-block;width:88px;text-align:center;font-family:"DM Mono",monospace !important;font-size:10px !important;font-weight:500;letter-spacing:.03em;padding:3px 0;border-radius:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.nlb-pill--draft{background:#eef0ee;color:#5a6a5a}',
+    '.nlb-pill--building{background:#f3ecd8;color:#9a7b1e;border:1px solid #e0d3a8}',
+    '.nlb-pill--ready{background:#e7eefb;color:#2b5d95}',
+    '.nlb-pill--live{background:#1a3a3a;color:#fff}',
+    '.nlb-pill--sent{background:#e2f1e9;color:#0f5c3f}',
+    '.nlb-td .nlb-open-btn{display:inline-flex;align-items:center;justify-content:center;min-width:76px;height:28px;padding:0 12px !important;font-size:12px !important;line-height:1 !important;text-decoration:none !important;white-space:nowrap}',
+    '.nlb-none{font-family:"DM Mono",monospace;font-size:10px;color:#8a8a7a}',
+    '.nlb-empty{margin-top:14px;padding:28px;text-align:center;color:#8a8a7a;border:1.5px dashed #e8e4d8;border-radius:7px;font-family:var(--ix-font-body,"DM Sans",sans-serif)}'
+  ].join('\n');
+  function ensureStyle() {
+    if (document.getElementById('nlb-style')) return;
+    var s = document.createElement('style'); s.id = 'nlb-style'; s.textContent = CSS;
+    document.head.appendChild(s);
+  }
+
   function row(nl) {
     var p = pillFor(nl.status);
     var href = nl.slug ? NL_URL_PREFIX + encodeURIComponent(nl.slug) : '';
-    return '<tr class="nlb-row" data-nl-id="' + esc(nl.id) + '">' +
-      '<td class="nlb-c-no">' + esc(nl.issueNo || '—') + '</td>' +
-      '<td class="nlb-c-name" title="' + esc(nl.name) + '">' + esc(nl.name || nl.slug || '—') + '</td>' +
-      '<td class="nlb-c-date">' + esc(nl.date || '—') + '</td>' +
-      '<td class="nlb-c-status"><span class="nlb-pill ' + p.cls + '">' + esc(p.label) + '</span></td>' +
-      '<td class="nlb-c-sends">' + esc(sendsText(nl.sends)) + '</td>' +
-      '<td class="nlb-c-open">' + (href
-        ? '<a class="nlb-open" href="' + esc(href) + '" target="_blank" rel="noopener">Open ↗</a>'
-        : '<span class="nlb-open nlb-open--none">No page</span>') + '</td>' +
-    '</tr>';
+    return '<div class="nlb-row" data-nl-id="' + esc(nl.id) + '">' +
+      '<div class="nlb-td nlb-no">' + esc(nl.issueNo || '—') + '</div>' +
+      '<div class="nlb-td nlb-name" title="' + esc(nl.name) + '">' + esc(nl.name || nl.slug || '—') + '</div>' +
+      '<div class="nlb-td nlb-date">' + esc(nl.date || '—') + '</div>' +
+      '<div class="nlb-td nlb-status"><span class="nlb-pill ' + p.cls + '">' + esc(p.label) + '</span></div>' +
+      '<div class="nlb-td nlb-sends">' + esc(sendsText(nl.sends)) + '</div>' +
+      '<div class="nlb-td nlb-open">' + (href
+        ? '<a class="ix-btn ix-btn--secondary nlb-open-btn" href="' + esc(href) + '" target="_blank" rel="noopener">Open ↗</a>'
+        : '<span class="nlb-none">No page</span>') + '</div>' +
+    '</div>';
   }
 
   function render() {
     var mount = document.querySelector(MOUNT_SEL);
     if (!mount) return;
+    ensureStyle();
     var list = readNewsletters();
 
     var root = mount.querySelector('.nlb-root');
@@ -150,16 +203,13 @@
       return;
     }
 
-    var html = header(list.length) +
-      '<div class="nlb-scroll"><table class="nlb-table">' +
-        '<colgroup><col class="nlb-w-no"><col class="nlb-w-name"><col class="nlb-w-date">' +
-        '<col class="nlb-w-status"><col class="nlb-w-sends"><col class="nlb-w-open"></colgroup>' +
-        '<thead><tr>' +
-          '<th class="nlb-c-no">No.</th><th class="nlb-c-name">Newsletter</th><th class="nlb-c-date">Date</th>' +
-          '<th class="nlb-c-status">Status</th><th class="nlb-c-sends">Sends</th><th class="nlb-c-open"></th>' +
-        '</tr></thead><tbody>';
+    var html = header(list.length) + '<div class="nlb-wrap">' +
+      '<div class="nlb-head">' +
+        '<div class="nlb-th nlb-no">No.</div><div class="nlb-th nlb-name">Newsletter</div><div class="nlb-th nlb-date">Date</div>' +
+        '<div class="nlb-th nlb-status">Status</div><div class="nlb-th nlb-sends">Sends</div><div class="nlb-th nlb-open"></div>' +
+      '</div><div class="nlb-body">';
     for (var i = 0; i < list.length; i++) html += row(list[i]);
-    html += '</tbody></table></div>';
+    html += '</div></div>';
     root.innerHTML = html;
   }
 
