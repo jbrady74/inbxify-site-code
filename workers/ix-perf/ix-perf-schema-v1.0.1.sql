@@ -1,4 +1,13 @@
--- ix-perf-schema-v1.0.0.sql
+-- ix-perf-schema-v1.0.1.sql
+-- v1.0.1 (16 Nov 2026, Performance Report S2): MORE THAN ONE EMAIL PROVIDER, AND CLICKS PER LINK FROM EACH.
+--   Jeff (16 Nov): we may send through Stirista, Nexstar and Data Axle at the same time, or each for different
+--   campaigns, so every provider number is kept per issue, per provider and per campaign (one provider may deploy
+--   one issue more than once). sends gains campaign (in its key). New table 9, provider_clicks: the click totals per
+--   link that a provider reports (Stirista's per-URL rows, Mailchimp, the Nexstar history), with the advertiser, ad,
+--   spot and link type read from the link's UTM codes. Provider names are open text: stirista, nexstar, data-axle,
+--   mailchimp, and any later one. Nothing else changed.
+--   IF v1.0.0 WAS ALREADY RUN: its sends table has the old key. It holds no rows yet (no intake is built), so run
+--   DROP TABLE sends; once, then run this whole file.
 -- INBXIFY · D1 database ix-perf · the performance store (Performance Report S2, 16 Nov 2026)
 -- Run once in the Cloudflare dashboard: D1 > ix-perf > Console, paste this whole file, Execute.
 -- Every statement uses IF NOT EXISTS, so running it again changes nothing.
@@ -100,10 +109,11 @@ CREATE TABLE IF NOT EXISTS email_opens (
 );
 CREATE INDEX IF NOT EXISTS eo_issue      ON email_opens (issue_code, list);
 
--- 5 · sends: one row per issue and provider, as the provider reports it (Mailchimp, Stirista, Nexstar history).
+-- 5 · sends: one row per issue, provider and campaign, as the provider reports it.
 CREATE TABLE IF NOT EXISTS sends (
   issue_id      TEXT NOT NULL,
-  provider      TEXT NOT NULL,             -- mailchimp | stirista | nexstar
+  provider      TEXT NOT NULL,             -- stirista | nexstar | data-axle | mailchimp | any later provider
+  campaign      TEXT NOT NULL DEFAULT '',  -- the provider's own id for this deployment (file name, PO, campaign id)
   issue_code    TEXT, publisher TEXT, title TEXT,
   sent_at       INTEGER,
   ordered       INTEGER, delivered INTEGER,
@@ -113,8 +123,29 @@ CREATE TABLE IF NOT EXISTS sends (
   measured_at   INTEGER,                   -- when the provider took the numbers (asked of Stirista, 16 Nov)
   fetched_at    INTEGER,
   raw           TEXT,                      -- the provider's numbers as received (JSON)
-  PRIMARY KEY (issue_id, provider)
+  PRIMARY KEY (issue_id, provider, campaign)
 );
+
+-- 9 · provider_clicks: one row per issue, provider, campaign and link: the click totals a provider reports per link.
+--   Kept apart from clicks (one row per click we see ourselves), so nothing is counted twice.
+CREATE TABLE IF NOT EXISTS provider_clicks (
+  issue_id      TEXT NOT NULL,
+  provider      TEXT NOT NULL,
+  campaign      TEXT NOT NULL DEFAULT '',
+  url           TEXT NOT NULL,             -- the link as the provider reports it
+  clicks_total  INTEGER,
+  clicks_unique INTEGER,
+  issue_code    TEXT, publisher TEXT, title TEXT,
+  advertiser_id TEXT,                      -- utm_term
+  ad_id         TEXT,
+  slot          TEXT,                      -- utm_content (BA-b3, FA-b24, RE-b30 ...)
+  link_type     TEXT,
+  dest_host     TEXT,
+  measured_at   INTEGER, fetched_at INTEGER,
+  PRIMARY KEY (issue_id, provider, campaign, url)
+);
+CREATE INDEX IF NOT EXISTS pc_adv        ON provider_clicks (advertiser_id);
+CREATE INDEX IF NOT EXISTS pc_issue      ON provider_clicks (issue_code, provider);
 
 -- 6 · links: one row per localtap.link short code (build step 3).
 CREATE TABLE IF NOT EXISTS links (
