@@ -1,0 +1,20 @@
+{
+  "page": "quill",
+  "webflowPage": "quill-admin (static page)",
+  "confirmed": false,
+  "head": [
+    { "link": { "rel": "preconnect", "href": "https://fonts.googleapis.com" } },
+    { "link": { "rel": "preconnect", "href": "https://fonts.gstatic.com", "crossorigin": true } },
+    { "css": "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Josefin+Sans:wght@400;600&family=Sen:wght@400;500;600;700&display=swap" },
+    "ix-tokens-v1.0.4.css",
+    "ix-info-v1.0.0.css",
+    "ps-shell-v1.0.2.css",
+    "quill-home-v2.0.0.css",
+    "quill-performance-v1.0.1.css"
+  ],
+  "body": [
+    "ix-info-v1.0.2.js",
+    "quill-home-v2.0.2.js",
+    "quill-performance-v1.0.1.js"
+  ]
+}

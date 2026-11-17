@@ -1,0 +1,49 @@
+# .github/workflows/loaders.yml
+# INBXIFY · Agent Groundwork G1 · builds the page version lists, purges them on jsDelivr, proves the CDN has them.
+# Runs on main (live) and on preview branches (HC-P-AG-1: reskin-, agent-, jeff-).
+# A red run means: the pages are still on the last good lists. Read the last step's output for the file named.
+name: Loaders
+
+on:
+  push:
+    branches:
+      - main
+      - 'reskin-**'
+      - 'agent-**'
+      - 'jeff-**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: loaders-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  loaders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build the version lists from manifests/
+        run: node tools/build-loaders.mjs
+      - name: Commit the lists if the manifests changed them
+        run: |
+          if [ -n "$(git status --porcelain loaders)" ]; then
+            git config user.name "inbxify-loaders"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add loaders
+            git commit -m "loaders: rebuilt from manifests"
+            git push
+          else
+            echo "loaders/ already matches the manifests"
+          fi
+      - name: Purge jsDelivr and check the CDN serves the new copy
+        env:
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref_name }}
+        run: node tools/verify-cdn.mjs
