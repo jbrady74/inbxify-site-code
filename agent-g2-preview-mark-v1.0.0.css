@@ -1,0 +1,14 @@
+/* agent-g2-preview-mark-v1.0.0.css
+   INBXIFY · Agent Groundwork G2 · the first live ?ixbranch= preview test (17 Nov 2026).
+   Lives ONLY on the branch agent-g2-preview. Never merge it to main. It draws one gold line of words across the
+   top of quill-admin so a person can see that the page is reading this branch's files. It changes nothing else. */
+body::before {
+  content: "Preview test: this gold line comes from the branch agent-g2-preview";
+  display: block;
+  padding: 10px 16px;
+  background: var(--ix-gold);
+  color: var(--ix-teal);
+  font: inherit;
+  font-weight: 700;
+  text-align: center;
+}
