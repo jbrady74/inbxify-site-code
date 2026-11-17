@@ -1,5 +1,43 @@
-// ix-perf-v1.1.2.js
+// ix-perf-v1.1.4.js
 // INBXIFY · Cloudflare Worker · ix-perf · the performance collector and its reads
+//
+// v1.1.4 (17 Nov 2026, Performance Report S4) — THE ISSUE IS FOUND FROM THE PAGE'S ADDRESS TOO.
+//   Jeff's test of v1.1.3 (7:40 AM): an issue page opened directly still showed a blank Issue, with no warning. v1.1.3
+//   needs the page to send its NEWSLETTERS item id. The site shell (ix-shell v1.0.28) draws an issue page from the
+//   copy of /site it kept in the reader's browser, and tells the collector with that kept copy. A copy kept before
+//   ix-issue-data v1.0.187 (16 Nov) has no issue id, so a returning reader's page sends none. The Worker no longer
+//   depends on it:
+//   1 · POST /c, open, on an issue page with no code and no id: the last part of the page's address is the NEWSLETTERS
+//       slug. NEWSLETTERS row by slug in the CMS copy -> its PUBLICATION PLANS item -> the plan's name. Both the id and
+//       the code are written.
+//   2 · POST /c, end and click, on an issue page with no code: taken from the page view's own row (one read by id).
+//   3 · FILL-IN (on /raw, every 5 minutes at most) also does both: page views on issue pages by their address, then ads
+//       and clicks from their page view. Only blank issue_id and issue_code are written. What stays unmatched is
+//       counted in "warnings".
+//   HARDCODING: none new (the slug is the last part of the address, as ix-shell reads it).
+//
+// v1.1.3 (17 Nov 2026, Performance Report S4) — ISSUE PAGES OPENED DIRECTLY NOW COUNT TOWARD THEIR ISSUE.
+//   S3 finding 1, ruling 17 (Jeff: "ship collector fix now"). The page script takes the issue code (WLN-123B) only from
+//   utm_campaign, so an issue page opened without an email link was stored with its NEWSLETTERS item id (issue_id) and a
+//   blank issue code, and Raw counts' Issue column missed it.
+//   WHERE THE CODE LIVES (checked in ix-issue-data v1.0.187): a NEWSLETTERS item does not hold the code. The code in
+//     every email link is the NAME of the issue's PUBLICATION PLANS item (utm_campaign = plan name), and the NEWSLETTERS
+//     item points at its plan through the field publication-plan. So: issue_id -> NEWSLETTERS row in the CMS copy
+//     (CMS_DB, ix-content copy_items) -> its plan (plan_id, else field_data publication-plan) -> the plan's name.
+//   1 · POST /c. A message with an issue id and no issue code gets the code looked up before the row is written
+//       (open, end and click alike). Nothing changes in the page script or in any template. A lookup that fails never
+//       stops the row being stored: it is stored with the blank code, as before.
+//   2 · FILL-IN. Rows already stored with an issue id and a blank code (everything since 16 Nov, and any row written
+//       before the CMS copy had the new issue) are filled in the same way, at most once every 5 minutes, when Quill
+//       reads /raw. Only the blank issue_code is written; no count, time or other column is touched. Rows that cannot
+//       be matched stay blank and /raw says how many in "warnings".
+//   3 · GET /health adds issueLookup: "ready", or the reason the lookup cannot work (binding or collection missing).
+//   Collections are found as in v1.1.1 (letters only): NEWSLETTERS and PUBLICATION PLANS. PERF_CMS may set
+//   "newsletters" and "plans" ids. Answers found are kept an hour per isolate; misses one minute.
+//   NOT FIXED HERE (coverage audit): article pages reached from an issue page on the site carry neither code nor id.
+//   HARDCODING (provisional, for the S4 delta): HC-P-PR4-1 the display names NEWSLETTERS and PUBLICATION PLANS and the
+//     field slug publication-plan; HC-P-PR4-2 the one-hour / one-minute lookup cache, the 5-minute fill-in pace and
+//     its 200 issues a pass.
 //
 // v1.1.2 (17 Nov 2026, Performance Report S3) — ADS WITH NO ADVERTISER ID SAY WHAT THEY ARE.
 //   Jeff (17 Nov): Raw counts showed advertiser counts with a blank name. His query of 16 Nov: every such ad row was a
@@ -102,7 +140,7 @@
 //     HC-P-PR2-3 the default origins and zone; HC-P-PR2-4 the size limits and field lengths; HC-P-PR2-5 the
 //     one-minute status stamp.
 
-const VERSION = '1.1.2';
+const VERSION = '1.1.4';
 const DEF_SEEN = { ratio: 0.5, ms: 500 };                                   // HC-P-PR2-2
 const DEF_ORIGINS = ['https://inbxify.com', 'https://www.inbxify.com'];     // HC-P-PR2-3
 const DEF_TZ = 'America/New_York';                                          // HC-P-PR2-3
@@ -242,6 +280,18 @@ async function collect(request, env, ctx, origin) {
   if (!idOk(m.pv)) return json({ ok: false, error: 'No page view id.' }, 400, origin);
   if (Array.isArray(m.ads) && m.ads.length > MAX_ADS) return json({ ok: false, error: 'Too many ads.' }, 413, origin);
   const now = Date.now(), tz = tzOf(env), seen = seenOf(env);
+  if (!m.issueCode) {                                                                                       // v1.1.3, v1.1.4
+    try {
+      if (idOk(m.issueId)) { const got = await issueCodes(env, [String(m.issueId)], []); if (got[m.issueId]) m.issueCode = got[m.issueId]; }
+      else if (m.kind === 'issue' && m.t === 'open') {
+        const sl = slugOfPath(m.path), got = sl ? await issuesBySlug(env, [sl], []) : {};
+        if (got[sl]) { m.issueId = got[sl].id; m.issueCode = got[sl].code; }
+      } else if (m.kind === 'issue') {
+        const r = await db.prepare('SELECT issue_id, issue_code FROM page_views WHERE id = ?').bind(m.pv).first();
+        if (r) { if (r.issue_id) m.issueId = r.issue_id; if (r.issue_code) m.issueCode = r.issue_code; }
+      }
+    } catch (e) {}
+  }
   try {
     let n = 0;
     if (m.t === 'open') n = await onOpen(db, m, now, tz, m.v);
@@ -262,7 +312,14 @@ async function collect(request, env, ctx, origin) {
 // ══════════════════════════════════════════════════════════
 const RAW_DEFAULT_DAYS = 7, RAW_EVENT_DAYS = 31, RAW_SIZE_MAX = 200, RAW_ALL_MAX = 50000, OPT_MAX = 500;   // HC-P-PR3-1
 const DEF_SOURCES = { site: { hours: 24 } };                                                               // HC-P-PR3-2
-const CMS_NAMES = { publishers: 'PUBLISHERS', titles: 'TITLES', customers: 'CUSTOMERS' };                 // HC-P-PR3-3
+const CMS_NAMES = { publishers: ['PUBLISHERS'], titles: ['TITLES'], customers: ['CUSTOMERS'],             // HC-P-PR3-3
+  newsletters: ['NEWSLETTERS', 'NEWSLETTER'], plans: ['PUBLICATIONPLANS', 'PUBLICATIONPLAN'] };            // HC-P-PR4-1 (letters only)
+const CMS_SAY = { publishers: 'PUBLISHERS', titles: 'TITLES', customers: 'CUSTOMERS', newsletters: 'NEWSLETTERS', plans: 'PUBLICATION PLANS' };
+const ISSUE_PLAN_FIELD = 'publication-plan';                                                               // HC-P-PR4-1
+const ISSUE_OK_TTL = 3600000, ISSUE_MISS_TTL = 60000, HEAL_MS = 300000, HEAL_MAX = 200;                    // HC-P-PR4-2
+const issueCache = new Map();         // NEWSLETTERS item id -> { at, code }
+const slugCache = new Map();          // NEWSLETTERS slug -> { at, id, code }   v1.1.4
+let lastHeal = 0, healNote = '';      // per isolate
 const AUTH_TTL = 60000, CMS_TTL = 600000;                                                                  // HC-P-PR3-4
 const EVENTS = ['page_view', 'ad_on_page', 'ad_seen', 'click'];                                            // HC-P-PR3-5
 const DIMS = ['day', 'publisher', 'title', 'issue', 'surface', 'event', 'spot', 'advertiser', 'linktype'];
@@ -349,6 +406,7 @@ function parseRaw(url, tz) {
 
 async function rawRead(url, env) {
   const db = env.PERF_DB, tz = tzOf(env), p = parseRaw(url, tz), warnings = [];
+  await healIssues(env, warnings);                                                                          // v1.1.3
   if (p.eventMode && daysBetween(p.from, p.to) > RAW_EVENT_DAYS)
     throw httpErr(400, 'One row per event shows at most ' + RAW_EVENT_DAYS + ' days at a time. Narrow the dates, or merge rows.');
   const events = p.filters.event != null ? EVENTS.filter(e => e === p.filters.event) : EVENTS.slice();
@@ -432,7 +490,7 @@ async function cmsCollections(env, warnings) {
   const list = r.results || [];
   Object.keys(CMS_NAMES).forEach(k => {
     if (over[k]) { found[k] = { id: over[k], copied: 1 }; return; }
-    const m = list.filter(c => cmsNorm(c.display_name) === CMS_NAMES[k]);                     // v1.1.1
+    const m = list.filter(c => CMS_NAMES[k].indexOf(cmsNorm(c.display_name)) >= 0);           // v1.1.1, v1.1.3
     found[k] = m.length === 1 ? { id: m[0].collection_id, copied: m[0].copied } : null;
   });
   cmsCols = found; cmsColsAt = Date.now();
@@ -454,8 +512,8 @@ async function namesRead(env, want, warnings) {
       const vals = [...want[k]];
       if (!vals.length) continue;
       const c = C[coll];
-      if (!c) { warnings.push(CMS_NAMES[coll] + ' was not found in the CMS copy, so ' + k + 's show their ' + (key === 'slug' ? 'slug' : 'id') + '.'); continue; }
-      if (!c.copied) warnings.push(CMS_NAMES[coll] + ' is not on the CMS copy list, so its names may be missing or old.');
+      if (!c) { warnings.push(CMS_SAY[coll] + ' was not found in the CMS copy, so ' + k + 's show their ' + (key === 'slug' ? 'slug' : 'id') + '.'); continue; }
+      if (!c.copied) warnings.push(CMS_SAY[coll] + ' is not on the CMS copy list, so its names may be missing or old.');
       for (let i = 0; i < vals.length; i += 90) {
         const part = vals.slice(i, i + 90);
         const r = await env.CMS_DB.prepare('SELECT ' + key + ' AS k, name FROM copy_items WHERE collection_id = ? AND ' + key + ' IN (' +
@@ -465,6 +523,109 @@ async function namesRead(env, want, warnings) {
     }
   } catch (e) { warnings.push('Names could not be read from the CMS copy: ' + ((e && e.message) || e)); }
   return names;
+}
+
+// ── v1.1.3: the issue code of an issue page ───────────────
+// issue_id (NEWSLETTERS item) -> its PUBLICATION PLANS item -> that plan's name, which is the code in every email link.
+function issueReady(C) {
+  if (!C.newsletters) return 'NEWSLETTERS was not found in the CMS copy.';
+  if (!C.plans) return 'PUBLICATION PLANS was not found in the CMS copy.';
+  return '';
+}
+async function issueCodes(env, ids, warnings) {
+  const out = {}, need = [], now = Date.now();
+  [...new Set(ids)].forEach(id => {
+    const h = issueCache.get(id);
+    if (h && now - h.at < (h.code ? ISSUE_OK_TTL : ISSUE_MISS_TTL)) { if (h.code) out[id] = h.code; }
+    else need.push(id);
+  });
+  if (!need.length) return out;
+  if (!env.CMS_DB) { warnings.push('ix-perf has no CMS_DB binding (database ix-content), so issue pages opened directly cannot be given their issue code.'); return out; }
+  const C = await cmsCollections(env, warnings);
+  const why = issueReady(C);
+  if (why) { warnings.push(why + ' Issue pages opened directly keep a blank issue code until it is.'); return out; }
+  if (issueCache.size > 2000) issueCache.clear();
+  for (let i = 0; i < need.length; i += 80) {
+    const part = need.slice(i, i + 80);
+    const r = await env.CMS_DB.prepare(
+      'SELECT n.item_id AS id, p.name AS code FROM copy_items n JOIN copy_items p ON p.collection_id = ? AND p.item_id = ' +
+      "COALESCE(NULLIF(n.plan_id, ''), json_extract(n.field_data, ?)) WHERE n.collection_id = ? AND n.item_id IN (" +
+      part.map(() => '?').join(',') + ')'
+    ).bind(C.plans.id, '$."' + ISSUE_PLAN_FIELD + '"', C.newsletters.id, ...part).all();
+    const got = {};
+    (r.results || []).forEach(x => { const code = str(String(x.code || '').trim(), LEN.code); if (code) got[x.id] = code; });
+    part.forEach(id => { issueCache.set(id, { at: now, code: got[id] || '' }); if (got[id]) out[id] = got[id]; });
+  }
+  return out;
+}
+// v1.1.4: the same, starting from the page's address. The last part of an issue page's address is its NEWSLETTERS slug.
+function slugOfPath(p) { const m = String(p || '').toLowerCase().match(/\/([a-z0-9][a-z0-9._-]{0,200})\/?$/); return m ? m[1] : ''; }
+async function issuesBySlug(env, slugs, warnings) {
+  const out = {}, need = [], now = Date.now();
+  [...new Set(slugs)].forEach(sl => {
+    const h = slugCache.get(sl);
+    if (h && now - h.at < (h.code ? ISSUE_OK_TTL : ISSUE_MISS_TTL)) { if (h.id) out[sl] = { id: h.id, code: h.code }; }
+    else need.push(sl);
+  });
+  if (!need.length) return out;
+  if (!env.CMS_DB) { warnings.push('ix-perf has no CMS_DB binding (database ix-content), so issue pages opened directly cannot be given their issue code.'); return out; }
+  const C = await cmsCollections(env, warnings);
+  const why = issueReady(C);
+  if (why) { warnings.push(why + ' Issue pages opened directly keep a blank issue code until it is.'); return out; }
+  if (slugCache.size > 2000) slugCache.clear();
+  for (let i = 0; i < need.length; i += 80) {
+    const part = need.slice(i, i + 80);
+    const r = await env.CMS_DB.prepare(
+      'SELECT n.slug AS slug, n.item_id AS id, p.name AS code FROM copy_items n LEFT JOIN copy_items p ON p.collection_id = ? AND p.item_id = ' +
+      "COALESCE(NULLIF(n.plan_id, ''), json_extract(n.field_data, ?)) WHERE n.collection_id = ? AND n.is_archived = 0 AND LOWER(n.slug) IN (" +
+      part.map(() => '?').join(',') + ')'
+    ).bind(C.plans.id, '$."' + ISSUE_PLAN_FIELD + '"', C.newsletters.id, ...part).all();
+    const got = {};
+    (r.results || []).forEach(x => { got[String(x.slug || '').toLowerCase()] = { id: str(x.id, LEN.code), code: str(String(x.code || '').trim(), LEN.code) }; });
+    part.forEach(sl => { const g = got[sl] || { id: '', code: '' }; slugCache.set(sl, { at: now, id: g.id, code: g.code }); if (g.id) out[sl] = g; });
+  }
+  return out;
+}
+// Rows stored with an issue id and a blank code get the code. Only issue_code is written, and only where it is blank.
+async function healIssues(env, warnings) {
+  const now = Date.now();
+  if (now - lastHeal >= HEAL_MS) {
+    lastHeal = now; healNote = '';
+    try {
+      const db = env.PERF_DB, tables = ['page_views', 'ad_views', 'clicks'];
+      const r = await db.prepare(tables.map(t => 'SELECT DISTINCT issue_id AS id FROM ' + t +
+        " WHERE COALESCE(issue_id,'') <> '' AND COALESCE(issue_code,'') = ''").join(' UNION ') + ' LIMIT ' + HEAL_MAX).all();
+      const ids = (r.results || []).map(x => String(x.id)).filter(idOk);
+      if (ids.length) {
+        const w = [], codes = await issueCodes(env, ids, w), stmts = [];
+        ids.forEach(id => { if (codes[id]) tables.forEach(t => stmts.push(
+          db.prepare('UPDATE ' + t + " SET issue_code = ? WHERE issue_id = ? AND COALESCE(issue_code,'') = ''").bind(codes[id], id))); });
+        for (let i = 0; i < stmts.length; i += 60) await db.batch(stmts.slice(i, i + 60));
+        if (w.length) healNote = w[0];
+      }
+      // v1.1.4 · page views on issue pages with neither id nor code: by the page's address
+      const BLANK = "COALESCE(issue_code,'') = ''", NOID = "COALESCE(issue_id,'') = ''";
+      const pr = await db.prepare("SELECT DISTINCT path FROM page_views WHERE kind = 'issue' AND " + BLANK + ' AND ' + NOID + ' LIMIT ' + HEAL_MAX).all();
+      const paths = (pr.results || []).map(x => String(x.path || '')).filter(x => slugOfPath(x));
+      if (paths.length) {
+        const w2 = [], bySlug = await issuesBySlug(env, paths.map(slugOfPath), w2), st2 = [];
+        paths.forEach(pa => { const g = bySlug[slugOfPath(pa)]; if (g) st2.push(
+          db.prepare("UPDATE page_views SET issue_id = ?, issue_code = ? WHERE kind = 'issue' AND path = ? AND " + BLANK + ' AND ' + NOID).bind(g.id, g.code, pa)); });
+        for (let i = 0; i < st2.length; i += 60) await db.batch(st2.slice(i, i + 60));
+        if (w2.length && !healNote) healNote = w2[0];
+      }
+      // v1.1.4 · ads and clicks on issue pages: from their page view
+      await db.batch(['ad_views', 'clicks'].map(t => db.prepare(
+        'UPDATE ' + t + ' SET issue_code = (SELECT p.issue_code FROM page_views p WHERE p.id = ' + t + '.page_view_id),' +
+        " issue_id = COALESCE(NULLIF(issue_id,''), (SELECT p.issue_id FROM page_views p WHERE p.id = " + t + '.page_view_id))' +
+        " WHERE kind = 'issue' AND " + BLANK + " AND page_view_id IN (SELECT id FROM page_views WHERE kind = 'issue' AND COALESCE(issue_code,'') <> '')")));
+      const left = await db.prepare("SELECT COUNT(*) AS n, COUNT(DISTINCT path) AS pages FROM page_views WHERE kind = 'issue' AND " + BLANK).first();
+      if (!healNote && left && left.n) healNote = left.n + (left.n === 1 ? ' issue page view has' : ' issue page views have') + ' no issue code yet (' +
+        left.pages + (left.pages === 1 ? ' page' : ' pages') + '): the NEWSLETTERS item or its PUBLICATION PLANS item was not found in the CMS copy. ' +
+        'They are tried again every 5 minutes.';
+    } catch (e) { healNote = 'Issue codes could not be filled in: ' + ((e && e.message) || e); }
+  }
+  if (healNote) warnings.push(healNote);
 }
 
 // ── GET /sources ──────────────────────────────────────────
@@ -509,8 +670,12 @@ export default {
     const origin = request.headers.get('Origin') || '';
     const allowed = originsOf(env).indexOf(origin.replace(/\/+$/, '')) >= 0;
     if (request.method === 'OPTIONS') return new Response(null, { status: allowed ? 204 : 403, headers: allowed ? cors(origin) : {} });
-    if (url.pathname === '/health') return json({ ok: true, version: VERSION, d1: !!env.PERF_DB, seen: seenOf(env), tz: tzOf(env),
-      members: !!(env.MEMBERS && typeof env.MEMBERS.fetch === 'function'), cms: !!env.CMS_DB });                // v1.1.0
+    if (url.pathname === '/health') {
+      let issueLookup = 'ix-perf has no CMS_DB binding.';                                                       // v1.1.3
+      if (env.CMS_DB) { try { issueLookup = issueReady(await cmsCollections(env, [])) || 'ready'; } catch (e) { issueLookup = 'CMS copy not readable: ' + ((e && e.message) || e); } }
+      return json({ ok: true, version: VERSION, d1: !!env.PERF_DB, seen: seenOf(env), tz: tzOf(env),
+        members: !!(env.MEMBERS && typeof env.MEMBERS.fetch === 'function'), cms: !!env.CMS_DB, issueLookup });  // v1.1.0
+    }
     if ((url.pathname === '/raw' || url.pathname === '/sources') && request.method === 'GET') {                 // v1.1.0
       if (!allowed) return json({ ok: false, error: 'This page may not read ix-perf.' }, 403);
       return readRoute(url, request, env, origin);
