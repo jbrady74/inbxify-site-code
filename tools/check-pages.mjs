@@ -132,7 +132,17 @@ async function pass(ctx, name, cfg, which, width) {
 
   async function record(label, n) {
     const file = `${name}-${width}-${String(n).padStart(2, '0')}-${slug(label)}-${which}.jpg`;
-    try { await page.screenshot({ path: path.join(SHOTS, file), ...PICTURE }); } catch (e) { log.stops.push(`no picture of "${label}": ${String(e.message || e).slice(0, 120)}`); }
+    try { await page.screenshot({ path: path.join(SHOTS, file), timeout: 20000, ...PICTURE }); }
+    catch (e) {
+      // a whole-page picture can hang on a very tall or still-moving page: take what the window shows instead
+      try {
+        const cdp = await page.context().newCDPSession(page);
+        const shot = await Promise.race([cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: PICTURE.quality }), sleep(15000).then(() => null)]);
+        if (!shot) throw new Error('the window picture timed out too');
+        fs.writeFileSync(path.join(SHOTS, file), Buffer.from(shot.data, 'base64'));
+        log.notes = (log.notes || 0) + 1;
+      } catch (e2) { log.stops.push(`no picture of "${label}": ${String(e.message || e).replace(/\s+/g, ' ').slice(0, 400)} / ${String(e2.message || e2).slice(0, 120)}`); }
+    }
     try {
       const res = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
       for (const v of res.violations) for (const nd of v.nodes) {
@@ -145,8 +155,12 @@ async function pass(ctx, name, cfg, which, width) {
 
   async function sawWhat() {
     try {
-      log.saw = await page.evaluate(() => ({ url: location.pathname + location.search, title: document.title,
-        text: ((document.body && document.body.innerText) || '').replace(/\s+/g, ' ').trim().slice(0, 240) }));
+      log.saw = await page.evaluate(() => {
+        const b = document.body, cs = b ? getComputedStyle(b) : null, hs = getComputedStyle(document.documentElement);
+        return { url: location.pathname + location.search, title: document.title,
+          text: ((b && b.innerText) || '').replace(/\s+/g, ' ').trim().slice(0, 240) +
+            ` [body: ${b ? b.children.length : 0} elements, display ${cs && cs.display}, visibility ${cs && cs.visibility}, opacity ${cs && cs.opacity}, height ${b && b.scrollHeight}; html display ${hs.display}, visibility ${hs.visibility}; gated elements ${document.querySelectorAll('[data-ms-content]').length}; member ${(() => { try { return localStorage.getItem('_ms-mem') ? 'in storage' : 'not in storage'; } catch (e) { return '?'; } })()}]` };
+      });
     } catch { /* the page is gone */ }
   }
 
