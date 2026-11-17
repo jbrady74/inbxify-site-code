@@ -18,9 +18,10 @@
 //   4. FAILS (exit 1) when
 //        · the page did not load its code, or the preview did not turn on, or the member was sent somewhere else
 //        · the branch shows a console error that main does not show
-//        · a request to jsDelivr failed on the branch
+//        · a request to jsDelivr fails on the branch and does not fail on main
 //        · the branch has a contrast failure that main does not have (axe-core "color-contrast", WCAG AA)
-//      Errors and contrast failures main already has are listed, not failed: the check judges the branch's change.
+//      Errors, failed requests and contrast failures main already has are listed, not failed: the check judges
+//      the branch's change.
 //
 // READ-ONLY. It never types, saves or submits; it only opens pages and clicks rail tabs. Every request that is
 // not a plain read (POST, PUT, PATCH, DELETE) is listed in the report by address, so a write would be seen.
@@ -201,7 +202,7 @@ if (pages.length && !cdnWait) {
     if (cfg.login && (!EMAIL || !PASSWORD)) { rec.fails.push('This page needs the agent login. The repo secrets IX_AGENT_EMAIL and IX_AGENT_PASSWORD are not set.'); continue; }
     for (const width of CFG.widths) {
       const ctx = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 } });
-      const w = { width, main: null, branch: null, newErrors: [], newContrast: [] };
+      const w = { width, main: null, branch: null, newErrors: [], newContrast: [], newCdn: [] };
       rec.widths.push(w);
       try {
         if (cfg.login) {
@@ -217,7 +218,9 @@ if (pages.length && !cdnWait) {
         for (const s of w.branch.stops) rec.fails.push(`${width} wide, branch: ${s}`);
         for (const s of w.main.stops) rec.fails.push(`${width} wide, main: ${s}`);
         if (w.newErrors.length) rec.fails.push(`${width} wide: ${w.newErrors.length} console error(s) the branch adds`);
-        if (w.branch.cdn.length) rec.fails.push(`${width} wide: ${w.branch.cdn.length} failed request(s) to jsDelivr on the branch`);
+        const gone = new Set(w.main.cdn.map((c) => keyOf(c.url)));
+        w.newCdn = w.branch.cdn.filter((c) => !gone.has(keyOf(c.url)));
+        if (w.newCdn.length) rec.fails.push(`${width} wide: ${w.newCdn.length} failed request(s) to jsDelivr the branch adds`);
         if (w.newContrast.length) rec.fails.push(`${width} wide: ${w.newContrast.length} contrast failure(s) the branch adds`);
       } finally { await ctx.close().catch(() => {}); }
     }
@@ -243,9 +246,9 @@ for (const p of result.pages) {
       for (const e of w.newErrors.slice(0, 40)) md.push(`| ${cell(e.view)} | \`${cell(e.text)}\` |`);
       md.push('');
     }
-    if (w.branch.cdn.length) {
-      md.push(`**${w.width} wide: failed requests to jsDelivr on the branch**`, '', '| View | Address | Why |', '|---|---|---|');
-      for (const c of w.branch.cdn.slice(0, 40)) md.push(`| ${cell(c.view)} | \`${cell(c.url)}\` | ${cell(c.why)} |`);
+    if (w.newCdn.length) {
+      md.push(`**${w.width} wide: failed requests to jsDelivr the branch adds**`, '', '| View | Address | Why |', '|---|---|---|');
+      for (const c of w.newCdn.slice(0, 40)) md.push(`| ${cell(c.view)} | \`${cell(c.url)}\` | ${cell(c.why)} |`);
       md.push('');
     }
     if (w.newContrast.length) {
@@ -256,8 +259,9 @@ for (const p of result.pages) {
     const oldErr = [...new Set(w.main.errors.map((e) => keyOf(e.text)))];
     const writes = [...new Set(w.branch.writes.map((x) => `${x.method} ${x.to}`))];
     md.push(`<details><summary>${p.page} at ${w.width} wide: ${w.branch.views.length} view(s), main beside branch</summary>`, '');
-    md.push(`Already on main, not failed: ${oldErr.length} console error(s), ${w.main.contrast.length} contrast failure(s).`);
-    if (oldErr.length) { md.push(''); for (const e of oldErr.slice(0, 15)) md.push(`- \`${cell(e)}\``); }
+    const oldCdn = [...new Set(w.main.cdn.map((c) => `${c.url} (${c.why})`))];
+    md.push(`Already on main, not failed: ${oldErr.length} console error(s), ${oldCdn.length} failed request(s) to jsDelivr, ${w.main.contrast.length} contrast failure(s).`);
+    if (oldErr.length || oldCdn.length) { md.push(''); for (const e of oldErr.slice(0, 15)) md.push(`- \`${cell(e)}\``); for (const e of oldCdn.slice(0, 15)) md.push(`- failed request: \`${cell(e)}\``); }
     md.push('');
     md.push(writes.length ? `Requests that were not plain reads (the check clicked rail tabs only): ${writes.map((x) => `\`${x}\``).join(', ')}.` : 'Every request was a plain read.');
     md.push('', '| View | main | branch |', '|---|---|---|');
