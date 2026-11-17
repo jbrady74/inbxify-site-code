@@ -162,10 +162,23 @@ async function pass(ctx, name, cfg, which, width) {
           text: ((b && b.innerText) || '').replace(/\s+/g, ' ').trim().slice(0, 240) +
             ` [body: ${b ? b.children.length : 0} elements, display ${cs && cs.display}, visibility ${cs && cs.visibility}, opacity ${cs && cs.opacity}, height ${b && b.scrollHeight}; html display ${hs.display}, visibility ${hs.visibility}; gated elements ${document.querySelectorAll('[data-ms-content]').length}; member ${(() => { try { return localStorage.getItem('_ms-mem') ? 'in storage' : 'not in storage'; } catch (e) { return '?'; } })()}]` };
       });
+      const emptied = await page.evaluate(() => (window.__ixEmptied || []).slice(0, 4)).catch(() => []);
+      if (emptied.length) log.saw.text += ` [emptied by: ${emptied.join(' || ')}]`;
       log.saw.text += ` [the server sent: ${log.doc || 'unknown'}; the window went to: ${navs.join(' then ')}]`;
     } catch { /* the page is gone */ }
   }
 
+  // if a script empties the page, remember which one (the report names it)
+  await page.addInitScript(() => {
+    const seen = (window.__ixEmptied = []);
+    const note = (what) => { try { seen.push(what + ' · readyState ' + document.readyState + ' · ' + String(new Error().stack).split('\n').slice(2, 6).map((l) => l.trim().replace(/^at /, '')).join(' < ')); } catch (e) { /* no stack */ } };
+    const wrap = (obj, name, test) => { const old = obj[name]; if (typeof old !== 'function') return; obj[name] = function () { try { if (test.call(this, arguments)) note(name); } catch (e) { /* keep going */ } return old.apply(this, arguments); }; };
+    wrap(Document.prototype, 'open', function () { return true; });
+    wrap(Document.prototype, 'write', function () { return document.readyState !== 'loading'; });
+    wrap(Element.prototype, 'remove', function () { return this === document.body || this === document.documentElement; });
+    wrap(Node.prototype, 'removeChild', function (a) { return a[0] === document.body || a[0] === document.documentElement; });
+    wrap(Node.prototype, 'replaceChild', function (a) { return a[1] === document.body || a[1] === document.documentElement; });
+  });
   const navs = [];
   page.on('framenavigated', (f) => { if (f === page.mainFrame()) navs.push(new URL(f.url()).pathname); });
   page.on('response', async (r) => {
