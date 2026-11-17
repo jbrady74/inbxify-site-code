@@ -1,0 +1,35 @@
+{
+  "page": "ipp",
+  "webflowPage": "PUBLICATION PLAN Template",
+  "confirmed": true,
+  "head": [
+    "ix-progress-v1.0.4.js",
+    "ix-tokens-v1.0.4.css",
+    "ix-form-controls-v1.2.0.css",
+    "ix-modals-v1.0.3.css",
+    "ix-info-v1.0.0.css",
+    "ix-success-toast-v1.0.0.css",
+    "ix-progress-v1.0.0.css",
+    "ipp-shell-v1.20.css",
+    "ipp-picker-v1.43.css",
+    "ix-ai-v1.3.1.css",
+    "ipp-publish-v2.29.css",
+    "ipp-words-v1.0.5.css",
+    "ipp-revenue-v1.6.8.css",
+    "ipp-layout-v1.0.28.css",
+    "ix-buttons-v1.0.7.css"
+  ],
+  "body": [
+    "ix-info-v1.0.2.js",
+    "ix-uc-v1.0.0.js",
+    "ipp-shell-v1.50.js",
+    "ipp-picker-markup-v1.20.js",
+    "ipp-picker-v1.82.js",
+    "ix-success-toast-v1.0.1.js",
+    "ipp-revenue-v1.9.0.js",
+    "ipp-layout-v1.0.63.js",
+    "ix-ai-v1.4.1.js",
+    "ipp-words-v1.2.1.js",
+    "ipp-publish-v2.81.js"
+  ]
+}
