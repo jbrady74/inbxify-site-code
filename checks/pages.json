@@ -1,0 +1,12 @@
+{
+  "base": "https://www.inbxify.com",
+  "loginAt": "/portal-login",
+  "widths": [1440, 390],
+  "pages": {
+    "quill":  { "path": "/quill-admin", "login": true, "tabs": ".ps-nav a" },
+    "portal": { "path": null, "login": true, "tabs": ".ps-nav a" },
+    "ta":     { "path": "/title-admin/full-test-3-weekly", "login": true, "tabs": ".w-tab-link[data-w-tab]" },
+    "ipp":    { "path": "/publication-plan/taw-101", "login": true, "tabs": ".ipp-switcher button[data-view]" },
+    "review": { "path": "/review", "login": false, "tabs": null }
+  }
+}
