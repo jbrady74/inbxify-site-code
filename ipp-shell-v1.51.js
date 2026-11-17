@@ -1,4 +1,10 @@
-/* ipp-shell-v1.50.js */
+/* ipp-shell-v1.51.js */
+/* v1.51 (17 Nov 2026, Performance Report S4): A SENT PLAN STILL HANDS OVER ITS EMAIL FILE. Jeff (17 Nov): on a sent plan the
+   Compile page's "View the email" and "Download" did nothing. The sent guard (v1.39) refuses every press inside a view
+   except the tabs, Open newsletter, the ids and Unlock, and the two file buttons were caught by it. Reading the file
+   changes nothing, so they are let through: [data-publish-view-email], [data-publish-download-email] (Compile header)
+   and [data-vd-download] (the same file on Distribution). Nothing else is let through, and the release lock (v1.26,
+   the four editing views) is unchanged. CSS stays ipp-shell-v1.20.css. HARDCODING: none new. */
 /* v1.50 (16 Nov 2026, Legacy Sunset S2): NO "Esc" CHIP. Jeff (16 Nov): the "Esc" label in the plan's top bar looked like a
    button but could not be clicked. It was only a hint for the Esc key. The chip is removed; the Esc key still closes the
    plan, and the Close plan button is unchanged (it lives in the same .ipp-crown-tools holder, which stays). Nothing else
@@ -869,6 +875,7 @@ window.IPP = (function () {
     if (SENT && el && el.closest) {                                         // v1.39: a sent plan refuses changes in every view
       if (el.closest('.ipp-switcher button') || el.closest('.ipp-b-open') || el.closest('.ipp-b-ids')) return false;   // v1.42: the tabs, Open newsletter and the ids still work
       if (el.closest('[data-cx-unlock]') || el.closest('[data-ipp-unlock]')) return false;                           // v1.45: Unlock, and its dialog, work on a sent plan
+      if (el.closest('[data-publish-view-email]') || el.closest('[data-publish-download-email]') || el.closest('[data-vd-download]')) return false;   // v1.51: the email file can still be opened and downloaded
       return !!el.closest('.ipp-view');
     }
     if (!LOCKED || !el || !el.closest) return false;
@@ -1417,7 +1424,7 @@ window.IPP = (function () {
     q: q, qa: qa, root: root,
     tenant: tenant, post: post, toast: toast, saving: saving,
     getJSON: getJSON, board: board,
-    planInfo: planInfo, requestClose: requestClose, version: '1.50', head: head,   // head v1.28
+    planInfo: planInfo, requestClose: requestClose, version: '1.51', head: head,   // head v1.28
     locked: function(){ return LOCKED; }, LOCK_VIEWS: LOCK_VIEWS   // v1.26
   };
 })();
