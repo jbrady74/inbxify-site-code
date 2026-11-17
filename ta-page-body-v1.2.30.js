@@ -22,7 +22,11 @@
        shown: nothing here saves. The Asset Form shows the result.
      · Scenario E (TA_CONFIG.makeTranscriber) is no longer called from
        this file. Switch it off in Make once this is live.
-     HARDCODING: none. Sections 2 to 5 otherwise unchanged.
+     · The Transcriber's prompt, AI call and field parse moved, word for
+       word, to ix-transcribe v1.0.0 (needed on the page, loaded before
+       this file) so Create from print reads with the same engine.
+     HARDCODING: none here (the model id moved with the engine: HC-IXT-1).
+     Sections 2 to 5 otherwise unchanged.
 
    v1.2.29 (15 Nov 2026 · Legacy Sunset S2):
      Section 1 (PubPlan Modal V4.0, the legacy picker planner's add/edit
@@ -1427,95 +1431,18 @@ document.addEventListener("DOMContentLoaded", async function() {
   };
 
   // ── Claude API call — all images in one message ──
+  // v1.2.30: the prompt, the call and the parse moved to ix-transcribe
+  // v1.0.0, word for word, so Create from print reads print pages with
+  // the same engine. Same fields come back.
   async function sctCallClaude() {
     if (!CFG.proxyUrl) throw new Error('Anthropic proxy URL not configured. Add anthropicProxy to window.TA_CONFIG in the page head.');
-
-    const n = S.images.length;
-    const pageNote = n > 1
-      ? `This article spans ${n} pages, provided in order. Treat them as one continuous article.`
-      : 'Transcribe this article screenshot.';
-
-    const system = `You are an expert article transcriber and editor for a local community newsletter publishing platform.
-
-Return your response using XML tags — one tag per field. Do not use JSON. Do not add any text outside the tags.
-
-Use exactly these tags:
-<title>Article headline</title>
-<subtitle>Sub-title if visible, else leave empty</subtitle>
-<writername>Primary writer name if visible, else leave empty</writername>
-<writertitle>Primary writer title/role if visible, else leave empty</writertitle>
-<cowritername>Co-writer name if visible, else leave empty</cowritername>
-<cowritertitle>Co-writer title if visible, else leave empty</cowritertitle>
-<teaser>Newsletter teaser here</teaser>
-<shortsummary>Short summary here</shortsummary>
-<body>Full article HTML here</body>
-
-TEASER RULES:
-- Target length: 350–400 characters. Write enough to fill this range.
-- Minimum: 300 characters. If under 300, expand with a compelling detail.
-- Maximum: 400 characters hard limit.
-- Write a complete, engaging teaser — no truncation, no ellipsis.
-
-SHORT SUMMARY RULES:
-- Target length: 120–150 characters. Write to fill this range.
-- Minimum: 100 characters. If under 100, add a key detail.
-- Maximum: 150 characters hard limit.
-
-BODY RULES:
-- Transcribe all visible article text accurately and completely.
-- SECTION HEADERS: If the article has visible section headers, use <h2 class="sct-transcribed">Header</h2>
-- LONG-RUN BREAKS: Within any stretch of body text that runs more than 6 paragraphs without an H2 — including the lede before the first source header — generate an interior <h2 class="sct-generated">Header</h2> at a natural topical seam to break it. Apply this rule even when other parts of the article have visible source headers (mixed mode is allowed and expected: sct-transcribed and sct-generated H2s can coexist in the same article).
-- AUTO-SECTIONALIZE: If the article has NO visible section headers, divide into 2–5 logical sections and create descriptive H2 headers. Mark these as <h2 class="sct-generated">Header</h2>
-- QUESTION AND ANSWER: in an interview or Q&A, a question and the answer that follows it are ONE unit. Never put a header (sct-generated or any other) between a question and its answer. If a generated header belongs near a Q&A pair, put it ABOVE the question.
-- Use <p> for paragraphs. Use <ul><li> for bullets. Use <ol><li> for numbered lists.
-- No inline styles. No wrapper divs. Start directly with content.
-- Do not summarize or cut the body — preserve all substantive content.
-
-If any field is not visible or not applicable, leave the tag empty. Never omit a tag.`;
-
-    // Build content array: all images first, then instruction
-    const content = [
-      ...S.images.map(img => ({
-        type: 'image',
-        source: { type: 'base64', media_type: img.mime, data: img.base64 }
-      })),
-      { type: 'text', text: n > 1
-        ? `This article spans ${n} pages in order. Treat as one continuous article. Transcribe it now.`
-        : 'Transcribe this article screenshot.' }
-    ];
-
-    const res = await fetch(CFG.proxyUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-opus-4-5',
-        max_tokens: 4000,
-        system,
-        messages: [{ role: 'user', content }]
-      })
+    if (!window.IxTranscribe || typeof window.IxTranscribe.read !== 'function') {
+      throw new Error('The Transcriber engine (ix-transcribe) is not loaded on this page, so nothing was read. Add ix-transcribe-v1.0.0.js to the page body code.');
+    }
+    return window.IxTranscribe.read({
+      images: S.images.map(img => ({ mime: img.mime, base64: img.base64 })),
+      proxyUrl: CFG.proxyUrl
     });
-
-    if (!res.ok) { const e=await res.json().catch(()=>({})); throw new Error(e.error?.message||'API error '+res.status); }
-    const data = await res.json();
-    const raw = data.content?.find(b=>b.type==='text')?.text||'';
-
-    // Parse XML tags — immune to apostrophes, quotes, em-dashes, HTML in body
-    const extract = (tag) => {
-      const m = raw.match(new RegExp('<' + tag + '>([\\s\\S]*?)<\\/' + tag + '>'));
-      return m ? m[1].trim() : '';
-    };
-
-    return {
-      title:        extract('title'),
-      subtitle:     extract('subtitle'),
-      writername:   extract('writername'),
-      writertitle:  extract('writertitle'),
-      cowritername: extract('cowritername'),
-      cowritertitle:extract('cowritertitle'),
-      teaser:       extract('teaser'),
-      shortsummary: extract('shortsummary'),
-      body:         extract('body'),
-    };
   }
 
   // ── v1.2.23 (TD-178): collapse empty paragraphs in transcribed body ──
