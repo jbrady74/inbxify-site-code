@@ -3,6 +3,9 @@
 // INBXIFY · the Checks Action, part 2: open the changed pages on the test title, on main and on the branch
 // (Agent Groundwork G2, scoping §3 points 1 to 4). Runs in GitHub's cloud with Playwright.
 //
+// v1.0.1 (17 Nov 2026) — from the first runs with the agent login: (1) a page that sends the member away AFTER it has
+//   loaded (Memberstack does this in the browser) is now caught, and the report says where the member ended up and
+//   what the page showed; (2) a picture no longer waits for web fonts that never arrive.
 // v1.0.0 (17 Nov 2026).   node tools/check-pages.mjs        (run from the repo root, on an agent branch)
 //   env BRANCH              the branch being checked (must be a preview name: reskin-, agent-, jeff-)
 //   env REPO                owner/name (to wait for the CDN)
@@ -31,6 +34,7 @@
 // HARDCODING (provisional): HC-P-AG-3 the test title's page addresses (checks/pages.json); HC-P-AG-8 SETTLE and
 //   LIMIT (how long a view may take to go quiet); HC-P-AG-9 the picture format.
 // ============================================================
+process.env.PW_TEST_SCREENSHOT_NO_FONTS_READY = '1';   // a picture must not wait for a web font that never arrives
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -111,7 +115,7 @@ async function signIn(ctx) {
 
 // ── one page, one width, main or branch ──────────────────
 async function pass(ctx, name, cfg, which, width) {
-  const log = { which, stops: [], errors: [], cdn: [], writes: [], contrast: [], views: [] };
+  const log = { which, stops: [], errors: [], cdn: [], writes: [], contrast: [], views: [], saw: null };
   const page = await ctx.newPage();
   let view = 'first view';
   page.on('console', (m) => { if (m.type() === 'error') log.errors.push({ view, text: m.text().slice(0, 300) }); });
@@ -139,6 +143,13 @@ async function pass(ctx, name, cfg, which, width) {
     log.views.push({ label, file });
   }
 
+  async function sawWhat() {
+    try {
+      log.saw = await page.evaluate(() => ({ url: location.pathname + location.search, title: document.title,
+        text: ((document.body && document.body.innerText) || '').replace(/\s+/g, ' ').trim().slice(0, 240) }));
+    } catch { /* the page is gone */ }
+  }
+
   const address = `${SITE}${cfg.path}?ixbranch=${which === 'main' ? 'off' : encodeURIComponent(BRANCH)}`;
   try {
     await page.goto(address, { waitUntil: 'load', timeout: 60000 });
@@ -159,11 +170,18 @@ async function pass(ctx, name, cfg, which, width) {
       if (st.ref !== expect) log.stops.push(`the page read "${st.ref}", not "${expect}"${which === 'main' ? '' : ': the preview did not turn on'}`);
     }
     await quiet(page);
+    const here = new URL(page.url()).pathname.replace(/\/$/, '');
+    if (here !== cfg.path.replace(/\/$/, '')) {
+      log.stops.push(`the page opened, then sent the member to ${here || '/'}. ${cfg.login ? 'The agent member is not allowed on this page (check its Memberstack plan).' : ''}`);
+      await sawWhat();
+      await record('first view', 0);
+      return log;
+    }
     await record('first view', 0);
 
     if (cfg.tabs) {
       const labels = await page.locator(cfg.tabs).evaluateAll((els) => els.map((el) => (el.textContent || '').replace(/\s+/g, ' ').trim()));
-      if (!labels.length) log.stops.push(`no rail tabs found (${cfg.tabs})`);
+      if (!labels.length) { log.stops.push(`no rail tabs found (${cfg.tabs})`); await sawWhat(); }
       for (let i = 0; i < labels.length; i++) {
         view = labels[i] || `tab ${i + 1}`;
         try {
@@ -216,6 +234,8 @@ if (pages.length && !cdnWait) {
         const had = new Set(w.main.contrast.map((c) => `${c.view}|${c.target}|${c.fg}|${c.bg}`));
         w.newContrast = w.branch.contrast.filter((c) => !had.has(`${c.view}|${c.target}|${c.fg}|${c.bg}`));
         for (const s of w.branch.stops) rec.fails.push(`${width} wide, branch: ${s}`);
+        const saw = w.branch.saw || w.main.saw;
+        if (saw) rec.fails.push(`${width} wide: the page was at \`${saw.url}\`, titled "${saw.title}", and showed: "${saw.text}"`);
         for (const s of w.main.stops) rec.fails.push(`${width} wide, main: ${s}`);
         if (w.newErrors.length) rec.fails.push(`${width} wide: ${w.newErrors.length} console error(s) the branch adds`);
         const gone = new Set(w.main.cdn.map((c) => keyOf(c.url)));
