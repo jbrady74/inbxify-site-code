@@ -104,7 +104,8 @@ async function signIn(ctx) {
     await page.goto(SITE + CFG.loginAt, { waitUntil: 'domcontentloaded', timeout: 45000 });
     await page.waitForFunction(() => window.$memberstackDom && typeof window.$memberstackDom.loginMemberEmailPassword === 'function', null, { timeout: 30000 });
     const res = await page.evaluate(async ([email, password]) => {
-      try { const r = await window.$memberstackDom.loginMemberEmailPassword({ email, password }); return { ok: !!(r && r.data && r.data.member), id: r && r.data && r.data.member && r.data.member.id }; }
+      try { const r = await window.$memberstackDom.loginMemberEmailPassword({ email, password }); const m = r && r.data && r.data.member;
+        return { ok: !!m, id: m && m.id, plans: ((m && m.planConnections) || []).map((p) => `${p.planId} (${p.status || (p.active ? 'active' : 'not active')})`) }; }
       catch (e) { return { ok: false, why: String((e && e.message) || e).slice(0, 200) }; }
     }, [EMAIL, PASSWORD]);
     await sleep(1200);
@@ -161,8 +162,19 @@ async function pass(ctx, name, cfg, which, width) {
           text: ((b && b.innerText) || '').replace(/\s+/g, ' ').trim().slice(0, 240) +
             ` [body: ${b ? b.children.length : 0} elements, display ${cs && cs.display}, visibility ${cs && cs.visibility}, opacity ${cs && cs.opacity}, height ${b && b.scrollHeight}; html display ${hs.display}, visibility ${hs.visibility}; gated elements ${document.querySelectorAll('[data-ms-content]').length}; member ${(() => { try { return localStorage.getItem('_ms-mem') ? 'in storage' : 'not in storage'; } catch (e) { return '?'; } })()}]` };
       });
+      log.saw.text += ` [the server sent: ${log.doc || 'unknown'}; the window went to: ${navs.join(' then ')}]`;
     } catch { /* the page is gone */ }
   }
+
+  const navs = [];
+  page.on('framenavigated', (f) => { if (f === page.mainFrame()) navs.push(new URL(f.url()).pathname); });
+  page.on('response', async (r) => {
+    try {
+      if (r.request().resourceType() !== 'document' || r.frame() !== page.mainFrame()) return;
+      const t = await r.text().catch(() => '');
+      log.doc = `${r.status()}, ${t.length} characters, ${/<body[\s>]/i.test(t) ? 'has a body' : 'no body'}`;
+    } catch { /* gone */ }
+  });
 
   const address = `${SITE}${cfg.path}?ixbranch=${which === 'main' ? 'off' : encodeURIComponent(BRANCH)}`;
   try {
@@ -240,6 +252,7 @@ if (pages.length && !cdnWait) {
         if (cfg.login) {
           const s = await signIn(ctx);
           if (!s.ok) { rec.fails.push(`${width} wide: the agent member could not sign in${s.why ? ' (' + s.why + ')' : ''}.`); continue; }
+          result.member = { id: s.id, plans: s.plans || [] };
         }
         w.main = await pass(ctx, name, cfg, 'main', width);
         w.branch = await pass(ctx, name, cfg, 'branch', width);
@@ -268,6 +281,7 @@ const cell = (s) => String(s == null ? '' : s).replace(/\|/g, '\\|').replace(/\n
 md.push(`### Pages: ${result.failed ? 'FAILED' : 'passed'}`);
 md.push('');
 for (const n of result.notes) md.push(n, '');
+if (result.member) md.push(`The agent member \`${result.member.id}\` has ${result.member.plans.length} Memberstack plan(s)${result.member.plans.length ? ': ' + result.member.plans.map((x) => '`' + x + '`').join(', ') : ''}.`, '');
 for (const p of result.pages) {
   md.push(`#### ${p.page}: ${p.fails.length ? 'FAILED' : 'passed'}`);
   md.push('');
