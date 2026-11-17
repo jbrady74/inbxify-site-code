@@ -1,0 +1,109 @@
+# .github/workflows/checks.yml
+# INBXIFY · Agent Groundwork G2 · the automatic checks on agent branches (scoping §3).
+# On every push to an agent- or reskin- branch: scan the CSS the branch adds, open each changed page on the TEST
+# title on main and on the branch (every rail tab, 1440 and 390 wide), and post the report on the pull request.
+# Read-only: pages are opened and rail tabs clicked; nothing is typed or saved.
+# A red run means the branch is not ready for Jeff to merge. Merging to main is going live, and only Jeff merges.
+# Secrets: IX_AGENT_EMAIL, IX_AGENT_PASSWORD (the agent Memberstack member). Pictures go to the check-reports branch.
+name: Checks
+
+on:
+  push:
+    branches:
+      - 'agent-**'
+      - 'reskin-**'
+  pull_request:
+    types: [opened, reopened]
+  workflow_dispatch:
+    inputs:
+      pages:
+        description: 'Pages to open: auto (changed pages), all, or a list such as ta,ipp'
+        default: auto
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ix-checks
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       (startsWith(github.head_ref, 'agent-') || startsWith(github.head_ref, 'reskin-')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      REPO: ${{ github.repository }}
+      BRANCH: ${{ github.head_ref || github.ref_name }}
+      OUT: check-out
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Note the commit being checked
+        run: echo "SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Build the version lists (not committed here; the Loaders Action does that)
+        run: node tools/build-loaders.mjs
+      - name: Scan the CSS the branch adds
+        id: css
+        continue-on-error: true
+        run: node tools/scan-css.mjs
+      - name: Install the browser
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1 @axe-core/playwright@4
+          npx playwright install --with-deps chromium
+      - name: Open the changed pages on main and on the branch
+        id: pages
+        continue-on-error: true
+        env:
+          PAGES: ${{ github.event.inputs.pages || 'auto' }}
+          IX_AGENT_EMAIL: ${{ secrets.IX_AGENT_EMAIL }}
+          IX_AGENT_PASSWORD: ${{ secrets.IX_AGENT_PASSWORD }}
+        run: node tools/check-pages.mjs
+      - name: Put the pictures on the check-reports branch
+        if: always()
+        run: |
+          set -e
+          [ -d "$OUT/shots" ] && [ -n "$(ls -A "$OUT/shots")" ] || { echo "no pictures"; exit 0; }
+          URL="https://x-access-token:${{ github.token }}@github.com/${REPO}.git"
+          REP="$RUNNER_TEMP/rep"
+          git clone --quiet --depth 1 --branch check-reports "$URL" "$REP" 2>/dev/null || { mkdir -p "$REP"; git -C "$REP" init --quiet; }
+          rm -rf "$REP/.git" "$REP/$BRANCH"
+          mkdir -p "$REP/$BRANCH"
+          cp "$OUT"/shots/* "$REP/$BRANCH/"
+          printf '# check-reports\n\nPictures from the Checks Action, one folder per checked branch. Rebuilt on every run; never merged.\n' > "$REP/README.md"
+          cd "$REP"
+          git init --quiet
+          git checkout --quiet -b check-reports
+          git config user.name "inbxify-checks"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit --quiet -m "check pictures"
+          git push --quiet --force "$URL" check-reports
+      - name: Post the report
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node tools/post-report.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: check-report
+          path: check-out
+          retention-days: 14
+      - name: Pass or fail
+        if: always()
+        run: |
+          if [ "${{ steps.css.outcome }}" != "success" ] || [ "${{ steps.pages.outcome }}" != "success" ]; then
+            echo "Checks failed. The report is on this run's summary page and on the pull request."
+            exit 1
+          fi
