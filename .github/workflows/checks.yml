@@ -25,7 +25,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: ix-checks
+  group: ix-checks-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -75,20 +75,25 @@ jobs:
           set -e
           [ -d "$OUT/shots" ] && [ -n "$(ls -A "$OUT/shots")" ] || { echo "no pictures"; exit 0; }
           URL="https://x-access-token:${{ github.token }}@github.com/${REPO}.git"
-          REP="$RUNNER_TEMP/rep"
-          git clone --quiet --depth 1 --branch check-reports "$URL" "$REP" 2>/dev/null || { mkdir -p "$REP"; git -C "$REP" init --quiet; }
-          rm -rf "$REP/.git" "$REP/$BRANCH"
-          mkdir -p "$REP/$BRANCH"
-          cp "$OUT"/shots/* "$REP/$BRANCH/"
-          printf '# check-reports\n\nPictures from the Checks Action, one folder per checked branch. Rebuilt on every run; never merged.\n' > "$REP/README.md"
-          cd "$REP"
-          git init --quiet
-          git checkout --quiet -b check-reports
-          git config user.name "inbxify-checks"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit --quiet -m "check pictures"
-          git push --quiet --force "$URL" check-reports
+          for TRY in 1 2 3 4 5; do
+            REP="$RUNNER_TEMP/rep-$TRY"
+            OLD=$(git ls-remote "$URL" refs/heads/check-reports | cut -f1)
+            git clone --quiet --depth 1 --branch check-reports "$URL" "$REP" 2>/dev/null || { mkdir -p "$REP"; }
+            rm -rf "$REP/.git" "$REP/$BRANCH"
+            mkdir -p "$REP/$BRANCH"
+            cp "$OUT"/shots/* "$REP/$BRANCH/"
+            printf '# check-reports\n\nPictures from the Checks Action, one folder per checked branch. Rebuilt on every run; never merged.\n' > "$REP/README.md"
+            git -C "$REP" init --quiet
+            git -C "$REP" checkout --quiet -b check-reports
+            git -C "$REP" config user.name "inbxify-checks"
+            git -C "$REP" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git -C "$REP" add -A
+            git -C "$REP" commit --quiet -m "check pictures"
+            # another branch's run may have pushed in between: only replace the copy we read, else read again
+            if git -C "$REP" push --quiet --force-with-lease="check-reports:${OLD}" "$URL" check-reports; then exit 0; fi
+            sleep $((TRY * 4))
+          done
+          echo "the pictures could not be pushed"; exit 1
       - name: Post the report
         if: always()
         env:
