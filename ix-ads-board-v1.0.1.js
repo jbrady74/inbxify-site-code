@@ -1,14 +1,15 @@
-// ix-ads-board-v1.0.0.js
+// ix-ads-board-v1.0.1.js
 // ============================================================
 // INBXIFY · ix-ads-board · the Ads board, shared by the Publisher Portal and the T-A Ads tab
 //
+// v1.0.1 (18 Nov 2026): version only, so the file pair matches ix-ads-board-v1.0.1.css (tokens). No code change.
 // v1.0.0 (18 Nov 2026, Ad Maker Build S1) — LIFTED FROM ps-ads v1.0.12, ONE COPY FOR BOTH SIDES.
 //   Everything ps-ads drew is here, unchanged for the Portal: the two boards, the client list with coverage
 //   marks (B S Sp T: green dot running, red ring sold with nothing running, dash not sold), the open row's
 //   Current · Pending · Other tabs, four equal Current cards, staging in gold, the save bar, the Ask email box,
 //   Request new ads and Withdraw. ps-ads v1.0.13 is now a thin file that mounts this with side 'publisher'.
 //   Every class keeps its ps-ad- name so the Portal's stylesheet rules apply as before; the stylesheet itself
-//   moved to ix-ads-board-v1.0.0.css, which also carries the Portal's --ps-* tokens on .ix-ab for pages that do
+//   moved to ix-ads-board-v1.0.1.css, which also carries the Portal's --ps-* tokens on .ix-ab for pages that do
 //   not load ps-shell (T-A).
 //
 //   THE TWO SIDES (opts.side)
@@ -47,7 +48,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.0', FILE = 'ix-ads-board-v' + VERSION + '.js';
+  var VERSION = '1.0.1', FILE = 'ix-ads-board-v' + VERSION + '.js';
   var SH = ['banner', 'sidebar', 'splash', 'text'];                        // HC-P-PP8-8
   var SHN = { banner: 'Banner', sidebar: 'Sidebar', splash: 'Splash', text: 'Text ad' };
   var W = {                                                              // HC-P-PP8-7

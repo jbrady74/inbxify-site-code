@@ -1,12 +1,13 @@
-/* ix-ads-board-v1.0.0.css */
+/* ix-ads-board-v1.0.1.css */
 /* ============================================================
    INBXIFY · ix-ads-board · the Ads board shared by the Publisher Portal and the T-A Ads tab
+   v1.0.1 (18 Nov 2026): tokens only — every colour and font size reads ix-tokens v1.0.5 (--ps-*, --ix-fs-*); no other change.
    v1.0.0 (18 Nov 2026, Ad Maker Build S1) — LIFTED FROM ps-ads-v1.0.12.css, unchanged for the Portal.
    Every class keeps its ps-ad- name. New here:
    · .ix-ab carries the Portal's --ps-* tokens itself, so a page without ps-shell (T-A) gets the same look.
    · .ps-ad-two.stack  the inbxify side: the two boards stacked full width, no height cap (the page grows).
    · .ps-ad-brow.has-act  a board row carrying a button (Make sidebar, Open in Ad Maker) at its right.
-   Companion JS: ix-ads-board-v1.0.0.js. ps-ads v1.0.13 loads this file in place of ps-ads-v1.0.12.css.
+   Companion JS: ix-ads-board-v1.0.1.js. ps-ads v1.0.13 loads this file in place of ps-ads-v1.0.12.css.
    ============================================================ */
 .ps-portal{--ps-gold:var(--ps-gold);--ps-gold-glow:var(--ps-gold-glow);--ps-ok:var(--ps-ok);--ps-ok-pale:var(--ps-green-pale)}
 .ps-ad{position:relative}

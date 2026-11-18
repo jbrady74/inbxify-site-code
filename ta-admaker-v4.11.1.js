@@ -1,4 +1,4 @@
-/* ta-admaker-v4.11.0.js
+/* ta-admaker-v4.11.1.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
 
@@ -13,6 +13,7 @@
    ix-success-toast, and AFTER ta-studio (v1_4_13 dispatches
    std:panel:admaker). Companion: ta-admaker-v1.1.0.css (head).
 
+   ── v4.11.1 (18 Nov 2026) ── version only: pairs with ta-admaker-v4.11.1.css (tokens). No code change. ──
    ── v4.11.0 · Ad Maker Build S1 (18 Nov 2026) ── THE ADS RAIL TAB, AND DESIGN IN CANVA ──
    · Ad Maker leaves TA Studio. It lives in the T-A Ads rail tab (#ta-ads-mount), which this file also draws:
      header (Ads · ⓘ · + New ad), the strip All ads · Ad Maker · Ad form · Upload a file · Paste ad copy ·
@@ -38,7 +39,7 @@
    · Quill deep link: ?admaker=open&customer=<id>&shape= opens the Ads tab on Ad Maker with that job.
    HARDCODING: HC-P-AMC1-1 CANVA_WORDS; HC-P-AMC1-2 CANVA_SIZES; HC-P-AMC1-3 CANVA_POLL_MS 3 s; HC-P-AMA1-1 ADS_TABS;
    HC-P-AMA1-2 ADS_IDEAS; HC-P-AMA1-3 ADS_TILES; default canvaUrl https://ix-canva.jeff-2cd.workers.dev.
-   Companion: ta-admaker-v4.11.0.css. Needs ix-ads-board v1.0.0, ix-sales v1.3.7, ix-canva v0.2.0, ta-asf (Ad form).
+   Companion: ta-admaker-v4.11.1.css. Needs ix-ads-board v1.0.0, ix-sales v1.3.7, ix-canva v0.2.0, ta-asf (Ad form).
 
    ── v1.5.0 · SS-Fork B · Creative S7 (7 Nov 2026, logo read by Worker) ──
    Needs extract-client v1.4.0 (/logo). Logo files are no longer read
@@ -851,7 +852,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.11.0', CSS_FILE = 'ta-admaker-v4.11.0.css';   // v4.11.0: the Ads tab and the Canva screens
+  var VERSION = '4.11.1', CSS_FILE = 'ta-admaker-v4.11.1.css';   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
   var ADVICE_BIGGER = 1.25;   // HC-P-SSB8-25
