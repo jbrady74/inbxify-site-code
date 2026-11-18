@@ -1,5 +1,24 @@
 // ============================================================
-// ta-studio-v1.4.12.js
+// ta-studio-v1.4.14.js
+//
+// v1.4.14 (18 Nov 2026, Ad Maker Build S1): AD MAKER LEAVES STUDIO.
+//   Ad Maker now lives in the T-A Ads rail tab (ta-admaker v4.11.0 draws that tab into #ta-ads-mount). The
+//   "Ad Maker" sub-tab, its panel and its TAB_INFO entry are gone from Studio; setPanel's admaker branch stays
+//   dormant (nothing dispatches it). The Create tab on the strip is untouched here: the rail's Create tab is
+//   ta-chrome's (v1.0.10 takes it off the rail; each library tab has its own New button).
+//
+// v1.4.13 (6 Nov 2026, SS-Fork B · Creative S5 — Ad Maker):
+//   Ruled 5 Nov (S2): the Ad Reformat sub-tab is renamed Ad Maker and
+//   the Generate sub-tab folds into it ("No print ad").
+//     - Strip: "Ad Maker" on panel key `admaker` replaces "Ad Reformat"
+//       (key `generator`); the "Generate" button (key `adgen`) is gone.
+//     - Panel: <div data-std-panel-body="admaker"> with an empty
+//       #std-admaker-mount; setPanel dispatches std:panel:admaker and
+//       ta-admaker-v1.0.0.js mounts into it (Converter pattern).
+//     - TAB_INFO: one entry, admaker, naming the Workers and scenarios
+//       Ad Maker talks to; the generator and adgen entries are gone.
+//   ta-adreformat v0.6.0 and ta-adgen v0.1.0 are retired: take both
+//   script tags off the TITLES-ADMIN Template body. Nothing else changes.
 //
 // v1.4.12 (28 Oct 2026, Code-Built Site S6 — the byline is a choice, Jeff):
 //   Two switches in the Writers block of the article edit form, both
@@ -1485,7 +1504,7 @@
     //    Previously the header badge hardcoded 'v1.4.1' and drifted
     //    eight patches out of date. Bump THIS on every version bump;
     //    the ⓘ popover reads it. ──
-    var STD_VERSION = '1.4.12';
+    var STD_VERSION = '1.4.14';
 
     // ── v1.4.10: live TITLE name for the .ix-hdr subheader.
     //    Reads the same already-Webflow-bound hidden element PubPlan
@@ -1636,12 +1655,6 @@
           '<button class="ix-btn ix-btn--tab" data-std-panel="converter">' +
             '<span>Convert</span>' +
           '</button>' +
-          '<button class="ix-btn ix-btn--tab" data-std-panel="generator">' +
-            '<span>Ad Reformat</span>' +
-          '</button>' +
-          '<button class="ix-btn ix-btn--tab" data-std-panel="adgen">' +
-            '<span>Generate</span>' +
-          '</button>' +
           // v1.3.8: Create tab — visually distinct (gold pill, pushed
           // right via margin-left:auto). Click does NOT switch panels;
           // it toggles the create dropdown below via data-std-create.
@@ -1708,20 +1721,7 @@
         '<div class="std-panel" data-std-panel-body="converter">' +
           '<div id="std-converter-mount"></div>' +
         '</div>' +
-        // ── Tab 6: Ad Reformat (generator key; reformatter self-mounts
-        //    into #std-generator-mount which it creates in this panel) ──
-        '<div class="std-panel" data-std-panel-body="generator">' +
-          '<div class="std-placeholder">' +
-            '<div class="std-placeholder-icon">\u2728</div>' +
-            '<div class="std-placeholder-title">Ad Reformat</div>' +
-            '<div class="std-placeholder-sub">Drop an existing ad; rebuild it at newsletter sizes.</div>' +
-          '</div>' +
-        '</div>' +
-        // ── Tab 7: Generate (from-scratch ad creator; adgen tool
-        //    mounts into #std-adgen-mount on std:panel:adgen) v1.4.8 ──
-        '<div class="std-panel" data-std-panel-body="adgen">' +
-          '<div id="std-adgen-mount"></div>' +
-        '</div>' +
+        // v1.4.14: the Ad Maker panel (v1.4.13) is gone; Ad Maker is the T-A Ads rail tab.
       '</div>';
 
     // ── Sub-tab wiring ──
@@ -1850,21 +1850,6 @@
         desc: 'Convert uploaded files before they enter the MEDIA pipeline. Tools: Reduce (resize/compress images) and SVG to JPEG. Output can be downloaded or saved to the Media Library.',
         scenarios: [
           { name: 'Scenario B — File Conditioner', route: 'createMediaFromBrowserUpload', webhook: 'TA_CONFIG.makeConditioner', notes: 'Fires only when Save to Media Library is chosen. Browser-only otherwise.' }
-        ]
-      },
-      generator: {
-        title: 'Ad Reformat',
-        desc: 'Drop an existing advertiser ad; the Reformatter reads it apart (brand colors, logo, image regions, text) and rebuilds it at newsletter sizes (700\u00d7235 banner).',
-        scenarios: [
-          { name: 'Worker — ix-adreformat', route: 'extract', webhook: 'ix-adreformat.jeff-2cd.workers.dev', notes: 'Claude vision decomposes the ad into reusable parts.' },
-          { name: 'Scenario B + 104', route: 'createMedia + createAsset', webhook: 'TA_CONFIG.makeConditioner / makeCreateAssets', notes: 'Saves the finished banner as a customer-assigned AD.' }
-        ]
-      },
-      adgen: {
-        title: 'Generate',
-        desc: 'Build an advertiser ad from scratch \u2014 blank canvas, brand kit (logo, colors, fonts), add text and elements \u2014 for advertisers with no existing ad to reformat.',
-        scenarios: [
-          { name: 'Scenario B + 104', route: 'createMedia + createAsset', webhook: 'TA_CONFIG.makeConditioner / makeCreateAssets', notes: 'Saves the finished ad as a customer-assigned AD (same chain as Ad Reformat).' }
         ]
       }
     };
@@ -2088,10 +2073,9 @@
         try { window.dispatchEvent(new CustomEvent('std:panel:converter')); }
         catch (e) { /* noop */ }
         document.body.classList.remove('studio-editing');
-      } else if (name === 'adgen') {
-        // v1.4.8: from-scratch ad generator. ta-adreformat (or the
-        // adgen tool) listens for this and mounts into #std-adgen-mount.
-        try { window.dispatchEvent(new CustomEvent('std:panel:adgen')); }
+      } else if (name === 'admaker') {
+        // v1.4.13: ta-admaker listens for this and mounts into #std-admaker-mount.
+        try { window.dispatchEvent(new CustomEvent('std:panel:admaker')); }
         catch (e) { /* noop */ }
         document.body.classList.remove('studio-editing');
       } else {

@@ -1,11 +1,12 @@
-/* ps-ads-v1.0.12.css */
+/* ix-ads-board-v1.0.0.css */
 /* ============================================================
-   INBXIFY · Publisher Portal · the Ads tab
-   v1.0.0 (10 Nov 2026, Publisher Portal S8) — FIRST BUILD, from portal Ads
-   mockup v0.10. Every class is namespaced ps-ad- (the site owns the generic
-   names; see ps-obligations v1.0.3). Colours and type are the shell's
-   --ps-* tokens. Gold (--ps-gold) marks anything Save will change; one small
-   Cancel link sits beside every staged thing. Companion JS: ps-ads-v1.0.0.js.
+   INBXIFY · ix-ads-board · the Ads board shared by the Publisher Portal and the T-A Ads tab
+   v1.0.0 (18 Nov 2026, Ad Maker Build S1) — LIFTED FROM ps-ads-v1.0.12.css, unchanged for the Portal.
+   Every class keeps its ps-ad- name. New here:
+   · .ix-ab carries the Portal's --ps-* tokens itself, so a page without ps-shell (T-A) gets the same look.
+   · .ps-ad-two.stack  the inbxify side: the two boards stacked full width, no height cap (the page grows).
+   · .ps-ad-brow.has-act  a board row carrying a button (Make sidebar, Open in Ad Maker) at its right.
+   Companion JS: ix-ads-board-v1.0.0.js. ps-ads v1.0.13 loads this file in place of ps-ads-v1.0.12.css.
    ============================================================ */
 .ps-portal{--ps-gold:#C4A35A;--ps-gold-glow:rgba(196,163,90,.22);--ps-ok:#1E6A3E;--ps-ok-pale:#E2F1E9}
 .ps-ad{position:relative}
@@ -269,3 +270,31 @@ textarea.ps-ad-in{height:auto;min-height:110px;width:100%;padding:9px 10px;line-
 .ps-ad-lr.ps-ad-openrow .chv svg{transform:rotate(180deg)}
 @media (max-width:1000px){.ps-ad-two{grid-template-columns:1fr}}
 @media (max-width:760px){.ps-ad-lr{grid-template-columns:minmax(0,1fr) auto 26px}.ps-ad-lr>:nth-child(2),.ps-ad-lr>:nth-child(3){display:none}}
+
+/* v1.0.0 ix-ads-board · tokens on the board itself, for pages without ps-shell (T-A) */
+.ix-ab{--ps-ink:#22252B;--ps-ink-2:#3A3E46;--ps-muted:#5A5E66;--ps-paper:#FFFFFF;--ps-ground:#FAF6EE;--ps-ground-2:#F1ECE2;--ps-rule:#D9D2C3;--ps-rule-soft:#ECE6DA;
+  --ps-row-hover:#FBF8F2;--ps-row-open:#F4EEE2;--ps-red:#DF4128;--ps-red-deep:#C2271A;--ps-red-pale:#FBE3DD;--ps-blue:#5B7FFF;--ps-blue-text:#3550C8;--ps-blue-pale:#E6EBFF;
+  --ps-green:#0F5C3F;--ps-green-pale:#E2F1E9;--ps-amber:#7A4E12;--ps-coral:#F48164;--ps-cream:#FBEBCB;--ps-gold:#C4A35A;--ps-gold-glow:rgba(196,163,90,.22);--ps-ok:#1E6A3E;--ps-ok-pale:#E2F1E9;--ps-purple:#7A4FD1;
+  --ps-serif:Newsreader,Georgia,serif;--ps-sans:Sen,system-ui,sans-serif;--ps-caps:'Josefin Sans',system-ui,sans-serif;
+  font-family:var(--ps-sans);color:var(--ps-ink);font-size:14px;line-height:1.45}
+.ix-ab .ps-titlerow{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.ix-ab .ps-titlerow h1{margin:0;font:400 30px/1.1 var(--ps-serif);letter-spacing:-.3px}
+.ix-ab .ps-titlerow .sp{flex:1}
+.ix-ab .ps-err{background:var(--ps-red-pale);color:var(--ps-red-deep);padding:12px 14px;border:1px solid var(--ps-red-deep)}
+/* the inbxify side: boards stacked full width, the page grows */
+.ps-ad-two.stack{grid-template-columns:1fr}
+.ps-ad-two.stack .ps-ad-box .bb{height:auto!important;max-height:none;overflow:visible}
+.side-inbxify .ps-ad-box.b-act .bh{border-left-color:var(--ps-purple)}
+.side-inbxify .ps-ad-box.b-act .bh .n{color:var(--ps-purple);font-weight:700}
+.side-inbxify .ps-ad-box.b-wait .bh{border-left-color:var(--ps-red-deep)}
+.side-inbxify .ps-ad-step.s-ix{color:var(--ps-ink);font-weight:700}
+.side-inbxify .ps-ad-step.s-you{color:var(--ps-ink-2);font-weight:400}.side-inbxify .ps-ad-step.s-you i{background:var(--ps-red-deep)}
+.side-inbxify .ps-ad-badge.b-you{background:transparent;border:1.5px solid var(--ps-red-deep);color:var(--ps-red-deep);padding:3.5px 10.5px}
+.side-inbxify .ps-ad-badge.b-ix{background:var(--ps-purple);border-color:var(--ps-purple);color:var(--ps-paper)}
+/* a board row carrying a button */
+.ps-ad-brow{position:relative}
+.ps-ad-brow.has-act{grid-template-columns:minmax(0,1fr) auto auto 26px}
+.ps-ad-brow .act{display:flex;align-items:center}
+.ps-ad-brow .act .ix-btn{white-space:nowrap}
+.ps-ad-shp.noad .ps-ad-meta .ps-ad-acts .ix-btn{width:100%;justify-content:center}
+@media (max-width:760px){.ps-ad-brow.has-act{grid-template-columns:minmax(0,1fr) 26px}.ps-ad-brow.has-act .act,.ps-ad-brow.has-act .ps-ad-cov{display:none}}
