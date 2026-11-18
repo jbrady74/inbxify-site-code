@@ -1,8 +1,32 @@
-// workers/ix-canva/ix-canva-v0.3.0.js
+// workers/ix-canva/ix-canva-v0.3.1.js
 // ============================================================
 // INBXIFY · Cloudflare Worker · ix-canva
 // Host: ix-canva.jeff-2cd.workers.dev
 //
+// v0.3.1 (18 Nov 2026, Ad Maker Build S3) — DRAFTS THAT STAY, APPROVED ADS FROZEN.
+//   Rulings (Jeff, 18 Nov): a draft stays in Canva and is listed under its customer; an approved ad is frozen, so
+//   Edit in Canva on it starts a copy; approved designs are marked in Canva. Canva's API cannot rename a design
+//   (checked 18 Nov: the Designs group has create, list, get, pages, export formats, dataset), so the mark is an
+//   "Approved" subfolder inside the customer's folder. Edit in Canva works from the design id, so the move hides nothing.
+//   · One DRAFT RECORD per design (KV draft:<customer id>:<design id>, no expiry): { designId, customer, shape, title,
+//     state draft | sent | approved, adId, made, updated, exportedAt, folderId, copiedFrom }. Jobs still lapse after
+//     30 days; the record does not, so a draft never drops off the list on its own. Written when a job is made,
+//     opened again or exported. Jobs from before v0.3.1 are read into records once (the first GET /drafts).
+//   · GET  /drafts?customer=<id>[,<id>…]   the records of those customers, newest first, each with Canva's thumbnail
+//                                          (15-minute link) and current title. A design deleted in Canva drops off.
+//          /drafts (no customer)           every record, no thumbnails (the Ads tab's counts).
+//   · POST /design/state { designId, customer{id,name}, shape?, state, adId? }   Ad Maker records what became of a
+//     design: sent (it has an ADS row, Pending or Sent back) or approved. approved moves the design into the
+//     customer's "Approved" subfolder (made on first use). Answers { draft, moved }.
+//   · POST /draft/remove { designId, customerId }   takes a draft off the list. The design stays in Canva (Canva's API
+//     has no delete). Only a draft: a sent or approved design keeps its record.
+//   · POST /job/from-design   an approved design is never opened for editing: the Worker copies it (Canva "copy of an
+//     existing design", a preview API), files the copy in the customer's folder and opens the copy as a new draft.
+//     { copy:true } asks for a copy of any design. Answers copied:true and copiedFrom.
+//   · POST /design/link       refuses an approved design (409) unless { view:true }.
+//   · api() errors carry Canva's status (canvaStatus), so a 404 on a design reads as "deleted in Canva".
+//   HARDCODING: HC-P-CANVA1-12 APPROVED_FOLDER "Approved"; HC-P-CANVA1-13 DRAFT_THUMBS 24 (designs looked up per call);
+//   HC-P-CANVA1-14 DRAFT_STATES draft / sent / approved.
 // v0.3.0 (18 Nov 2026, Ad Maker Build S1) — THE INBXIFY APP INSIDE CANVA.
 //   The inbxify Canva app (side panel, canva-app/ in the repo) shows the match sheet for the design that is open: the
 //   colours with hex codes, each line of text with the closest Canva font, weight, size and colour, and Add buttons
@@ -67,8 +91,11 @@
 // v0.1.3 (18 Nov 2026) — the test Worker: /connect, /test, /return; see the git history for its notes.
 // ============================================================
 
-const VERSION = '0.3.0';
+const VERSION = '0.3.1';
 const SHEET_MAX = 65536;   // HC-P-CANVA1-10
+const APPROVED_FOLDER = 'Approved';   // HC-P-CANVA1-12 · v0.3.1: the subfolder approved designs move to
+const DRAFT_THUMBS = 24;              // HC-P-CANVA1-13 · v0.3.1: designs looked up in Canva per GET /drafts
+const DRAFT_STATES = ['draft', 'sent', 'approved'];   // HC-P-CANVA1-14
 const SCAN_MAX = 1000;     // HC-P-CANVA1-11
 const CANVA_API = 'https://api.canva.com/rest/v1';
 const CANVA_AUTH = 'https://www.canva.com/api/oauth/authorize';
@@ -111,11 +138,14 @@ export default {
       m = p.match(/^\/job\/([A-Za-z0-9_-]+)\/sheet$/);
       if (m && req.method === 'POST') { await authorize(env, req, origin); return json(env, origin, await jobSheet(env, m[1], await readJson(req))); }   // v0.3.0
       if (p === '/app/job' && req.method === 'GET') return json(env, origin, await appJob(env, req));   // v0.3.0: the Canva app
+      if (p === '/drafts' && req.method === 'GET') { await authorize(env, req, origin); return json(env, origin, await draftsList(env, url)); }   // v0.3.1
+      if (p === '/design/state' && req.method === 'POST') { const who = await authorize(env, req, origin); return json(env, origin, await designState(env, await readJson(req), who)); }   // v0.3.1
+      if (p === '/draft/remove' && req.method === 'POST') { await authorize(env, req, origin); return json(env, origin, await draftRemove(env, await readJson(req))); }   // v0.3.1
       if (p === '/design/link' && req.method === 'POST') { await authorize(env, req, origin); return json(env, origin, await designLink(env, await readJson(req))); }
       return json(env, origin, { ok: false, error: 'Not found' }, 404);
     } catch (e) {
       const status = e && e.status ? e.status : 500, msg = (e && e.message) || String(e);
-      if (req.headers.get('Accept') && /text\/html/.test(req.headers.get('Accept')) && !p.startsWith('/job') && !p.startsWith('/design') && !p.startsWith('/app')) return html(page('Something went wrong', `<p class="bad">${esc(msg)}</p><p><a href="/test">Back to the test page</a></p>`), status);
+      if (req.headers.get('Accept') && /text\/html/.test(req.headers.get('Accept')) && !p.startsWith('/job') && !p.startsWith('/design') && !p.startsWith('/app') && !p.startsWith('/draft')) return html(page('Something went wrong', `<p class="bad">${esc(msg)}</p><p><a href="/test">Back to the test page</a></p>`), status);
       return json(env, origin, { ok: false, error: msg }, status);
     }
   }
@@ -223,7 +253,7 @@ async function api(env, path, opts) {
   if (body && typeof body === 'object' && !(body instanceof ArrayBuffer) && !(body instanceof Uint8Array)) { headers['Content-Type'] = 'application/json'; body = JSON.stringify(body); }
   const r = await fetch(CANVA_API + path, { method: opts.method || 'GET', headers, body });
   const txt = await r.text(); let j = null; try { j = JSON.parse(txt); } catch (e) {}
-  if (!r.ok) throw httpErr(502, 'Canva ' + (opts.method || 'GET') + ' ' + path + ' answered ' + r.status + (j && (j.message || j.code) ? ': ' + (j.code ? j.code + ' · ' : '') + (j.message || '') : txt ? ': ' + txt.slice(0, 300) : ''));
+  if (!r.ok) { const e = httpErr(502, 'Canva ' + (opts.method || 'GET') + ' ' + path + ' answered ' + r.status + (j && (j.message || j.code) ? ': ' + (j.code ? j.code + ' · ' : '') + (j.message || '') : txt ? ': ' + txt.slice(0, 300) : '')); e.canvaStatus = r.status; throw e; }   // v0.3.1: the status travels
   return j;
 }
 async function poll(env, path, pick) {
@@ -330,6 +360,7 @@ async function jobCreate(env, b, who) {
   const job = { id, designId: design.id, customer, shape, title, taUrl: String(b.taUrl || ''), folderId, assets: assets.map(a => a.id), status: 'open', notes, by: who.email || who.memberId, made: new Date().toISOString(), ms: Date.now() - t0,
     words: cleanWords(b.words), colours: cleanColours(b.colours), sheetState: b.sheetPending ? 'pending' : 'none' };   // v0.3.0
   await saveJob(env, job);
+  await draftTouch(env, job, { folderId });   // v0.3.1
   return { ok: true, job: jobOut(job), editUrl: editUrlWithState(design.urls.edit_url, id) };
 }
 async function carry(env, designId) {   // v0.3.0: a later job on the same design keeps the words and the sheet
@@ -337,14 +368,27 @@ async function carry(env, designId) {   // v0.3.0: a later job on the same desig
   return prev ? { words: prev.words || [], colours: prev.colours || [], sheet: prev.sheet || null, sheetState: prev.sheet ? 'ready' : 'none' } : {};
 }
 async function jobFromDesign(env, b, who) {
-  const designId = String(b.designId || '').trim(); if (!designId) throw httpErr(400, 'designId is required.');
-  const d = await api(env, '/designs/' + encodeURIComponent(designId));
-  const shape = SHAPES[String(b.shape)] ? String(b.shape) : '';
+  let designId = String(b.designId || '').trim(); if (!designId) throw httpErr(400, 'designId is required.');
   const customer = b.customer && typeof b.customer === 'object' ? { id: String(b.customer.id || ''), name: String(b.customer.name || '').trim() } : { id: '', name: '' };
+  let d = await api(env, '/designs/' + encodeURIComponent(designId));
+  const rec = await draftGet(env, customer.id, designId);
+  const shape = SHAPES[String(b.shape)] ? String(b.shape) : (rec && rec.shape) || '';
+  const carried = await carry(env, designId), notes = ['Opened again from a saved version'];
+  let copiedFrom = '', folderId = (rec && rec.folderId) || '';
+  if (b.copy || (rec && rec.state === 'approved')) {   // v0.3.1: an approved ad is frozen; the work goes on in a copy
+    const c = await api(env, '/designs', { method: 'POST', body: { type: 'design', design_id: designId } });
+    if (!c || !c.design || !c.design.id) throw httpErr(502, 'Canva did not answer with the copy.');
+    copiedFrom = designId; designId = c.design.id; d = c;
+    if (customer.name) { folderId = await folderFor(env, customer.name); await moveTo(env, folderId, designId); }
+    notes[0] = 'A copy of ' + copiedFrom + (rec && rec.state === 'approved' ? ' (approved, so it stays as it is)' : '');
+  }
   const id = rnd(9);
-  const job = { ...(await carry(env, designId)), id, designId, customer, shape, title: (d.design && d.design.title) || designId, taUrl: String(b.taUrl || ''), status: 'open', notes: ['Opened again from a saved version'], by: who.email || who.memberId, made: new Date().toISOString() };
+  const job = { ...carried, id, designId, customer, shape, title: (d.design && d.design.title) || designId, taUrl: String(b.taUrl || ''), status: 'open', notes, by: who.email || who.memberId, made: new Date().toISOString() };
+  if (folderId) job.folderId = folderId;
   await saveJob(env, job);
-  return { ok: true, job: jobOut(job), editUrl: editUrlWithState(d.design.urls.edit_url, id) };
+  if (copiedFrom) await env.CANVA_KV.put('design:' + designId, id, { expirationTtl: JOB_TTL });
+  const draft = await draftTouch(env, job, copiedFrom ? { state: 'draft', adId: '', copiedFrom, folderId } : (folderId ? { folderId } : {}));
+  return { ok: true, job: jobOut(job), editUrl: editUrlWithState(d.design.urls.edit_url, id), copied: !!copiedFrom, copiedFrom, draft };
 }
 async function jobGet(env, id) { return { ok: true, job: jobOut(await loadJob(env, id)) }; }
 async function jobExport(env, id, from) {
@@ -352,6 +396,7 @@ async function jobExport(env, id, from) {
   const url = await exportPng(env, job.designId, job.shape);
   job.status = 'exported'; job.exportUrl = url; job.exportedAt = new Date().toISOString(); job.exportFrom = from || 'page'; job.error = '';
   await saveJob(env, job);
+  await draftTouch(env, job, { exportedAt: job.exportedAt });   // v0.3.1
   return { ok: true, job: jobOut(job) };
 }
 async function jobPng(env, origin, id) {
@@ -364,12 +409,108 @@ async function jobPng(env, origin, id) {
 }
 async function designLink(env, b) {
   const designId = String(b.designId || '').trim(); if (!designId) throw httpErr(400, 'designId is required.');
+  const cust = b.customer && typeof b.customer === 'object' ? { id: String(b.customer.id || ''), name: String(b.customer.name || '').trim() } : { id: '', name: '' };
+  const rec = await draftGet(env, cust.id, designId);
+  if (rec && rec.state === 'approved' && !b.view) throw httpErr(409, 'That design is an approved ad, so it stays as it is. Edit in Canva starts a copy (POST /job/from-design).');   // v0.3.1
   const d = await api(env, '/designs/' + encodeURIComponent(designId));
   let state = String(b.jobId || '');
-  if (!state) { const id = rnd(9); await saveJob(env, { ...(await carry(env, designId)), id, designId, customer: b.customer || { id: '', name: '' }, shape: SHAPES[String(b.shape)] ? String(b.shape) : '', title: (d.design && d.design.title) || designId, taUrl: String(b.taUrl || ''), status: 'open', notes: ['Edit link'], made: new Date().toISOString() }); state = id; }
-  return { ok: true, jobId: state, editUrl: editUrlWithState(d.design.urls.edit_url, state), title: (d.design && d.design.title) || '' };
+  if (!state) { const id = rnd(9); const job = { ...(await carry(env, designId)), id, designId, customer: cust, shape: SHAPES[String(b.shape)] ? String(b.shape) : (rec && rec.shape) || '', title: (d.design && d.design.title) || designId, taUrl: String(b.taUrl || ''), status: 'open', notes: ['Edit link'], made: new Date().toISOString() }; await saveJob(env, job); if (!b.view) await draftTouch(env, job); state = id; }
+  return { ok: true, jobId: state, editUrl: editUrlWithState(d.design.urls.edit_url, state), viewUrl: (d.design.urls && d.design.urls.view_url) || '', title: (d.design && d.design.title) || '' };
 }
 
+// ── v0.3.1 · drafts: one record per design, kept until it is removed ──────
+function draftKey(custId, designId) { return 'draft:' + custId + ':' + designId; }
+async function draftGet(env, custId, designId) { return custId && designId ? await env.CANVA_KV.get(draftKey(custId, designId), 'json') : null; }
+async function draftTouch(env, job, patch) {   // makes or updates the record of a job's design; a job with no customer id (the test page) keeps none
+  const c = job.customer || {}; if (!c.id || !job.designId) return null;
+  const now = new Date().toISOString(), prev = await draftGet(env, c.id, job.designId);
+  const d = Object.assign({ designId: job.designId, customer: { id: c.id, name: c.name || '' }, shape: job.shape || '', title: job.title || '', state: 'draft', adId: '', made: job.made || now, by: job.by || '', folderId: job.folderId || '', exportedAt: '', copiedFrom: '' }, prev || {}, patch || {}, { updated: now, jobId: job.id || (prev && prev.jobId) || '' });
+  if (!d.shape && job.shape) d.shape = job.shape;
+  if (!d.customer.name && c.name) d.customer.name = c.name;
+  await env.CANVA_KV.put(draftKey(c.id, job.designId), JSON.stringify(d));   // no expirationTtl: a draft stays until it is removed
+  return d;
+}
+async function draftBackfill(env) {   // once: the jobs made before v0.3.1 become records (newest job per design wins)
+  if (await env.CANVA_KV.get('draftscan')) return 0;
+  let cursor, seen = 0; const best = new Map();
+  do {
+    const page = await env.CANVA_KV.list({ prefix: 'job:', cursor, limit: 1000 }); cursor = page.list_complete ? null : page.cursor;
+    for (const k of page.keys) { if (++seen > SCAN_MAX) break; const j = await env.CANVA_KV.get(k.name, 'json'); if (!j || !j.designId || !j.customer || !j.customer.id) continue; const key = j.customer.id + ':' + j.designId, b = best.get(key); if (!b || String(j.made) > String(b.made)) best.set(key, Object.assign({}, j, { exportedAt: (b && b.exportedAt) || j.exportedAt || '' })); else if (j.exportedAt && !b.exportedAt) b.exportedAt = j.exportedAt; }
+  } while (cursor && seen < SCAN_MAX);
+  let n = 0;
+  for (const j of best.values()) { if (await draftGet(env, j.customer.id, j.designId)) continue; await draftTouch(env, j, { exportedAt: j.exportedAt || '', folderId: j.folderId || '' }); n++; }
+  await env.CANVA_KV.put('draftscan', new Date().toISOString());
+  return n;
+}
+async function draftRecords(env, prefix) {
+  const out = []; let cursor;
+  do {
+    const page = await env.CANVA_KV.list({ prefix, cursor, limit: 1000 }); cursor = page.list_complete ? null : page.cursor;
+    const got = await Promise.all(page.keys.map(k => env.CANVA_KV.get(k.name, 'json'))); got.forEach(d => { if (d && d.designId) out.push(d); });
+  } while (cursor && out.length < SCAN_MAX);
+  return out;
+}
+async function draftsList(env, url) {
+  const backfilled = await draftBackfill(env);
+  const ids = String(url.searchParams.get('customer') || '').split(',').map(x => x.trim()).filter(x => /^[A-Za-z0-9_-]{6,40}$/.test(x)).slice(0, 50);
+  let recs = [];
+  if (ids.length) for (const id of ids) recs = recs.concat(await draftRecords(env, 'draft:' + id + ':'));
+  else recs = await draftRecords(env, 'draft:');
+  recs.sort((a, b) => String(b.updated || b.made).localeCompare(String(a.updated || a.made)));
+  let looked = 0;
+  if (ids.length) {   // with a customer named: Canva's thumbnail and title, and a design deleted in Canva drops off
+    const head = recs.slice(0, DRAFT_THUMBS); looked = head.length;
+    await Promise.all(head.map(async r => {
+      try { const d = (await api(env, '/designs/' + encodeURIComponent(r.designId))).design || {}; r.thumb = (d.thumbnail && d.thumbnail.url) || ''; if (d.title) r.title = d.title; r.canvaUpdated = d.updated_at ? new Date(d.updated_at * 1000).toISOString() : ''; }
+      catch (e) { if (e && e.canvaStatus === 404) { r.gone = true; await env.CANVA_KV.delete(draftKey(r.customer.id, r.designId)); } else r.thumbError = (e && e.message) || String(e); }
+    }));
+    recs = recs.filter(r => !r.gone);
+  }
+  return { ok: true, drafts: recs.map(draftOut), looked, backfilled };
+}
+function draftOut(d) { return { designId: d.designId, customer: d.customer, shape: d.shape || '', title: d.title || '', state: DRAFT_STATES.includes(d.state) ? d.state : 'draft', adId: d.adId || '', made: d.made || '', updated: d.updated || '', exportedAt: d.exportedAt || '', copiedFrom: d.copiedFrom || '', thumb: d.thumb || '', canvaUpdated: d.canvaUpdated || '', thumbError: d.thumbError || '' }; }
+async function approvedFolder(env, parentId) {   // the customer's "Approved" subfolder: remembered, else found, else made
+  const key = 'folder-approved:' + parentId, known = await env.CANVA_KV.get(key);
+  if (known) { try { await api(env, '/folders/' + encodeURIComponent(known)); return known; } catch (e) { await env.CANVA_KV.delete(key); } }
+  try {
+    const list = await api(env, '/folders/' + encodeURIComponent(parentId) + '/items?item_types=folder&limit=100');
+    const hit = (list.items || []).find(it => it.folder && it.folder.name === APPROVED_FOLDER);
+    if (hit) { await env.CANVA_KV.put(key, hit.folder.id); return hit.folder.id; }
+  } catch (e) { /* listing is best effort */ }
+  const f = await api(env, '/folders', { method: 'POST', body: { name: APPROVED_FOLDER, parent_folder_id: parentId } });
+  await env.CANVA_KV.put(key, f.folder.id);
+  return f.folder.id;
+}
+async function designState(env, b, who) {
+  const designId = String(b.designId || '').trim(), state = String(b.state || '');
+  const customer = b.customer && typeof b.customer === 'object' ? { id: String(b.customer.id || ''), name: String(b.customer.name || '').trim() } : { id: '', name: '' };
+  if (!designId) throw httpErr(400, 'designId is required.');
+  if (!customer.id) throw httpErr(400, 'customer.id is required.');
+  if (!DRAFT_STATES.includes(state)) throw httpErr(400, 'state must be draft, sent or approved.');
+  const prev = await draftGet(env, customer.id, designId);
+  if (prev && prev.state === 'approved' && state !== 'approved') throw httpErr(409, 'That design is an approved ad. It keeps that mark.');
+  const patch = { state }; if (b.adId) patch.adId = String(b.adId).slice(0, 40);
+  let moved = false, moveNote = '';
+  if (state === 'approved' && !(prev && prev.state === 'approved' && prev.approvedFolderId)) {
+    try {
+      const parent = (prev && prev.folderId) || (customer.name || (prev && prev.customer.name) ? await folderFor(env, customer.name || prev.customer.name) : '');
+      if (!parent) throw new Error('the customer has no folder name to file under');
+      const fid = await approvedFolder(env, parent);
+      await api(env, '/folders/move', { method: 'POST', body: { to_folder_id: fid, item_id: designId } });
+      moved = true; patch.folderId = parent; patch.approvedFolderId = fid; patch.approvedAt = new Date().toISOString();
+    } catch (e) { moveNote = 'The design was marked approved here, but Canva did not move it into "' + APPROVED_FOLDER + '": ' + ((e && e.message) || e); }
+  }
+  const draft = await draftTouch(env, { designId, customer, shape: SHAPES[String(b.shape)] ? String(b.shape) : '', title: (prev && prev.title) || '', by: who.email || who.memberId }, patch);
+  return { ok: true, draft: draftOut(draft), moved, moveNote };
+}
+async function draftRemove(env, b) {
+  const designId = String(b.designId || '').trim(), custId = String(b.customerId || '').trim();
+  if (!designId || !custId) throw httpErr(400, 'designId and customerId are required.');
+  const d = await draftGet(env, custId, designId); if (!d) return { ok: true, removed: false };
+  if (d.state !== 'draft') throw httpErr(409, 'Only a draft comes off the list. This design is ' + d.state + '.');
+  await env.CANVA_KV.delete(draftKey(custId, designId));
+  return { ok: true, removed: true };
+}
 
 // ── v0.3.0 · the match sheet and the app ──────────────────────────────────
 function cleanHex(c) { const m = String(c || '').trim().match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i); if (!m) return ''; const g = m[1].length === 3 ? m[1].split('').map(x => x + x).join('') : m[1]; return '#' + g.toUpperCase(); }

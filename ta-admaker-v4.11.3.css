@@ -1,5 +1,7 @@
-/* ta-admaker-v4.11.1.css
-   INBXIFY · AD MAKER and the T-A ADS TAB · companion to ta-admaker-v4.11.1.js
+/* ta-admaker-v4.11.3.css
+   INBXIFY · AD MAKER and the T-A ADS TAB · companion to ta-admaker-v4.11.3.js
+   v4.11.3 (18 Nov 2026, Ad Maker Build S3): the What happens card and Send to on Check, the send-back note on the Canva screen, and
+   Drafts in Canva above the board. Appended at the end; nothing above changed.
    v4.11.1 (18 Nov 2026): the new block reads ix-tokens v1.0.5 tokens only (Agent Groundwork CSS scan); no other change.
    v4.11.0 (18 Nov 2026, Ad Maker Build S1): the Ads rail tab (header, strip, New ad tiles, idea pages, Ad form line)
    and the Design in Canva screens (Set up pieces and words, Canva wait, Check). Appended at the end; nothing above changed.
@@ -1078,3 +1080,45 @@ section.publisher-wrapper .am-frame, section.publisher-wrapper .am-work, section
 #am-cvbig{max-width:100%;overflow:auto;border:1px solid var(--am-border);background:var(--ps-paper);padding:8px;border-radius:6px}
 #am-cvbig img{max-width:100%}
 @media (prefers-reduced-motion:reduce){.am-cvdots i{animation:none}}
+
+/* ════════════════════════════════════════════════════════════════
+   v4.11.3 · Ad Maker Build S3 (18 Nov 2026) · WHAT HAPPENS, SEND TO, DRAFTS IN CANVA
+   New rules read only ix-tokens (--ps-* colours, --ix-fs-* sizes) and this file's own --am-* set.
+   ════════════════════════════════════════════════════════════════ */
+.am-what, section.publisher-wrapper .am-what { margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px; }
+.am-what.need, section.publisher-wrapper .am-what.need { border: 2px solid var(--ps-gold) !important; }
+.am-what .am-fch, section.publisher-wrapper .am-what .am-fch { margin-bottom: 6px; }
+.am-whatl, section.publisher-wrapper .am-whatl { align-items: flex-start; gap: 10px; padding: 8px 10px; border: 1px solid transparent; border-radius: 3px; }
+.am-whatl input, section.publisher-wrapper .am-whatl input { margin: 3px 0 0; flex: none; }
+.am-whatl .tx, section.publisher-wrapper .am-whatl .tx { display: block; min-width: 0; background: transparent !important; }
+.am-whatl .tx b, section.publisher-wrapper .am-whatl .tx b { display: block; font: 600 var(--ix-fs-13-5)/1.3 var(--am-body); color: var(--am-ink) !important; background: transparent !important; }
+.am-whatl .tx small, section.publisher-wrapper .am-whatl .tx small { display: block; font: 400 var(--ix-fs-12-5)/1.4 var(--am-body); color: var(--ps-muted) !important; background: transparent !important; }
+.am-whatl.am-what-on, section.publisher-wrapper .am-whatl.am-what-on { border-color: var(--ps-gold) !important; box-shadow: 0 0 0 3px var(--ps-gold-glow); background: var(--ps-paper) !important; }
+.am-sendto, section.publisher-wrapper .am-sendto { display: flex; flex-direction: column; gap: 6px; margin: 2px 0 8px 34px; padding: 10px 12px; border-left: 2px solid var(--ps-gold); background: var(--ps-ground) !important; }
+.am-sendto .l, section.publisher-wrapper .am-sendto .l { font: 600 var(--ix-fs-11)/1 var(--ps-caps); letter-spacing: 1.5px; text-transform: uppercase; color: var(--ps-muted) !important; background: transparent !important; }
+.am-sendto .am-clk, section.publisher-wrapper .am-sendto .am-clk { font-size: var(--ix-fs-13); }
+.am-sendto .am-light, section.publisher-wrapper .am-sendto .am-light { background: transparent !important; }
+.am-cvback, section.publisher-wrapper .am-cvback { margin-bottom: 12px; border-left: 3px solid var(--ps-red-deep) !important; font-size: var(--ix-fs-13); line-height: 1.45; color: var(--am-ink) !important; }
+.am-cvback b, section.publisher-wrapper .am-cvback b { color: var(--ps-red-deep) !important; margin-right: 6px; background: transparent !important; }
+.am-savenote, section.publisher-wrapper .am-savenote { margin-top: 12px; font-size: var(--ix-fs-13-5); line-height: 1.5; color: var(--am-ink) !important; }
+
+/* Drafts in Canva, above the board on All ads */
+.ta-ads-dr{background:var(--ps-paper);border:1px solid var(--ps-rule);border-radius:3px;margin:0 0 18px;padding:14px 18px 8px}
+.ta-ads-drh{display:flex;align-items:baseline;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--ps-rule-soft)}
+.ta-ads-drh h3{margin:0!important;font:400 var(--ix-fs-21)/1.15 Newsreader,Georgia,serif!important;color:var(--ps-ink)}
+.ta-ads-drh .n,section.publisher-wrapper .ta-ads-drh .n{font:700 var(--ix-fs-12)/1 Sen,system-ui,sans-serif;color:var(--ps-ink);background:var(--ps-ground-2)!important;border-radius:10px;padding:3px 8px}
+.ta-ads-drh .s{font-size:var(--ix-fs-12-5);color:var(--ps-muted)}
+.ta-ads-drnone{padding:12px 0 8px;font-size:var(--ix-fs-13);color:var(--ps-muted);min-height:20px}
+.ta-ads-drrow{display:grid;grid-template-columns:132px minmax(0,1.3fr) 76px minmax(0,1.5fr) minmax(0,1.5fr) 400px;gap:14px;align-items:center;padding:8px 0;border-bottom:1px solid var(--ps-rule-soft);font-size:var(--ix-fs-13);color:var(--ps-ink)}
+.ta-ads-drrow:last-child{border-bottom:0}
+.ta-ads-drrow>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ta-ads-drrow .th,section.publisher-wrapper .ta-ads-drrow .th{height:48px;background:var(--ps-ground-2)!important;border:1px solid var(--ps-rule-soft);display:flex;align-items:center;justify-content:center}
+.ta-ads-drrow .th img{display:block;max-width:100%;max-height:46px;width:auto;height:auto}
+.ta-ads-drrow .cu{font-weight:700}
+.ta-ads-drrow .sh,.ta-ads-drrow .wh{color:var(--ps-muted)}
+.ta-ads-drrow .ac{display:flex;align-items:center;justify-content:flex-end;gap:10px;overflow:visible}
+.ta-ads-drrow .ac .q{font-size:var(--ix-fs-12-5);color:var(--ps-ink-2);white-space:nowrap}
+.ta-ads-drrow.asking .wh{display:none}.ta-ads-drrow.asking .ac{grid-column:5/7}
+.ta-ads-drbtn{height:30px!important;padding:0 12px!important;font-size:var(--ix-fs-12-5)!important;width:128px;flex:none}
+.ta-ads-drx{font-size:var(--ix-fs-12);color:var(--ps-muted);text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
+@media (max-width:1180px){.ta-ads-drrow{grid-template-columns:132px minmax(0,1fr) 76px minmax(0,1fr) 400px}.ta-ads-drrow .wh{display:none}.ta-ads-drrow.asking .ti{display:none}.ta-ads-drrow.asking .ac{grid-column:4/6}}

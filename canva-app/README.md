@@ -2,12 +2,13 @@
 
 The side panel Jeff opens in Canva (Apps → inbxify) on a design that Ad Maker sent there. It shows the match sheet for
 that design: the colours read off the original ad with their hex codes, and each block of text with the closest Canva
-font, weight, size and colour. **Add** places one block on the design; **Add all words** places every block. Blocks
-keep their places when the design has the original ad's proportions, and stack down the left when the shape changed.
+font, weight, size and colour. **Add** places one block on the design; **Add all words** places every block. Each block
+with a place keeps it (the original ad is fitted inside the design), and blocks stack down the left only when the shape
+really changed (a banner made into a sidebar).
 
 - App: "inbxify" in Canva's developer portal, App ID `AAHOGMgrrlE`, Teams account The Healthiest.
-- Backend: ix-canva v0.3.0 `GET /app/job` (Canva user token + design token, both verified against the app's JWKS).
-- The sheet itself is read by Ad Maker (ta-admaker v4.11.2) when Edit in Canva is pressed, and stored on the job.
+- Backend: ix-canva v0.3.1 `GET /app/job` (Canva user token + design token, both verified against the app's JWKS).
+- The sheet itself is read by Ad Maker (ta-admaker v4.11.3) when Edit in Canva is pressed, and stored on the job.
 
 ## Only the app's own file lives here
 
@@ -29,4 +30,5 @@ Upload `dist/app.js` in the developer portal (App source → JavaScript file), t
 
 ## History
 
+- v0.1.1 (18 Nov 2026, Ad Maker Build S3): each line with a place keeps it (the original is fitted inside the design); lines stack only when the shape really changed; light swatches get an outline.
 - v0.1.0 (18 Nov 2026, Ad Maker Build S1): colours, fonts, sizes, Add / Add all words.

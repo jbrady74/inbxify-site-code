@@ -1,7 +1,19 @@
-// ps-review-v1.0.2.js
+// ps-review-v1.0.3.js
 // ============================================================
 // INBXIFY · the advertiser review page (www.inbxify.com/review?t=<token>)
 //
+// v1.0.3 (18 Nov 2026, Ad Maker Build S3) — THE PUBLISHER'S APPROVAL, BY EMAIL LINK.
+//   The same page now also opens an inbxify "Send for approval" link (ix-sales v1.3.9 answers kind:"approval").
+//   Rulings (Jeff, 18 Nov): approval is by email for now, the link opens with no login, and offers Approve and make
+//   current, Approve and hold, or Send back with a note; the same ix-sales path as a Portal decision.
+//   · One card per ad: the picture, what is running now for that shape (when there is one), then the three choices
+//     top to bottom. Send back opens a note box (required). A chosen card gets the gold border and its own Cancel.
+//   · Choices stage until Send (the fixed panel on the right): the card says so. Send posts
+//     /review/<token>/decide; each choice is written through Scenario G and 114 and logged.
+//   · After Send: a short centred page that says what was done. A link that was already used says what was decided.
+//   · An expired approval link offers an email to the inbxify person who sent it.
+//   The advertiser page (kind "advertiser") is unchanged. CSS v1.0.3.
+//   HARDCODING: HC-P-PP8-9 gains W.ap (the approval page's words).
 // v1.0.2 (10 Nov 2026, Publisher Portal S8, live test step 9, Jeff's rethink) — ONE MESSAGE, ONE BOX.
 //   Ask for changes → the mic (or Type instead) → the transcript opens in a large pop-up, editable, with photos
 //   or files under it → Done. That text is the whole message to the publisher: no "what we heard" beside "what
@@ -38,11 +50,12 @@
 //   POST /review/<token>/transcribe   the recording → { said, like, change }
 //   POST /review/<token>/file         multipart file → { url, name }
 //   POST /review/<token>/answer       { name, items[] }
+//   POST /review/<token>/decide       { items:[{adId, shape, action, note}] }   (v1.0.3, an approval link)
 //
 // THE PAGE (Webflow static page /review, no Memberstack)
 //   <div id="ps-review" data-sales-url="https://ix-sales…workers.dev"
 //        data-inbxify-logo="<inbxify wordmark url>"></div>
-//   plus this file and ps-review-v1.0.2.css. Fonts: Newsreader, Sen,
+//   plus this file and ps-review-v1.0.3.css. Fonts: Newsreader, Sen,
 //   Josefin Sans (the portal's).
 //
 // HARDCODING (provisional ids, for the tracker)
@@ -52,7 +65,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.2', FILE = 'ps-review-v' + VERSION + '.js';
+  var VERSION = '1.0.3', FILE = 'ps-review-v' + VERSION + '.js';
   var REC_MAX_MS = 4 * 60 * 1000;
   var BOX = null;                                                        // v1.0.2: which ad's message box is open                                        // HC-P-PP8-10
   var W = {                                                              // HC-P-PP8-9
@@ -103,7 +116,31 @@
     badH: 'This link is not one we made', bad: 'Check the link in your email and try again, or ask the publisher who sent it for a new one.',
     failH: 'Something went wrong', fail: 'The page could not load your ads: {msg}',
     sendFail: 'Your answers did not send: {msg}',
-    needName: 'Add your name to send.'
+    needName: 'Add your name to send.',
+    // v1.0.3 · the publisher's approval page (an inbxify "Send for approval" link)
+    ap: {
+      h1: 'Ready for your OK: {customer}', loading: 'Opening the ad\u2026',
+      lede: 'Choose what to do with {n}. Nothing changes until you click Send.', one: 'this ad', many: 'each of these {n} ads',
+      ledeSmall: 'This link is only for you \u00b7 works until {until}.',
+      running: 'Running now', nothingRunning: 'No {shape} is running for {customer} now.',
+      opts: {
+        'approve-current': ['Approve it and run it', 'It becomes the {shape} that runs for {customer}.', 'It replaces the {shape} running now.'],
+        'approve-hold': ['Approve it and hold it', 'It is ready to run later. Nothing changes for readers now.', 'The {shape} running now keeps running.'],
+        'send-back': ['Send it back with a note', 'Say what to change. inbxify fixes it and sends it again.', '']
+      },
+      noteLabel: 'What should change?', notePh: 'For example: use the new phone number and make the hours bigger',
+      staged: 'Goes to inbxify when you click Send.', cancel: 'Cancel',
+      st: { 'approve-current': 'Approve and run', 'approve-hold': 'Approve and hold', 'send-back': 'Send back', none: 'Not chosen yet', needNote: 'Needs a note' },
+      panelH: 'Your decision', send: 'Send', sending: 'Sending\u2026',
+      hintStart: 'Choose what to do with the ad to get started.', hintNote: 'Add a note to the ad you are sending back.',
+      left: 'You can send now and decide the rest later with the same link.',
+      doneH: 'Thank you{name}.', doneNote: 'inbxify has your decision. You can close this page.',
+      doneLine: { 'approve-current': '{shape}: approved, and it is the one that runs now', 'approve-hold': '{shape}: approved and held', 'send-back': '{shape}: sent back with your note' },
+      failLine: '{shape}: not saved. {msg}', sendFail: 'Your decision did not send: {msg}',
+      usedH: 'This link has been used', used: 'Here is what was decided{on}.', usedMore: 'If something changed, reply to the email this link came in.',
+      expiredH: 'This link has expired', expired: 'Approval links work for {days} days. Ask inbxify for a new one.',
+      emailBtn: 'Email inbxify for a new link', emailSubj: 'New approval link for {customer}', emailBody: 'Hi,\n\nThe approval link for the {customer} ad has expired. Could you send me a new one?\n\nThanks'
+    }
   };
   var MIC = '<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
 
@@ -175,7 +212,8 @@
   function endCard(h, body, cls) { return '<div class="ps-rv-end' + (cls ? ' ' + cls : '') + '"><h2>' + esc(h) + '</h2>' + body + '</div>'; }
   function render() {
     var h = header() + '<main class="ps-rv-main" id="ps-rv-main">', f = first(), p = (D && D.publisher) || {};
-    if (page === 'loading') h += '<p class="ps-rv-loading">' + esc(W.loading) + '</p>';
+    if (page === 'ap-open' || page === 'ap-done' || page === 'ap-used' || page === 'ap-expired') h += apMain();   // v1.0.3
+    else if (page === 'loading') h += '<p class="ps-rv-loading">' + esc(W.loading) + '</p>';
     else if (page === 'bad') h += endCard(W.badH, '<p>' + esc(W.bad) + '</p>', 'gone');
     else if (page === 'fail') h += endCard(W.failH, '<p>' + esc(fill(W.fail, { msg: sendErr })) + '</p>', 'gone');
     else if (page === 'expired') {
@@ -207,6 +245,71 @@
   }
   function repaintBar() { var b = root.querySelector('#ps-rv-bar'); if (b) b.outerHTML = renderBar(); }
   function item(key) { return D.items.find(function (it) { return it.key === key; }); }
+
+  // ── v1.0.3 · the publisher's approval page ──────────────────
+  var AP = {}, apSending = false, apResult = null;                       // key → { act, note }
+  function apFirst() { return ((D && D.publisher && D.publisher.person) || '').split(' ')[0]; }
+  function apReady(a) { return !!a && !!a.act && (a.act !== 'send-back' || !!(a.note || '').trim()); }
+  function apCard(it) {
+    var a = AP[it.key], k = esc(it.key), low = it.label.toLowerCase(), P = W.ap, done = !!it.decision;
+    var st = done ? '<span class="ps-rv-state s-ok">' + esc(P.st[it.decision] || '') + '</span>' : a && a.act ? '<span class="ps-rv-state ' + (apReady(a) ? 's-ok' : 's-chg') + '">' + esc(apReady(a) ? P.st[a.act] : P.st.needNote) + '</span>' : '';
+    var cur = it.current && /^https?:\/\//.test(it.current.picture || '') ? '<div class="ps-rv-now"><span>' + esc(P.running) + '</span><img class="s-' + esc(it.shape) + '" src="' + esc(it.current.picture) + '" alt="' + esc(P.running + ': ' + (it.current.name || '')) + '"></div>'
+      : it.current ? '<p class="ps-rv-quiet ps-rv-nonow">' + esc(P.running + ': ' + (it.current.name || low)) + '</p>'
+      : '<p class="ps-rv-quiet ps-rv-nonow">' + esc(fill(P.nothingRunning, { shape: low, customer: D.customer || '' })) + '</p>';
+    var body;
+    if (done) body = '<p class="ps-rv-quiet">' + esc(fill(P.doneLine[it.decision] || '', { shape: it.label })) + (it.note ? ' · ' + esc(it.note) : '') + '</p>';
+    else body = '<div class="ps-rv-opts" role="radiogroup" aria-labelledby="h-' + k + '">' + ['approve-current', 'approve-hold', 'send-back'].map(function (act) {
+        var o = P.opts[act], on = a && a.act === act, sub = fill(it.current && o[2] ? o[2] : o[1], { shape: low, customer: D.customer || '' });
+        return '<button type="button" class="ps-rv-opt' + (on ? ' on' : '') + '" role="radio" aria-checked="' + (on ? 'true' : 'false') + '" data-apact="' + k + '" data-v="' + act + '"><i aria-hidden="true"></i><span><b>' + esc(o[0]) + '</b><small>' + esc(sub) + '</small></span></button>' +
+          (on && act === 'send-back' ? '<div class="ps-rv-note"><label class="ps-rv-f" for="n-' + k + '">' + esc(P.noteLabel) + '</label><textarea id="n-' + k + '" data-apnote="' + k + '" placeholder="' + esc(P.notePh) + '" class="' + ((a.note || '').trim() ? 'chg' : '') + '">' + esc(a.note || '') + '</textarea></div>' : '');
+      }).join('') + '</div>' + (a && a.act ? '<div class="ps-rv-picked ps-rv-staged"><span>' + esc(P.staged) + '</span><button type="button" class="ps-rv-cancel" data-apundo="' + k + '">' + esc(P.cancel) + '</button></div>' : '');
+    return '<section class="ps-rv-ad' + (a && a.act ? ' chg' : '') + '" aria-labelledby="h-' + k + '"><div class="ps-rv-adhead"><h2 id="h-' + k + '">' + esc(it.label) + '</h2><span class="where">' + esc(W.where[it.shape] || '') + '</span>' + st + '</div>' +
+      '<div class="ps-rv-stage">' + art(it) + '</div>' + cur + body + '</section>';
+  }
+  function apBar() {
+    var P = W.ap, open = D.items.filter(function (it) { return !it.decision; });
+    var picked = open.filter(function (it) { return AP[it.key] && AP[it.key].act; }), rdy = picked.filter(function (it) { return apReady(AP[it.key]); });
+    var rows = D.items.map(function (it) { var a = AP[it.key]; var st = it.decision ? P.st[it.decision] : !a || !a.act ? P.st.none : apReady(a) ? P.st[a.act] : P.st.needNote;
+      return '<li><span>' + esc(it.label) + '</span><span>' + esc(st || '') + '</span></li>'; }).join('');
+    var can = rdy.length && rdy.length === picked.length && !apSending;
+    var hint = !picked.length ? P.hintStart : rdy.length !== picked.length ? P.hintNote : picked.length < open.length ? P.left : '';
+    return '<div id="ps-rv-bar"><div class="ps-rv-sidepanel" role="region" aria-label="' + esc(P.panelH) + '"><h3>' + esc(P.panelH) + '</h3><ul>' + rows + '</ul>' + (sendErr ? '<div class="ps-rv-err">' + esc(sendErr) + '</div>' : '') +
+      '<div class="acts"><button type="button" class="ps-rv-cancel" id="ps-rv-apcancel"' + (picked.length ? '' : ' style="visibility:hidden"') + '>' + esc(P.cancel) + '</button><button type="button" class="ps-rv-btn" id="ps-rv-apsend"' + (can ? '' : ' disabled') + '>' + esc(apSending ? P.sending : P.send) + '</button></div>' +
+      (hint ? '<p class="hint">' + esc(hint) + '</p>' : '') + '</div></div>';
+  }
+  function apRepaintBar() { var b = root.querySelector('#ps-rv-bar'); if (b) b.outerHTML = apBar(); }
+  function apList(items, map) { return '<ul class="ps-rv-donelist">' + items.map(function (it) { return '<li>' + esc(fill(map[it.decision || it.action] || '', { shape: it.label || '' })) + (it.note ? '<br><span class="ps-rv-quiet">' + esc(it.note) + '</span>' : '') + '</li>'; }).join('') + '</ul>'; }
+  function apMain() {
+    var P = W.ap, p = (D && D.publisher) || {}, f = apFirst();
+    if (page === 'ap-expired') {
+      var to = D.sentBy || '', mail = to ? 'mailto:' + encodeURIComponent(to) + '?subject=' + encodeURIComponent(fill(P.emailSubj, { customer: D.customer || p.company || '' })) + '&body=' + encodeURIComponent(fill(P.emailBody, { customer: D.customer || 'our' })) : '';
+      return endCard(P.expiredH, '<p>' + esc(fill(P.expired, { days: D.linkDays || 14 })) + '</p>' + (mail ? '<p style="margin-top:16px"><a class="ps-rv-btn" href="' + mail + '">' + esc(P.emailBtn) + '</a></p>' : ''), 'gone');
+    }
+    if (page === 'ap-used') return endCard(P.usedH, '<p>' + esc(fill(P.used, { on: D.decidedAt ? ' on ' + day(D.decidedAt) : '' })) + '</p>' + apList(D.items.filter(function (it) { return it.decision; }), P.doneLine) + '<p class="ps-rv-quiet" style="margin-top:12px!important">' + esc(P.usedMore) + '</p>');
+    if (page === 'ap-done') {
+      var okItems = (apResult.decided || []).map(function (z) { var it = item(z.adId + '|' + z.shape) || {}; return { label: it.label || z.shape, decision: z.action }; });
+      var bad = (apResult.failed || []).map(function (z) { var it = item(z.adId + '|' + z.shape) || {}; return '<li class="bad">' + esc(fill(P.failLine, { shape: it.label || z.shape, msg: z.error || '' })) + '</li>'; }).join('');
+      return endCard(fill(P.doneH, { name: f ? ', ' + f : '' }), apList(okItems, P.doneLine) + (bad ? '<ul class="ps-rv-donelist">' + bad + '</ul>' : '') + '<p style="margin-top:12px!important">' + esc(P.doneNote) + '</p>', 'thanks');
+    }
+    return '<div class="ps-rv-col"><h1>' + esc(fill(P.h1, { customer: D.customer || p.company || '' })) + '</h1><p class="ps-rv-lede">' + esc(fill(P.lede, { n: D.items.length === 1 ? P.one : fill(P.many, { n: D.items.length }) })) +
+      ' <small>' + esc(fill(P.ledeSmall, { until: day(D.until) })) + '</small></p>' + D.items.map(apCard).join('') + '</div><aside class="ps-rv-aside">' + apBar() + '</aside>';
+  }
+  async function apSend() {
+    var todo = D.items.filter(function (it) { return !it.decision && apReady(AP[it.key]); }); if (!todo.length || apSending) return;
+    apSending = true; sendErr = ''; apRepaintBar();
+    var r = await api('/review/' + token + '/decide', { method: 'POST', json: { items: todo.map(function (it) { var a = AP[it.key]; return { adId: it.adId, shape: it.shape, action: a.act, note: a.act === 'send-back' ? (a.note || '').trim() : '' }; }) } });
+    apSending = false;
+    if (!r.ok) { sendErr = fill(W.ap.sendFail, { msg: (r.json && r.json.error) || ('HTTP ' + r.status) }); apRepaintBar(); return; }
+    apResult = r.json; page = 'ap-done'; render(); window.scrollTo(0, 0);
+  }
+  function apClick(t) {
+    var d = t.dataset;
+    if (d.apact) { var cur = AP[d.apact] || {}; AP[d.apact] = { act: d.v, note: cur.note || '' }; render(); if (d.v === 'send-back') { var ta = root.querySelector('[data-apnote="' + CSS.escape(d.apact) + '"]'); if (ta) ta.focus(); } return true; }
+    if (d.apundo) { delete AP[d.apundo]; render(); return true; }
+    if (t.id === 'ps-rv-apcancel') { AP = {}; sendErr = ''; render(); return true; }
+    if (t.id === 'ps-rv-apsend') { apSend(); return true; }
+    return false;
+  }
 
   // ── recording ───────────────────────────────────────────────
   function tone(up) {   // v1.0.2 · a short tone on start (rising) and stop (falling); silent if the browser has no AudioContext
@@ -265,6 +368,7 @@
   function wire() {
     root.addEventListener('click', function (e) {
       var t = e.target.closest('button'); if (!t) return; var d = t.dataset;
+      if (apClick(t)) return;   // v1.0.3
       if (d.ok) { A[d.ok] = { kind: 'ok' }; render(); return; }
       if (d.chg) { A[d.chg] = { kind: 'chg', step: 'mic', like: '', change: '', said: '', typed: '', files: [], err: '' }; render(); return; }
       if (d.undo) { if (rec && rec.key === d.undo) stopRec(); delete A[d.undo]; if (BOX === d.undo) BOX = null; render(); return; }
@@ -280,6 +384,7 @@
     });
     root.addEventListener('input', function (e) {
       var t = e.target, d = t.dataset || {};
+      if (d.apnote) { var an = AP[d.apnote]; if (an) { an.note = t.value; t.classList.toggle('chg', !!t.value.trim()); apRepaintBar(); var sec = t.closest('.ps-rv-ad'), stt = sec && sec.querySelector('.ps-rv-state'); if (stt) { stt.textContent = apReady(an) ? W.ap.st[an.act] : W.ap.st.needNote; stt.className = 'ps-rv-state ' + (apReady(an) ? 's-ok' : 's-chg'); } } return; }   // v1.0.3
       if (t.id === 'ps-rv-who') { who = t.value; t.classList.toggle('chg', !!who); var s = root.querySelector('#ps-rv-send'); if (s) { var rd = Object.keys(A).filter(function (k) { return ready(A[k]); }), working = Object.keys(A).length - rd.length; s.disabled = !(rd.length && !working && who.trim()); } return; }
       if (d.txt) { var a = A[d.txt]; a.typed = t.value; t.classList.toggle('chg', !!t.value); var b = root.querySelector('[data-done="' + CSS.escape(d.txt) + '"]'); if (b) b.disabled = !t.value.trim(); return; }
       if (d.like) { A[d.like].like = t.value; repaintBar(); return; }
@@ -301,6 +406,7 @@
     if (r.status === 404) { page = 'bad'; render(); return; }
     if (!r.ok) { page = 'fail'; sendErr = (r.json && r.json.error) || ('HTTP ' + r.status); render(); return; }
     D = r.json; D.items = (D.items || []).map(function (it) { it.key = it.adId + '|' + it.shape; return it; });
+    if (D.kind === 'approval') { page = D.expired ? 'ap-expired' : D.decided ? 'ap-used' : 'ap-open'; document.title = D.expired ? W.ap.expiredH : fill(W.ap.h1, { customer: D.customer || '' }); render(); return; }   // v1.0.3
     page = D.expired ? 'expired' : D.answered ? 'already' : 'open';
     document.title = D.expired ? W.expiredH : fill(W.h1, { title: D.title || (D.publisher && D.publisher.company) || '' });
     render();
