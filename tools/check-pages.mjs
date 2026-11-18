@@ -3,6 +3,8 @@
 // INBXIFY · the Checks Action, part 2: open the changed pages on the test title, on main and on the branch
 // (Agent Groundwork G2, scoping §3 points 1 to 4). Runs in GitHub's cloud with Playwright.
 //
+// v1.0.2 (17 Nov 2026) — main is opened a second time before a console error or contrast failure is blamed on the
+//   branch: live data can arrive on one pass and not the other (Quill Performance did, run 44228896517).
 // v1.0.1 (17 Nov 2026) — from the first runs with the agent login: (1) a page that sends the member away AFTER it has
 //   loaded (Memberstack does this in the browser) is now caught, and the report says where the member ended up and
 //   what the page showed; (2) a picture no longer waits for web fonts that never arrive.
@@ -272,6 +274,16 @@ if (pages.length && !cdnWait) {
         }
         w.main = await pass(ctx, name, cfg, 'main', width);
         w.branch = await pass(ctx, name, cfg, 'branch', width);
+        // Live data can arrive on one pass and not the other. Before blaming the branch for an error or a
+        // contrast failure, open main once more and count what either main pass showed.
+        const errKey = (e) => keyOf(e.text), conKey = (c) => `${c.view}|${c.target}|${c.fg}|${c.bg}`;
+        const mainErr = new Set(w.main.errors.map(errKey)), mainCon = new Set(w.main.contrast.map(conKey));
+        if (w.branch.errors.some((e) => !mainErr.has(errKey(e))) || w.branch.contrast.some((c) => !mainCon.has(conKey(c)))) {
+          const again = await pass(ctx, name, cfg, 'main', width);
+          w.main.errors.push(...again.errors.filter((e) => !mainErr.has(errKey(e))));
+          w.main.contrast.push(...again.contrast.filter((c) => !mainCon.has(conKey(c))));
+          w.mainTwice = true;
+        }
         const seen = new Set(w.main.errors.map((e) => keyOf(e.text)));
         w.newErrors = w.branch.errors.filter((e) => !seen.has(keyOf(e.text)));
         const had = new Set(w.main.contrast.map((c) => `${c.view}|${c.target}|${c.fg}|${c.bg}`));
