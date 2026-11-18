@@ -1,5 +1,5 @@
 /* ============================================================
-   ix-tokens-v1.0.4.css
+   ix-tokens-v1.0.5.css
    INBXIFY · ix component series — THE TOKEN SOURCE OF TRUTH
 
    LOAD THIS FIRST. Before ix-buttons, ix-form-controls, ix-modals,
@@ -321,6 +321,71 @@
   --ix-z-dropdown:      5000;
   --ix-z-modal:         10000;
   --ix-z-lightbox:      99998;     /* was UNDEFINED */
+
+  /* ── v1.0.5 (18 Nov 2026, Ad Maker Build S1) · THE PORTAL PALETTE AND A TYPE SCALE ──
+     The Publisher Portal look (ps-shell v1.0.2) is becoming the look of every staff surface (TA Reskin). Its
+     palette moves here under its own --ps-* names so a shared module (ix-ads-board) reads the same tokens on
+     the Portal and on T-A; ps-shell's copy stays and matches. The type scale gives every stylesheet a token
+     for each size the Portal uses, so no module types a px font size (Agent Groundwork, HC-P-AG-10).        */
+  --ps-ink:             #22252B;
+  --ps-ink-2:           #3A3E46;
+  --ps-muted:           #5A5E66;
+  --ps-faint:           #8A8E96;
+  --ps-paper:           #FFFFFF;
+  --ps-ground:          #FAF6EE;
+  --ps-ground-2:        #F1ECE2;
+  --ps-ground-3:        #E6E2D6;
+  --ps-rule:            #D9D2C3;
+  --ps-rule-soft:       #ECE6DA;
+  --ps-row-hover:       #FBF8F2;
+  --ps-row-open:        #F4EEE2;
+  --ps-red:             #DF4128;
+  --ps-red-deep:        #C2271A;
+  --ps-red-pale:        #FBE3DD;
+  --ps-blue:            #5B7FFF;
+  --ps-blue-text:       #3550C8;
+  --ps-blue-pale:       #E6EBFF;
+  --ps-blue-line:       #C9D3FA;
+  --ps-green:           #0F5C3F;
+  --ps-green-pale:      #E2F1E9;
+  --ps-ok:              #1E6A3E;
+  --ps-amber:           #7A4E12;
+  --ps-amber-pale:      #FBF3DF;
+  --ps-coral:           #F48164;
+  --ps-cream:           #FBEBCB;
+  --ps-gold:            #C4A35A;
+  --ps-gold-ink:        #8A6E2E;
+  --ps-gold-deep:       #C9A227;
+  --ps-gold-glow:       rgba(196, 163, 90, 0.22);
+  --ps-purple:          #7A4FD1;
+  --ps-ink-ghost:       rgba(34, 37, 43, 0.18);
+  --ps-scrim:           rgba(22, 24, 29, 0.45);
+  --ps-shadow-ink:      rgba(0, 0, 0, 0.25);
+  --ps-serif:           Newsreader, Georgia, serif;
+  --ps-sans:            Sen, system-ui, sans-serif;
+  --ps-caps:            'Josefin Sans', system-ui, sans-serif;
+  /* type scale · name = px */
+  --ix-fs-8:            8px;
+  --ix-fs-9:            9px;
+  --ix-fs-9-5:          9.5px;
+  --ix-fs-10-5:         10.5px;
+  --ix-fs-11:           11px;
+  --ix-fs-11-5:         11.5px;
+  --ix-fs-12:           12px;
+  --ix-fs-12-5:         12.5px;
+  --ix-fs-13:           13px;
+  --ix-fs-13-5:         13.5px;
+  --ix-fs-14:           14px;
+  --ix-fs-15:           15px;
+  --ix-fs-16:           16px;
+  --ix-fs-17:           17px;
+  --ix-fs-18:           18px;
+  --ix-fs-19:           19px;
+  --ix-fs-21:           21px;
+  --ix-fs-22:           22px;
+  --ix-fs-24:           24px;
+  --ix-fs-30:           30px;
+  --ix-fs-34:           34px;
 }
 
 /* ============================================================

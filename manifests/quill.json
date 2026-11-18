@@ -4,7 +4,7 @@
   "confirmed": true,
   "head": [
     { "css": "https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Josefin+Sans:wght@600;700&family=Sen:wght@400;600;700&display=swap" },
-    "ix-tokens-v1.0.4.css",
+    "ix-tokens-v1.0.5.css",
     "ix-info-v1.0.0.css",
     "ps-shell-v1.0.2.css",
     "quill-home-v2.0.0.css",
