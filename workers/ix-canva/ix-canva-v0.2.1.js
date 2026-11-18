@@ -1,8 +1,16 @@
-// workers/ix-canva/ix-canva-v0.2.0.js
+// workers/ix-canva/ix-canva-v0.2.1.js
 // ============================================================
 // INBXIFY · Cloudflare Worker · ix-canva
 // Host: ix-canva.jeff-2cd.workers.dev
 //
+// v0.2.1 (18 Nov 2026, Ad Maker Build S1, test 1) — NAMES CANVA ACCEPTS, AND THE CUSTOMER'S OWN FOLDER NAME.
+//   · Canva refuses an asset name over 50 characters ("Invalid upload metadata header", 400). Every uploaded
+//     piece's name is now cut to 50, keeping the extension (found on Senior Care Authority - Northern & Central
+//     New Jersey; the Graze Craze test names were short).
+//   · The Projects folder is named for the customer alone, no "inbxify · " in front (Jeff, 18 Nov). Folders made
+//     by v0.2.0 keep their old name and are left alone; the next job for that customer makes the new one.
+//   · A remembered folder is checked before use: if it was deleted in Canva, the Worker forgets it and finds or
+//     makes the folder again instead of leaving the pieces loose. A renamed folder keeps receiving (matched by id).
 // v0.2.0 (18 Nov 2026, Ad Maker Build S1) — THE JOB API FOR AD MAKER.
 //   The test Worker (v0.1.x) proved the trip. This version is what the T-A Ads tab talks to:
 //   · POST /job                 Ad Maker sends the pieces of one ad (PNGs as data URLs), the customer, the shape
@@ -43,7 +51,7 @@
 // v0.1.3 (18 Nov 2026) — the test Worker: /connect, /test, /return; see the git history for its notes.
 // ============================================================
 
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 const CANVA_API = 'https://api.canva.com/rest/v1';
 const CANVA_AUTH = 'https://www.canva.com/api/oauth/authorize';
 const SCOPES = ['asset:read', 'asset:write', 'design:content:read', 'design:content:write', 'design:meta:read', 'design:meta:write', 'folder:read', 'folder:write', 'profile:read'];   // HC-P-CANVA1-2
@@ -51,7 +59,9 @@ const SHAPES = { banner: { w: 700, h: 235, label: 'Banner' }, sidebar: { w: 480,
 const POLL_MS = 1500, POLL_MAX = 60;   // HC-P-CANVA1-3
 const EXPORT_SCALE = 2;                // HC-P-CANVA1-4
 const JOB_TTL = 86400 * 30;            // HC-P-CANVA1-5
-const FOLDER_PREFIX = 'inbxify · ';   // HC-P-CANVA1-6
+const FOLDER_PREFIX = '';   // HC-P-CANVA1-6 · v0.2.1: none (Jeff, 18 Nov); the folder carries the customer's name alone
+const NAME_MAX = 50;       // HC-P-CANVA1-8 · Canva's limit on an asset name (unencoded)
+function canvaName(n) { n = String(n || 'piece.png').trim(); if (n.length <= NAME_MAX) return n; const m = n.match(/(\.[A-Za-z0-9]{2,5})$/), ext = m ? m[1] : ''; return n.slice(0, NAME_MAX - ext.length).replace(/[\s.\-\u00b7]+$/, '') + ext; }
 function dot(x, delay) { return { ddd: 0, ind: 1, ty: 4, nm: 'dot', sr: 1, ks: { o: { a: 0, k: 100 }, r: { a: 0, k: 0 }, p: { a: 0, k: [x, 80, 0] }, a: { a: 0, k: [0, 0, 0] },
   s: { a: 1, k: [{ i: { x: [.4, .4, .4], y: [1, 1, 1] }, o: { x: [.6, .6, .6], y: [0, 0, 0] }, t: delay, s: [60, 60, 100] }, { i: { x: [.4, .4, .4], y: [1, 1, 1] }, o: { x: [.6, .6, .6], y: [0, 0, 0] }, t: delay + 15, s: [130, 130, 100] }, { t: delay + 30, s: [60, 60, 100] }] } },
   ao: 0, shapes: [{ ty: 'gr', it: [{ ty: 'el', p: { a: 0, k: [0, 0] }, s: { a: 0, k: [22, 22] } }, { ty: 'fl', c: { a: 0, k: [0.133, 0.145, 0.169, 1] }, o: { a: 0, k: 100 } }, { ty: 'tr', p: { a: 0, k: [0, 0] }, a: { a: 0, k: [0, 0] }, s: { a: 0, k: [100, 100] }, r: { a: 0, k: 0 }, o: { a: 0, k: 100 } }] }], ip: 0, op: 60, st: 0, bm: 0 }; }
@@ -231,7 +241,8 @@ async function callback(env, url) {
 // ── Canva pieces: folders, uploads, designs, exports ──────────────────────
 async function folderFor(env, customer) {
   const want = FOLDER_PREFIX + customer;
-  const key = 'folder:' + want; const known = await env.CANVA_KV.get(key); if (known) return known;
+  const key = 'folder:' + want; const known = await env.CANVA_KV.get(key);
+  if (known) { try { await api(env, '/folders/' + encodeURIComponent(known)); return known; } catch (e) { await env.CANVA_KV.delete(key); } }   // v0.2.1: deleted in Canva → find or make it again
   try {
     const list = await api(env, '/folders/root/items?item_types=folder&limit=100');
     const hit = (list.items || []).find(it => it.folder && it.folder.name === want);
@@ -243,6 +254,7 @@ async function folderFor(env, customer) {
 }
 async function moveTo(env, folderId, itemId) { try { await api(env, '/folders/move', { method: 'POST', body: { to_folder_id: folderId, item_id: itemId } }); return true; } catch (e) { return false; } }
 async function uploadBytes(env, bytes, name) {
+  name = canvaName(name);   // v0.2.1
   const meta = JSON.stringify({ name_base64: btoa(unescape(encodeURIComponent(name))) });
   const j = await api(env, '/asset-uploads', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'Asset-Upload-Metadata': meta }, body: bytes });
   const asset = await poll(env, '/asset-uploads/' + j.job.id, job => job.asset);
