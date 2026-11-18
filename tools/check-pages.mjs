@@ -186,6 +186,9 @@ async function pass(ctx, name, cfg, which, width) {
       if (r.request().resourceType() !== 'document' || r.frame() !== page.mainFrame()) return;
       const t = await r.text().catch(() => '');
       log.doc = `${r.status()}, ${t.length} characters, ${/<body[\s>]/i.test(t) ? 'has a body' : 'no body'}`;
+      const gates = [...t.matchAll(/<([a-z0-9]+)\b[^>]*\bdata-ms-content=["']([^"']+)["'][^>]*>/gi)]
+        .map((m) => `<${m[1].toLowerCase()}${/\bid=["']([^"']+)/i.exec(m[0]) ? '#' + /\bid=["']([^"']+)/i.exec(m[0])[1] : ''}${/\bclass=["']([^"' ]+)/i.exec(m[0]) ? '.' + /\bclass=["']([^"' ]+)/i.exec(m[0])[1] : ''} data-ms-content="${m[2]}">`);
+      if (gates.length) log.doc += `; Memberstack gates in the page: ${[...new Set(gates)].slice(0, 12).join(', ')}`;
     } catch { /* gone */ }
   });
 
