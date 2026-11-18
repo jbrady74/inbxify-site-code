@@ -1,5 +1,8 @@
-/* ta-admaker-v4.10.4.css
-   INBXIFY TA Studio — AD MAKER (sub-tab) · companion to ta-admaker-v4.10.4.js
+/* ta-admaker-v4.11.1.css
+   INBXIFY · AD MAKER and the T-A ADS TAB · companion to ta-admaker-v4.11.1.js
+   v4.11.1 (18 Nov 2026): the new block reads ix-tokens v1.0.5 tokens only (Agent Groundwork CSS scan); no other change.
+   v4.11.0 (18 Nov 2026, Ad Maker Build S1): the Ads rail tab (header, strip, New ad tiles, idea pages, Ad form line)
+   and the Design in Canva screens (Set up pieces and words, Canva wait, Check). Appended at the end; nothing above changed.
    v4.10.4: version only (layering fix is in the js).
    v4.10.3: thin selection line.
    v4.9.0: cancel on the selection, crop mode.
@@ -1008,3 +1011,70 @@ section.publisher-wrapper .am-frame, section.publisher-wrapper .am-work, section
 .am-edge, section.publisher-wrapper .am-edge { border-width: 1px !important; border-radius: 1px !important; }
 .am-edge.w, section.publisher-wrapper .am-edge.w { right: -4px !important; width: 6px !important; height: 14px !important; margin-top: -7px !important; }
 .am-edge.h, section.publisher-wrapper .am-edge.h { bottom: -4px !important; width: 14px !important; height: 6px !important; margin-left: -7px !important; }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   v4.11.0 · THE T-A ADS TAB (#ta-ads-mount)
+   ═══════════════════════════════════════════════════════════════ */
+.ta-ads{font-family:Sen,system-ui,sans-serif;color:var(--ps-ink)}
+.ta-ads-head{display:flex;align-items:center;gap:12px;padding:6px 0 12px}
+.ta-ads-head h2{margin:0!important;font:400 var(--ix-fs-30)/1.1 Newsreader,Georgia,serif!important;letter-spacing:-.3px;color:var(--ps-ink)}
+.ta-ads-head .sp{flex:1}
+.ta-ads-strip{margin:0 0 16px!important;padding:0!important}
+.ta-ads-strip .ix-btn--tab.idea{color:var(--ps-faint)!important}
+.ta-ads-strip .ix-btn--tab.idea i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ps-gold);margin-left:7px;vertical-align:middle}
+.ta-ads-pane[hidden]{display:none}
+.ta-ads-pane #std-admaker-mount .am-head{display:none}   /* the Ads tab's header stands in for Ad Maker's own */
+.ta-ads-back{display:inline-block;font-size:var(--ix-fs-12-5);color:var(--ps-blue-text);text-decoration:underline;text-underline-offset:2px;margin-bottom:6px}
+.ta-ads-h3{margin:0 0 4px!important;font:400 var(--ix-fs-24)/1.15 Newsreader,Georgia,serif!important}
+.ta-ads-sub{color:var(--ps-muted);font-size:var(--ix-fs-13);margin-bottom:16px}
+.ta-ads-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;max-width:960px}
+.ta-ads-tile{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;padding:18px 18px 16px;background:var(--ps-paper);border:1px solid var(--ps-rule);border-radius:3px;cursor:pointer;font:inherit;color:var(--ps-ink);min-height:168px}
+.ta-ads-tile:hover{border-color:var(--ps-ink)}
+.ta-ads-tile .ic{width:34px;height:34px;color:var(--ps-ink)}.ta-ads-tile .ic svg{width:34px;height:34px}
+.ta-ads-tile b{font:600 var(--ix-fs-17)/1.2 Newsreader,Georgia,serif}
+.ta-ads-tile small{font-size:var(--ix-fs-12-5);color:var(--ps-muted);line-height:1.4;flex:1}
+.ta-ads-tile em{font-style:normal;font-size:var(--ix-fs-11);font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ps-green)}
+.ta-ads-tile.idea{background:var(--ps-ground)}.ta-ads-tile.idea .ic{color:var(--ps-faint)}.ta-ads-tile.idea em{color:var(--ps-gold-ink)}
+.ta-ads-form{background:var(--ps-paper);border:1px solid var(--ps-rule);border-radius:3px;padding:18px 20px;max-width:720px}
+.ta-ads-form p{margin:0 0 12px;color:var(--ps-ink-2);font-size:var(--ix-fs-13-5);line-height:1.5}
+.ta-ads-idea{background:var(--ps-paper);border:1px solid var(--ps-rule);border-radius:3px;padding:18px 22px 20px;max-width:760px}
+.ta-ads-ideah{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.ta-ads-ideah h3{margin:0!important;font:400 var(--ix-fs-24)/1.15 Newsreader,Georgia,serif!important}
+.ta-ads-pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:var(--ix-fs-11);font-weight:700;background:var(--ps-amber-pale);color:var(--ps-gold-ink)}
+.ta-ads-idea h4{margin:14px 0 4px!important;font:600 var(--ix-fs-11)/1 'Josefin Sans',system-ui,sans-serif!important;letter-spacing:2px;text-transform:uppercase;color:var(--ps-muted)}
+.ta-ads-idea p,.ta-ads-idea li{font-size:var(--ix-fs-13-5);line-height:1.5;color:var(--ps-ink-2);margin:0}
+.ta-ads-idea ul{margin:0!important;padding-left:18px}
+@media (max-width:900px){.ta-ads-tiles{grid-template-columns:1fr 1fr}}
+
+/* ═══════════════════════════════════════════════════════════════
+   v4.11.0 · DESIGN IN CANVA · Set up · Canva · Check
+   ═══════════════════════════════════════════════════════════════ */
+.am-cvpieces{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.am-cvpiece{position:relative;display:flex;flex-direction:column;gap:6px;align-items:stretch;padding:8px;background:var(--ps-paper);border:1.5px solid var(--am-border);border-radius:8px;cursor:pointer;font:inherit;text-align:left;color:var(--am-ink)}
+.am-cvpiece.on{border-color:var(--am-gold);box-shadow:0 0 0 3px var(--am-gold-glow)}
+.am-cvpiece .ck{position:absolute;top:6px;left:6px;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--am-border);background:var(--ps-paper);font-size:var(--ix-fs-11);display:flex;align-items:center;justify-content:center;z-index:1}
+.am-cvpiece.on .ck{background:var(--am-ink);border-color:var(--am-ink);color:var(--ps-paper)}
+.am-cvpiece .im{height:110px;display:flex;align-items:center;justify-content:center;background:var(--am-cream-deep);border-radius:4px;overflow:hidden}
+.am-cvpiece .im.checker{background-image:linear-gradient(45deg,var(--ps-ground-3) 25%,transparent 25%),linear-gradient(-45deg,var(--ps-ground-3) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,var(--ps-ground-3) 75%),linear-gradient(-45deg,transparent 75%,var(--ps-ground-3) 75%);background-size:14px 14px;background-position:0 0,0 7px,7px -7px,-7px 0;background-color:var(--ps-paper)}
+.am-cvpiece .im img{max-width:100%;max-height:100%;width:auto;height:auto;display:block}
+.am-cvpiece b{font-size:var(--ix-fs-12);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.am-cvwords table{width:100%;border-collapse:collapse;font-size:var(--ix-fs-12-5)}
+.am-cvwords th{text-align:left;font-size:var(--ix-fs-10-5);font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--am-mid);padding:0 8px 6px 0;border-bottom:1px solid var(--am-border-soft)}
+.am-cvwords td{padding:7px 8px 7px 0;border-bottom:1px solid var(--am-border-soft);vertical-align:top;color:var(--am-ink)}
+.am-cvwords td.k{font-weight:700;white-space:nowrap;color:var(--am-mid)}
+.am-cvwords td.w{font-weight:600}
+.am-cvwords td small{display:block;color:var(--am-mid);font-size:var(--ix-fs-11)}
+.am-cvwords.small td{padding:5px 6px 5px 0;font-size:var(--ix-fs-12)}
+.am-cvwfoot{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.am-cvwait{text-align:center;padding:28px 24px}
+.am-cvwait p{margin:10px auto 6px;max-width:52ch;font-size:var(--ix-fs-13-5);line-height:1.5;color:var(--am-ink)}
+.am-cvdots{display:flex;gap:10px;justify-content:center;margin:4px 0 8px}
+.am-cvdots i{width:14px;height:14px;border-radius:50%;background:var(--am-ink);animation:am-cvb 1.1s ease-in-out infinite}
+.am-cvdots i:nth-child(2){animation-delay:.2s}.am-cvdots i:nth-child(3){animation-delay:.4s}
+@keyframes am-cvb{0%,100%{transform:scale(.6);opacity:.45}50%{transform:scale(1.15);opacity:1}}
+.am-cvacts{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.am-cvstatus{margin-top:6px}
+#am-cvbig{max-width:100%;overflow:auto;border:1px solid var(--am-border);background:var(--ps-paper);padding:8px;border-radius:6px}
+#am-cvbig img{max-width:100%}
+@media (prefers-reduced-motion:reduce){.am-cvdots i{animation:none}}

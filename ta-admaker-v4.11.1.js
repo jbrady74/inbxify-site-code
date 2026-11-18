@@ -1,4 +1,4 @@
-/* ta-admaker-v4.10.6.js
+/* ta-admaker-v4.11.1.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
 
@@ -12,6 +12,34 @@
    ix-ad-layouts-v1.0.1.js, ix-pdf-pager-v1.1.0.js, ix-info and
    ix-success-toast, and AFTER ta-studio (v1_4_13 dispatches
    std:panel:admaker). Companion: ta-admaker-v1.1.0.css (head).
+
+   ── v4.11.1 (18 Nov 2026) ── version only: pairs with ta-admaker-v4.11.1.css (tokens). No code change. ──
+   ── v4.11.0 · Ad Maker Build S1 (18 Nov 2026) ── THE ADS RAIL TAB, AND DESIGN IN CANVA ──
+   · Ad Maker leaves TA Studio. It lives in the T-A Ads rail tab (#ta-ads-mount), which this file also draws:
+     header (Ads · ⓘ · + New ad), the strip All ads · Ad Maker · Ad form · Upload a file · Paste ad copy ·
+     Already in Intake · From a print issue (the last four are idea pages: purpose, decided, open questions),
+     and "+ New ad" tiles. All ads is ix-ads-board v1.0.0 from inbxify's side (To make · With the publisher or
+     advertiser · Client list, every customer of the publisher, read from ix-sales GET /ads). Make sidebar /
+     Make banner on a customer, Edit in Ad Maker and Open in Ad Maker on a version open an Ad Maker job on THAT
+     customer's own ads only (Jeff, 18 Nov: no other customer's ads are ever offered). Ad form opens ta-asf's
+     create-ad form. The Studio sub-tab and std:panel:admaker still mount this file if a page keeps them.
+   · Design in Canva replaces Improve this ad on Start (Fine-tune and the parts kit stay in the code, reached
+     only through Give me ideas and saved parts-kit versions). Steps: Start · Read · Set up · Canva · Check ·
+     Save. Set up ticks the pieces (pool pictures, logo, the whole ad) and lists the words with font, size and
+     colour (CANVA_SIZES); Edit in Canva sends them to ix-canva v0.2.0 (TA_CONFIG.canvaUrl), which files them in
+     the customer's Canva Projects folder and opens a blank design at the shape's size in a new tab; Ad Maker
+     polls the job and takes the 2× PNG when Canva's Return button (or Fetch from Canva) exports it; Check shows
+     it at size and on a phone with an optional second look (anthropicProxy) and the click link; Save uploads
+     the PNG (Uploadcare), records MEDIA (Scenario B Route 4) and the ADS row (104) with a canva recipe
+     {"v":"canva","designId",...}, then Approve & make current as before. A saved Canva version opens again with
+     Edit in Canva (POST /job/from-design carrying the shape). Save as is stays (Give me ideas path).
+   · ix-ad-layouts never sees a canva recipe: loadVersion and startFromVersion detect it first.
+   · Customers not in the page's hidden list (another title's) join CUST from the board's brand record
+     (ix-sales v1.3.7), so Make sidebar works for every customer of the publisher.
+   · Quill deep link: ?admaker=open&customer=<id>&shape= opens the Ads tab on Ad Maker with that job.
+   HARDCODING: HC-P-AMC1-1 CANVA_WORDS; HC-P-AMC1-2 CANVA_SIZES; HC-P-AMC1-3 CANVA_POLL_MS 3 s; HC-P-AMA1-1 ADS_TABS;
+   HC-P-AMA1-2 ADS_IDEAS; HC-P-AMA1-3 ADS_TILES; default canvaUrl https://ix-canva.jeff-2cd.workers.dev.
+   Companion: ta-admaker-v4.11.1.css. Needs ix-ads-board v1.0.0, ix-sales v1.3.7, ix-canva v0.2.0, ta-asf (Ad form).
 
    ── v1.5.0 · SS-Fork B · Creative S7 (7 Nov 2026, logo read by Worker) ──
    Needs extract-client v1.4.0 (/logo). Logo files are no longer read
@@ -824,7 +852,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.10.6', CSS_FILE = 'ta-admaker-v4.10.4.css';   // v4.10.5: CSS unchanged
+  var VERSION = '4.11.1', CSS_FILE = 'ta-admaker-v4.11.1.css';   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
   var ADVICE_BIGGER = 1.25;   // HC-P-SSB8-25
@@ -893,7 +921,7 @@
   var SRC_TYPES = [['banner', 'Banner'], ['sidebar', 'Sidebar'], ['splash', 'Splash'], ['print', 'Print ad'], ['other', 'Something else']];   // HC-P-SSB8-1
   var TYPE_GUESS_TOL = 1.3, AS_IS_GROUNDS = 3;                                                // HC-P-SSB8-2, HC-P-SSB8-3
   var WHOLE_AD_SHARE = 0.8;   // a found picture covering this much of the source is the ad itself, not a photo   // HC-P-SSB7-9
-  var SHAPE_TILES = [['banner', 'Banner', '700 \u00d7 235', false], ['sidebar', 'Sidebar', '480 \u00d7 400', false], ['splash', 'Splash', 'coming', true], ['text', 'Text ad', 'coming', true]];
+  var SHAPE_TILES = [['banner', 'Banner', '700 \u00d7 235', false], ['sidebar', 'Sidebar', '480 \u00d7 400', false], ['splash', 'Splash', '1080 \u00d7 1280 \u00b7 Canva only', false], ['text', 'Text ad', 'coming', true]];   // v4.11.0: splash through Canva
 
   var W = {                                                            // HC-P-SSB5-9
     title: 'Ad Maker', tagline: 'one shape at a time, from what the customer already has', whichShape: 'Which shape', oneAtATime: 'one at a time; come back for the next', keep: 'Keep', kept: 'Kept \u2713', clone: 'Clone', variations: 'Variations', putBack: 'put it back', keptFor: 'Kept for Save', workingOn: 'Working on', upNext: 'Up next', willUse: 'The drafts will use', nothingToDecide: 'Nothing to decide.', needs: 'Needs action', sent: 'Sent back', needed: 'Ad needed', note: 'Note only',
@@ -1252,7 +1280,7 @@
     if (!S.ads || !custId) return [];
     return S.ads.filter(function (it) { return adCustomerId(it.fieldData || {}) === custId && !(it.fieldData || {})['house-kind']; })
       .sort(function (a, b) { return String(b.createdOn || '').localeCompare(String(a.createdOn || '')); })
-      .map(function (it) { var fd = it.fieldData || {}; return { id: it.id, name: fd.name || it.id, banner: fd['banner-ad-link'] || '', sidebar: fd['sidebar-ad-link'] || '', recipe: fd['reformat-recipe'] || '',
+      .map(function (it) { var fd = it.fieldData || {}; return { id: it.id, name: fd.name || it.id, banner: fd['banner-ad-link'] || '', sidebar: fd['sidebar-ad-link'] || '', splash: fd[SHAPE_SLUG.splash.link] || '', recipe: fd['reformat-recipe'] || '',
         bannerApproval: optName('banner-approval', fd['banner-approval']), sidebarApproval: optName('sidebar-approval', fd['sidebar-approval']), createdOn: it.createdOn || '' }; });
   }
   // "<Customer> · <Month Year>", then v2, v3 — counted against the rows that exist.
@@ -1288,13 +1316,14 @@
         { name: 'Scenario 114', note: 'TA_CONFIG.makeUpdateCustomer: colours, fonts, a replaced logo' },
         { name: 'Scenario G \u2014 updateAd', note: 'TA_CONFIG.makeStudio: the send-back fix' }
       ],
-      companions: CSS_FILE + ' \u00b7 ix-ad-layouts v' + (window.IxAdLayouts ? IxAdLayouts.VERSION : '?') + ' \u00b7 ix-pdf-pager v1.1.0 \u00b7 ix-info \u00b7 ix-buttons' });
+      companions: CSS_FILE + ' \u00b7 ix-ad-layouts v' + (window.IxAdLayouts ? IxAdLayouts.VERSION : '?') + ' \u00b7 ix-pdf-pager v1.1.0 \u00b7 ix-canva v0.2.0 \u00b7 ix-ads-board v1.0.0 \u00b7 ix-info \u00b7 ix-buttons' });
   }
   // v2.0.0: the five steps are the spine - a row of boxes, one line each; a reached step is a button back to it.
   // v3.0.0: a step is open when its screen has something to show: Read once read, Pick once painted, Fine-tune with one picked, Save with one kept
   function canStep(n) {
     if (S.saving) return false;
     if (n === 1) return true;
+    if (canvaMode()) { var cv0 = S.canva || {}; if (n === 2) return !!(S.read || S.src === 'none'); if (n === 3) return !!(S.read || S.src === 'none') && S.screen !== 'start'; if (n === 4) return !!cv0.job; if (n === 5) return !!cv0.img; return false; }   // v4.11.0
     if (improveMode()) { if (n === 2) return !!(S.read || S.ed); if (n === 3) return !!(S.ed && !S.ed.clean && forward()); if (n === 4) return !!(S.ed && keptItems().length); return false; }   // v4.3.0
     if (n === 2) return !!(S.read || S.src === 'none' || S.ed);
     if (n === 3) return !!(S.ed && S.cleanReady);   // v4.2.0: Clean up, once it has been opened for this job
@@ -1304,9 +1333,11 @@
     return false;
   }
   function improveMode() { return S.mode === 'improve'; }
-  function stepNames() { return improveMode() ? ['Start', 'Read', 'Improve', 'Save'] : STEP_NAMES; }
-  function stepSubs() { return improveMode() ? ['Who, which shape, from what', 'The ad, and what we found', 'This shape, better online', 'Final check, then save'] : STEP_SUBS; }
-  function stepOf(scr) { return improveMode() ? ({ start: 1, read: 2, finetune: 3, tune: 3, save: 4, done: 4 }[scr] || 1) : (SCREEN_STEP[scr] || 1); }
+  var CANVA_STEPS = ['Start', 'Read', 'Set up', 'Canva', 'Check', 'Save'], CANVA_SUBS = ['Who, which shape, from what', 'The ad, and what we found', 'What goes to Canva', 'Lay it out there', 'The finished ad, on a phone', 'Then save'];   // v4.11.0
+  var CANVA_STEP_OF = { start: 1, read: 2, setup: 3, canva: 4, check: 5, save: 6, done: 6 }, CANVA_SCREEN = { 1: 'start', 2: 'read', 3: 'setup', 4: 'canva', 5: 'check', 6: 'save' };
+  function stepNames() { return canvaMode() ? CANVA_STEPS : improveMode() ? ['Start', 'Read', 'Improve', 'Save'] : STEP_NAMES; }
+  function stepSubs() { return canvaMode() ? CANVA_SUBS : improveMode() ? ['Who, which shape, from what', 'The ad, and what we found', 'This shape, better online', 'Final check, then save'] : STEP_SUBS; }
+  function stepOf(scr) { return canvaMode() ? (CANVA_STEP_OF[scr] || 1) : improveMode() ? ({ start: 1, read: 2, finetune: 3, tune: 3, save: 4, done: 4 }[scr] || 1) : (SCREEN_STEP[scr] || 1); }
   function stepsHTML() {
     if (S.screen === 'fix' || S.screen === 'fixdone') return '<div class="am-steps"><div class="am-step now wide"><em>!</em><div><b>' + W.fixing + '</b><span>Replaces the returned shape only</span></div></div></div>';
     var k = stepOf(S.screen), saved = S.screen === 'save' && S.saving && (S.saving.done || S.saving.err), names = stepNames(), subs = stepSubs();
@@ -1507,11 +1538,11 @@
     else if (it && it.err) mid = colh(it.title) + '<div class="am-err">' + esc(it.m) + '</div>';
     else mid = startCentre(it);
     var oneSrc = S.srcs && S.srcs.length === 1 && S.srcs[0].kind !== 'none';
-    var ready = !!(c && S.shape && S.srcs && S.srcs.length && S.mode && (S.mode !== 'improve' || oneSrc));   // v3.1.0 · v4.3.0: and what you need
+    var ready = !!(c && S.shape && S.srcs && S.srcs.length && S.mode && (S.mode !== 'improve' || oneSrc) && !(S.shape === 'splash' && S.mode !== 'canva'));   // v3.1.0 · v4.3.0 · v4.11.0: splash is Canva only
     var pend = (S.col.main ? 1 : 0) + (S.col.accent ? 1 : 0);
     var srcWord = { print: W.srcPrint, drop: W.srcDrop, paste: 'a screenshot', version: W.srcVersion, piece: 'a saved piece', none: W.srcNone }[S.src] || '';
     var fv = S.src === 'version' && S.fromVersion ? versionsOf(S.custId).filter(function (v) { return v.id === S.fromVersion; })[0] : null;
-    var msg = S.sel ? (c ? (!S.shape ? W.whichShape + '?' : S.srcs && S.srcs.length && !S.mode ? 'What do you need: improve this ad, or ideas?' : S.mode === 'improve' && S.srcs && S.srcs.length > 1 ? 'Improve works from one ad \u00b7 take the others out of Picked' : S.mode === 'improve' && S.srcs && S.srcs.length && !oneSrc ? 'Improve needs an ad to start from, not Scratch' : S.srcs && S.srcs.length && S.mode === 'improve' ? 'Improving <b>' + esc(S.srcs[0].name || 'this ad') + '</b> as a ' + S.shape : S.srcs && S.srcs.length ? 'Making a ' + S.shape + ' from <b>' + S.srcs.length + ' source' + (S.srcs.length > 1 ? 's' : '') + '</b>' + (pend ? ' \u00b7 ' + pend + ' brand colour' + (pend > 1 ? 's' : '') + ' to the customer on Save' : '') : W.howStart) : W.custFirst) : 'Pick a job on the left.';
+    var msg = S.sel ? (c ? (!S.shape ? W.whichShape + '?' : S.srcs && S.srcs.length && !S.mode ? 'What do you need: design it in Canva, or ideas?' : S.shape === 'splash' && S.mode && S.mode !== 'canva' ? 'A splash is made in Canva \u00b7 pick Design in Canva' : S.mode === 'improve' && S.srcs && S.srcs.length > 1 ? 'Improve works from one ad \u00b7 take the others out of Picked' : S.mode === 'improve' && S.srcs && S.srcs.length && !oneSrc ? 'Improve needs an ad to start from, not Scratch' : S.srcs && S.srcs.length && S.mode === 'improve' ? 'Improving <b>' + esc(S.srcs[0].name || 'this ad') + '</b> as a ' + S.shape : S.srcs && S.srcs.length ? 'Making a ' + S.shape + ' from <b>' + S.srcs.length + ' source' + (S.srcs.length > 1 ? 's' : '') + '</b>' + (pend ? ' \u00b7 ' + pend + ' brand colour' + (pend > 1 ? 's' : '') + ' to the customer on Save' : '') : W.howStart) : W.custFirst) : 'Pick a job on the left.';
     shell(mid, barHTML(msg, (S.sel ? ghost('startCancel', W.cancel) : '') + (S.sel && !(it && (it.coming || it.err)) ? btn('toRead', W.readAd, 'primary', !ready) : '')));
   }
   function jobWord(it) { return S.shape ? 'Making a ' + S.shape : (it && it.what ? String(it.what) : 'Not on the list'); }
@@ -1539,7 +1570,7 @@
     var picked = function (kind, id) { return S.srcs.some(function (r) { return r.kind === kind && r.id === id; }); };
     var tile = function (kind, id, img, name, meta) { var on = picked(kind, id); return '<button type="button" class="am-st' + (on ? ' on' : '') + '" data-act="srcToggle" data-k="' + kind + '" data-v="' + esc(id) + '" title="' + esc(name) + '"><span class="ck">' + (on ? '\u2713' : '') + '</span><span class="bx">' + (img ? '<img src="' + esc(img) + '" alt="">' : '<i></i>') + '</span><b>' + esc(name) + '</b><small>' + esc(meta) + '</small></button>'; };
     var strip = '';
-    if (chip === 'saved') strip = vs.length ? '<div class="am-strip">' + vs.map(function (v) { return tile('version', v.id, v.banner || v.sidebar, v.name, (v.recipe ? 'Made in Ad Maker' : 'Picture only') + (v.banner ? ' \u00b7 banner' : ' \u00b7 sidebar')); }).join('') + '</div>' : '<div class="am-srcl">No saved ads for this customer yet.</div>';
+    if (chip === 'saved') strip = vs.length ? '<div class="am-strip">' + vs.map(function (v) { return tile('version', v.id, v.banner || v.sidebar || v.splash, v.name, (isCanvaRecipe(v.recipe) ? 'Made in Canva' : v.recipe ? 'Made in Ad Maker' : 'Picture only') + (v.banner ? ' \u00b7 banner' : v.sidebar ? ' \u00b7 sidebar' : ' \u00b7 splash')); }).join('') + '</div>' : '<div class="am-srcl">No saved ads for this customer yet.</div>';
     else if (chip === 'pieces') strip = ps.length ? '<div class="am-strip">' + ps.map(function (q) { return tile('piece', q.id, q.url, q.name, q.w ? q.w + ' \u00d7 ' + q.h + ' px' : 'piece'); }).join('') + '</div>' : (S.loading.media === true ? '<div class="am-srcl">Reading the customer\u2019s media\u2026</div>' : '<div class="am-srcl">No saved pieces yet. Cut them on Read with Mark the photo.</div>');
     else if (chip === 'print') strip = '<div class="am-srcl">Nothing waiting for this customer. Arrives with Print Ads as Input.</div>';
     else if (chip === 'upload') strip = (S.drop ? '<div class="am-srcl">Opening ' + esc(S.drop.name) + '\u2026</div>' : '<div class="am-drop am-paste" data-act="fileDrop" id="am-dropzone" tabindex="0"><div class="t"><b>Drop a PDF or picture here</b>, or click here and press ' + esc(pasteKey()) + ' to paste a screenshot. <a href="#" class="am-up" data-act="pickFile">Choose a file</a></div><input type="file" id="am-file" accept="image/*,application/pdf" style="display:none"></div>');
@@ -1548,7 +1579,7 @@
       return '<span class="am-tpill' + (S.srcFlash === r.key ? ' flash' : '') + '"><span class="mini">' + (r.thumb ? '<img src="' + esc(r.thumb) + '" alt="">' : '') + '</span><span class="nm" title="' + esc(r.name) + '">' + esc(r.name) + '</span><button type="button" data-act="srcDrop" data-v="' + i + '" aria-label="Remove ' + esc(r.name) + '">\u00d7</button></span>';
     }).join('') : '<span class="am-srcl">Nothing yet. Pick from any chip above; nothing wins here, Read shows each one.</span>') + '</div>';
     h += ask(3, 'From what', S.mode === 'improve' ? 'one ad to improve' : 'pick as many as you like', chips + strip + tray);
-    var need = [['improve', 'Improve this ad', 'Re-fit it to this shape and make it better online: bigger type, cleaner pictures, every piece movable and stretchable. Stays close to the art. Works from one ad.'], ['ideas', 'Give me ideas', 'New concepts from everything you picked, in the customer\u2019s brand colours, fonts and logo. For when the art is not right yet.']];
+    var need = [['canva', CANVA_WORDS.tile, CANVA_WORDS.tileSub], ['ideas', 'Give me ideas', 'New concepts from everything you picked, in the customer\u2019s brand colours, fonts and logo. For when the art is not right yet. Banner and sidebar.']];   // v4.11.0: Design in Canva replaces Improve (its code stays, reached from saved parts kits)
     h += ask(4, 'What you need', '', '<div class="am-needs">' + need.map(function (q) { return '<button type="button" class="am-need' + (S.mode === q[0] ? ' on' : '') + '" data-act="needPick" data-v="' + q[0] + '"><b>' + q[1] + '</b><small>' + q[2] + '</small></button>'; }).join('') + '</div>', !S.mode);   // v4.3.0
     return h;
   }
@@ -1693,6 +1724,8 @@
   function loadVersion(v) {
     S.fromVersion = v.id;
     if (!v.recipe) return;
+    if (isCanvaRecipe(v.recipe)) { S.verRecipe = null; try { S.verCanva = JSON.parse(v.recipe); } catch (e) { S.verCanva = null; } return; }   // v4.11.0: a Canva version has no layout recipe; its picture is read
+    S.verCanva = null;
     try { S.verRecipe = IxAdLayouts.recipe.parse(v.recipe); } catch (e) { S.verRecipe = null; S.verRecipeErr = e.message; }
   }
 
@@ -1778,7 +1811,7 @@
     var unsavedN = S.pics.filter(function (p) { return p.marked && !p.mediaId; }).length;   // v2.6.0
     var pieceBtn = S.savingPieces ? btn('x', 'Saving pieces\u2026', 'secondary', true) : unsavedN ? btn('savePieces', 'Save ' + unsavedN + ' piece' + (unsavedN > 1 ? 's' : '') + ' as media', 'secondary') : '';
     shell(mid, barHTML(S.savingPieces ? 'Saving the pieces to ' + esc(c.name) + '\u2019s media\u2026' : 'What was read off the ad \u00b7 nothing to set here',
-      ghost('back', W.back) + pieceBtn + btn('toDrafts', improveMode() ? 'Improve the ad' : layoutLead() ? 'Next: clean up the ad' : S.ed && S.drafts && S.draftSig === inputSig() ? 'See the concepts' : 'Show the concepts', 'primary', S.savingPieces)), { right: found });
+      ghost('back', W.back) + pieceBtn + btn('toDrafts', canvaMode() ? 'Next: set up for Canva' : improveMode() ? 'Improve the ad' : layoutLead() ? 'Next: clean up the ad' : S.ed && S.drafts && S.draftSig === inputSig() ? 'See the concepts' : 'Show the concepts', 'primary', S.savingPieces)), { right: found });
     showSource();
     (function () { var el = document.getElementById('am-srcbig'), src = S.srcCanvas || S.verImg; if (!el || !src) return; var wv = Math.min(760, el.clientWidth - 40 || 700); var im = canvasView(src.tagName === 'IMG' ? imgToCanvas(src) : src, wv); im.style.maxWidth = '100%'; im.style.margin = '0 auto'; el.innerHTML = ''; el.appendChild(im); })();   // after shell: the column exists now
   }
@@ -4386,7 +4419,7 @@
       .then(function (r) {
         if (!r.ok || !r.j || r.j.ok !== true) throw new Error('Scenario 114 did not confirm the customer write.');
         var e = r.j.fieldData || {}, miss = [];
-        var pairs = { phone: 'business-phone', website: 'contact-website', email: 'business-email', brandColorMain: 'brand-color-main', brandColorAccent: 'brand-color-accent', brandFontHeading: 'brand-font-heading', brandFontBody: 'brand-font-body', logoLink: 'logo-link', logoLinkLight: 'logo-link-light', currentBannerAd: 'current-banner-ad', currentSidebarAd: 'current-sidebar-ad' };
+        var pairs = { phone: 'business-phone', website: 'contact-website', email: 'business-email', brandColorMain: 'brand-color-main', brandColorAccent: 'brand-color-accent', brandFontHeading: 'brand-font-heading', brandFontBody: 'brand-font-body', logoLink: 'logo-link', logoLinkLight: 'logo-link-light', currentBannerAd: 'current-banner-ad', currentSidebarAd: 'current-sidebar-ad', currentSplashAd: 'current-splash-ad' };
         var idOf = function (v) { if (Array.isArray(v)) v = v[0]; return v && typeof v === 'object' ? (v.id || v.itemId || '') : (v || ''); };
         Object.keys(fd).forEach(function (k) { var slug = pairs[k]; if (slug && String(idOf(e[slug])).toUpperCase() !== String(fd[k]).toUpperCase()) miss.push(slug); });
         if (miss.length) throw new Error('Webflow did not keep ' + miss.join(', ') + '. Check Scenario 114\u2019s mapping for those fields.');
@@ -4471,7 +4504,7 @@
     body[sh === 'banner' ? 'bannerApproval' : 'sidebarApproval'] = approvedId;
     fetchJson(cfg.makeStudio, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(function (q) { var fd = q.ok && q.j && q.j.ok === true && q.j.fieldData; if (!fd || String(fd[SHAPE_SLUG[sh].approval] || '') !== approvedId) throw new Error('Scenario G did not confirm the approval.'); r.busy = 'Making it current\u2026'; render();
-        var fd2 = {}; fd2[sh === 'banner' ? 'currentBannerAd' : 'currentSidebarAd'] = r.id; return write114(fd2, 'current'); })
+        var fd2 = {}; fd2[sh === 'banner' ? 'currentBannerAd' : sh === 'sidebar' ? 'currentSidebarAd' : 'currentSplashAd'] = r.id; return write114(fd2, 'current'); })
       .then(function () { r.busy = ''; r.current = true; render(); toast(esc(r.name) + ' approved and set as the current ' + sh + '.', 'ok'); return loadAds(); })
       .catch(function (e) { r.busy = ''; r.approveErr = (e && e.message) || String(e); render(); });
   }
@@ -4501,7 +4534,7 @@
     var h = colh(sv.done ? W.saved : W.saving, sv.head || '') + '<div class="am-card">' + sv.steps.map(function (st) {
       return '<div class="am-ps ' + st.state + '"><i>' + (st.state === 'done' ? '\u2713' : st.state === 'bad' ? '!' : '') + '</i>' + esc(st.label) + (st.err ? '<span class="am-err inline">' + esc(st.err) + '</span>' : '') + '<span class="who">' + esc(st.who) + '</span></div>'; }).join('');
     if (sv.err) h += '<div class="am-err" style="margin-top:10px">' + esc(sv.err) + '</div>';
-    if (sv.rows.length) h += '<div class="am-result"><h4>' + sv.rows.length + ' version' + (sv.rows.length > 1 ? 's' : '') + ' saved</h4>' + sv.rows.map(function (r, i) { return '<div class="am-rr">' + (r.banner ? '<img src="' + esc(r.banner) + '" alt="" style="width:260px">' : '') + (r.sidebar ? '<img src="' + esc(r.sidebar) + '" alt="" style="width:120px">' : '') + '<div class="lines"><b>' + esc(r.name) + '</b><br>' + (r.banner ? 'Banner <span class="am-pend">' + APPROVAL_WORDS.pending + '</span> ' : '') + (r.sidebar ? 'Sidebar <span class="am-pend">' + APPROVAL_WORDS.pending + '</span>' : '') + '<br>' + (r.current ? '<span class="am-flag ok" style="background:#E6F2EC !important">Approved \u00b7 the customer\u2019s current ' + r.shape + '</span>' : r.busy ? '<span class="am-note">' + esc(r.busy) + '</span>' : (r.approveErr ? '<span class="am-err inline">' + esc(r.approveErr) + '</span> ' : '') + '<button type="button" class="ix-btn ix-btn--secondary" data-act="approveRow" data-i="' + i + '" style="height:30px !important;padding:0 12px !important;font-size:12.5px !important;margin-top:6px">Approve &amp; make current</button> <span class="am-note">or leave it Pending for the publisher to review</span>') + '</div></div>'; }).join('') + '</div>';
+    if (sv.rows.length) h += '<div class="am-result"><h4>' + sv.rows.length + ' version' + (sv.rows.length > 1 ? 's' : '') + ' saved</h4>' + sv.rows.map(function (r, i) { return '<div class="am-rr">' + (r.banner ? '<img src="' + esc(r.banner) + '" alt="" style="width:260px">' : '') + (r.sidebar ? '<img src="' + esc(r.sidebar) + '" alt="" style="width:120px">' : '') + (r.splash ? '<img src="' + esc(r.splash) + '" alt="" style="width:120px">' : '') + '<div class="lines"><b>' + esc(r.name) + '</b><br>' + (r.banner ? 'Banner <span class="am-pend">' + APPROVAL_WORDS.pending + '</span> ' : '') + (r.sidebar ? 'Sidebar <span class="am-pend">' + APPROVAL_WORDS.pending + '</span>' : '') + (r.splash ? 'Splash <span class="am-pend">saved \u00b7 no approval field yet</span>' : '') + '<br>' + (r.noApproval ? '<span class="am-note">ADS has no splash approval or current-splash pointer yet; the splash is on the row and ready for the IPP.</span>' : r.current ? '<span class="am-flag ok" style="background:#E6F2EC !important">Approved \u00b7 the customer\u2019s current ' + r.shape + '</span>' : r.busy ? '<span class="am-note">' + esc(r.busy) + '</span>' : (r.approveErr ? '<span class="am-err inline">' + esc(r.approveErr) + '</span> ' : '') + '<button type="button" class="ix-btn ix-btn--secondary" data-act="approveRow" data-i="' + i + '" style="height:30px !important;padding:0 12px !important;font-size:12.5px !important;margin-top:6px">Approve &amp; make current</button> <span class="am-note">or leave it Pending for the publisher to review</span>') + '</div></div>'; }).join('') + '</div>';
     h += '</div>';
     shell(h, barHTML(sv.done ? W.savedMsg : sv.err ? 'Stopped. Nothing after the failed step was written.' : W.keepOpen, (sv.done || sv.err) ? (sv.done ? btn('proofsPdf', 'Download the proofs PDF', 'secondary') + ' ' : '') + btn('again', W.again, 'secondary') + (sv.done && (S.shape === 'banner' || S.shape === 'sidebar') ? ' ' + btn('nextShape', 'Make the ' + (S.shape === 'banner' ? 'sidebar' : 'banner') + ' next', 'primary') : '') : ''), { right: null });
   }
@@ -4559,6 +4592,349 @@
       .catch(function (e) { S.saving.err = (e && e.message) || String(e); render(); });
   }
 
+
+  // ══════════════════════════════════════════════════════════════
+  //  v4.11.0 · DESIGN IN CANVA: Set up → Canva → Check → Save
+  //  The pieces (ticked pictures, the logo, the whole ad) go to the customer's Canva Projects folder through
+  //  ix-canva v0.2.0; a blank design opens at the shape's size; the words wait on the Set up screen as a list
+  //  with font, size and colour; Canva's Return button (or Fetch from Canva here) brings the PNG back at 2×;
+  //  Check shows it with an optional second look; Save writes it like any version, with a canva recipe.
+  // ══════════════════════════════════════════════════════════════
+  var CANVA_WORDS = {   // HC-P-AMC1-1
+    tile: 'Design in Canva', tileSub: 'The pieces go to Canva; you lay the ad out there with Canva’s tools, then it comes back here to check and save. Banner, sidebar or splash.',
+    setup: 'Set up', setupSub: 'What goes to Canva', canva: 'Canva', canvaSub: 'Lay it out there', check: 'Check', checkSub: 'The finished ad, before Save',
+    pieces: 'Pieces', piecesSub: 'tick what should go to the customer’s Canva folder', words: 'The words', wordsSub: 'keep this list beside Canva; the text boxes are typed there',
+    go: 'Edit in Canva', going: 'Sending to Canva…', again: 'Edit in Canva again', fetch: 'Fetch from Canva', fetching: 'Fetching the finished picture…',
+    waiting: 'Canva is open in another tab. When you are done, click Canva’s <b>Return to inbxify</b> button (top right), or press Fetch from Canva here.',
+    open: 'Open Canva again', sentOk: 'In Canva. Your pieces are in Projects → the customer’s folder, beside the design.',
+    copy: 'Copy the words', copied: 'Words copied.', looks: 'Looks right', noPieces: 'Nothing ticked: only the blank design goes to Canva.',
+    notConnected: 'ix-canva is not connected to the Canva account. Open the Worker’s /connect page once.',
+    checkHead: 'Back from Canva', checkSub2: 'at twice the ad size · check it on a phone before Save'
+  };
+  var CANVA_SIZES = {   // HC-P-AMC1-2 · suggested type sizes in Canva, px at the design size
+    banner: { headline: 36, headline2: 24, supporting: 18, button: 16, phone: 18, website: 14, small_print: 11, business: 16 },
+    sidebar: { headline: 40, headline2: 26, supporting: 20, button: 18, phone: 20, website: 16, small_print: 12, business: 18 },
+    splash: { headline: 84, headline2: 56, supporting: 42, button: 38, phone: 42, website: 34, small_print: 24, business: 38 }
+  };
+  var CANVA_POLL_MS = 3000;   // HC-P-AMC1-3
+  function canvaMode() { return S.mode === 'canva'; }
+  function canvaUrl() { return String(CFG().canvaUrl || 'https://ix-canva.jeff-2cd.workers.dev').replace(/\/+$/, ''); }
+  function canvaApi(path, opts) {
+    opts = opts || {};
+    return memberToken().then(function (tok) {
+      if (!tok) throw new Error('No Memberstack login on this page, so ix-canva cannot be asked.');
+      var init = { method: opts.method || 'GET', headers: { Authorization: 'Bearer ' + tok } };
+      if (opts.body !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
+      if (opts.raw) return fetch(canvaUrl() + path, init).then(function (r) { if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || ('ix-canva answered HTTP ' + r.status)); }); return r.blob(); });
+      return fetchJson(canvaUrl() + path, init).then(function (r) { if (!r.ok || !r.j || r.j.ok !== true) throw new Error((r.j && r.j.error) || ('ix-canva answered HTTP ' + r.status)); return r.j; });
+    });
+  }
+  function canvaPieces() {   // the pictures that go to Canva: ticked pool pictures, the logo, the whole ad
+    var out = [], c = cust() || {}, seen = [];
+    (S.pics || []).concat(S._poolPics || []).forEach(function (p) { if (!p || !p.img || p.whole || seen.indexOf(p.img) > -1) return; seen.push(p.img); out.push({ key: 'pic' + out.length, img: p.img, label: p.label || 'Picture', kind: 'photo', on: (S.ticks || []).indexOf(picKey(p)) > -1 }); });
+    if (S.printLogo && S.printLogo.img && (!c.logo || S.logoUse === 'print')) out.push({ key: 'logo-print', img: S.printLogo.img, label: 'Logo (cut from the ad)', kind: 'logo', on: true });
+    if (c.logo) out.push({ key: 'logo-file', url: c.logo, label: 'Logo (customer’s file)', kind: 'logo', on: true });
+    if (c.logoLight) out.push({ key: 'logo-light', url: c.logoLight, label: 'Light logo (for dark panels)', kind: 'logo', on: false });
+    if (S.whole && S.whole.img) out.push({ key: 'whole', img: S.whole.img, label: 'The whole ad, as read', kind: 'whole', on: false });
+    return out;
+  }
+  function canvaTicked() { var cv = S.canva || (S.canva = {}); if (!cv.ticks) { cv.ticks = {}; canvaPieces().forEach(function (p) { cv.ticks[p.key] = p.on; }); } return canvaPieces().filter(function (p) { return cv.ticks[p.key]; }); }
+  function canvaWordRows() {
+    var f = fontsFor(), cl = colours(), sz = CANVA_SIZES[S.shape] || CANVA_SIZES.banner, ink = cl.main || INK;
+    return SLOTS.map(function (sl) { var k = sl[0], v = String(S.words[k] || '').trim(); if (!v) return null;
+      var head = k === 'headline' || k === 'headline2', btn0 = k === 'button';
+      return { slot: sl[1], text: v, font: head ? f.head : f.body, weight: head ? (f.headWeight || 700) : (btn0 ? 700 : 400), size: sz[k] || sz.supporting, colour: btn0 ? (cl.accent || ink) : ink, note: btn0 ? 'on a button, white type' : '' };
+    }).filter(Boolean);
+  }
+  function canvaWordsText() { return canvaWordRows().map(function (r) { return r.slot + ': ' + r.text + '  [' + r.font + ' ' + r.weight + ', ' + r.size + ' px, ' + r.colour + (r.note ? ', ' + r.note : '') + ']'; }).join('\n'); }
+  function vSetup() {
+    var c = cust(), cv = S.canva || (S.canva = {}), pcs = canvaPieces(), ticked = canvaTicked(), dims = shapeDims(S.shape) || { w: 0, h: 0 };
+    canvaTicked();
+    var left = colh(CANVA_WORDS.pieces, CANVA_WORDS.piecesSub) + '<div class="am-cvpieces">' + pcs.map(function (p) {
+      var on = !!cv.ticks[p.key];
+      return '<button type="button" class="am-cvpiece' + (on ? ' on' : '') + '" data-act="cvTick" data-v="' + esc(p.key) + '"><span class="ck">' + (on ? '✓' : '') + '</span><span class="im' + (p.kind === 'logo' ? ' checker' : '') + '" data-cvim="' + esc(p.key) + '">' + (p.url ? '<img src="' + esc(p.url) + '" alt="">' : '') + '</span><b>' + esc(p.label) + '</b></button>';
+    }).join('') + (pcs.length ? '' : '<div class="am-note">' + CANVA_WORDS.noPieces + '</div>') + '</div>' +
+      '<div class="am-card" style="margin-top:12px"><b>Goes to Canva</b><div class="am-note" style="margin-top:4px">A blank ' + esc(shapeLabel(S.shape).toLowerCase()) + ' design, ' + dims.w + ' × ' + dims.h + ' px, in the folder <b>inbxify · ' + esc(c.name) + '</b> under Projects, with ' + ticked.length + ' piece' + (ticked.length === 1 ? '' : 's') + '.' + (c.main ? ' Brand colours: <span class="am-pchip"><i style="background:' + esc(c.main) + ' !important"></i>' + esc(c.main) + '</span>' + (c.accent ? ' <span class="am-pchip"><i style="background:' + esc(c.accent) + ' !important"></i>' + esc(c.accent) + '</span>' : '') : '') + '</div></div>';
+    later(function () { pcs.forEach(function (p) { if (!p.img) return; var el = document.querySelector('#' + MOUNT_ID + ' [data-cvim="' + p.key + '"]'); if (el) { el.innerHTML = ''; el.appendChild(canvasView(p.img.getContext ? p.img : imgToCanvas(p.img), 120, true)); } }); });
+    var rows = canvaWordRows();
+    var right = colh(CANVA_WORDS.words, CANVA_WORDS.wordsSub) + '<div class="am-card am-cvwords">' + (rows.length ? '<table><thead><tr><th>Slot</th><th>Words</th><th>Font</th><th>Size</th><th>Colour</th></tr></thead><tbody>' + rows.map(function (r) {
+      return '<tr><td class="k">' + esc(r.slot) + '</td><td class="w">' + esc(r.text) + '</td><td>' + esc(r.font) + ' ' + r.weight + '</td><td>' + r.size + ' px</td><td><span class="am-pchip"><i style="background:' + esc(r.colour) + ' !important"></i>' + esc(r.colour) + '</span>' + (r.note ? '<small>' + esc(r.note) + '</small>' : '') + '</td></tr>';
+    }).join('') + '</tbody></table>' : '<div class="am-note">No words were read. Type them in Canva.</div>') +
+      '<div class="am-cvwfoot">' + btn('cvCopy', CANVA_WORDS.copy, 'secondary') + '<span class="am-light">Live text boxes placed for you arrive with the inside-Canva app (next build).</span></div></div>';
+    shell('<div class="am-boxcols">' + col('', 'flex:1;min-width:0', left) + col('', 'width:460px;flex:none', right) + '</div>',
+      barHTML(cv.err ? '<span class="am-err inline">' + esc(cv.err) + '</span>' : cv.busy ? CANVA_WORDS.going : 'Pieces and words ready · Edit in Canva opens a new tab', ghost('back', W.back) + btn('cvGo', cv.busy ? CANVA_WORDS.going : CANVA_WORDS.go, 'primary', !!cv.busy)), { right: null });
+  }
+  function canvaDataUrl(img, max) { var cv0 = img.getContext ? img : imgToCanvas(img); return scaled(cv0, max || 2400).toDataURL('image/png'); }
+  function canvaGo() {
+    var c = cust(), cv = S.canva || (S.canva = {}); if (cv.busy) return;
+    cv.busy = true; cv.err = ''; render();
+    var ticked = canvaTicked(), pieces = [], links = [];
+    ticked.forEach(function (p, i) { if (p.img) pieces.push({ name: (c.name + ' - ' + p.label + '.png').replace(/[^\w .()\-]+/g, '-'), dataUrl: canvaDataUrl(p.img) }); else if (p.url) links.push(p.url); });
+    var title = c.name + ' · ' + shapeLabel(S.shape) + ' · ' + new Date().toISOString().slice(0, 10);
+    var taUrl = location.origin + location.pathname + '#ads';
+    canvaApi('/job', { method: 'POST', body: { customer: { id: c.id, name: c.name }, shape: S.shape, title: title, taUrl: taUrl, pieces: pieces, links: links } })
+      .then(function (j) { cv.busy = false; cv.job = j.job; cv.editUrl = j.editUrl; cv.png = null; cv.img = null; cv.blob = null; cv.status = 'open'; S.screen = 'canva'; render();
+        var w = window.open(j.editUrl, '_blank'); if (!w) toast('The browser blocked the Canva tab. Use Open Canva again.', 'err'); canvaPollStart(); })
+      .catch(function (e) { cv.busy = false; cv.err = /not connected/i.test(e.message) ? CANVA_WORDS.notConnected + ' (' + e.message + ')' : e.message; render(); });
+  }
+  var CANVA_TIMER = null;
+  function canvaPollStart() { canvaPollStop(); CANVA_TIMER = setInterval(canvaPollOnce, CANVA_POLL_MS); }
+  function canvaPollStop() { if (CANVA_TIMER) { clearInterval(CANVA_TIMER); CANVA_TIMER = null; } }
+  function canvaPollOnce() {
+    var cv = S.canva; if (!cv || !cv.job || S.screen !== 'canva' || cv.fetching) { if (!cv || S.screen !== 'canva') canvaPollStop(); return; }
+    canvaApi('/job/' + encodeURIComponent(cv.job.id)).then(function (j) { cv.job = j.job; if (j.job.status === 'exported' && j.job.exportedAt !== cv.seenExport) { cv.seenExport = j.job.exportedAt; canvaFetch(); } else { var el = document.querySelector('#' + MOUNT_ID + ' .am-cvstatus'); if (el) el.textContent = canvaStatusWord(); } }).catch(function () {});
+  }
+  function canvaStatusWord() { var cv = S.canva || {}, j = cv.job || {}; return j.status === 'exported' ? 'Exported ' + fmtDate(j.exportedAt) : 'Waiting for Canva’s Return button · checked ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); }
+  function canvaFetch() {
+    var cv = S.canva; if (!cv || !cv.job || cv.fetching) return;
+    cv.fetching = true; cv.err = ''; render();
+    var p = cv.job.status === 'exported' ? Promise.resolve() : canvaApi('/job/' + encodeURIComponent(cv.job.id) + '/export', { method: 'POST' }).then(function (j) { cv.job = j.job; });
+    p.then(function () { return canvaApi('/job/' + encodeURIComponent(cv.job.id) + '/png', { raw: true }); })
+      .then(function (blob) { cv.blob = blob; return new Promise(function (ok, bad) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = function () { bad(new Error('The PNG from Canva could not be shown.')); }; i.src = URL.createObjectURL(blob); }); })
+      .then(function (img) { cv.img = img; cv.fetching = false; cv.fc = null; canvaPollStop(); S.screen = 'check'; render(); toast('The ad is back from Canva.', 'ok'); })
+      .catch(function (e) { cv.fetching = false; cv.err = e.message; render(); });
+  }
+  function vCanva() {
+    var cv = S.canva || {}, c = cust();
+    var mid = colh(CANVA_WORDS.canva, CANVA_WORDS.canvaSub) + '<div class="am-card am-cvwait">' + (cv.fetching ? '<div class="am-prog"><b>' + CANVA_WORDS.fetching + '</b><div class="bar"><i></i></div></div>' :
+      '<div class="am-cvdots"><i></i><i></i><i></i></div><p>' + CANVA_WORDS.waiting + '</p><div class="am-cvstatus am-light">' + esc(canvaStatusWord()) + '</div>' +
+      '<div class="am-cvacts">' + btn('cvOpen', CANVA_WORDS.open, 'secondary') + btn('cvFetch', CANVA_WORDS.fetch, 'primary') + '</div>' + (cv.err ? '<div class="am-err" style="margin-top:10px">' + esc(cv.err) + '</div>' : '')) + '</div>' +
+      '<div class="am-note" style="margin-top:10px">' + CANVA_WORDS.sentOk + ' Design <code>' + esc(cv.job ? cv.job.designId : '') + '</code>.</div>';
+    var right = colh(CANVA_WORDS.words, 'for the text boxes') + '<div class="am-card am-cvwords small"><table><tbody>' + canvaWordRows().map(function (r) { return '<tr><td class="k">' + esc(r.slot) + '</td><td class="w">' + esc(r.text) + '</td><td><small>' + esc(r.font) + ' ' + r.weight + ' · ' + r.size + ' px · ' + esc(r.colour) + '</small></td></tr>'; }).join('') + '</tbody></table><div class="am-cvwfoot">' + btn('cvCopy', CANVA_WORDS.copy, 'secondary') + '</div></div>';
+    shell(mid, barHTML(cv.fetching ? CANVA_WORDS.fetching : 'In Canva · ' + esc(c.name) + ', ' + esc(shapeLabel(S.shape).toLowerCase()), ghost('back', W.back)), { right: right });
+  }
+  function vCheck() {
+    var cv = S.canva || {}, c = cust(), dims = shapeDims(S.shape) || { w: 0, h: 0 }, img = cv.img;
+    if (!cv.fc) cv.fc = { asked: false, busy: false, err: '', issues: null };
+    var fc = cv.fc;
+    var fcHead = '<div class="am-fch"><b>Final check</b><span>' + (fc.issues ? (fc.issues.length ? fc.issues.length + ' thing' + (fc.issues.length > 1 ? 's' : '') + ' to look at' : 'The second look found nothing') : 'Look at it on a phone; ask for a second look if you like') + '</span>' +
+      (fc.busy ? '<span class="am-note">Asking for a second look…</span>' : '<button type="button" class="am-btn2" data-act="cvAsk">' + (fc.asked ? 'Ask again' : 'Ask for a second look') + '</button>') + '</div>' + (fc.err ? '<div class="am-err">' + esc(fc.err) + '</div>' : '') +
+      (fc.issues && fc.issues.length ? '<div class="am-fclist">' + fc.issues.map(function (q) { return '<div class="am-fc"><span class="am-flag warn" style="background:#FBF3DF !important">Second look</span><span class="tx">' + esc(q) + '</span></div>'; }).join('') + '</div>' : '');
+    var mid = colh(CANVA_WORDS.checkHead, (img ? img.naturalWidth + ' × ' + img.naturalHeight + ' px' : '') + ' · ' + CANVA_WORDS.checkSub2) +
+      '<div class="am-card am-sum">' + fcHead + '<div class="am-sumrow big"><div class="pic" id="am-cvbig"></div><div class="am-sumr"><b>' + esc(shapeLabel(S.shape)) + '</b> · made in Canva<div class="am-srcl">Saved as <b>' + esc(versionName(c, 1)) + '</b> · ' + APPROVAL_WORDS.pending + '</div>' +
+      '<div class="am-phoneh" style="margin-top:8px">On a phone <span>' + PHONE_W + ' px</span></div><div class="am-phonepic" id="am-cvphone"></div></div></div></div>' + clickCardHTML();
+    later(function () { if (!img) return; var b = document.getElementById('am-cvbig'), p = document.getElementById('am-cvphone'); if (b) { var i1 = new Image(); i1.src = img.src; i1.style.width = Math.min(dims.w || 700, 700) + 'px'; i1.style.display = 'block'; b.innerHTML = ''; b.appendChild(i1); } if (p) { var i2 = new Image(); i2.src = img.src; i2.style.width = PHONE_W + 'px'; i2.style.display = 'block'; p.innerHTML = ''; p.appendChild(i2); } });
+    shell(mid, barHTML(S.click ? '<b>1 version</b> to the customer, pending' : 'Choose where a click goes first', ghost('back', W.back) + btn('cvAgain', CANVA_WORDS.again, 'secondary') + btn('cvSave', W.saveBtn + ' 1 version', 'primary', !S.click)), { right: null });
+  }
+  function canvaAsk() {
+    var cv = S.canva, cfg = CFG(); if (!cv || !cv.img || cv.fc.busy) return;
+    if (!cfg.anthropicProxy) { cv.fc.err = 'TA_CONFIG.anthropicProxy is missing on this page, so there is no one to ask.'; render(); return; }
+    cv.fc.busy = true; cv.fc.err = ''; render();
+    var content = [];
+    try { var sc = scaled(imgToCanvas(cv.img), 900); content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: sc.toDataURL('image/jpeg', 0.85).split(',')[1] } }); } catch (e) {}
+    content.push({ type: 'text', text: 'This is a finished ' + shapeLabel(S.shape).toLowerCase() + ' ad (' + (shapeDims(S.shape) || {}).w + '×' + (shapeDims(S.shape) || {}).h + ' px) for ' + (cust() || {}).name + ', made in Canva from these words:\n' + canvaWordsText() + '\n\nList anything a reader on a phone would stumble on: typos, words cut off, type too small (under 11 px at the design size), crowding, a missing phone or website, low contrast. Answer ONLY with JSON: {"issues":["..."]}. An empty list means it is fine.' });
+    fetchJson(cfg.anthropicProxy, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: CHECK_MODEL, max_tokens: 800, system: 'You check finished newsletter ads before they are sent to a client. You answer ONLY with JSON, no prose, no code fences.', messages: [{ role: 'user', content: content }] }) })
+      .then(function (r) {
+        if (!r.ok || !r.j) throw new Error('The Anthropic proxy answered HTTP ' + r.status + '.');
+        var txt = (r.j.content || []).map(function (q) { return q.type === 'text' ? q.text : ''; }).join('').replace(/```json|```/g, '').trim(), obj;
+        try { obj = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)); } catch (e) { throw new Error('The answer could not be read.'); }
+        cv.fc.issues = (obj.issues || []).map(String); cv.fc.asked = true; cv.fc.busy = false; render();
+      }).catch(function (e) { cv.fc.busy = false; cv.fc.err = e.message || 'The check failed.'; render(); });
+  }
+  function canvaRecipe(cv) { var d = shapeDims(S.shape) || {}; return JSON.stringify({ v: 'canva', designId: cv.job.designId, jobId: cv.job.id, shape: S.shape, w: d.w, h: d.h, scale: 2, made: new Date().toISOString(), by: 'ta-admaker-v' + VERSION }); }
+  function isCanvaRecipe(s) { return /^\s*\{\s*"v"\s*:\s*"canva"/.test(String(s || '')); }
+  function canvaSave() {
+    var c = cust(), cfg = CFG(), cv = S.canva, sh = S.shape; if (!cv || !cv.blob) return;
+    if (!cfg.makeCreateAssets) { toast('TA_CONFIG.makeCreateAssets is missing.', 'err'); return; }
+    // Scenario 104 v3.10 maps splashImageMediaId and splashImageSrc, but ADS has no splash-approval field (checked 18 Nov), so a splash saves with no approval
+    var pend = sh === 'splash' ? '' : optId(SHAPE_SLUG[sh].approval, APPROVAL_WORDS.pending), addT = sh === 'splash' ? optId('add-type', 'Splash Ad') : addTypeId(sh);
+    if (!pend && sh !== 'splash') { toast('The ADS collection has no "' + APPROVAL_WORDS.pending + '" choice on ' + SHAPE_SLUG[sh].approval + ', so nothing was saved.', 'err'); return; }
+    if (!addT) { toast('The ADS add-type field has no choice for ' + shapeLabel(sh) + ', so nothing was saved.', 'err'); return; }
+    S.screen = 'save'; S.saving = { steps: [], rows: [], done: false, err: '', head: '1 version: the ' + shapeLabel(sh).toLowerCase() + ' made in Canva, its own ADS row' + (sh === 'splash' ? ' (no approval field for splash)' : '') }; render();
+    var name = versionName(c, 1), label = shapeLabel(sh) + ' · ' + name, up = null, mediaId = null, recipe = canvaRecipe(cv);
+    run(step(label + ': uploading the PNG from Canva', 'Uploadcare'), upload(cv.blob, fileName(c, sh, 1))).then(function (u) { up = u; })
+      .then(function () { return run(step(label + ': recording in MEDIA', 'Scenario B Route 4'), mediaRow(up, fileName(c, sh, 1))).then(function (id) { mediaId = id; }); })
+      .then(function () {
+        var fields = { adName: name, customerId: c.id, customerName: c.name, addType: addT, reformatRecipe: recipe, redirectLink: S.click ? S.click.url : '', clickKind: S.click ? S.click.kind : '' };
+        if (sh === 'banner') { fields.bannerImageMediaId = mediaId; fields.bannerImageSrc = up.cdnUrl; fields.bannerApproval = pend; }
+        else if (sh === 'sidebar') { fields.sidebarImageMediaId = mediaId; fields.sidebarImageSrc = up.cdnUrl; fields.sidebarApproval = pend; }
+        else { fields.splashImageMediaId = mediaId; fields.splashImageSrc = up.cdnUrl; }
+        return run(step(label + ': ADS row "' + name + '" with the Canva design id', 'Scenario 104'),
+          fetchJson(cfg.makeCreateAssets, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ assetType: 'ad', titleSlug: cfg.titleSlug, taItemId: cfg.taItemId, fields: fields, source: 'ta-admaker-v' + VERSION }) })
+            .then(function (r) {
+              if (!r.ok || !r.j || r.j.ok !== true) throw new Error('Scenario 104 did not confirm the ADS row.');
+              var e = r.j.fieldData || null, miss = [];
+              if (!e) throw new Error('Scenario 104 echoed no fieldData, so the row cannot be checked.');
+              if (String(e['reformat-recipe'] || '').trim() !== recipe.trim()) miss.push('reformat-recipe');
+              if (!String(e[SHAPE_SLUG[sh].link] || '').trim()) miss.push(SHAPE_SLUG[sh].link);
+              if (pend && String(e[SHAPE_SLUG[sh].approval] || '') !== pend) miss.push(SHAPE_SLUG[sh].approval);
+              if (miss.length) throw new Error('The row was created but Webflow did not keep ' + miss.join(', ') + '. Check Scenario 104’s mapping for those fields.');
+              S.saving.rows.push({ name: name, id: r.j.adId || r.j.itemId || '', shape: sh, noApproval: sh === 'splash', banner: sh === 'banner' ? e['banner-ad-link'] : '', sidebar: sh === 'sidebar' ? e['sidebar-ad-link'] : '', splash: sh === 'splash' ? e[SHAPE_SLUG.splash.link] : '' });
+            }));
+      })
+      .then(function () { var cw = custWrites(); if (cw.what.length) return run(step('Saving the ' + cw.what.join(', ') + ' to the customer', 'Scenario 114'), write114(cw.fd, 'save')); })
+      .then(function () { S.saving.done = true; render(); return loadAds(); }).then(function () { render(); if (window.IxAdsTab) IxAdsTab.refresh(); })
+      .catch(function (e) { S.saving.err = (e && e.message) || String(e); render(); });
+  }
+  // Edit in Canva again: a saved version whose recipe is a canva recipe opens its design with a fresh job (shape carried, so the export is at 2×)
+  function canvaEditAgain(v, rec) {
+    var c = cust(), cv = S.canva || (S.canva = {}); if (cv.busy) return;
+    cv.busy = true; cv.err = ''; S.mode = 'canva'; S.shape = rec.shape || S.shape || 'banner'; S.screen = 'canva'; render();
+    canvaApi('/job/from-design', { method: 'POST', body: { designId: rec.designId, shape: S.shape, customer: { id: c.id, name: c.name }, taUrl: location.origin + location.pathname + '#ads' } })
+      .then(function (j) { cv.busy = false; cv.job = j.job; cv.editUrl = j.editUrl; cv.img = null; cv.blob = null; cv.seenExport = null; render(); var w = window.open(j.editUrl, '_blank'); if (!w) toast('The browser blocked the Canva tab. Use Open Canva again.', 'err'); canvaPollStart(); })
+      .catch(function (e) { cv.busy = false; cv.err = e.message; render(); });
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  //  v4.11.0 · THE T-A ADS RAIL TAB (seed rulings 1-8, 14 Nov; mockup Main.dc.html)
+  //  #ta-ads-mount holds: header (Ads · ⓘ · + New ad), the strip (All ads · Ad Maker · Ad form · four idea tabs),
+  //  and the panes. All ads is ix-ads-board (side inbxify); Ad Maker is this file's own mount; Ad form opens the
+  //  Asset Form; the idea tabs say what they are for. "+ New ad" shows the tile page.
+  // ══════════════════════════════════════════════════════════════
+  var ADS_MOUNT_ID = 'ta-ads-mount';
+  var ADS_TABS = [   // HC-P-AMA1-1 · key, label, works
+    ['all', 'All ads', true], ['maker', 'Ad Maker', true], ['form', 'Ad form', true],
+    ['upload', 'Upload a file', false], ['paste', 'Paste ad copy', false], ['intake', 'Already in Intake', false], ['print', 'From a print issue', false]
+  ];
+  var ADS_IDEAS = {   // HC-P-AMA1-2 · the idea pages: purpose, decided, open questions
+    upload: { t: 'Upload a file', p: 'A finished ad the advertiser sent (PNG, JPG or PDF) goes straight onto an ADS row as a version, no redesign.', d: ['Ad Maker already reads a dropped file; this tab would skip Read and save the picture as it is.', 'Any shape; the shape is guessed from the proportions and confirmed.'], o: ['Does a file saved as-is still get the Check step?', 'Who approves: straight to Pending for the publisher, or inbxify first?'] },
+    paste: { t: 'Paste ad copy', p: 'Words only (an email from the advertiser, a flyer’s text): the copy becomes the words list and the pieces come from the customer record, then Design in Canva.', d: ['Scratch in Ad Maker is the nearest thing today: it types the wording with no source ad.'], o: ['Should pasted copy be read by the Worker for slots (headline, phone) or typed into the slots by hand?'] },
+    intake: { t: 'Already in Intake', p: 'Ads found when a print issue was taken in (Print Ads as Input) wait here, by customer, ready to open in Ad Maker.', d: ['The Start screen’s Print issue chip is the placeholder for this today ("Nothing waiting for this customer").'], o: ['Where do the found ads live: ALLOCATIONS rows, MEDIA rows, or a D1 table on ix-content?'] },
+    print: { t: 'From a print issue', p: 'Pick a page of an uploaded print issue, box the ad, and it opens in Ad Maker: the same as dropping a PDF, but from the issue already on file.', d: ['ix-pdf-pager renders pages and boxes an ad today, from a dropped file.'], o: ['Which print issues are on file to pick from: the Print Issues tab’s uploads?'] }
+  };
+  var ADS_TILES = [   // HC-P-AMA1-3 · the "+ New ad" tile page
+    { k: 'maker', icon: 'maker', t: 'Ad Maker', s: 'Read an old ad, a file or a saved version; lay it out in Canva or pick a concept; check and save.', works: true },
+    { k: 'form', icon: 'form', t: 'Ad form', s: 'Type the ADS row by hand: name, customer, pictures already hosted, links.', works: true },
+    { k: 'upload', icon: 'upload', t: 'Upload a file', s: 'A finished ad from the advertiser, saved as it is.', works: false },
+    { k: 'paste', icon: 'paste', t: 'Paste ad copy', s: 'Words from an email or flyer become the ad’s wording.', works: false },
+    { k: 'intake', icon: 'intake', t: 'Already in Intake', s: 'Ads found when a print issue was taken in.', works: false },
+    { k: 'print', icon: 'print', t: 'From a print issue', s: 'Box an ad on a page of an issue already on file.', works: false }
+  ];
+  var ADS_ICONS = {
+    maker: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+    form: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+    upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg>',
+    paste: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4h6v3H9z"/><path d="M9 12h6M9 16h4"/></svg>',
+    intake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v13H3z"/><path d="M3 7l3-4h12l3 4"/><path d="M9 12h6"/></svg>',
+    print: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>'
+  };
+  var ADS_W = { title: 'Ads', newAd: '+ New ad', allAds: 'All ads', idea: 'Idea · not built', works: 'Works today', notBuilt: 'Not built · thinking only', purpose: 'Purpose', decided: 'Decided so far', open: 'Open questions',
+    formLine: 'Type an ADS row by hand: the name, the customer, pictures already hosted, the click link. The same form the Articles, Events and Real Estate tabs use.', formBtn: 'Open the ad form', formMissing: 'The Asset Form (ta-asf) is not on this page.' };
+  var A = { tab: 'all', page: 'tabs', board: null, mounted: false, pubId: '', pubName: '' };
+  function adsEl() { return document.getElementById(ADS_MOUNT_ID); }
+  function adsBadge() {
+    if (!(window.IxInfo && IxInfo.badge)) return '';
+    return IxInfo.badge({ file: FILE, version: VERSION, title: ADS_W.title,
+      blurb: 'The Ads rail tab: every customer of the publisher on the Portal’s board from inbxify’s side (To make, With the publisher or advertiser, then the client list), Ad Maker (Design in Canva or concepts), the ad form, and four idea tabs. Make sidebar / Make banner on a customer opens an Ad Maker job on that customer’s own ads.',
+      scenarios: [
+        { name: 'Worker — ix-sales', note: 'GET /ads?publisher= (every customer, versions, states, brand); POST /ads/<id>/decide (Approve & make current, under the staff login)' },
+        { name: 'Worker — ix-canva', note: 'TA_CONFIG.canvaUrl: POST /job, GET /job/<id>, GET /job/<id>/png, POST /job/<id>/export, POST /job/from-design' },
+        { name: 'Worker — ix-adreformat', note: 'TA_CONFIG.adReformatWorker: reads the ad' },
+        { name: 'Worker — ix-asset-list', note: '/list?type=ad: sent back, versions, recipes' },
+        { name: 'Scenario B — Route 4', note: 'MEDIA rows for the saved pictures' },
+        { name: 'Scenario 104', note: 'the ADS version row (recipe: layouts, parts kit or canva design id)' },
+        { name: 'Scenario 114', note: 'customer writes; current-<shape>-ad pointer' },
+        { name: 'Scenario G', note: 'approveAd / updateAd' }
+      ],
+      companions: CSS_FILE + ' · ix-ads-board v' + (window.IxAdsBoard ? IxAdsBoard.VERSION : '?') + ' · ix-ad-layouts v' + (window.IxAdLayouts ? IxAdLayouts.VERSION : '?') + ' · ix-canva v0.2.0 · ix-sales v1.3.7' });
+  }
+  function adsPublisher() {
+    var id = pagePublisher(), nm = '';
+    var tae = document.querySelector('#title-admin-id'); if (tae) nm = String(tae.getAttribute('data-pub-name') || '').trim();
+    if (!nm) nm = String(CFG().publisherName || '').trim();
+    return { id: id, name: nm, contact: '' };
+  }
+  function adsApi(path, o) {
+    o = o || {};
+    var base = String(CFG().salesUrl || '').replace(/\/+$/, '');
+    if (!base) return Promise.resolve({ ok: false, status: 0, json: { ok: false, error: 'TA_CONFIG.salesUrl is not set.' } });
+    return memberToken().then(function (tok) {
+      if (!tok) return { ok: false, status: 401, json: { ok: false, error: 'No Memberstack login on this page.' } };
+      var init = { method: o.method || 'GET', headers: { Authorization: 'Bearer ' + tok }, ixLabel: o.label || undefined };
+      if (o.body !== undefined) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(o.body); }
+      return fetch(base + path, init).then(function (r) { return r.json().catch(function () { return { ok: false, error: 'HTTP ' + r.status }; }).then(function (j) { return { ok: r.ok && j && j.ok !== false, status: r.status, json: j }; }); }, function (e) { return { ok: false, status: 0, json: { ok: false, error: 'No answer from ix-sales: ' + ((e && e.message) || e) } }; });
+    });
+  }
+  function adsRender() {
+    var el = adsEl(); if (!el) return;
+    var h = '<div class="ta-ads"><div class="ta-ads-head"><h2>' + ADS_W.title + '</h2>' + adsBadge() + '<span class="sp"></span>' + (A.page === 'new' ? '' : '<button type="button" class="ix-btn ix-btn--primary ta-ads-new" data-ads="new">' + ADS_W.newAd + '</button>') + '</div>';
+    if (A.page === 'new') {
+      h += '<a href="#" class="ta-ads-back" data-ads="tabs">‹ ' + ADS_W.allAds + '</a><h3 class="ta-ads-h3">New ad</h3><div class="ta-ads-sub">Pick how to start. Two work today; four are ideas.</div><div class="ta-ads-tiles">' + ADS_TILES.map(function (t) {
+        return '<button type="button" class="ta-ads-tile' + (t.works ? '' : ' idea') + '" data-ads="tab" data-v="' + t.k + '"><span class="ic">' + ADS_ICONS[t.icon] + '</span><b>' + esc(t.t) + '</b><small>' + esc(t.s) + '</small><em>' + (t.works ? ADS_W.works : ADS_W.idea) + '</em></button>';
+      }).join('') + '</div></div>';
+      el.innerHTML = h; return;
+    }
+    h += '<div class="ix-tabs-l1 ta-ads-strip" role="tablist">' + ADS_TABS.map(function (t) { return '<button type="button" role="tab" class="ix-tab-l1' + (A.tab === t[0] ? ' is-active' : '') + (t[2] ? '' : ' idea') + '" aria-selected="' + (A.tab === t[0]) + '" data-ads="tab" data-v="' + t[0] + '">' + esc(t[1]) + (t[2] ? '' : '<i title="' + ADS_W.idea + '"></i>') + '</button>'; }).join('') + '</div>';
+    h += '<div class="ta-ads-pane" data-pane="all"' + (A.tab === 'all' ? '' : ' hidden') + '><div id="ta-ads-board"></div></div>';
+    h += '<div class="ta-ads-pane" data-pane="maker"' + (A.tab === 'maker' ? '' : ' hidden') + '><div id="' + MOUNT_ID + '"></div></div>';
+    h += '<div class="ta-ads-pane" data-pane="form"' + (A.tab === 'form' ? '' : ' hidden') + '><div class="ta-ads-form"><p>' + ADS_W.formLine + '</p>' + (window.InbxASF && InbxASF.open ? '<button type="button" class="ix-btn ix-btn--primary" data-ads="form">' + ADS_W.formBtn + '</button>' : '<div class="am-err">' + ADS_W.formMissing + '</div>') + '</div></div>';
+    Object.keys(ADS_IDEAS).forEach(function (k) { var I = ADS_IDEAS[k];
+      h += '<div class="ta-ads-pane" data-pane="' + k + '"' + (A.tab === k ? '' : ' hidden') + '><div class="ta-ads-idea"><div class="ta-ads-ideah"><h3>' + esc(I.t) + '</h3><span class="ta-ads-pill">' + ADS_W.notBuilt + '</span></div>' +
+        '<h4>' + ADS_W.purpose + '</h4><p>' + esc(I.p) + '</p><h4>' + ADS_W.decided + '</h4><ul>' + I.d.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><h4>' + ADS_W.open + '</h4><ul>' + I.o.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div></div>'; });
+    h += '</div>';
+    var keepMaker = document.getElementById(MOUNT_ID);   // the Ad Maker's DOM survives a tab switch (its jobs live in JOBS; the mount is recreated by mount())
+    el.innerHTML = h;
+    if (keepMaker && keepMaker.childNodes.length) { var slot = document.getElementById(MOUNT_ID); if (slot) slot.replaceWith(keepMaker); }
+    adsShowTab();
+  }
+  function adsShowTab() {
+    var el = adsEl(); if (!el) return;
+    el.querySelectorAll('.ta-ads-pane').forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== A.tab; });
+    el.querySelectorAll('.ta-ads-strip .ix-btn--tab').forEach(function (b) { var on = b.getAttribute('data-v') === A.tab; b.classList.toggle('is-active', on); b.setAttribute('aria-selected', on); });
+    if (A.tab === 'all') adsBoardMount();
+    if (A.tab === 'maker') { mount(); placeBar(); }
+  }
+  function adsBoardMount() {
+    var host = document.getElementById('ta-ads-board'); if (!host) return;
+    if (A.board) { if (!host.childNodes.length) { A.board = null; } else return; }
+    if (!window.IxAdsBoard) { host.innerHTML = '<div class="am-err">ix-ads-board is not on the page.</div>'; return; }
+    var pub = adsPublisher();
+    if (!pub.id) { host.innerHTML = '<div class="am-err">This page names no publisher (TA_CONFIG.publisherId or #title-admin-id data-pub), so the ads cannot be read.</div>'; return; }
+    A.board = IxAdsBoard.mount(host, { side: 'inbxify', title: '', api: adsApi, publisher: pub, who: { staff: true, email: '', name: '' }, info: null,
+      onLoad: function (custs) { adsBrand(custs); },
+      onAction: function (a) { adsAction(a); } });
+  }
+  // the board's customers carry their brand record (ix-sales v1.3.7); a customer not in the page's hidden list joins CUST from it
+  function adsBrand(custs) {
+    (custs || []).forEach(function (c) { if (custById(c.id)) return; var b = c.brand || {};
+      CUST.push({ id: c.id, name: c.name, logo: b.logo || '', logoLight: b.logoLight || '', main: hex(b.main), accent: hex(b.accent), fontHead: b.fontHead || '', fontBody: b.fontBody || '', website: b.website || '', email: b.email || '', phone: b.phone || '', socials: b.socials || {}, booking: b.booking || '', defaultLink: b.defaultLink || '', publisherId: A.pubId || '' }); });
+    CUST.sort(function (a, b) { return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1; });
+  }
+  // Make sidebar / Make banner / Edit in Ad Maker / Open in Ad Maker from the board → an Ad Maker job on that customer (seed rulings 5-8)
+  function adsAction(a) {
+    var c = a.customer, sh = a.shape, v = a.version;
+    if (!(sh === 'banner' || sh === 'sidebar' || sh === 'splash')) { toast(shapeLabel(sh) + ' ads are made in a tool that is coming.', 'err'); return; }
+    A.tab = 'maker'; adsShowTab();
+    var it = { kind: 'needed', id: 'board-' + c.id + '-' + sh + '-' + (v ? v.id : 'new') + '-' + Date.now(), custId: c.id, shape: sh, title: c.name, what: shapeLabel(sh), m: a.kind === 'make' ? 'From the Ads board' : 'Edit in Ad Maker', q: '', coming: false };
+    openJob(it, function () {
+      S.shape = sh; S.mode = 'canva'; S.srcChip = 'saved'; S.srcs = [];
+      var vs = versionsOf(c.id), cur = null;
+      if (v) cur = vs.filter(function (x) { return x.id === v.id; })[0] || null;
+      if (!cur && a.kind === 'make') { var other = sh === 'sidebar' ? 'banner' : 'sidebar'; cur = vs.filter(function (x) { return x[other] && !isCanvaRecipe(x.recipe); })[0] || vs.filter(function (x) { return x[other]; })[0] || null; }   // the current other shape, first
+      if (cur) { var rec = srcRecFor('version', cur.id); if (rec) S.srcs.push(rec); }
+      S.startNote = a.kind === 'make' ? 'Making the ' + sh + ' for ' + c.name + '. Pick one of their own ads to start from below; the current ' + (sh === 'sidebar' ? 'banner' : 'sidebar') + ' is picked first.' : 'Opening ' + (v ? v.name : c.name) + ' in Ad Maker.';
+      if (v && isCanvaRecipe(v.recipe)) { var rc = null; try { rc = JSON.parse(v.recipe); } catch (e) {} if (rc && rc.designId) { canvaEditAgain(v, rc); return; } }
+      render();
+    });
+  }
+  function adsOnClick(e) {
+    var t = e.target.closest('[data-ads]'); if (!t) return;
+    var k = t.getAttribute('data-ads'); e.preventDefault();
+    if (k === 'new') { A.page = 'new'; adsRender(); return; }
+    if (k === 'tabs') { A.page = 'tabs'; adsRender(); return; }
+    if (k === 'tab') { A.tab = t.getAttribute('data-v'); A.page = 'tabs'; adsRender(); return; }
+    if (k === 'form') { if (window.InbxASF && InbxASF.open) { try { InbxASF.open({ mode: 'create', assetType: 'ad' }); } catch (ex) { toast('The ad form did not open: ' + ex.message, 'err'); } } return; }
+  }
+  function adsMount() {
+    var el = adsEl(); if (!el) return false;
+    if (A.mounted) { adsShowTab(); return true; }
+    A.mounted = true; A.pubId = adsPublisher().id;
+    el.addEventListener('click', adsOnClick);
+    var q = {}; try { new URLSearchParams(location.search).forEach(function (v, k) { q[k] = v; }); } catch (e) {}
+    if (q.admaker === 'open') A.tab = 'maker';   // Quill's deep link opens Ad Maker
+    adsRender();
+    if (q.admaker === 'open' && q.customer) setTimeout(function () { var c0 = custById(q.customer); if (c0) openJob({ kind: 'needed', id: 'deep-' + Date.now(), custId: c0.id, shape: q.shape || '', title: c0.name, what: q.shape ? shapeLabel(q.shape) : 'Ad', m: 'Opened from Quill', q: '', coming: false }); }, 400);
+    return true;
+  }
+  function adsWire() {
+    var open = function () { setTimeout(adsMount, 0); };
+    document.querySelectorAll('[data-w-tab="Ads"]').forEach(function (l) { l.addEventListener('click', open); });
+    if (/^#ads\b/.test(location.hash)) { var lk = document.querySelector('.w-tab-link[data-w-tab="Ads"]'); if (lk) { lk.click(); open(); } }
+    var pane = adsEl(); if (pane && pane.closest('.w-tab-pane') && pane.closest('.w-tab-pane').classList.contains('w--tab-active')) open();
+  }
+  window.IxAdsTab = { mount: adsMount, refresh: function () { if (A.board) A.board.refresh(); }, _state: function () { return A; } };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', adsWire); else adsWire();
+
   // ══════════════════════════════════════════════════════════════
   //  Render, events, mount
   // ══════════════════════════════════════════════════════════════
@@ -4566,7 +4942,7 @@
   function render() {
     // v2.0.2: every column keeps its scroll position across a re-render (a click on a sidebar draft used to jump the centre back to the top)
     var keep = {}; ['am-left', 'am-main', 'am-right'].forEach(function (k) { var el = document.querySelector('#' + MOUNT_ID + ' .am-col.' + k); keep[k] = el ? el.scrollTop : 0; });
-    var v = { start: vStart, read: vRead, clean: vClean, improvewait: vImproveWait, drafts: vPick, make: vPick, pick: vPick, finetune: vMake, tune: vMake, fix: vTune, save: vSave }[S.screen] || vStart;   // v3.0.0 · v4.2.0: clean
+    var v = { start: vStart, read: vRead, clean: vClean, improvewait: vImproveWait, drafts: vPick, make: vPick, pick: vPick, finetune: vMake, tune: vMake, fix: vTune, save: vSave, setup: vSetup, canva: vCanva, check: vCheck }[S.screen] || vStart;   // v4.11.0: the Canva screens   // v3.0.0 · v4.2.0: clean
     if (S.screen === 'fix' && S.reading) { shell(colh(W.fixing) + '<div class="am-prog"><b>Rebuilding the version from its recipe</b><div class="bar"><i></i></div></div>', '<div class="am-msg"></div><div class="am-grow"></div>' + ghost('startCancel', W.cancel)); return; }
     v();
     Object.keys(keep).forEach(function (k) { var el = document.querySelector('#' + MOUNT_ID + ' .am-col.' + k); if (el && keep[k]) el.scrollTop = keep[k]; });
@@ -4619,7 +4995,7 @@
     if (t.hasAttribute('data-drop-piece')) { var di = +t.getAttribute('data-drop-piece'), dp = S.pics.filter(function (p) { return p.i === di; })[0]; if (dp && !dp.mediaId) { S.pics = S.pics.filter(function (p) { return p.i !== di; }); S.marks = S.marks.filter(function (m, k) { return S.pics.some(function (p) { return p.marked && p.bbox && p.bbox[0] === m.x && p.bbox[1] === m.y; }); }); if (S.photo && S.photo.i === di) { S.photo = S.photoFound ? Object.assign({}, S.photoFound) : null; S.usePhoto = !!(S.photo && !S.photo.whole); } } render(); return; }
     if (t.hasAttribute('data-piece')) { S.src = 'piece'; S.fromPiece = t.getAttribute('data-piece'); S.drop = null; S.fromVersion = ''; render(); return; }
     if (t.hasAttribute('data-ver')) { var v = versionsOf(S.custId).filter(function (x) { return x.id === t.getAttribute('data-ver'); })[0]; if (v) { S.src = 'version'; S.drop = null; loadVersion(v); } render(); return; }
-    if (t.hasAttribute('data-step')) { var sn = +t.getAttribute('data-step'); if (!canStep(sn)) return; if (improveMode()) { go({ 1: 'start', 2: 'read', 3: 'finetune', 4: 'save' }[sn]); return; } if (sn === 3) { openClean(); return; } if (S.screen === 'clean' && sn > 3) return; go(STEP_SCREEN[sn]); return; }   // v4.2.0
+    if (t.hasAttribute('data-step')) { var sn = +t.getAttribute('data-step'); if (!canStep(sn)) return; if (canvaMode()) { go(CANVA_SCREEN[sn]); return; } if (improveMode()) { go({ 1: 'start', 2: 'read', 3: 'finetune', 4: 'save' }[sn]); return; } if (sn === 3) { openClean(); return; } if (S.screen === 'clean' && sn > 3) return; go(STEP_SCREEN[sn]); return; }   // v4.2.0
     if (t.hasAttribute('data-photo')) { S.usePhoto = t.getAttribute('data-photo') === '1'; render(); return; }
     if (t.hasAttribute('data-mshape')) { S.markShape = t.getAttribute('data-mshape'); render(); return; }
     if (t.hasAttribute('data-pick')) { var pk = S.pics[+t.getAttribute('data-pick')]; if (pk) { S.photo = Object.assign({}, pk); S.usePhoto = !pk.whole; var fx = S.ed && forward(); if (fx) { pushHist(); fx.picRef = picKey(pk); fx.picImg = pk.img; repaint(fx); } } render(); return; }   // v4.0.3
@@ -4659,7 +5035,7 @@
       case 'pagePrev': S.page = Math.max(1, S.page - 1); S.box = null; render(); break;
       case 'pageNext': S.page = Math.min(S.drop.pages, S.page + 1); S.box = null; render(); break;
       case 'readAgain': S.err = ''; S.readFresh = true; readAd(); break;   // v4.0.9: always afresh
-      case 'back': if (improveMode() && (S.screen === 'finetune' || S.screen === 'tune')) { go('read'); break; } if (improveMode() && S.screen === 'save') { go('finetune'); break; } if ((S.screen === 'pick' || S.screen === 'drafts' || S.screen === 'make') && S.cleanReady) { openClean(); break; } go({ read: 'start', clean: 'read', drafts: 'read', make: 'read', pick: 'read', finetune: 'pick', tune: 'pick', save: (S.ed && forward()) ? 'finetune' : 'pick' }[S.screen] || 'start'); break;   // v3.0.0 · v4.2.0: Pick goes back to Clean up
+      case 'back': if (canvaMode()) { if (S.screen === 'canva') canvaPollStop(); go({ read: 'start', setup: 'read', canva: 'setup', check: (S.canva && S.canva.job) ? 'canva' : 'setup', save: 'check' }[S.screen] || 'start'); break; } if (improveMode() && (S.screen === 'finetune' || S.screen === 'tune')) { go('read'); break; } if (improveMode() && S.screen === 'save') { go('finetune'); break; } if ((S.screen === 'pick' || S.screen === 'drafts' || S.screen === 'make') && S.cleanReady) { openClean(); break; } go({ read: 'start', clean: 'read', drafts: 'read', make: 'read', pick: 'read', finetune: 'pick', tune: 'pick', save: (S.ed && forward()) ? 'finetune' : 'pick' }[S.screen] || 'start'); break;   // v3.0.0 · v4.2.0: Pick goes back to Clean up
       case 'wCancel': var k = t.getAttribute('data-k'); S.words[k] = S.base[k]; render(); break;
       case 'logoCancel': S.logoUse = 'file'; S.logoScope = 'version'; render(); if (S.ed) repaintAll(); break;
       case 'logoPrint': S.logoUse = 'print'; S.logoScope = 'version'; render(); if (S.ed) repaintAll(); break;
@@ -4667,7 +5043,8 @@
       case 'readCancel': SLOTS.forEach(function (sl) { S.words[sl[0]] = S.base[sl[0]]; }); render(); break;
       case 'draftsCancel': S.short = { banner: [], sidebar: [] }; render(); break;
       case 'toSave': S.saving = null; go('save'); break;
-      case 'toDrafts': { snapActive();   // v4.2.0: Read leads to Clean up when the ad's layout was read, else straight to Pick
+      case 'toDrafts': { snapActive();   // v4.2.0
+        if (canvaMode()) { if (!S.ed) applyPool(); else mergeSources(); if (!S.canva || S.canva.job) S.canva = { ticks: null }; go('setup'); break; }   // v4.11.0: the Canva path: Read leads to Clean up when the ad's layout was read, else straight to Pick
         if (S.ed && !S.ed.clean) S.keptStash = keptItems().slice();
         if (improveMode()) { if (S.ed && !S.ed.clean && S.improveKey === cleanKey() && forward()) { go('finetune'); break; } if (!S.ed) applyPool(); else mergeSources(); startImprove(); break; }   // v4.3.0
         var ck0 = cleanKey(), wasEd = !!S.ed;
@@ -4711,6 +5088,7 @@
       case 'grpCancel': { var gk = t.getAttribute('data-v'); each(function (x) { grpKeys(gk).forEach(function (k) { if (k === 'style') { x.sr.style = JSON.parse(JSON.stringify(x.sr0.style || {})); } else if (k === 'sizes') { x.sr.sizes = JSON.parse(JSON.stringify(x.sr0.sizes || {})); } else if (x.sr0[k] === undefined) delete x.sr[k]; else x.sr[k] = JSON.parse(JSON.stringify(x.sr0[k])); }); }); if (gk === 'words') { S.words = JSON.parse(JSON.stringify(S.ed.w0)); S.ed.head = S.ed.head0; repaintAll(); } render(); } break;
       case 'nextShape': { var made = S.ed ? keptItems()[0] : null, was = S.shape, other = was === 'banner' ? 'sidebar' : 'banner';   // v3.0.1
         if (made && made.paint && made.paint.canvas) S.srcCanvas = made.paint.canvas;
+        if (canvaMode() && S.canva && S.canva.img) { S.srcCanvas = imgToCanvas(S.canva.img); S.canva = { ticks: null }; }   // v4.11.0
         S.saving = null; S.shape = other; S.drafts = null; S.draftErr = ''; S.ed = null; S.short = { banner: [], sidebar: [] }; S.savePick = { banner: [], sidebar: [] };
         S.startNote = 'Making the ' + other + ' from the ' + was + ' you just saved. Its wording, photo and logo carry over; Read shows that ' + was + '.';
         go('start'); } break;
@@ -4843,8 +5221,16 @@
       case 'approveRow': approveRow(+t.getAttribute('data-i')); break;
       case 'szCancel': each(function (x) { x.sr.sizes[t.getAttribute('data-k')] = 1; }); render(); break;
       case 'doSave': S.clickWarned = false; doSave(); break;
+      case 'cvTick': { var cvk = t.getAttribute('data-v'); canvaTicked(); S.canva.ticks[cvk] = !S.canva.ticks[cvk]; render(); } break;   // v4.11.0
+      case 'cvCopy': { var ctx0 = canvaWordsText(); (navigator.clipboard ? navigator.clipboard.writeText(ctx0) : Promise.reject()).then(function () { toast(CANVA_WORDS.copied, 'ok'); }, function () { toast('Could not copy. Select the list and copy it by hand.', 'err'); }); } break;
+      case 'cvGo': canvaGo(); break;
+      case 'cvOpen': if (S.canva && S.canva.editUrl) window.open(S.canva.editUrl, '_blank'); break;
+      case 'cvFetch': canvaFetch(); break;
+      case 'cvAsk': canvaAsk(); break;
+      case 'cvAgain': if (S.canva && S.canva.editUrl) { S.screen = 'canva'; S.canva.seenExport = S.canva.job && S.canva.job.exportedAt; render(); window.open(S.canva.editUrl, '_blank'); canvaPollStart(); } break;
+      case 'cvSave': canvaSave(); break;
       case 'doFix': doFix(); break;
-      case 'again': doClose(S); loadNeeds().then(render); loadAds().then(render); loadMedia().then(render); break;   // v2.8.0: the saved job closes; the lists reload
+      case 'again': doClose(S); canvaPollStop(); loadNeeds().then(render); loadAds().then(render); loadMedia().then(render); if (window.IxAdsTab) IxAdsTab.refresh(); break;   // v2.8.0: the saved job closes; the lists reload
     }
   }
   // v2.7.0: the business name slot is filled from the customer unless the read supplied one
@@ -4964,7 +5350,7 @@
     } else {
       // no recipe: read the banner picture through the Worker, as a dropped picture
       S.screen = 'read'; S.reading = true; render();
-      loadImg(v.banner || v.sidebar).then(function (img) { if (!img) throw new Error('The version\u2019s picture could not be loaded.'); S.drop = { name: v.name, img: img }; S.box = null; S.boxed = true; readAd(); }).catch(function (e) { S.reading = false; S.err = e.message; render(); });
+      loadImg(v.banner || v.sidebar || v.splash).then(function (img) { if (!img) throw new Error('The version\u2019s picture could not be loaded.'); S.drop = { name: v.name, img: img }; S.box = null; S.boxed = true; readAd(); }).catch(function (e) { S.reading = false; S.err = e.message; render(); });
     }
   }
   function onInput(e) {
@@ -5044,8 +5430,10 @@
 
   var mounted = false;
   function mount() {
-    var panel = document.querySelector(PANEL); if (!panel) { log('no Ad Maker panel yet'); return false; }
-    var m = document.getElementById(MOUNT_ID); if (!m) { m = document.createElement('div'); m.id = MOUNT_ID; panel.innerHTML = ''; panel.appendChild(m); }
+    var m = document.getElementById(MOUNT_ID), panel = m ? null : document.querySelector(PANEL);   // v4.11.0: the Ads tab makes the mount itself; the Studio panel is the fallback
+    if (!m && !panel) { log('no Ad Maker mount yet'); return false; }
+    if (!m) { m = document.createElement('div'); m.id = MOUNT_ID; panel.innerHTML = ''; panel.appendChild(m); }
+    if (mounted && !m.childNodes.length) { render(); }   // the Ads tab redrew around an empty mount
     if (mounted) return true;
     mounted = true;
     var miss = [];

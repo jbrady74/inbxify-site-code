@@ -1,7 +1,14 @@
-// ta-chrome-v1.0.9.js
+// ta-chrome-v1.0.10.js
 // ============================================================
-// ta-chrome-v1.0.9.js
+// ta-chrome-v1.0.10.js
 // INBXIFY Title-Admin Page Chrome Enhancer
+//
+// v1.0.10 changes (18 Nov 2026, Ad Maker Build S1):
+//   Rail group 02 Content becomes Studio · Articles · Ads · Events · Real Estate (Jeff, T-A Rail Mockup v0.1,
+//   approved 8 Nov). 'Create' leaves the rail (each library tab has its own New button; Studio keeps its own
+//   Create strip tab) and 'ContentLibrary' is replaced by the four typed tabs. The data-w-tab keys are
+//   'Articles', 'Ads', 'Events', 'RealEstate' (the Designer label of the last is "Real Estate"). Icons added for
+//   the four. 'ContentLibrary' and 'Create' keep their icon entries so a page that still has those tabs renders.
 //
 // v1.0.9 changes (Sep 7, 2026):
 //   GROUP 01 IS "Print Issues", NOT "Allocate". The tab beneath
@@ -246,7 +253,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.0.9';
+  var VERSION = '1.0.10';
 
   // ══════════════════════════════════════════════════════════
   // CONFIG — TA_CONFIG wins, these are defaults. No tenant value
@@ -656,7 +663,11 @@
     'Studio':            '●',   // red dot, text-style char (CSS color-able)
     'Uploads Processor': '⚙️',   // processing = gear
     'Content Maker':     '🖊️',   // pen (more refined than pencil)
-    'ContentLibrary':    '📚',   // library = books
+    'ContentLibrary':    '📚',   // library = books (legacy tab; v1.0.10 splits it)
+    'Articles':          '📚',   // v1.0.10 — the four typed library tabs
+    'Ads':               '🖼️',
+    'Events':            '🎟️',
+    'RealEstate':        '🏠',
     'Newsletters':       '✉️',   // newsletter = mail
     'CLIENTS':           '🏢',   // business clients
     'Sponsorships':      '💰',   // money/deals
@@ -756,7 +767,7 @@
        'PrintIssue' is the data-w-tab attribute and must not be
        edited to match the Designer label. */
     { n: '01', l: 'Print Issues', tabs: ['PrintIssue'] },
-    { n: '02', l: 'Content',    tabs: ['Studio', 'Create', 'ContentLibrary'] },
+    { n: '02', l: 'Content',    tabs: ['Studio', 'Articles', 'Ads', 'Events', 'RealEstate'] },   // v1.0.10: Create off the rail; the library by type
     { n: '03', l: 'Plan',       tabs: ['PubPlan', 'Awaiting', 'Obligations', 'Sponsorships', 'Newsletters'] },
     { n: '04', l: 'Send',       tabs: ['Mailchimp', 'Nexstar'] },
     { n: '05', l: 'Measure',    tabs: ['Performance'] },
@@ -779,7 +790,7 @@
   var NOT_BUILT = {};
 
   // Marked here, hidden by §37 — undoable without a JS bump.
-  var RETIRED = { 'Uploads Processor': 1, 'Content Maker': 1 };
+  var RETIRED = { 'Uploads Processor': 1, 'Content Maker': 1, 'Create': 1, 'ContentLibrary': 1 };   // v1.0.10: Create and the old Asset Library tab hide until they are deleted in the Designer
   var RETIRE_HIDDEN = true;
 
   // Present but on its way out.

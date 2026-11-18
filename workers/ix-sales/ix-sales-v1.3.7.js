@@ -1,10 +1,18 @@
-// ix-sales-v1.3.6.js
+// ix-sales-v1.3.7.js
 // INBXIFY · Cloudflare Worker · ix-sales
 // SALES RECORDS and OBLIGATIONS: the one place the rules live. The portal
 // (S2) and Studio (S3) both call this; the Revenue Picker (S4) and Scenario
 // 108 (S5) call it too. Scoping: Sales-Records-Obligations-Scoping-v0_7.md.
 // Since v1.3.0 also the portal's Ads tab and the advertiser review page.
 //
+// v1.3.7 (18 Nov 2026, Ad Maker Build S1 · the T-A Ads tab) — EACH CUSTOMER CARRIES ITS BRAND RECORD.
+//   GET /ads?publisher= : every customer row gains brand { logo, logoLight, main, accent, fontHead, fontBody, phone,
+//   website, email, socials{instagram, facebook, linkedin, tiktok, youtube, x, pinterest, houzz}, booking, defaultLink }
+//   read straight off the CUSTOMERS row ix-sales already lists (no extra Webflow call). The T-A Ads tab lists every
+//   customer of the publisher, and Ad Maker's Make sidebar needs the logo, colours, fonts and contacts of a customer
+//   who may sit on another title's TITLES-ADMIN page, where the page's hidden customers list cannot supply them.
+//   The portal (ps-ads) ignores the new field. No other change.
+//   HARDCODING: HC-P-AMB1-1 the CUSTOMERS slugs in CUST_BRAND (the same slugs client-manager and ta-admaker read).
 // v1.3.6 (10 Nov 2026, Publisher Portal S9, Test 6) — GET /ads/requests also answers sentBack[]: the latest Send back
 //   decision per ad and shape for the publisher, { adId, shape, note, by, at }, read from PUBLISHER REVIEWS. Ad Maker's
 //   Sent back items read their note from here; the portal writes the note to PUBLISHER REVIEWS (Send-back Note), never to
@@ -247,7 +255,19 @@
 //           month falls back to the calendar month end.
 // ============================================================
 
-const VERSION = '1.3.6';
+const VERSION = '1.3.7';
+// v1.3.7 · CUSTOMERS slugs that make up a customer's brand record (HC-P-AMB1-1)
+const CUST_BRAND = { logo: 'logo-link', logoLight: 'logo-link-light', main: 'brand-color-main', accent: 'brand-color-accent', fontHead: 'brand-font-heading', fontBody: 'brand-font-body',
+  phone: ['business-phone', 'phone', 'contact-phone'], website: ['contact-website', 'website', 'business-website'], email: ['business-email', 'email', 'contact-email'],
+  booking: 'online-booking-link', defaultLink: 'default-paid-ad-ulc-link',
+  socials: { instagram: 'instagram', facebook: 'facebook', linkedin: 'linkedin', tiktok: 'tiktok', youtube: 'youtube', x: ['x-twitter', 'x-2', 'x'], pinterest: 'pinterest', houzz: 'houzz' } };
+function brandOf(f) {
+  const pick = k => { const ks = Array.isArray(k) ? k : [k]; for (const s of ks) { const v = f[s]; if (v == null || v === '') continue; return typeof v === 'object' ? String(v.url || v.id || '') : String(v); } return ''; };
+  const hex = v => { const m = String(v || '').trim().match(/^#?([0-9a-f]{6})$/i); return m ? '#' + m[1].toUpperCase() : ''; };
+  const socials = {}; Object.keys(CUST_BRAND.socials).forEach(k => { socials[k] = pick(CUST_BRAND.socials[k]); });
+  return { logo: pick(CUST_BRAND.logo), logoLight: pick(CUST_BRAND.logoLight), main: hex(pick(CUST_BRAND.main)), accent: hex(pick(CUST_BRAND.accent)), fontHead: pick(CUST_BRAND.fontHead), fontBody: pick(CUST_BRAND.fontBody),
+    phone: pick(CUST_BRAND.phone), website: pick(CUST_BRAND.website), email: pick(CUST_BRAND.email), booking: pick(CUST_BRAND.booking), defaultLink: pick(CUST_BRAND.defaultLink), socials };
+}
 const WF = 'https://api.webflow.com/v2';
 const PAGE = 100, MAX_PAGES = 100, PARALLEL = 4, MAX_RETRIES = 4;
 const SR_PAD = 4, OB_PAD = 2;                                        // HC-S-4
@@ -1283,7 +1303,7 @@ async function adsTab(run, url) {
       shapes[shape] = { sold: !!((sold[c.id] || {})[shape]), current: cur, versions: list,
         requests: (reqs[c.id + '|' + shape] || []).sort((a, b) => String(a.askedAt).localeCompare(String(b.askedAt))) };   // v1.3.5
     });
-    return { id: c.id, name: String(fd(c).name || ''), shapes, problems: v.problems || [] };
+    return { id: c.id, name: String(fd(c).name || ''), brand: brandOf(fd(c)), shapes, problems: v.problems || [] };   // v1.3.7: the brand record
   }).sort((a, b) => a.name.localeCompare(b.name));
   return { ok: true, publisher: sc.publisherId, shapes: SHAPE_KEYS.map(k => ({ key: k, label: ADS_TAB.shapes[k].label })),
     staleMonths: cfg.staleMonths, linkDays: cfg.linkDays, customers };

@@ -1,6 +1,18 @@
-// content-library-v1.0.89.js
+// content-library-v1.0.90.js
 // ============================================================
-// INBXIFY Asset Library — T-A Page Tab
+// INBXIFY Asset Library — T-A Page Tab · from v1.0.90 one rail tab per asset type
+// v1.0.90 (18 Nov 2026, Ad Maker Build S1): ONE TYPE PER RAIL TAB, NO INNER TAB ROW, NO ADS SECTION.
+//   Jeff's direction (7–8 Nov, T-A Rail Mockup v0.1; seed 14 Nov): the Asset Library splits onto the left rail as
+//   Articles · Ads · Events · Real Estate. This file now serves three of them; Ads is ta-admaker's Ads tab.
+//   · RAIL MODE: when the page has mounts marked data-asset-type (#ta-lib-articles-mount articles,
+//     #ta-lib-events-mount event(s), #ta-lib-re-mount realestate), the module builds one root and moves it into the
+//     active pane; a click on that pane's Webflow tab ([data-w-tab="Articles" | "Events" | "RealEstate"]) switches
+//     the type (setMain) and moves the root. The header's title is the type's name; the inner tab row is gone; New,
+//     Filters and Search sit in the strip's end slot alone. Refresh keeps the tab: the hash is #lib-<type> and the
+//     reload clicks that rail tab.
+//   · The Ads tab is gone from the strip in both modes; the ads render branch stays dormant (nothing reaches it).
+//   · FALLBACK: with no rail mounts the file mounts into #content-library-mount as before, with three tabs.
+//   HARDCODING: HC-P-CL90-1 RAIL_TYPES (mount type → Webflow tab name, title, hash).
 // v1.0.89 (16 Nov 2026, Content Home S12): NO SILENT CALLS.
 //   Found 16 Nov: every Assign Save also fired Scenario 104 with op=edit (query fields itemId, pubplanId, …) to
 //   "stamp" the article's own plan refs, fire-and-forget, failures only in the console. Scenario 104 v3.10 takes only
@@ -852,8 +864,19 @@
 document.addEventListener('DOMContentLoaded', function () {
   'use strict';
 
+  // v1.0.90 · rail mode: one mount per type; the module root travels between them
+  var RAIL_TYPES = { articles: { tab: 'Articles', title: 'Articles', hash: 'lib-articles' }, events: { tab: 'Events', title: 'Events', hash: 'lib-events' }, realestate: { tab: 'RealEstate', title: 'Real Estate', hash: 'lib-realestate' } };   // HC-P-CL90-1
+  var RAIL = {}; var _railAlias = { article: 'articles', articles: 'articles', event: 'events', events: 'events', re: 'realestate', realestate: 'realestate', 'real-estate': 'realestate' };
+  document.querySelectorAll('[data-asset-type]').forEach(function (n) { var k = _railAlias[String(n.getAttribute('data-asset-type') || '').toLowerCase()]; if (k && RAIL_TYPES[k] && !RAIL[k]) RAIL[k] = n; });
+  var RAIL_MODE = Object.keys(RAIL).length > 0;
   var mount = document.getElementById('content-library-mount');
+  if (RAIL_MODE) { mount = document.createElement('div'); mount.id = 'content-library-root'; mount.className = 'cl-root'; }
   if (!mount) return;
+  function railActiveType() {   // the type whose pane is showing, else the first mount's
+    var keys = Object.keys(RAIL), on = keys.filter(function (k) { var p = RAIL[k].closest('.w-tab-pane'); return p && p.classList.contains('w--tab-active'); })[0];
+    return on || keys[0];
+  }
+  function railPlace(type) { var host = RAIL[type]; if (host && mount.parentNode !== host) { host.innerHTML = ''; host.appendChild(mount); } }
 
   // ── Config ──
   var CFG = {
@@ -2322,7 +2345,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // ACTIONS
   // ══════════════════════════════════════════════
 
-  function setMain(tab) { S.mainTab = tab; S.subTab = 'all'; S.q = ''; S.editingId = null; render(); ensureLoaded(tab); }
+  function setMain(tab) { if (tab === 'ads') return; S.mainTab = tab; S.subTab = 'all'; S.q = ''; S.editingId = null; if (RAIL_MODE) railPlace(tab); render(); ensureLoaded(tab); }   // v1.0.90: ads is ta-admaker's; the root follows the type
   // v1.0.33: search setter. Preserve focus/caret across re-render by NOT
   // re-rendering the input itself (see render: input keeps its value via DOM).
   function setQ(val) { S.q = val || ''; render(); }
@@ -2592,7 +2615,7 @@ document.addEventListener('DOMContentLoaded', function () {
         delete S.armed[r.id];
       });
       if (clean) {
-        window.location.hash = 'content-library';
+        window.location.hash = _clHash();
         setTimeout(function () { window.location.reload(); }, 2500);   // v1.0.88: time to read where each went
       } else {
         render();
@@ -2799,7 +2822,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // object literal would freeze the values at mount and every reader
   // would see 'articles' forever. Consumers: ta-asf v1.5.50+ (return
   // surface on close).
-  var CL_VERSION = '1.0.89';
+  var CL_VERSION = '1.0.90';
   window.InbxContentLibrary = {
     get mainTab()   { return S.mainTab || ''; },
     get subTab()    { return S.subTab || ''; },
@@ -2904,7 +2927,7 @@ document.addEventListener('DOMContentLoaded', function () {
   };
   function reloadTab(tab) {
     if (!ASSET_LIST_URL || !paging[tab]) {   // older source: the header Refresh path
-      window.location.hash = 'content-library'; window.location.reload(); return;
+      window.location.hash = _clHash(); window.location.reload(); return;
     }
     ALL_ITEMS = ALL_ITEMS.filter(function (i) { return i.collection !== tab; });
     paging[tab] = { offset: 0, total: null, loading: false, done: false };
@@ -2939,6 +2962,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // RENDER
   // ══════════════════════════════════════════════
 
+  function _clHash() { return RAIL_MODE && RAIL_TYPES[S.mainTab] ? RAIL_TYPES[S.mainTab].hash : 'content-library'; }   // v1.0.90
   function render() {
     // v1.0.42: shared pill emitter — uses the ix-btn--pill primitive so the
     // active state matches the rest of the platform (no bespoke styling).
@@ -2964,15 +2988,16 @@ document.addEventListener('DOMContentLoaded', function () {
     // v1.0.72: canonical refresh control from the component -
     //          replaces the bespoke text button.
     var _clBtn = (window.IxHeader && IxHeader.refreshBtn)
-      ? IxHeader.refreshBtn({ onclick: "window.location.hash='content-library';window.location.reload()" })
-      : '<button class="cl-btn" onclick="window.location.hash=\'content-library\';window.location.reload()">\u21BB Refresh</button>';
+      ? IxHeader.refreshBtn({ onclick: "window.location.hash='" + _clHash() + "';window.location.reload()" })
+      : '<button class="cl-btn" onclick="window.location.hash=\'' + _clHash() + '\';window.location.reload()">\u21BB Refresh</button>';
     // v1.0.86 — the system-wide ⓘ badge (ix-info v1.0.2), beside refresh as on the Allocator.
+    var _clTitle = RAIL_MODE && RAIL_TYPES[S.mainTab] ? RAIL_TYPES[S.mainTab].title : 'Asset Library';   // v1.0.90
     var _clInfo = window.IxInfo ? window.IxInfo.badge({
       file:    'content-library-v' + CL_VERSION + '.js',
       version: CL_VERSION,
-      title:   'Asset Library',
+      title:   _clTitle,
       heading: 'Writes through',
-      blurb:   'Every Article, Ad, Event and Real Estate record of this title, one tab each. ' +
+      blurb:   (RAIL_MODE ? 'Every ' + _clTitle + ' record of this title (the Articles, Events and Real Estate rail tabs share this module; Ads is Ad Maker\u2019s tab). ' : 'Every Article, Event and Real Estate record of this title, one tab each. ') +
                'Each row shows the issues it is placed in. Pick a plan on a row and Save. ' +
                'An article goes into the plan\u2019s next open article tile, or a new tile after the last one when every ' +
                'tile is full (the Allocator\u2019s rule). An event or listing is recorded on the plan and waits in the ' +
@@ -2989,8 +3014,8 @@ document.addEventListener('DOMContentLoaded', function () {
       companions: 'ix-header v1.0.2 \u00b7 ix-info v1.0.2 \u00b7 ta-asf (New) \u00b7 pathways: ix-issue-data v1.0.180+ /plans, /plan-board; ix-content v1.2.2 /nl-blocks (read), /nl-blocks/batch (write) \u00b7 ipp-picker v1.82 (the waiting card), ipp-publish v2.81 (Compile stops while one waits)'
     }) : '<span class="cl-ver">v' + CL_VERSION + '</span>';
     h += (window.IxHeader && IxHeader.render)
-      ? IxHeader.render({ icon: '\uD83D\uDCDA', title: 'Asset Library', actions: [_clBtn, _clInfo] })
-      : '<div class="ix-hdr"><div class="ix-hdr-left"><div class="ix-hdr-icon">\uD83D\uDCDA</div><div><h3>Asset Library</h3></div></div><div class="ix-hdr-right">' + _clBtn + _clInfo + '</div></div>';
+      ? IxHeader.render({ icon: '\uD83D\uDCDA', title: _clTitle, actions: [_clBtn, _clInfo] })
+      : '<div class="ix-hdr"><div class="ix-hdr-left"><div class="ix-hdr-icon">\uD83D\uDCDA</div><div><h3>' + _clTitle + '</h3></div></div><div class="ix-hdr-right">' + _clBtn + _clInfo + '</div></div>';
 
     /* ── ROW 2 — canonical strip + end slot ──           v1.0.79
 
@@ -3015,9 +3040,8 @@ document.addEventListener('DOMContentLoaded', function () {
        markup when IxTabs is absent, so an out-of-order deploy
        degrades instead of blanking the row. */
     var searchLabel = S.mainTab === 'realestate' ? 'real estate' : S.mainTab;
-    var _clTabs = [
+    var _clTabs = RAIL_MODE ? [] : [   // v1.0.90: no inner tab row on the rail; Ads is ta-admaker's tab
       { key: 'articles',   label: 'Articles' },
-      { key: 'ads',        label: 'Ads' },
       { key: 'events',     label: 'Events' },
       { key: 'realestate', label: 'Real Estate' }
     ];
@@ -3591,6 +3615,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function init() {
+    var _hm0 = RAIL_MODE ? ((/^#lib-(articles|events|realestate)$/.exec(window.location.hash || '') || [])[1] || '') : '';   // v1.0.90
     // Read DOM data
     MNLS_SECTIONS = readMnlsSections();
     PRODUCTS = readProducts();
@@ -3601,6 +3626,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // v1.0.45: all types load via webhook. Start empty; load the active tab.
     ALL_ITEMS = [];
+    if (RAIL_MODE) S.mainTab = _hm0 || railActiveType();
     loadAssets(S.mainTab || 'articles');
     loadNlbAssignments();   // v1.0.51: decoupled durable-status feed (re-decorates + re-renders when ready)
     loadWorkerPlans();      // v1.0.87: every plan of the title, from the Data Worker
@@ -3617,12 +3643,18 @@ document.addEventListener('DOMContentLoaded', function () {
       taItemId: TA_ITEM_ID,
     });
 
+    if (RAIL_MODE) {   // v1.0.90: the root sits in the active pane; each rail tab switches the type
+      railPlace(S.mainTab);
+      Object.keys(RAIL_TYPES).forEach(function (k) { if (!RAIL[k]) return; document.querySelectorAll('[data-w-tab="' + RAIL_TYPES[k].tab + '"]').forEach(function (l) { l.addEventListener('click', function () { setTimeout(function () { if (S.mainTab !== k) setMain(k); else railPlace(k); }, 0); }); }); });
+    }
     render();
 
-    // Hash return: if page was reloaded with #content-library, click the tab to return here
+    // Hash return: if page was reloaded with #content-library (or #lib-<type> in rail mode), click the tab to return here
+    var _hm = /^#lib-(articles|events|realestate)$/.exec(window.location.hash || '');
+    if (RAIL_MODE && _hm && RAIL[_hm[1]]) { setMain(_hm[1]); setTimeout(function () { var tb = document.querySelector('[data-w-tab="' + RAIL_TYPES[_hm[1]].tab + '"]'); if (tb) tb.click(); history.replaceState(null, '', window.location.pathname + window.location.search); }, 300); }
     if (window.location.hash === '#content-library') {
       setTimeout(function () {
-        var tabBtn = document.querySelector('[data-w-tab="ContentLibrary"]');
+        var tabBtn = document.querySelector('[data-w-tab="' + (RAIL_MODE ? RAIL_TYPES[S.mainTab].tab : 'ContentLibrary') + '"]');
         if (tabBtn) tabBtn.click();
         // Clear hash so it doesn't interfere with future navigation
         history.replaceState(null, '', window.location.pathname + window.location.search);
