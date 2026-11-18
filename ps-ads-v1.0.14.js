@@ -1,7 +1,8 @@
-// ps-ads-v1.0.13.js
+// ps-ads-v1.0.14.js
 // ============================================================
 // INBXIFY · Publisher Portal · the Ads tab
 //
+// v1.0.14 (18 Nov 2026): version only; pairs with ix-ads-board v1.0.1. No code change.
 // v1.0.13 (18 Nov 2026, Ad Maker Build S1) — THE TAB NOW MOUNTS ix-ads-board (side 'publisher').
 //   Nothing the publisher sees changes. Everything v1.0.12 drew and saved (the two boards, the client list, the
 //   open row's tabs, staging and Save, Ask, Request new ads, Withdraw) moved into ix-ads-board-v1.0.1.js so the
@@ -13,7 +14,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.13', FILE = 'ps-ads-v' + VERSION + '.js';
+  var VERSION = '1.0.14', FILE = 'ps-ads-v' + VERSION + '.js';
   function mount(node, ctx) {
     if (!window.IxAdsBoard) { node.innerHTML = '<div class="ps-err" role="alert">The ads board did not load (ix-ads-board). Reload the page.</div>'; return; }
     var deep = ''; try { deep = new URLSearchParams(location.search).get('customer') || ''; } catch (e) {}
