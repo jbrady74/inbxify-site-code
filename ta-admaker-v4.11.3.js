@@ -4570,7 +4570,7 @@
     if (sv.err) h += '<div class="am-err" style="margin-top:10px">' + esc(sv.err) + '</div>';
     var SW2 = SAVE_WORDS, apW = function (r) { return r.outcome === 'current' || r.outcome === 'hold' || r.current ? APPROVAL_WORDS.approved : APPROVAL_WORDS.pending; };
     if (sv.note && sv.done) h += '<div class="am-note am-savenote">' + esc(sv.note) + '</div>';
-    if (sv.rows.length) h += '<div class="am-result"><h4>' + sv.rows.length + ' version' + (sv.rows.length > 1 ? 's' : '') + ' saved</h4>' + sv.rows.map(function (r, i) { return '<div class="am-rr">' + (r.banner ? '<img src="' + esc(r.banner) + '" alt="" style="width:260px">' : '') + (r.sidebar ? '<img src="' + esc(r.sidebar) + '" alt="" style="width:120px">' : '') + (r.splash ? '<img src="' + esc(r.splash) + '" alt="" style="width:120px">' : '') + '<div class="lines"><b>' + esc(r.name) + '</b><br>' + (r.banner ? 'Banner <span class="am-pend">' + apW(r) + '</span> ' : '') + (r.sidebar ? 'Sidebar <span class="am-pend">' + apW(r) + '</span>' : '') + (r.splash ? 'Splash <span class="am-pend">saved · no approval field yet</span>' : '') + '<br>' +
+    if (sv.rows.length) h += '<div class="am-result"><h4>' + (sv.was ? esc(SW2.head2Saved[sv.outcome] || '') : sv.rows.length + ' version' + (sv.rows.length > 1 ? 's' : '') + ' saved') + '</h4>' + sv.rows.map(function (r, i) { return '<div class="am-rr">' + (r.banner ? '<img src="' + esc(r.banner) + '" alt="" style="width:260px">' : '') + (r.sidebar ? '<img src="' + esc(r.sidebar) + '" alt="" style="width:120px">' : '') + (r.splash ? '<img src="' + esc(r.splash) + '" alt="" style="width:120px">' : '') + '<div class="lines"><b>' + esc(r.name) + '</b><br>' + (r.banner ? 'Banner <span class="am-pend">' + apW(r) + '</span> ' : '') + (r.sidebar ? 'Sidebar <span class="am-pend">' + apW(r) + '</span>' : '') + (r.splash ? 'Splash <span class="am-pend">saved · no approval field yet</span>' : '') + '<br>' +
       (r.noApproval ? '<span class="am-note">ADS has no splash approval or current-splash pointer yet; the splash is on the row and ready for the IPP.</span>'
         : r.outcome === 'current' || r.current ? '<span class="am-flag ok" style="background:#E6F2EC !important">' + esc(fillW(SW2.rowCurrent, { shape: r.shape })) + '</span>'
         : r.outcome === 'hold' ? '<span class="am-flag ok" style="background:#E6F2EC !important">' + esc(SW2.rowHold) + '</span>'
@@ -4578,7 +4578,7 @@
         : r.busy ? '<span class="am-note">' + esc(r.busy) + '</span>'
         : (r.approveErr ? '<span class="am-err inline">' + esc(r.approveErr) + '</span> ' : '') + '<button type="button" class="ix-btn ix-btn--secondary" data-act="approveRow" data-i="' + i + '" style="height:30px !important;padding:0 12px !important;font-size:12.5px !important;margin-top:6px">Approve &amp; make current</button> <button type="button" class="ix-btn ix-btn--secondary" data-act="approveRowHold" data-i="' + i + '" style="height:30px !important;padding:0 12px !important;font-size:12.5px !important;margin-top:6px">Approve &amp; hold</button> <span class="am-note">or leave it ' + APPROVAL_WORDS.pending + '; its card on All ads can send it for approval</span>') + '</div></div>'; }).join('') + '</div>';
     h += '</div>';
-    shell(h, barHTML(sv.done ? ((sv.outcome && SAVE_WORDS.savedMsg[sv.outcome]) || W.savedMsg) : sv.err ? 'Stopped. Nothing after the failed step was written.' : W.keepOpen, (sv.done || sv.err) ? (sv.done && sv.outcome !== 'draft' ? btn('proofsPdf', 'Download the proofs PDF', 'secondary') + ' ' : '') + btn('again', W.again, 'secondary') + (sv.done && sv.outcome !== 'draft' && (S.shape === 'banner' || S.shape === 'sidebar') ? ' ' + btn('nextShape', 'Make the ' + (S.shape === 'banner' ? 'sidebar' : 'banner') + ' next', 'primary') : '') : ''), { right: null });
+    shell(h, barHTML(sv.done ? ((sv.outcome && ((sv.was && SAVE_WORDS.savedMsgSaved[sv.outcome]) || SAVE_WORDS.savedMsg[sv.outcome])) || W.savedMsg) : sv.err ? 'Stopped. Nothing after the failed step was written.' : W.keepOpen, (sv.done || sv.err) ? (sv.done && sv.outcome !== 'draft' && !sv.was ? btn('proofsPdf', 'Download the proofs PDF', 'secondary') + ' ' : '') + btn('again', W.again, 'secondary') + (sv.done && sv.outcome !== 'draft' && (S.shape === 'banner' || S.shape === 'sidebar') ? ' ' + btn('nextShape', 'Make the ' + (S.shape === 'banner' ? 'sidebar' : 'banner') + ' next', 'primary') : '') : ''), { right: null });
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -4850,8 +4850,12 @@
     noContact: 'The PUBLISHERS record has no Contact Name or Business Email, so only a test can be sent.',
     need: 'Choose what happens, then Save', needClick: 'Choose where a click goes first',
     bar: { draft: 'Save keeps the design in Canva as a draft', send: 'Save writes the ad, then emails {to}', current: 'Save writes the ad, approves it and makes it current', hold: 'Save writes the ad, approves it and holds it', plain: 'Save writes the splash to the customer' },
+    barSaved: { send: 'Save emails {to}', current: 'Save approves it and makes it current', hold: 'Save approves it and holds it', plain: 'Already saved' },
+    optsSaved: { send: 'Emails a review link that needs no login. The ad stays Pending until the answer comes back.' },
     step: { draft: 'Keeping the design as a draft in Canva', send: 'Emailing the review link to {to}', current: 'Approving and making it the current {shape}, for the publisher', hold: 'Approving and holding it, for the publisher', sent: 'Marking the design as saved in Canva', approved: 'Moving the design to the customer’s Approved folder in Canva' },
     head2: { draft: 'Kept as a draft in Canva', send: '1 version saved and sent for approval', current: '1 version saved, approved and made current', hold: '1 version saved, approved and held', plain: '1 version saved' },
+    head2Saved: { send: 'Sent for approval', current: 'Approved and made current', hold: 'Approved and held', plain: 'Saved' },
+    savedMsgSaved: { send: 'Sent. The decision comes back by email.', current: 'Approved and running.', hold: 'Approved. The current ad keeps running.' },
     draftDone: 'The design is in Canva, in {customer}’s folder. It is listed under Drafts in Canva on All ads, with Edit in Canva and Check and save.',
     draftDoneFix: 'Your changes stay in Canva. The saved ad still shows its earlier picture until you save it here.',
     rowSent: 'Approval email sent to {to}. The link works for {days} days.', rowSentTest: 'Test approval email sent to {to}. Approving from it counts.',
@@ -4876,7 +4880,7 @@
         more = '<div class="am-sendto"><span class="l">' + SW.sendTo + '</span>' +
           '<label class="am-clk"><input type="radio" name="am-sendto" data-sendto="publisher"' + (cv.to === 'publisher' ? ' checked' : '') + (w.hasPub ? '' : ' disabled') + '> ' + esc(w.hasPub ? w.pub : SW.noContact) + '</label>' +
           '<label class="am-clk"><input type="radio" name="am-sendto" data-sendto="test"' + (cv.to === 'test' ? ' checked' : '') + '> ' + esc(w.test) + ' <span class="am-light">' + SW.toTestNote + '</span></label></div>'; }
-      return '<label class="am-clk am-whatl' + (on ? ' am-what-on' : '') + '"><input type="radio" name="am-what" data-what="' + k + '"' + (on ? ' checked' : '') + '><span class="tx"><b>' + esc(o[0]) + '</b><small>' + esc(fillW(o[1], { customer: c.name || 'the customer', shape: low })) + '</small></span></label>' + more; }).join('');
+      return '<label class="am-clk am-whatl' + (on ? ' am-what-on' : '') + '"><input type="radio" name="am-what" data-what="' + k + '"' + (on ? ' checked' : '') + '><span class="tx"><b>' + esc(o[0]) + '</b><small>' + esc(fillW((cv.existing && SW.optsSaved[k]) || o[1], { customer: c.name || 'the customer', shape: low })) + '</small></span></label>' + more; }).join('');
     return '<div class="am-card am-what' + (cv.what ? '' : ' need') + '"><div class="am-fch"><b>' + SW.head + '</b><span>' + (cv.what ? esc(SW.opts[cv.what][0]) : SW.sub) + '</span>' + (cv.what ? revert('whatCancel') : '') + '</div>' + rows + '</div>';
   }
   function whatCan() { var cv = S.canva || {}; if (!cv.what || !cv.img) return false; if (cv.what === 'draft') return true; return !!(cv.existing || S.click); }
@@ -4885,7 +4889,7 @@
     if (!cv.what) return SW.need;
     if (cv.what !== 'draft' && !cv.existing && !S.click) return SW.needClick;
     var w = cv.what === 'send' ? sendToWho() : null;
-    return fillW(SW.bar[cv.what], { to: w ? esc(cv.to === 'test' ? w.testName : w.pubName) : '' });
+    return fillW((cv.existing ? SW.barSaved : SW.bar)[cv.what] || SW.bar[cv.what], { to: w ? esc(cv.to === 'test' ? w.testName : w.pubName) : '' });
   }
   function checkNameLine(cv, c) {
     if (cv.existing) return 'Saved as <b>' + esc(cv.existing.name) + '</b>';
@@ -4923,7 +4927,7 @@
       if (!fromV && !addT) { toast('The ADS add-type field has no choice for ' + shapeLabel(sh) + ', so nothing was saved.', 'err'); return; }
     }
     var who = what === 'send' ? sendToWho() : null, toName = who ? (cv.to === 'test' ? who.testName : who.pubName) : '';
-    S.screen = 'save'; S.saving = { steps: [], rows: [], done: false, err: '', head: SAVE_WORDS.head2[what] + (sh === 'splash' ? ' (no approval field for splash)' : ''), outcome: what }; render();
+    S.screen = 'save'; S.saving = { steps: [], rows: [], done: false, err: '', head: (ex ? SAVE_WORDS.head2Saved : SAVE_WORDS.head2)[what] + (sh === 'splash' ? ' (no approval field for splash)' : ''), outcome: what, was: !!ex }; render();
     var name = ex ? ex.name : fromV ? fromV.name : versionName(c, 1), label = shapeLabel(sh) + ' · ' + name, up = null, mediaId = null, row = null;
     var designId = ex ? (ex.designId || '') : (cv.job ? cv.job.designId : ''), recipe = ex ? '' : canvaRecipe(cv), chain = Promise.resolve();
     function rowOf(id, link) { row = { name: name, id: id, shape: sh, noApproval: sh === 'splash', banner: sh === 'banner' ? link : '', sidebar: sh === 'sidebar' ? link : '', splash: sh === 'splash' ? link : '', designId: designId }; S.saving.rows.push(row); }
@@ -5196,7 +5200,7 @@
       var id = esc(d.designId), sh = d.shape || '', busy = D.busy === d.designId;
       var acts = D.ask === d.designId ? '<span class="q">' + DW.removeAsk + '</span><button type="button" class="ix-btn ix-btn--danger ta-ads-drbtn" data-ads="drRemoveYes" data-v="' + id + '">' + DW.yes + '</button><a href="#" class="ta-ads-drx" data-ads="drRemoveNo">' + DW.no + '</a>'
         : '<button type="button" class="ix-btn ix-btn--primary ta-ads-drbtn" data-ads="drEdit" data-v="' + id + '"' + (busy ? ' disabled' : '') + '>' + DW.edit + '</button><button type="button" class="ix-btn ix-btn--secondary ta-ads-drbtn" data-ads="drCheck" data-v="' + id + '"' + (busy ? ' disabled' : '') + '>' + DW.check + '</button><a href="#" class="ta-ads-drx" data-ads="drRemove" data-v="' + id + '">' + DW.remove + '</a>';
-      return '<div class="ta-ads-drrow"><span class="th">' + (d.thumb ? '<img src="' + esc(d.thumb) + '" alt="" loading="lazy">' : '') + '</span><span class="cu" title="' + esc(d.customer.name) + '">' + esc(d.customer.name) + '</span><span class="sh">' + esc(sh ? shapeLabel(sh) : DW.noShape) + '</span>' +
+      return '<div class="ta-ads-drrow' + (D.ask === d.designId ? ' asking' : '') + '"><span class="th">' + (d.thumb ? '<img src="' + esc(d.thumb) + '" alt="" loading="lazy">' : '') + '</span><span class="cu" title="' + esc(d.customer.name) + '">' + esc(d.customer.name) + '</span><span class="sh">' + esc(sh ? shapeLabel(sh) : DW.noShape) + '</span>' +
         '<span class="ti" title="' + esc(d.title) + '">' + esc(d.copiedFrom ? DW.copy : d.title) + '</span><span class="wh">' + esc(fillW(DW.worked, { on: fmtDate(d.canvaUpdated || d.updated) })) + ' · ' + esc(d.exportedAt ? fillW(DW.back, { on: fmtDate(d.exportedAt) }) : DW.notBack) + '</span><span class="ac">' + acts + '</span></div>'; }).join('');
     host.innerHTML = h + '</div>';
   }
@@ -5756,6 +5760,7 @@
     if (!window.IxAdLayouts) miss.push('ix-ad-layouts');
     try { IxAdLayouts.shapes(); } catch (e) { miss.push(e.message); }
     readCustomers();
+    try { if (A.board && A.board.state) adsBrand((A.board.state() || {}).customers); } catch (e) { log('adsBrand', e); }   // v4.11.3: readCustomers rebuilt the list; the board's other customers join it again
     m.addEventListener('click', onClick); m.addEventListener('input', onInput); m.addEventListener('change', onChange);
     m.addEventListener('keydown', function (ev) {   // v4.7.0: arrow keys step a typed box, 1 or 10 with Shift
       var t = ev.target; if (!t || !t.matches || !t.matches('input[data-tbin]') || (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown')) return;

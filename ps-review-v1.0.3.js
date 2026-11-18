@@ -254,6 +254,7 @@
     var a = AP[it.key], k = esc(it.key), low = it.label.toLowerCase(), P = W.ap, done = !!it.decision;
     var st = done ? '<span class="ps-rv-state s-ok">' + esc(P.st[it.decision] || '') + '</span>' : a && a.act ? '<span class="ps-rv-state ' + (apReady(a) ? 's-ok' : 's-chg') + '">' + esc(apReady(a) ? P.st[a.act] : P.st.needNote) + '</span>' : '';
     var cur = it.current && /^https?:\/\//.test(it.current.picture || '') ? '<div class="ps-rv-now"><span>' + esc(P.running) + '</span><img class="s-' + esc(it.shape) + '" src="' + esc(it.current.picture) + '" alt="' + esc(P.running + ': ' + (it.current.name || '')) + '"></div>'
+      : it.current ? '<p class="ps-rv-quiet ps-rv-nonow">' + esc(P.running + ': ' + (it.current.name || low)) + '</p>'
       : '<p class="ps-rv-quiet ps-rv-nonow">' + esc(fill(P.nothingRunning, { shape: low, customer: D.customer || '' })) + '</p>';
     var body;
     if (done) body = '<p class="ps-rv-quiet">' + esc(fill(P.doneLine[it.decision] || '', { shape: it.label })) + (it.note ? ' · ' + esc(it.note) : '') + '</p>';
