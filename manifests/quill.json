@@ -8,11 +8,11 @@
     "ix-info-v1.0.0.css",
     "ps-shell-v1.0.2.css",
     "quill-home-v2.0.0.css",
-    "quill-performance-v1.0.1.css"
+    "quill-performance-v1.1.0.css"
   ],
   "body": [
     "ix-info-v1.0.2.js",
     "quill-home-v2.0.2.js",
-    "quill-performance-v1.0.1.js"
+    "quill-performance-v1.1.0.js"
   ]
 }
