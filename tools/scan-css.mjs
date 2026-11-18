@@ -18,7 +18,7 @@
 //   failed: otherwise no old file could ever get a small fix. A brand-new module is judged on every line.
 //
 // Writes OUT/css.md (for the report) and OUT/css.json. Reads git only; opens no page.
-// HARDCODING (provisional): HC-P-AG-7 TOKEN_FILES (the files allowed to hold hand-typed values).
+// HARDCODING (provisional): HC-P-AG-10 TOKEN_FILES (the files allowed to hold hand-typed values).
 // ============================================================
 import fs from 'node:fs';
 import path from 'node:path';
@@ -26,7 +26,7 @@ import { execFileSync } from 'node:child_process';
 
 const BASE = process.env.BASE_REF || 'origin/main';
 const OUT = process.env.OUT || 'check-out';
-const TOKEN_FILES = /^ix-tokens-v[\d._]+\.css$/;                 // HC-P-AG-7
+const TOKEN_FILES = /^ix-tokens-v[\d._]+\.css$/;                 // HC-P-AG-10
 const VERSIONED = /-v\d[\d._]*\.(css|js)$/i;
 const SKIP_DIRS = /^(tools|loaders|manifests|checks|\.github|node_modules)\//;
 

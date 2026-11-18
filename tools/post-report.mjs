@@ -10,15 +10,15 @@
 //   · writes it to the run's summary page, always
 //   · posts it on the branch's open pull request, as one comment that is replaced on every push
 // With no open pull request it says so and posts nothing: the summary page still has the report.
-// HARDCODING (provisional): HC-P-AG-10 MARK (how the comment is found again) and SHOTS_BRANCH.
+// HARDCODING (provisional): HC-P-AG-13 MARK (how the comment is found again) and SHOTS_BRANCH.
 // ============================================================
 import fs from 'node:fs';
 import path from 'node:path';
 
 const { REPO, BRANCH, SHA = '', RUN_URL = '', GITHUB_TOKEN } = process.env;
 const OUT = process.env.OUT || 'check-out';
-const SHOTS_BRANCH = process.env.SHOTS_BRANCH || 'check-reports';   // HC-P-AG-10
-const MARK = '<!-- ix-checks-report -->';                           // HC-P-AG-10
+const SHOTS_BRANCH = process.env.SHOTS_BRANCH || 'check-reports';   // HC-P-AG-13
+const MARK = '<!-- ix-checks-report -->';                           // HC-P-AG-13
 const read = (f) => { try { return fs.readFileSync(path.join(OUT, f), 'utf8'); } catch { return ''; } };
 const json = (f) => { try { return JSON.parse(read(f)); } catch { return null; } };
 

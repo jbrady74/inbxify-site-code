@@ -3,7 +3,9 @@
 # On every push to an agent- or reskin- branch: scan the CSS the branch adds, open each changed page on the TEST
 # title on main and on the branch (every rail tab, 1440 and 390 wide), and post the report on the pull request.
 # Read-only: pages are opened and rail tabs clicked; nothing is typed or saved.
-# A red run means the branch is not ready for Jeff to merge. Merging to main is going live, and only Jeff merges.
+# The verdict is the "ix-checks" status on the commit and the report on the pull request. The run itself always
+# ends green, so a failed check never sends GitHub's "Run failed" email (Jeff, 17 Nov). A red ix-checks status
+# means the branch is not ready for Jeff to merge. Merging to main is going live, and only Jeff merges.
 # Secrets: IX_AGENT_EMAIL, IX_AGENT_PASSWORD (the agent Memberstack member). Pictures go to the check-reports branch.
 name: Checks
 
@@ -23,6 +25,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  statuses: write
 
 concurrency:
   group: ix-checks-${{ github.head_ref || github.ref_name }}
@@ -105,10 +108,16 @@ jobs:
           name: check-report
           path: check-out
           retention-days: 14
-      - name: Pass or fail
+      - name: Pass or fail (as the ix-checks status on the commit, not as a failed run)
         if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${{ steps.css.outcome }}" != "success" ] || [ "${{ steps.pages.outcome }}" != "success" ]; then
-            echo "Checks failed. The report is on this run's summary page and on the pull request."
-            exit 1
+          if [ "${{ steps.css.outcome }}" = "success" ] && [ "${{ steps.pages.outcome }}" = "success" ]; then
+            STATE=success; WHAT="All checks passed"
+          else
+            STATE=failure; WHAT="Checks failed: see the report on the pull request"
           fi
+          gh api "repos/${REPO}/statuses/${SHA}" -X POST -f state="$STATE" -f context=ix-checks \
+            -f description="$WHAT" -f target_url="$RUN_URL" > /dev/null
+          echo "ix-checks: $STATE"

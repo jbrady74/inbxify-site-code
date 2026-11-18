@@ -33,8 +33,8 @@
 //
 // Writes OUT/pages.md, OUT/pages.json and OUT/shots/*.jpg. Pictures are named in the report as {{IMG:name}};
 // tools/post-report.mjs turns those into addresses.
-// HARDCODING (provisional): HC-P-AG-3 the test title's page addresses (checks/pages.json); HC-P-AG-8 SETTLE and
-//   LIMIT (how long a view may take to go quiet); HC-P-AG-9 the picture format.
+// HARDCODING (provisional): HC-P-AG-3 the test title's page addresses (checks/pages.json); HC-P-AG-11 SETTLE and
+//   LIMIT (how long a view may take to go quiet); HC-P-AG-12 the picture format.
 // ============================================================
 process.env.PW_TEST_SCREENSHOT_NO_FONTS_READY = '1';   // a picture must not wait for a web font that never arrives
 import fs from 'node:fs';
@@ -50,8 +50,8 @@ const SHOTS = path.join(OUT, 'shots');
 const CFG = JSON.parse(fs.readFileSync('checks/pages.json', 'utf8'));
 const SITE = (process.env.IX_BASE || CFG.base).replace(/\/$/, '');
 const EMAIL = process.env.IX_AGENT_EMAIL || '', PASSWORD = process.env.IX_AGENT_PASSWORD || '';
-const SETTLE = 900, LIMIT = 12000;                                   // HC-P-AG-8
-const PICTURE = { type: 'jpeg', quality: 68, fullPage: true };       // HC-P-AG-9
+const SETTLE = 900, LIMIT = 12000;                                   // HC-P-AG-11
+const PICTURE = { type: 'jpeg', quality: 68, fullPage: true };       // HC-P-AG-12
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 if (!/^(reskin-|agent-|jeff-)[A-Za-z0-9._-]+$/.test(BRANCH)) { console.error(`"${BRANCH}" is not a preview branch name`); process.exit(1); }
