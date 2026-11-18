@@ -1,4 +1,4 @@
-/* ta-admaker-v4.11.1.js
+/* ta-admaker-v4.11.2.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
 
@@ -13,6 +13,17 @@
    ix-success-toast, and AFTER ta-studio (v1_4_13 dispatches
    std:panel:admaker). Companion: ta-admaker-v1.1.0.css (head).
 
+   ── v4.11.2 (18 Nov 2026, test 1 on Senior Care Authority) ── THE MATCH SHEET, AND THE CANVA TAB OPENS ──
+   · Match sheet: on Edit in Canva, Ad Maker reads the original ad once more through the Anthropic proxy for what
+     Jeff needs to rebuild it in Canva: every colour with its hex code, and every line of text with the closest Canva
+     font (plus two alternatives), weight, size in px, colour, alignment and where it sits. The sheet goes to the job
+     (ix-canva v0.3.0 POST /job/<id>/sheet), where the inbxify app inside Canva shows it and places the text; it also
+     shows on the Canva screen here. A failed read is recorded so the app stops waiting.
+   · The words list and the read colours go with the job too (the app shows them until the sheet arrives).
+   · The Canva tab opens on the click itself (a blank tab, then pointed at the design), so the browser no longer
+     blocks it as a pop-up. Same for Edit in Canva again on a saved version.
+   · The words/sheet sit under the waiting card in the main column (they drew over the card in a narrow column).
+   HARDCODING: HC-P-AMC1-6 SHEET_MAX_W 1400 px (the picture sent for the sheet); the sheet prompt's rules.
    ── v4.11.1 (18 Nov 2026) ── version only: pairs with ta-admaker-v4.11.1.css (tokens). No code change. ──
    ── v4.11.0 · Ad Maker Build S1 (18 Nov 2026) ── THE ADS RAIL TAB, AND DESIGN IN CANVA ──
    · Ad Maker leaves TA Studio. It lives in the T-A Ads rail tab (#ta-ads-mount), which this file also draws:
@@ -852,7 +863,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.11.1', CSS_FILE = 'ta-admaker-v4.11.1.css';   // v4.11.0: the Ads tab and the Canva screens
+  var VERSION = '4.11.2', CSS_FILE = 'ta-admaker-v4.11.1.css';   // v4.11.2: CSS unchanged   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
   var ADVICE_BIGGER = 1.25;   // HC-P-SSB8-25
@@ -4667,15 +4678,74 @@
   function canvaDataUrl(img, max) { var cv0 = img.getContext ? img : imgToCanvas(img); return scaled(cv0, max || 2400).toDataURL('image/png'); }
   function canvaGo() {
     var c = cust(), cv = S.canva || (S.canva = {}); if (cv.busy) return;
+    var tab = canvaBlankTab();   // v4.11.2: open on the click, so it is not a blocked pop-up
     cv.busy = true; cv.err = ''; render();
     var ticked = canvaTicked(), pieces = [], links = [];
     ticked.forEach(function (p, i) { if (p.img) pieces.push({ name: (c.name + ' - ' + p.label + '.png').replace(/[^\w .()\-]+/g, '-'), dataUrl: canvaDataUrl(p.img) }); else if (p.url) links.push(p.url); });
     var title = c.name + ' · ' + shapeLabel(S.shape) + ' · ' + new Date().toISOString().slice(0, 10);
     var taUrl = location.origin + location.pathname + '#ads';
-    canvaApi('/job', { method: 'POST', body: { customer: { id: c.id, name: c.name }, shape: S.shape, title: title, taUrl: taUrl, pieces: pieces, links: links } })
+    var src = sheetSource();
+    canvaApi('/job', { method: 'POST', body: { customer: { id: c.id, name: c.name }, shape: S.shape, title: title, taUrl: taUrl, pieces: pieces, links: links,
+        words: canvaWordRows().map(function (r) { return { slot: r.slot, text: r.text, font: r.font, weight: r.weight, size: r.size, colour: r.colour }; }),
+        colours: (S.adColours || []).map(function (x) { return { hex: hex(x) || '', where: 'in the ad' }; }), sheetPending: !!src } })
       .then(function (j) { cv.busy = false; cv.job = j.job; cv.editUrl = j.editUrl; cv.png = null; cv.img = null; cv.blob = null; cv.status = 'open'; S.screen = 'canva'; render();
-        var w = window.open(j.editUrl, '_blank'); if (!w) toast('The browser blocked the Canva tab. Use Open Canva again.', 'err'); canvaPollStart(); })
-      .catch(function (e) { cv.busy = false; cv.err = /not connected/i.test(e.message) ? CANVA_WORDS.notConnected + ' (' + e.message + ')' : e.message; render(); });
+        canvaPointTab(tab, j.editUrl); canvaPollStart(); if (src) canvaSheet(cv, src); })
+      .catch(function (e) { if (tab) try { tab.close(); } catch (x) {} cv.busy = false; cv.err = /not connected/i.test(e.message) ? CANVA_WORDS.notConnected + ' (' + e.message + ')' : e.message; render(); });
+  }
+  // v4.11.2 · the Canva tab opens on the click; the design address arrives a few seconds later
+  function canvaBlankTab() {
+    var t = null; try { t = window.open('', '_blank'); if (t) t.document.write('<title>Opening Canva</title><p style="font:15px Sen,system-ui,sans-serif;color:#22252B;padding:48px">Opening the design in Canva…</p>'); } catch (e) { t = null; }
+    return t;
+  }
+  function canvaPointTab(tab, url) {
+    if (tab && !tab.closed) { try { tab.location.href = url; return; } catch (e) {} }
+    var w = window.open(url, '_blank'); if (!w) toast('The browser blocked the Canva tab. Use Open Canva again.', 'err');
+  }
+  // v4.11.2 · THE MATCH SHEET: colours, fonts, sizes and places read off the original ad for rebuilding it in Canva
+  var SHEET_MAX_W = 1400;   // HC-P-AMC1-6
+  function sheetSource() {
+    var img = (S.whole && S.whole.img) || S.srcCanvas || null; if (!img) return null;
+    var cv0 = img.getContext ? img : imgToCanvas(img); if (!cv0 || !cv0.width) return null;
+    var sc = scaled(cv0, SHEET_MAX_W); return { canvas: sc, w: sc.width, h: sc.height };
+  }
+  function sheetPrompt(src) {
+    var c = cust() || {};
+    return 'This is a print ad for ' + (c.name || 'a local business') + ', ' + src.w + ' x ' + src.h + ' px. A designer will rebuild it in Canva and needs a match sheet.\n' +
+      'Answer ONLY with JSON, no prose, no code fences:\n' +
+      '{"srcW":' + src.w + ',"srcH":' + src.h + ',"background":"#RRGGBB","colours":[{"hex":"#RRGGBB","where":"short words: e.g. right panel, headline text, bottom band"}],' +
+      '"lines":[{"text":"exact words, with \\n where the ad breaks the line","role":"headline|second headline|supporting|button|phone|website|small print|business name|tagline|other",' +
+      '"font":"closest font family offered in Canva (Google Fonts names such as Montserrat, Nunito, Playfair Display, Open Sans, Poppins, Lato, Raleway, Oswald, Merriweather, Varela Round, Quicksand, DM Sans)",' +
+      '"alts":["two more close Canva families"],"weight":400,"sizePx":24,"colour":"#RRGGBB","align":"start|center|end","box":{"x":0.1,"y":0.1,"w":0.3,"h":0.1}}]}\n' +
+      'Rules: weight is 100 to 900. sizePx is the font size in px at this image size (a capital letter is about 0.7 of it). ' +
+      'Colours: every distinct colour that matters to the design (panels, bands, text, logo ring), at most 8, most important first, real sampled hex values. ' +
+      'Lines: one entry per block of text that shares one style, in reading order; include small lines (captions, small print, labels on a band). ' +
+      'box is the block\'s position as fractions of the image (x, y = top-left). Leave out text that is only inside the logo.';
+  }
+  function canvaSheet(cv, src) {
+    var cfg = CFG(), jobId = cv.job && cv.job.id; if (!jobId) return;
+    cv.sheetState = 'reading'; cv.sheet = null; render();
+    var fail = function (why) { cv.sheetState = 'failed'; cv.sheetErr = why; render(); canvaApi('/job/' + encodeURIComponent(jobId) + '/sheet', { method: 'POST', body: { failed: why } }).catch(function () {}); };
+    if (!cfg.anthropicProxy) { fail('TA_CONFIG.anthropicProxy is not set on this page.'); return; }
+    var content = [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: src.canvas.toDataURL('image/jpeg', 0.9).split(',')[1] } }, { type: 'text', text: sheetPrompt(src) }];
+    fetchJson(cfg.anthropicProxy, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: CHECK_MODEL, max_tokens: 3000, system: 'You are a print designer reading an ad precisely. You answer ONLY with JSON.', messages: [{ role: 'user', content: content }] }) })
+      .then(function (r) {
+        if (!r.ok || !r.j) throw new Error('the Anthropic proxy answered HTTP ' + r.status);
+        var txt = (r.j.content || []).map(function (q) { return q.type === 'text' ? q.text : ''; }).join('').replace(/```json|```/g, '').trim(), obj;
+        try { obj = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)); } catch (e) { throw new Error('the answer was not readable JSON'); }
+        if (!obj || !Array.isArray(obj.lines)) throw new Error('the answer had no lines');
+        obj.srcW = obj.srcW || src.w; obj.srcH = obj.srcH || src.h; obj.by = 'ta-admaker-v' + VERSION;
+        return canvaApi('/job/' + encodeURIComponent(jobId) + '/sheet', { method: 'POST', body: { sheet: obj } }).then(function () { cv.sheet = obj; cv.sheetState = 'ready'; render(); });
+      })
+      .catch(function (e) { fail((e && e.message) || String(e)); });
+  }
+  function sheetHTML(cv) {
+    var sh = cv.sheet, st = cv.sheetState;
+    var head = '<div class="am-cvsheeth"><b>Match sheet</b> <span class="am-light">' + (st === 'reading' ? 'Reading the fonts and colours off the ad…' : st === 'failed' ? 'Could not read the fonts and colours: ' + esc(cv.sheetErr || '') : sh ? 'Also in Canva: Apps → inbxify, with Add buttons' : 'Ad Maker’s words') + '</span></div>';
+    if (!sh) return head + '<div class="am-card am-cvwords"><table><tbody>' + canvaWordRows().map(function (r) { return '<tr><td class="k">' + esc(r.slot) + '</td><td class="w">' + esc(r.text) + '</td><td><small>' + esc(r.font) + ' ' + r.weight + ' · ' + r.size + ' px · ' + esc(r.colour) + '</small></td></tr>'; }).join('') + '</tbody></table><div class="am-cvwfoot">' + btn('cvCopy', CANVA_WORDS.copy, 'secondary') + '</div></div>';
+    var cols = (sh.colours || []).map(function (c0) { var h0 = hex(c0.hex) || c0.hex; return '<span class="am-pchip"><i style="background:' + esc(h0) + ' !important"></i><b>' + esc(String(h0).toUpperCase()) + '</b> ' + esc(c0.where || '') + '</span>'; }).join(' ');
+    var rows = (sh.lines || []).map(function (l) { var h0 = hex(l.colour) || l.colour; return '<tr><td class="k">' + esc(l.role || '') + '</td><td class="w">' + esc(l.text).replace(/\n/g, '<br>') + '</td><td>' + esc(l.font || '') + (l.alts && l.alts.length ? '<small>or ' + esc(l.alts.join(', ')) + '</small>' : '') + '</td><td>' + esc(String(l.weight || '')) + '</td><td>' + Math.round(l.sizePx || 0) + ' px</td><td><span class="am-pchip"><i style="background:' + esc(h0) + ' !important"></i>' + esc(String(h0).toUpperCase()) + '</span></td></tr>'; }).join('');
+    return head + '<div class="am-card am-cvwords"><div class="am-cvcols" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">' + cols + '</div><table><thead><tr><th>Role</th><th>Words</th><th>Font</th><th>Weight</th><th>Size</th><th>Colour</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="am-cvwfoot"><span class="am-light">Sizes are at the original ad’s ' + sh.srcW + ' × ' + sh.srcH + ' px; the app scales them to the design.</span></div></div>';
   }
   var CANVA_TIMER = null;
   function canvaPollStart() { canvaPollStop(); CANVA_TIMER = setInterval(canvaPollOnce, CANVA_POLL_MS); }
@@ -4700,8 +4770,8 @@
       '<div class="am-cvdots"><i></i><i></i><i></i></div><p>' + CANVA_WORDS.waiting + '</p><div class="am-cvstatus am-light">' + esc(canvaStatusWord()) + '</div>' +
       '<div class="am-cvacts">' + btn('cvOpen', CANVA_WORDS.open, 'secondary') + btn('cvFetch', CANVA_WORDS.fetch, 'primary') + '</div>' + (cv.err ? '<div class="am-err" style="margin-top:10px">' + esc(cv.err) + '</div>' : '')) + '</div>' +
       '<div class="am-note" style="margin-top:10px">' + CANVA_WORDS.sentOk + ' Design <code>' + esc(cv.job ? cv.job.designId : '') + '</code>.</div>';
-    var right = colh(CANVA_WORDS.words, 'for the text boxes') + '<div class="am-card am-cvwords small"><table><tbody>' + canvaWordRows().map(function (r) { return '<tr><td class="k">' + esc(r.slot) + '</td><td class="w">' + esc(r.text) + '</td><td><small>' + esc(r.font) + ' ' + r.weight + ' · ' + r.size + ' px · ' + esc(r.colour) + '</small></td></tr>'; }).join('') + '</tbody></table><div class="am-cvwfoot">' + btn('cvCopy', CANVA_WORDS.copy, 'secondary') + '</div></div>';
-    shell(mid, barHTML(cv.fetching ? CANVA_WORDS.fetching : 'In Canva · ' + esc(c.name) + ', ' + esc(shapeLabel(S.shape).toLowerCase()), ghost('back', W.back)), { right: right });
+    mid += '<div style="margin-top:18px">' + sheetHTML(cv) + '</div>';   // v4.11.2: under the card, full width
+    shell(mid, barHTML(cv.fetching ? CANVA_WORDS.fetching : 'In Canva · ' + esc(c.name) + ', ' + esc(shapeLabel(S.shape).toLowerCase()), ghost('back', W.back)), { right: null });
   }
   function vCheck() {
     var cv = S.canva || {}, c = cust(), dims = shapeDims(S.shape) || { w: 0, h: 0 }, img = cv.img;
@@ -4769,10 +4839,11 @@
   // Edit in Canva again: a saved version whose recipe is a canva recipe opens its design with a fresh job (shape carried, so the export is at 2×)
   function canvaEditAgain(v, rec) {
     var c = cust(), cv = S.canva || (S.canva = {}); if (cv.busy) return;
+    var tab = canvaBlankTab();   // v4.11.2
     cv.busy = true; cv.err = ''; S.mode = 'canva'; S.shape = rec.shape || S.shape || 'banner'; S.screen = 'canva'; render();
     canvaApi('/job/from-design', { method: 'POST', body: { designId: rec.designId, shape: S.shape, customer: { id: c.id, name: c.name }, taUrl: location.origin + location.pathname + '#ads' } })
-      .then(function (j) { cv.busy = false; cv.job = j.job; cv.editUrl = j.editUrl; cv.img = null; cv.blob = null; cv.seenExport = null; render(); var w = window.open(j.editUrl, '_blank'); if (!w) toast('The browser blocked the Canva tab. Use Open Canva again.', 'err'); canvaPollStart(); })
-      .catch(function (e) { cv.busy = false; cv.err = e.message; render(); });
+      .then(function (j) { cv.busy = false; cv.job = j.job; cv.editUrl = j.editUrl; cv.img = null; cv.blob = null; cv.seenExport = null; render(); canvaPointTab(tab, j.editUrl); canvaPollStart(); })
+      .catch(function (e) { if (tab) try { tab.close(); } catch (x) {} cv.busy = false; cv.err = e.message; render(); });
   }
 
   // ══════════════════════════════════════════════════════════════
