@@ -1,4 +1,4 @@
-/* ps-review-v1.0.2.css */
+/* ps-review-v1.0.3.css */
 /* ============================================================
    INBXIFY · the advertiser review page (/review?t=…)
    v1.0.0 (10 Nov 2026, Publisher Portal S8) — FIRST BUILD, from advertiser
@@ -122,3 +122,25 @@
 .ps-rv-box .ps-rv-pacts{margin-top:16px}
 .ps-rv-end.thanks{text-align:center;margin-top:60px}
 .ps-rv-end.thanks h2{font-size:28px!important}
+
+/* v1.0.3 (18 Nov 2026, Ad Maker Build S3) · the publisher's approval page: the three choices, what is running now.
+   New rules take their sizes from ix-tokens (--ix-fs-*) and their colours from this page's own --rv-* set. */
+.ps-rv-now{display:flex;align-items:center;gap:14px;margin:0 0 14px;padding:10px 12px;background:var(--rv-ground);border:1px solid var(--rv-rule-soft)}
+.ps-rv-now span{flex:none;width:96px;font-size:var(--ix-fs-12);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--rv-muted)}
+.ps-rv-now img{display:block;height:auto;max-width:100%}.ps-rv-now img.s-banner{width:300px}.ps-rv-now img.s-sidebar{width:120px}.ps-rv-now img.s-splash{width:96px}
+.ps-rv-nonow{margin:0 0 14px!important}
+.ps-rv-opts{display:flex;flex-direction:column;gap:8px}
+.ps-rv-opt{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;background:var(--rv-paper);color:var(--rv-ink);border:1.5px solid var(--rv-rule);border-radius:2px;padding:12px 14px;cursor:pointer;font-size:var(--ix-fs-15);line-height:1.35}
+.ps-rv-opt:hover{border-color:var(--rv-ink)}
+.ps-rv-opt i{flex:none;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--rv-muted);margin-top:2px;background:var(--rv-paper)}
+.ps-rv-opt.on{border-color:var(--rv-gold);box-shadow:0 0 0 3px var(--rv-gold-glow)}
+.ps-rv-opt.on i{border-color:var(--rv-ink);background:radial-gradient(circle,var(--rv-ink) 0 5px,var(--rv-paper) 6px)}
+.ps-rv-opt b{display:block;font-weight:700}
+.ps-rv-opt small{display:block;font-size:var(--ix-fs-13);color:var(--rv-muted)}
+.ps-rv-note{margin:0 0 4px 30px}
+.ps-rv-note .ps-rv-f{margin-top:4px}
+.ps-rv-staged{margin-top:12px;font-size:var(--ix-fs-13);color:var(--rv-muted);justify-content:space-between}
+.ps-rv-donelist{margin:8px 0 0!important;padding:0!important;list-style:none;color:var(--rv-ink-2)}
+.ps-rv-donelist li{padding:6px 0;border-bottom:1px solid var(--rv-rule-soft)}
+.ps-rv-donelist li.bad{color:var(--rv-red)}
+@media (max-width:560px){.ps-rv-now{flex-direction:column;align-items:flex-start;gap:6px}.ps-rv-now span{width:auto}.ps-rv-now img.s-banner{width:100%}.ps-rv-note{margin-left:0}}
