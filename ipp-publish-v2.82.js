@@ -1,4 +1,24 @@
-/* ipp-publish-v2.81.js */
+/* ipp-publish-v2.82.js */
+/* v2.82 (17 Nov 2026, Performance Report S5, Jeff by voice: "just do download for Stirista, download for Mailchimp, buttons"):
+   THE EMAIL FILE IS DOWNLOADED FOR A NAMED SENDER, AND ALWAYS CARRIES OUR OPEN PICTURE.
+     · THE HEADER'S ONE "Download" IS TWO BUTTONS: "Download for Stirista" and "Download for Mailchimp" (160 px each, the
+       same size; the stamp row's left words give way). Each asks ix-issue-data GET /email-html?n=<NEWSLETTER id>&s=<sender>,
+       so our open picture in that file says who sent it (ix-perf /o, s=stirista or s=mailchimp). Before this every file
+       said "email", and Quill Performance could not tell one sender's opens from the other's.
+     · THE FILE'S NAME SAYS WHO IT IS FOR: <issue>-stirista.html and <issue>-mailchimp.html (it was <issue>.html).
+     · DISTRIBUTION's two Download buttons hand over the list vendor's file (Stirista). The vendor email's "attached as"
+       line and the sent record use that name.
+     · A FLAW FOUND WHILE BUILDING, FIXED HERE: right after a compile in the same sitting, Download handed over the copy
+       the page was holding, which never passed through /email-html and so carried NO open picture. Download now always
+       fetches the file from /email-html. "View email" still opens the held copy (a look, not a file to send).
+     · If the Worker answers that the picture is off (its variable OPEN_PICTURE_URL is blank), the file still downloads
+       and a notice says it carries no open picture.
+   A sent plan still lets these through: the buttons keep the attributes ipp-shell v1.51 allows
+   ([data-publish-download-email], [data-vd-download]). No Worker change: /email-html has taken s since v1.0.188.
+   CSS stays ipp-publish-v2.29.css; the 160 px width is injected (as HC-P-PUB78-1 does).
+   HARDCODING: HC-P-PUB82-1 the senders Stirista and Mailchimp, their button words and file names, and Stirista as the
+   list vendor on Distribution. These are true for today's publishers only: they belong on TITLES-ADMIN send settings
+   (tracked in HC-Delta-Performance-Report-S5). HC-P-PUB82-2 the 160 px button width. */
 /* v2.81 (15 Nov 2026, Content Home S12, Jeff's ruling S11-4 and the S12 seed §1.4): COMPILE WAITS WHILE AN ASSET LIBRARY ROW
    WAITS. An event, listing or article assigned on the Asset Library to this issue and in no tile yet is a loose row on the
    plan (/plan-board loose[], asset kind article, event or re). The Editorial Picker shows them in its "From the Asset
@@ -941,7 +961,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '2.81';   // v2.42: FILE is derived from this
+  var VERSION = '2.82';   // v2.42: FILE is derived from this
   var DEFAULT_SEND_TIME = '08:00'; // HC-P-S7-17
   var FILE = 'ipp-publish-v' + VERSION + '.js';
   var MOUNTED = 'data-publish-mounted';
@@ -988,7 +1008,17 @@
   }
   function hook() { return (window.PP_WEBHOOKS || {}).compile || ''; }
   // v2.21 (D12, ruling 9): the vendor file is named for the plan, no timestamp.
-  function emailFileName() { return (ids().issue || 'newsletter') + '.html'; }
+  // v2.82, HC-P-PUB82-1 — who the email file can be downloaded for. vendor marks the list vendor Distribution hands over to.
+  var SENDERS = [{ key: 'stirista', label: 'Stirista', vendor: true }, { key: 'mailchimp', label: 'Mailchimp' }];
+  function vendorSender() { return (SENDERS.filter(function (x) { return x.vendor; })[0] || SENDERS[0]).key; }
+  function senderOk(k) { return SENDERS.some(function (x) { return x.key === k; }) ? k : vendorSender(); }
+  function fileFor(sender) { return (ids().issue || 'newsletter') + '-' + senderOk(sender) + '.html'; }
+  function emailFileName() { return fileFor(vendorSender()); }
+  (function () {                                                             // HC-P-PUB82-2: both download buttons 160 px
+    if (document.getElementById('ipp-pub-dl-css')) return;
+    var st = document.createElement('style'); st.id = 'ipp-pub-dl-css'; st.textContent = '[data-ipp-root] .ipp-cx-sm.is-dl{width:160px}';
+    document.head.appendChild(st);
+  })();
   function checkUrl() { return (window.PP_WEBHOOKS || {}).issueCheck || ''; }
 
   function esc(s) {
@@ -3160,7 +3190,8 @@
       else if (lk && lk.running) bits.push('<span>checking links\u2026</span>');
       var slug = pubRow() && pubRow().slug, sm = 'class="ipp-cx-sm' + (dim ? ' is-dim' : '') + '"';
       right = '<span class="ipp-cx-fact' + (dim ? ' is-dim' : '') + '">' + bits.join(' \u00b7 ') + '</span>' +
-        '<button type="button" ' + sm + ' data-publish-view-email>' + HX.files.view + '</button><button type="button" ' + sm + ' data-publish-download-email>' + HX.files.download + '</button>' +
+        '<button type="button" ' + sm + ' data-publish-view-email>' + HX.files.view + '</button>' +
+        SENDERS.map(function (x) { return '<button type="button" ' + sm.replace('ipp-cx-sm', 'ipp-cx-sm is-dl') + ' data-publish-download-email="' + x.key + '" title="' + esc(fileFor(x.key)) + '">' + HX.files.download + ' for ' + esc(x.label) + '</button>'; }).join('') +   // v2.82
         (slug ? '<a ' + sm + ' href="/nl/' + esc(slug) + '" target="_blank" rel="noopener">' + HX.files.web + '</a>' : '<span ' + sm + ' aria-disabled="true">' + HX.files.web + '</span>');
     }
     return '<div class="ipp-cx-stl">' + left + '</div><div class="ipp-cx-str">' + right + '</div>';
@@ -3400,8 +3431,25 @@
       .catch(function (e) { IxToast.show(what === 'view' ? 'Could not open the email' : 'No file to download', 'err', { detail: (e && e.message) || 'the request failed' }); });
   }
   function viewHtml() { emailFile(function (url) { window.open(url, '_blank', 'noopener'); }, 'view'); }
-  function downloadHtml() {
-    emailFile(function (url) { var a = document.createElement('a'); a.href = url; a.download = emailFileName(); document.body.appendChild(a); a.click(); a.remove(); }, 'download');
+  // v2.82 — a file to send is always fetched from /email-html for a named sender, so it carries our open picture with
+  // that sender in it. Never the copy the page holds from this sitting's compile (that copy has no picture).
+  function downloadHtml(sender) {
+    sender = senderOk(sender);
+    var u = linkCheckUrl().replace(/\/link-check.*$/, '/email-html'), nl = ids().nlId;
+    if (!u || !nl) { IxToast.show('No email yet', 'err', { detail: 'Compile first.' }); return; }
+    var pic = '';
+    fetch(u + '?n=' + encodeURIComponent(nl) + '&s=' + encodeURIComponent(sender), { method: 'GET', credentials: 'omit', cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || ('HTTP ' + r.status)); }, function () { throw new Error('HTTP ' + r.status); });
+        pic = r.headers.get('X-IX-Open-Picture') || ''; return r.blob();
+      })
+      .then(function (b) {
+        var url = URL.createObjectURL(new Blob([b], { type: 'text/html' })), a = document.createElement('a');
+        a.href = url; a.download = fileFor(sender); document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 4000);
+        if (pic === 'off') IxToast.show('Downloaded with no open picture', 'err', { detail: 'ix-issue-data\u2019s OPEN_PICTURE_URL is blank, so opens of this file will not be counted.' });
+      })
+      .catch(function (e) { IxToast.show('No file to download', 'err', { detail: (e && e.message) || 'the request failed' }); });
   }
 
 
@@ -3457,7 +3505,7 @@
                   { name: 'ix-content \u00b7 POST /allocations/batch', note: 'v2.77: Take it off this issue, for a print item in no tile (publication-plans and disposition, with its version)' },
                   { name: '124 \u00b7 PubPlan Block Writer', note: 'the NEWSLETTER only: nlmeta for the step stamps, Send Setup and Delivery' },
                   { name: 'B \u00b7 Conditioner', note: 'picture uploads' }],
-      companions: 'ipp-publish-v2.29.css \u00b7 ipp-shell v1.27 \u00b7 ix-modals \u00b7 ix-success-toast \u00b7 pathways: ix-issue-data v1.0.180+ /plan-board (publish block, holds, row versions, allocations with versions, allocFields; Setup counts four); ix-content v1.2.2 /nl-blocks/batch and /allocations/batch, /links, /media, /link-check, /email-html, /issue-check (wouldStop), Scenario 124 webhook (op nlmeta), Scenario 206 webhook (Compile) \u00b7 ipp-revenue v1.6.5 (IPPRevenue.gate, goTo) \u00b7 ipp-picker v1.55+ (data-slot-key tiles), v1.82 (the waiting card that Place it opens)'
+      companions: 'ipp-publish-v2.29.css \u00b7 ipp-shell v1.27 \u00b7 ix-modals \u00b7 ix-success-toast \u00b7 pathways: ix-issue-data v1.0.180+ /plan-board (publish block, holds, row versions, allocations with versions, allocFields; Setup counts four); ix-content v1.2.2 /nl-blocks/batch and /allocations/batch, /links, /media, /link-check, /email-html (v1.0.188+: s names the sender for our open picture, v2.82), /issue-check (wouldStop), Scenario 124 webhook (op nlmeta), Scenario 206 webhook (Compile) \u00b7 ipp-revenue v1.6.5 (IPPRevenue.gate, goTo) \u00b7 ipp-picker v1.55+ (data-slot-key tiles), v1.82 (the waiting card that Place it opens)'
     });
   }
 
@@ -3769,7 +3817,7 @@
       if ((el = t.closest('[data-cf-go]'))) { e.preventDefault(); if (CF.ticks.every(Boolean)) { if (noWeatherCompile()) openWxAsk(); else setRelease(true); } return; }   // v2.59: the weather question first
       if ((el = t.closest('[data-cf-withdraw]'))) { e.preventDefault(); openUnlock(); return; }   // v2.46: Unlock is the one way back
       if ((el = t.closest('[data-vd-copy]'))) { e.preventDefault(); copyText(el.getAttribute('data-vd-copy')); return; }
-      if ((el = t.closest('[data-vd-download]'))) { e.preventDefault(); downloadHtml(); return; }
+      if ((el = t.closest('[data-vd-download]'))) { e.preventDefault(); downloadHtml(vendorSender()); return; }   // v2.82
       if ((el = t.closest('[data-vd-sent]'))) { e.preventDefault(); openSentDialog(); return; }                                   // v2.47: the Mark as sent acknowledgement
       if ((el = t.closest('[data-vd-open]'))) { e.preventDefault(); var ok0 = el.getAttribute('data-vd-open'); VS.open = VS.open === ok0 ? '' : ok0; drawSim(); return; }   // v2.47: the To / CC drop-down
       if ((el = t.closest('[data-vd-reset]'))) { e.preventDefault(); if (el.getAttribute('data-vd-reset') === 'to') VS.to = null; else VS.cc = null; VS.open = ''; drawSim(); return; }
@@ -3783,7 +3831,7 @@
       if ((el = t.closest('[data-vs-cancel-all]'))) { e.preventDefault(); VS.draft = {}; VS.note = ''; drawSim(); return; }
       if ((el = t.closest('[data-vs-cancel]'))) { e.preventDefault(); delete VS.draft[el.getAttribute('data-vs-cancel')]; VS.note = ''; drawSim(); return; }
       if ((el = t.closest('[data-publish-view-email]'))) { e.preventDefault(); viewHtml(); return; }                 // v2.21 (D12)
-      if ((el = t.closest('[data-publish-download-email]'))) { e.preventDefault(); downloadHtml(); return; }         // v2.21 (D12)
+      if ((el = t.closest('[data-publish-download-email]'))) { e.preventDefault(); downloadHtml(el.getAttribute('data-publish-download-email')); return; }   // v2.82         // v2.21 (D12)
     });
     c.addEventListener('change', function (e) {
       var t = e.target;
