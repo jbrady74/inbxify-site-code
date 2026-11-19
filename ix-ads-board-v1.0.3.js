@@ -1,8 +1,10 @@
-// ix-ads-board-v1.0.2.js
+// ix-ads-board-v1.0.3.js
 // ============================================================
 // INBXIFY · ix-ads-board · the Ads board, shared by the Publisher Portal and the T-A Ads tab
 //
-// v1.0.2 (18 Nov 2026, Ad Maker Build S3) — INBXIFY'S OWN APPROVAL, AND APPROVAL BY EMAIL. JS only; the CSS stays v1.0.1.
+// v1.0.3 (19 Nov 2026, Ad Maker Build S3): version only, to pair with ix-ads-board-v1.0.3.css (the inbxify side's sections take
+//   the Drafts in Canva card: Jeff, 19 Nov). No code change beyond the names.
+// v1.0.2 (18 Nov 2026, Ad Maker Build S3) — INBXIFY'S OWN APPROVAL, AND APPROVAL BY EMAIL. JS only; the CSS stayed v1.0.1.
 //   · inbxify side: Save sends as:"inbxify" with every decision, so ix-sales (v1.3.9) logs "inbxify for the publisher"
 //     (the same Scenario G / 114 path as the publisher's own decision). The Portal side is unchanged.
 //   · inbxify side: a pending version's card gains "Send for approval" (onAction kind 'send': the host opens it on
@@ -58,7 +60,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.2', CSS_VERSION = '1.0.1', FILE = 'ix-ads-board-v' + VERSION + '.js';
+  var VERSION = '1.0.3', CSS_VERSION = '1.0.3', FILE = 'ix-ads-board-v' + VERSION + '.js';
   var SH = ['banner', 'sidebar', 'splash', 'text'];                        // HC-P-PP8-8
   var SHN = { banner: 'Banner', sidebar: 'Sidebar', splash: 'Splash', text: 'Text ad' };
   var W = {                                                              // HC-P-PP8-7
