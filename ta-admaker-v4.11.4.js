@@ -1,4 +1,4 @@
-/* ta-admaker-v4.11.3.js
+/* ta-admaker-v4.11.4.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
 
@@ -13,6 +13,13 @@
    ix-success-toast, and AFTER ta-studio (v1_4_13 dispatches
    std:panel:admaker). Companion: ta-admaker-v1.1.0.css (head).
 
+   ── v4.11.4 (19 Nov 2026, Test 1 on the live page) ── DRAFTS IN CANVA: NOTHING CUT OFF, NOTHING SAID TWICE ──
+   · The row dropped its Canva-name column: the name only repeated the customer and the shape. "Worked on … · not
+     brought back yet" has the room and is no longer cut off. A copy of an approved ad says so there.
+   · When Canva gives no picture for a draft, the row says why in small type (ix-canva's thumbError) instead of
+     showing an empty box with no reason.
+   · Pairs with ix-ads-board v1.0.3, whose CSS gives the inbxify side's sections the same card as Drafts in Canva.
+   Companion: ta-admaker-v4.11.4.css.
    ── v4.11.3 · Ad Maker Build S3 (18 Nov 2026) ── ONE SAVE, "WHAT HAPPENS", AND DRAFTS IN CANVA ──
    Rulings (Jeff, 18 Nov): one Save on Check with a What happens choice above it; inbxify may always approve,
    through ix-sales like a publisher decision; approval goes by email for now; approved ads are frozen.
@@ -36,7 +43,7 @@
    · The Saved screen's Approve & make current goes through ix-sales too (it used to call Scenario G itself and
      logged nothing).
    HARDCODING: HC-P-AMS3-4 SAVE_WORDS (the What happens card, Send to, the Saved lines); HC-P-AMS3-6 DRAFT_WORDS.
-   Companion: ta-admaker-v4.11.3.css. Needs ix-ads-board v1.0.2, ix-sales v1.3.9, ix-canva v0.3.1, ix-members v1.1.1.
+   Companion: ta-admaker-v4.11.3.css. Needs ix-ads-board v1.0.3, ix-sales v1.3.9, ix-canva v0.3.1, ix-members v1.1.1.
    ── v4.11.2 (18 Nov 2026, test 1 on Senior Care Authority) ── THE MATCH SHEET, AND THE CANVA TAB OPENS ──
    · Match sheet: on Edit in Canva, Ad Maker reads the original ad once more through the Anthropic proxy for what
      Jeff needs to rebuild it in Canva: every colour with its hex code, and every line of text with the closest Canva
@@ -887,7 +894,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.11.3', CSS_FILE = 'ta-admaker-v4.11.3.css';   // v4.11.0: the Ads tab and the Canva screens
+  var VERSION = '4.11.4', CSS_FILE = 'ta-admaker-v4.11.4.css';   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
   var ADVICE_BIGGER = 1.25;   // HC-P-SSB8-25
@@ -5161,7 +5168,7 @@
   var DRAFT_WORDS = {   // HC-P-AMS3-6
     head: 'Drafts in Canva', sub: 'Kept in Canva, not saved to the site', none: 'No drafts in Canva.', loading: 'Reading the drafts from Canva…',
     edit: 'Edit in Canva', check: 'Check and save', remove: 'Remove from list', removeAsk: 'Take it off this list? The design stays in Canva.', yes: 'Yes, remove', no: 'cancel',
-    worked: 'Worked on {on}', notBack: 'not brought back yet', back: 'brought back {on}', copy: 'A copy of an approved ad', noShape: 'Shape not recorded'
+    noPic: 'No picture from Canva', noPicYet: 'Canva has no picture of it yet', worked: 'Worked on {on}', notBack: 'not brought back yet', back: 'brought back {on}', copy: 'A copy of an approved ad', noShape: 'Shape not recorded'
   };
   function adsCanvaVersions() {   // design id → { adId, shape, approved } for every ADS row on this page made in Canva
     var out = {};
@@ -5201,7 +5208,7 @@
       var acts = D.ask === d.designId ? '<span class="q">' + DW.removeAsk + '</span><button type="button" class="ix-btn ix-btn--danger ta-ads-drbtn" data-ads="drRemoveYes" data-v="' + id + '">' + DW.yes + '</button><a href="#" class="ta-ads-drx" data-ads="drRemoveNo">' + DW.no + '</a>'
         : '<button type="button" class="ix-btn ix-btn--primary ta-ads-drbtn" data-ads="drEdit" data-v="' + id + '"' + (busy ? ' disabled' : '') + '>' + DW.edit + '</button><button type="button" class="ix-btn ix-btn--secondary ta-ads-drbtn" data-ads="drCheck" data-v="' + id + '"' + (busy ? ' disabled' : '') + '>' + DW.check + '</button><a href="#" class="ta-ads-drx" data-ads="drRemove" data-v="' + id + '">' + DW.remove + '</a>';
       return '<div class="ta-ads-drrow' + (D.ask === d.designId ? ' asking' : '') + '"><span class="th">' + (d.thumb ? '<img src="' + esc(d.thumb) + '" alt="" loading="lazy">' : '') + '</span><span class="cu" title="' + esc(d.customer.name) + '">' + esc(d.customer.name) + '</span><span class="sh">' + esc(sh ? shapeLabel(sh) : DW.noShape) + '</span>' +
-        '<span class="ti" title="' + esc(d.title) + '">' + esc(d.copiedFrom ? DW.copy : d.title) + '</span><span class="wh">' + esc(fillW(DW.worked, { on: fmtDate(d.canvaUpdated || d.updated) })) + ' · ' + esc(d.exportedAt ? fillW(DW.back, { on: fmtDate(d.exportedAt) }) : DW.notBack) + '</span><span class="ac">' + acts + '</span></div>'; }).join('');
+        '<span class="wh" title="' + esc(d.title) + '">' + (d.copiedFrom ? esc(DW.copy) + ' · ' : '') + esc(fillW(DW.worked, { on: fmtDate(d.canvaUpdated || d.updated) })) + ' · ' + esc(d.exportedAt ? fillW(DW.back, { on: fmtDate(d.exportedAt) }) : DW.notBack) + (!d.thumb ? '<small class="np">' + esc(d.thumbError ? DW.noPic + ': ' + d.thumbError : DW.noPicYet) + '</small>' : '') + '</span><span class="ac">' + acts + '</span></div>'; }).join('');
     host.innerHTML = h + '</div>';
   }
   function adsDraftOpen(designId, mode) {

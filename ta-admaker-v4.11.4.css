@@ -1,5 +1,6 @@
-/* ta-admaker-v4.11.3.css
-   INBXIFY · AD MAKER and the T-A ADS TAB · companion to ta-admaker-v4.11.3.js
+/* ta-admaker-v4.11.4.css
+   INBXIFY · AD MAKER and the T-A ADS TAB · companion to ta-admaker-v4.11.4.js
+   v4.11.4 (19 Nov 2026): the Drafts in Canva row has five columns (the Canva name went), and a small line for a missing picture.
    v4.11.3 (18 Nov 2026, Ad Maker Build S3): the What happens card and Send to on Check, the send-back note on the Canva screen, and
    Drafts in Canva above the board. Appended at the end; nothing above changed.
    v4.11.1 (18 Nov 2026): the new block reads ix-tokens v1.0.5 tokens only (Agent Groundwork CSS scan); no other change.
@@ -1109,7 +1110,7 @@ section.publisher-wrapper .am-frame, section.publisher-wrapper .am-work, section
 .ta-ads-drh .n,section.publisher-wrapper .ta-ads-drh .n{font:700 var(--ix-fs-12)/1 Sen,system-ui,sans-serif;color:var(--ps-ink);background:var(--ps-ground-2)!important;border-radius:10px;padding:3px 8px}
 .ta-ads-drh .s{font-size:var(--ix-fs-12-5);color:var(--ps-muted)}
 .ta-ads-drnone{padding:12px 0 8px;font-size:var(--ix-fs-13);color:var(--ps-muted);min-height:20px}
-.ta-ads-drrow{display:grid;grid-template-columns:132px minmax(0,1.3fr) 76px minmax(0,1.5fr) minmax(0,1.5fr) 400px;gap:14px;align-items:center;padding:8px 0;border-bottom:1px solid var(--ps-rule-soft);font-size:var(--ix-fs-13);color:var(--ps-ink)}
+.ta-ads-drrow{display:grid;grid-template-columns:132px minmax(0,1.2fr) 76px minmax(0,1.6fr) 400px;gap:14px;align-items:center;padding:8px 0;border-bottom:1px solid var(--ps-rule-soft);font-size:var(--ix-fs-13);color:var(--ps-ink)}
 .ta-ads-drrow:last-child{border-bottom:0}
 .ta-ads-drrow>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ta-ads-drrow .th,section.publisher-wrapper .ta-ads-drrow .th{height:48px;background:var(--ps-ground-2)!important;border:1px solid var(--ps-rule-soft);display:flex;align-items:center;justify-content:center}
@@ -1118,7 +1119,8 @@ section.publisher-wrapper .am-frame, section.publisher-wrapper .am-work, section
 .ta-ads-drrow .sh,.ta-ads-drrow .wh{color:var(--ps-muted)}
 .ta-ads-drrow .ac{display:flex;align-items:center;justify-content:flex-end;gap:10px;overflow:visible}
 .ta-ads-drrow .ac .q{font-size:var(--ix-fs-12-5);color:var(--ps-ink-2);white-space:nowrap}
-.ta-ads-drrow.asking .wh{display:none}.ta-ads-drrow.asking .ac{grid-column:5/7}
+.ta-ads-drrow.asking .wh{display:none}.ta-ads-drrow.asking .ac{grid-column:4/6}
+.ta-ads-drrow .wh .np{display:block;font-size:var(--ix-fs-11);color:var(--ps-red-deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ta-ads-drbtn{height:30px!important;padding:0 12px!important;font-size:var(--ix-fs-12-5)!important;width:128px;flex:none}
 .ta-ads-drx{font-size:var(--ix-fs-12);color:var(--ps-muted);text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
-@media (max-width:1180px){.ta-ads-drrow{grid-template-columns:132px minmax(0,1fr) 76px minmax(0,1fr) 400px}.ta-ads-drrow .wh{display:none}.ta-ads-drrow.asking .ti{display:none}.ta-ads-drrow.asking .ac{grid-column:4/6}}
+@media (max-width:1180px){.ta-ads-drrow{grid-template-columns:132px minmax(0,1fr) 76px minmax(0,1fr) 400px}}
