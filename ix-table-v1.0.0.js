@@ -57,7 +57,7 @@
      sortable: true    the header sorts on click, one arrow style (▲ ▼).
 
    ARMOR: the root carries ix-own (title-admin-page-design's wildcard skips it); state classes are namespaced
-   (.ixt-open, .ixt-z, .ixt-set …), so site rules like .open and .red cannot reach them.
+   (.ixtb-open, .ixtb-z, .ixtb-set …), so site rules like .open and .red cannot reach them.
 
    HARDCODING (provisional): HC-P-RESKIN-4 the defaults below (min-width 1080, page size 25, pill names).
    ════════════════════════════════════════════════════════════════ */
@@ -73,7 +73,7 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
   var CARET = '<svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 5l4 4 4-4"></path></svg>';
-  var CHEV = '<svg class="ixt-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  var CHEV = '<svg class="ixtb-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
 
   function pill(name, text) {
     var n = String(name || '').toLowerCase();
@@ -86,18 +86,18 @@
     p = p || {};
     var facts = p.facts || [];
     var cols = Math.max(1, Math.min(facts.length || 1, p.columns || 6));
-    return '<div class="ixt-card">' +
-      '<div class="ixt-card-h">' +
-        (p.title ? '<span class="ixt-card-t">' + esc(p.title) + '</span>' : '') +
-        (p.sub ? '<span class="ixt-card-s">' + esc(p.sub) + '</span>' : '') +
-        '<span class="ixt-sp"></span>' + (p.action || '') +
+    return '<div class="ixtb-card">' +
+      '<div class="ixtb-card-h">' +
+        (p.title ? '<span class="ixtb-card-t">' + esc(p.title) + '</span>' : '') +
+        (p.sub ? '<span class="ixtb-card-s">' + esc(p.sub) + '</span>' : '') +
+        '<span class="ixtb-sp"></span>' + (p.action || '') +
       '</div>' +
-      (facts.length ? '<div class="ixt-card-b" style="grid-template-columns:repeat(' + cols + ',minmax(0,1fr))">' +
+      (facts.length ? '<div class="ixtb-card-b" style="grid-template-columns:repeat(' + cols + ',minmax(0,1fr))">' +
         facts.map(function (f) {
-          return '<div class="ixt-fact"><div class="ixt-fact-l">' + esc(f.label) + '</div><div class="ixt-fact-v">' +
+          return '<div class="ixtb-fact"><div class="ixtb-fact-l">' + esc(f.label) + '</div><div class="ixtb-fact-v">' +
             (f.html != null ? f.html : esc(f.value)) + '</div></div>';
         }).join('') + '</div>' : '') +
-      (p.body ? '<div class="ixt-card-x">' + p.body + '</div>' : '') +
+      (p.body ? '<div class="ixtb-card-x">' + p.body + '</div>' : '') +
     '</div>';
   }
 
@@ -173,18 +173,18 @@
     }
 
     function cellClass(c) {
-      var k = ['ixt-c'];
-      if (c.type === 'id') k.push('ixt-id');
-      if (c.type === 'number') k.push('ixt-num');
-      if (c.type === 'action') k.push('ixt-act');
-      if (c.type === 'chev') k.push('ixt-cv');
-      if (c.type === 'date') k.push('ixt-date');
-      if (c.align === 'right') k.push('ixt-r');
+      var k = ['ixtb-c'];
+      if (c.type === 'id') k.push('ixtb-id');
+      if (c.type === 'number') k.push('ixtb-num');
+      if (c.type === 'action') k.push('ixtb-act');
+      if (c.type === 'chev') k.push('ixtb-cv');
+      if (c.type === 'date') k.push('ixtb-date');
+      if (c.align === 'right') k.push('ixtb-r');
       return k.join(' ');
     }
 
     function cell(c, r) {
-      if (c.type === 'chev') return '<td class="ixt-c ixt-cv">' + CHEV + '</td>';
+      if (c.type === 'chev') return '<td class="ixtb-c ixtb-cv">' + CHEV + '</td>';
       var html, tip = c.title ? c.title(r) : '';
       if (c.type === 'pill') {
         var p = c.pill ? c.pill(r) : r[c.key];
@@ -203,17 +203,17 @@
     function head() {
       var h = '<thead><tr>' + cols.map(function (c) {
         var arrow = '';
-        if (S.sort && S.sort.key === c.key) arrow = ' <span class="ixt-arrow" aria-hidden="true">' + (S.sort.dir === 'desc' ? '▼' : '▲') + '</span>';
-        var cls = cellClass(c).replace('ixt-c', 'ixt-h') + (c.sortable ? ' ixt-sortable' : '');
+        if (S.sort && S.sort.key === c.key) arrow = ' <span class="ixtb-arrow" aria-hidden="true">' + (S.sort.dir === 'desc' ? '▼' : '▲') + '</span>';
+        var cls = cellClass(c).replace('ixtb-c', 'ixtb-h') + (c.sortable ? ' ixtb-sortable' : '');
         var aria = c.sortable ? ' aria-sort="' + (S.sort && S.sort.key === c.key ? (S.sort.dir === 'desc' ? 'descending' : 'ascending') : 'none') + '"' : '';
-        var inner = c.sortable ? '<button type="button" class="ixt-sort" data-ixt-sort="' + esc(c.key) + '">' + esc(c.label) + arrow + '</button>' : esc(c.label);
+        var inner = c.sortable ? '<button type="button" class="ixtb-sort" data-ixtb-sort="' + esc(c.key) + '">' + esc(c.label) + arrow + '</button>' : esc(c.label);
         return '<th class="' + cls + '" scope="col"' + aria + (c.tip ? ' title="' + esc(c.tip) + '"' : '') + '>' + inner + '</th>';
       }).join('') + '</tr>';
       if (cols.some(function (c) { return c.filter; })) {
-        h += '<tr class="ixt-frow">' + cols.map(function (c) {
+        h += '<tr class="ixtb-frow">' + cols.map(function (c) {
           if (!c.filter) return '<td></td>';
           var v = S.filters[c.key];
-          return '<td><button type="button" class="ixt-fb' + (v != null ? ' ixt-set' : '') + '" data-ixt-f="' + esc(c.key) + '" aria-haspopup="listbox" aria-label="Filter ' + esc(c.label) + '">' +
+          return '<td><button type="button" class="ixtb-fb' + (v != null ? ' ixtb-set' : '') + '" data-ixtb-f="' + esc(c.key) + '" aria-haspopup="listbox" aria-label="Filter ' + esc(c.label) + '">' +
             '<span>' + esc(v != null ? v : 'All') + '</span>' + CARET + '</button></td>';
         }).join('') + '</tr>';
       }
@@ -225,15 +225,15 @@
       if (S.loading) {
         var k = Math.max(4, Math.min(pageSize || 8, 8)), ph = '';
         for (var i = 0; i < k; i++) {
-          ph += '<tr class="ixt-ph">' + cols.map(function (c, j) {
+          ph += '<tr class="ixtb-ph">' + cols.map(function (c, j) {
             var w = c.type === 'chev' ? 0 : 40 + ((i * 7 + j * 13) % 45);
-            return '<td class="' + cellClass(c) + '">' + (w ? '<span class="ixt-bar" style="width:' + w + '%"></span>' : '') + '</td>';
+            return '<td class="' + cellClass(c) + '">' + (w ? '<span class="ixtb-bar" style="width:' + w + '%"></span>' : '') + '</td>';
           }).join('') + '</tr>';
         }
         return '<tbody>' + ph + '</tbody>';
       }
-      if (!S.rows.length) return '<tbody><tr class="ixt-empty"><td colspan="' + n + '">' + esc(words.empty || ('No ' + noun[1] + ' yet.')) + '</td></tr></tbody>';
-      if (!list.length) return '<tbody><tr class="ixt-empty"><td colspan="' + n + '">' + esc(words.noMatch || ('No ' + noun[1] + ' match these filters.')) + '</td></tr></tbody>';
+      if (!S.rows.length) return '<tbody><tr class="ixtb-empty"><td colspan="' + n + '">' + esc(words.empty || ('No ' + noun[1] + ' yet.')) + '</td></tr></tbody>';
+      if (!list.length) return '<tbody><tr class="ixtb-empty"><td colspan="' + n + '">' + esc(words.noMatch || ('No ' + noun[1] + ' match these filters.')) + '</td></tr></tbody>';
       var start = pageSize ? S.page * pageSize : 0;
       var page = pageSize ? list.slice(start, start + pageSize) : list;
       var h = '<tbody>', z = 0, lastGroup = {};
@@ -241,34 +241,34 @@
         var rid = String(rowId(r, start + i));
         if (o.group) {
           var g = o.group(r);
-          if (g !== lastGroup.v) { lastGroup.v = g; z = 0; h += '<tr class="ixt-group"><td colspan="' + n + '">' + esc(o.groupLabel ? o.groupLabel(g, r) : g) + '</td></tr>'; }
+          if (g !== lastGroup.v) { lastGroup.v = g; z = 0; h += '<tr class="ixtb-group"><td colspan="' + n + '">' + esc(o.groupLabel ? o.groupLabel(g, r) : g) + '</td></tr>'; }
         }
         var open = !!S.open[rid];
-        var cls = 'ixt-row' + (zebra && z % 2 ? ' ixt-z' : '') + (open ? ' ixt-open' : '') + (o.expand ? ' ixt-x' : '');
+        var cls = 'ixtb-row' + (zebra && z % 2 ? ' ixtb-z' : '') + (open ? ' ixtb-open' : '') + (o.expand ? ' ixtb-x' : '');
         z++;
-        h += '<tr class="' + cls + '" data-ixt-row="' + esc(rid) + '"' + (o.expand ? ' tabindex="0" aria-expanded="' + open + '"' : '') + '>' +
+        h += '<tr class="' + cls + '" data-ixtb-row="' + esc(rid) + '"' + (o.expand ? ' tabindex="0" aria-expanded="' + open + '"' : '') + '>' +
           cols.map(function (c) { return cell(c, r); }).join('') + '</tr>';
-        if (open && o.expand) h += '<tr class="ixt-sub"><td colspan="' + n + '">' + o.expand(r) + '</td></tr>';
+        if (open && o.expand) h += '<tr class="ixtb-sub"><td colspan="' + n + '">' + o.expand(r) + '</td></tr>';
       });
       return h + '</tbody>';
     }
 
     function bar(list) {
       var nf = Object.keys(S.filters).length;
-      var count = S.loading ? '<span class="ixt-reading"><span class="ixt-spin" aria-hidden="true"></span><span class="ixt-secs">Reading… ' + Math.floor((Date.now() - S.t0) / 1000) + 's</span></span>'
+      var count = S.loading ? '<span class="ixtb-reading"><span class="ixtb-spin" aria-hidden="true"></span><span class="ixtb-secs">Reading… ' + Math.floor((Date.now() - S.t0) / 1000) + 's</span></span>'
         : '<span>' + (nf ? list.length.toLocaleString() + ' of ' : '') + S.rows.length.toLocaleString() + ' ' + esc(S.rows.length === 1 ? noun[0] : noun[1]) + '</span>';
-      return '<div class="ixt-tbar">' + count + '<span class="ixt-sp"></span>' +
-        (nf ? '<span>' + nf + ' filter' + (nf === 1 ? '' : 's') + ' on</span><button type="button" class="ixt-clear" data-ixt-clear="1">Clear filters</button>' : '') +
+      return '<div class="ixtb-tbar">' + count + '<span class="ixtb-sp"></span>' +
+        (nf ? '<span>' + nf + ' filter' + (nf === 1 ? '' : 's') + ' on</span><button type="button" class="ixtb-clear" data-ixtb-clear="1">Clear filters</button>' : '') +
         '</div>';
     }
 
     function pager(list) {
       if (!pageSize || S.loading) return '';
       var total = list.length, from = total ? S.page * pageSize + 1 : 0, to = Math.min(total, (S.page + 1) * pageSize);
-      return '<div class="ixt-pager"><span>' + from.toLocaleString() + ' to ' + to.toLocaleString() + ' of ' + total.toLocaleString() + '</span><span class="ixt-sp"></span>' +
+      return '<div class="ixtb-pager"><span>' + from.toLocaleString() + ' to ' + to.toLocaleString() + ' of ' + total.toLocaleString() + '</span><span class="ixtb-sp"></span>' +
         '<span>' + pageSize + ' per page</span>' +
-        '<button type="button" class="ix-table-btn" data-ixt-page="-1"' + (S.page <= 0 ? ' disabled' : '') + '>Previous</button>' +
-        '<button type="button" class="ix-table-btn" data-ixt-page="1"' + (to >= total ? ' disabled' : '') + '>Next</button></div>';
+        '<button type="button" class="ix-table-btn" data-ixtb-page="-1"' + (S.page <= 0 ? ' disabled' : '') + '>Previous</button>' +
+        '<button type="button" class="ix-table-btn" data-ixtb-page="1"' + (to >= total ? ' disabled' : '') + '>Next</button></div>';
     }
 
     function dropdown() {
@@ -281,30 +281,30 @@
       var q = S.ddQuery.toLowerCase(), cur = S.filters[c.key];
       var items = [{ v: null, t: 'All' }].concat(vals.map(function (v) { return { v: v, t: v }; }))
         .filter(function (x) { return x.v == null || !q || x.t.toLowerCase().indexOf(q) > -1; });
-      return '<div class="ixt-dd" role="listbox" aria-label="Filter ' + esc(c.label) + '">' +
-        '<input type="text" class="ixt-dd-q" value="' + esc(S.ddQuery) + '" placeholder="Search ' + esc(String(c.label).toLowerCase()) + '" aria-label="Search ' + esc(c.label) + '">' +
-        '<div class="ixt-dd-list">' + items.map(function (x) {
+      return '<div class="ixtb-dd" role="listbox" aria-label="Filter ' + esc(c.label) + '">' +
+        '<input type="text" class="ixtb-dd-q" value="' + esc(S.ddQuery) + '" placeholder="Search ' + esc(String(c.label).toLowerCase()) + '" aria-label="Search ' + esc(c.label) + '">' +
+        '<div class="ixtb-dd-list">' + items.map(function (x) {
           var on = (x.v == null && cur == null) || (x.v != null && x.v === cur);
-          return '<div class="ixt-dd-i' + (on ? ' ixt-on' : '') + '" role="option" aria-selected="' + on + '" tabindex="-1" data-ixt-v="' + (x.v == null ? '' : esc(x.v)) + '" data-ixt-all="' + (x.v == null ? 1 : 0) + '">' +
+          return '<div class="ixtb-dd-i' + (on ? ' ixtb-on' : '') + '" role="option" aria-selected="' + on + '" tabindex="-1" data-ixtb-v="' + (x.v == null ? '' : esc(x.v)) + '" data-ixtb-all="' + (x.v == null ? 1 : 0) + '">' +
             '<span>' + esc(x.t) + '</span>' + (on ? '<span aria-hidden="true">✓</span>' : '') + '</div>';
-        }).join('') + (items.length === 1 && q ? '<div class="ixt-dd-none">Nothing matches</div>' : '') + '</div></div>';
+        }).join('') + (items.length === 1 && q ? '<div class="ixtb-dd-none">Nothing matches</div>' : '') + '</div></div>';
     }
 
     function draw() {
       var list = filtered();
       if (pageSize && S.page * pageSize >= list.length) S.page = Math.max(0, Math.ceil(list.length / pageSize) - 1);
       var hasFilters = cols.some(function (c) { return c.filter; });
-      var focusQ = S.dd && document.activeElement && document.activeElement.classList.contains('ixt-dd-q');
+      var focusQ = S.dd && document.activeElement && document.activeElement.classList.contains('ixtb-dd-q');
       var caret = focusQ ? document.activeElement.selectionStart : null;
-      root.innerHTML = '<div class="ix-table-wrap ix-own" data-ixt="' + esc(id) + '">' +
+      root.innerHTML = '<div class="ix-table-wrap ix-own" data-ixtb="' + esc(id) + '">' +
         (hasFilters || S.loading ? bar(list) : '') +
-        '<div class="ix-table-box' + (o.dense ? ' ix-table--dense' : '') + (zebra ? ' ix-table--zebra' : '') + (S.loading ? ' ixt-loading' : '') + '">' +
-          '<div class="ixt-scroll"><table class="ix-table" style="min-width:' + (o.minWidth || DEFAULTS.minWidth) + 'px">' + colgroup() + head() + body(list) + '</table></div>' +
-          (S.loading ? '<div class="ixt-readbar" aria-hidden="true"><i></i></div>' : '') +
+        '<div class="ix-table-box' + (o.dense ? ' ix-table--dense' : '') + (zebra ? ' ix-table--zebra' : '') + (S.loading ? ' ixtb-loading' : '') + '">' +
+          '<div class="ixtb-scroll"><table class="ix-table" style="min-width:' + (o.minWidth || DEFAULTS.minWidth) + 'px">' + colgroup() + head() + body(list) + '</table></div>' +
+          (S.loading ? '<div class="ixtb-readbar" aria-hidden="true"><i></i></div>' : '') +
           pager(list) +
         '</div>' + dropdown() + '</div>';
       if (S.loading) {   // the bar sits on the table, under the header and the filter row (the board)
-        var th = root.querySelector('.ix-table thead'), rb = root.querySelector('.ixt-readbar');
+        var th = root.querySelector('.ix-table thead'), rb = root.querySelector('.ixtb-readbar');
         if (th && rb) rb.style.top = th.offsetHeight + 'px';
       }
       if (S.dd) placeDropdown(focusQ, caret);
@@ -312,66 +312,66 @@
     }
 
     function placeDropdown(focusQ, caret) {
-      var wrap = root.querySelector('.ix-table-wrap'), dd = root.querySelector('.ixt-dd');
-      var fb = root.querySelector('[data-ixt-f="' + (window.CSS && CSS.escape ? CSS.escape(S.dd) : S.dd) + '"]');
+      var wrap = root.querySelector('.ix-table-wrap'), dd = root.querySelector('.ixtb-dd');
+      var fb = root.querySelector('[data-ixtb-f="' + (window.CSS && CSS.escape ? CSS.escape(S.dd) : S.dd) + '"]');
       if (!wrap || !dd || !fb) return;
       var w = wrap.getBoundingClientRect(), b = fb.getBoundingClientRect();
       var left = Math.min(b.left - w.left, w.width - dd.offsetWidth);
       dd.style.left = Math.max(0, Math.round(left)) + 'px';
       dd.style.top = Math.round(b.bottom - w.top + 4) + 'px';
-      var q = dd.querySelector('.ixt-dd-q');
+      var q = dd.querySelector('.ixtb-dd-q');
       if (q) { q.focus(); if (focusQ && caret != null) q.setSelectionRange(caret, caret); }
     }
 
     // ── events, delegated on the root (survive every redraw) ──
     function onClick(e) {
       var t = e.target;
-      var f = t.closest('[data-ixt-f]');
-      if (f) { e.preventDefault(); var k = f.getAttribute('data-ixt-f'); S.dd = S.dd === k ? null : k; S.ddQuery = ''; draw(); return; }
-      var it = t.closest('.ixt-dd-i');
+      var f = t.closest('[data-ixtb-f]');
+      if (f) { e.preventDefault(); var k = f.getAttribute('data-ixtb-f'); S.dd = S.dd === k ? null : k; S.ddQuery = ''; draw(); return; }
+      var it = t.closest('.ixtb-dd-i');
       if (it) {
         e.preventDefault();
-        if (it.getAttribute('data-ixt-all') === '1') delete S.filters[S.dd]; else S.filters[S.dd] = it.getAttribute('data-ixt-v');
+        if (it.getAttribute('data-ixtb-all') === '1') delete S.filters[S.dd]; else S.filters[S.dd] = it.getAttribute('data-ixtb-v');
         S.dd = null; S.page = 0; draw(); return;
       }
-      if (t.closest('.ixt-dd')) return;
+      if (t.closest('.ixtb-dd')) return;
       if (S.dd) { S.dd = null; draw(); }
-      if (t.closest('[data-ixt-clear]')) { e.preventDefault(); S.filters = {}; S.page = 0; draw(); return; }
-      var sb = t.closest('[data-ixt-sort]');
+      if (t.closest('[data-ixtb-clear]')) { e.preventDefault(); S.filters = {}; S.page = 0; draw(); return; }
+      var sb = t.closest('[data-ixtb-sort]');
       if (sb) {
-        var key = sb.getAttribute('data-ixt-sort');
+        var key = sb.getAttribute('data-ixtb-sort');
         S.sort = S.sort && S.sort.key === key ? { key: key, dir: S.sort.dir === 'asc' ? 'desc' : 'asc' } : { key: key, dir: 'asc' };
         S.page = 0; draw(); return;
       }
-      var pg = t.closest('[data-ixt-page]');
-      if (pg) { e.preventDefault(); if (!pg.disabled) { S.page += +pg.getAttribute('data-ixt-page'); draw(); } return; }
+      var pg = t.closest('[data-ixtb-page]');
+      if (pg) { e.preventDefault(); if (!pg.disabled) { S.page += +pg.getAttribute('data-ixtb-page'); draw(); } return; }
       if (!o.expand) return;
-      if (t.closest('a, button, input, select, textarea, label, [data-ixt-keep]')) return;
-      var row = t.closest('[data-ixt-row]');
-      if (row) toggle(row.getAttribute('data-ixt-row'));
+      if (t.closest('a, button, input, select, textarea, label, [data-ixtb-keep]')) return;
+      var row = t.closest('[data-ixtb-row]');
+      if (row) toggle(row.getAttribute('data-ixtb-row'));
     }
     function onInput(e) {
-      if (!e.target.classList.contains('ixt-dd-q')) return;
+      if (!e.target.classList.contains('ixtb-dd-q')) return;
       S.ddQuery = e.target.value; draw();
     }
     function onKey(e) {
-      if (e.key === 'Escape' && S.dd) { var k = S.dd; S.dd = null; draw(); var b = root.querySelector('[data-ixt-f="' + k + '"]'); if (b) b.focus(); return; }
+      if (e.key === 'Escape' && S.dd) { var k = S.dd; S.dd = null; draw(); var b = root.querySelector('[data-ixtb-f="' + k + '"]'); if (b) b.focus(); return; }
       if (S.dd && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-        var items = Array.prototype.slice.call(root.querySelectorAll('.ixt-dd-i'));
+        var items = Array.prototype.slice.call(root.querySelectorAll('.ixtb-dd-i'));
         var i = items.indexOf(document.activeElement);
         var n = e.key === 'ArrowDown' ? Math.min(items.length - 1, i + 1) : Math.max(0, i - 1);
         if (items[n]) { e.preventDefault(); items[n].focus(); }
         return;
       }
       if (e.key === 'Enter') {
-        if (document.activeElement && document.activeElement.classList.contains('ixt-dd-i')) { e.preventDefault(); document.activeElement.click(); return; }
-        if (S.dd && document.activeElement && document.activeElement.classList.contains('ixt-dd-q')) {
-          var first = root.querySelectorAll('.ixt-dd-i')[root.querySelectorAll('.ixt-dd-i').length > 1 ? 1 : 0];
+        if (document.activeElement && document.activeElement.classList.contains('ixtb-dd-i')) { e.preventDefault(); document.activeElement.click(); return; }
+        if (S.dd && document.activeElement && document.activeElement.classList.contains('ixtb-dd-q')) {
+          var first = root.querySelectorAll('.ixtb-dd-i')[root.querySelectorAll('.ixtb-dd-i').length > 1 ? 1 : 0];
           if (first) { e.preventDefault(); first.click(); }
           return;
         }
-        var row = e.target.closest && e.target.closest('[data-ixt-row]');
-        if (row && e.target === row && o.expand) { e.preventDefault(); toggle(row.getAttribute('data-ixt-row')); }
+        var row = e.target.closest && e.target.closest('[data-ixtb-row]');
+        if (row && e.target === row && o.expand) { e.preventDefault(); toggle(row.getAttribute('data-ixtb-row')); }
       }
     }
     function onDoc(e) { if (S.dd && !root.contains(e.target)) { S.dd = null; draw(); } }
@@ -382,7 +382,7 @@
       if (o.single !== false) S.open = {};
       if (now) S.open[rid] = 1; else delete S.open[rid];
       draw();
-      var row = root.querySelector('[data-ixt-row="' + (window.CSS && CSS.escape ? CSS.escape(rid) : rid) + '"]');
+      var row = root.querySelector('[data-ixtb-row="' + (window.CSS && CSS.escape ? CSS.escape(rid) : rid) + '"]');
       if (row) row.focus({ preventScroll: true });
       if (typeof o.onOpen === 'function') o.onOpen(rid, now);
     }
@@ -400,7 +400,7 @@
         clearInterval(timer);
         if (on) {
           S.t0 = Date.now();
-          timer = setInterval(function () { var s = root.querySelector('.ixt-secs'); if (s) s.textContent = 'Reading… ' + Math.floor((Date.now() - S.t0) / 1000) + 's'; }, 250);
+          timer = setInterval(function () { var s = root.querySelector('.ixtb-secs'); if (s) s.textContent = 'Reading… ' + Math.floor((Date.now() - S.t0) / 1000) + 's'; }, 250);
         }
         draw(); return api;
       },
