@@ -1,4 +1,9 @@
-// content-library-v1.0.90.js
+// content-library-v1.0.91.js
+// v1.0.91 (22 Nov 2026, Content Home S13): THE TITLE OPENS VIEW.
+//   Jeff, 22 Nov: on the Asset Library, clicking an asset's name must open its View, the same as the View button
+//   (openView, the Asset Workbench). The name is a button now: pointer and underline on hover, and the keyboard can
+//   reach it (Enter or Space). A group's name (a customer row that opens and closes its group) is unchanged.
+//   Nothing else changed.
 // ============================================================
 // INBXIFY Asset Library — T-A Page Tab · from v1.0.90 one rail tab per asset type
 // v1.0.90 (18 Nov 2026, Ad Maker Build S1): ONE TYPE PER RAIL TAB, NO INNER TAB ROW, NO ADS SECTION.
@@ -943,6 +948,8 @@ document.addEventListener('DOMContentLoaded', function () {
     '.cl-dot-live{background:#27ae60}',
     '.cl-dot-draft{background:#e8a030}',
     '.cl-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}',
+    '.cl-title--open{cursor:pointer}',   // v1.0.91
+    '.cl-title--open:hover,.cl-title--open:focus-visible{text-decoration:underline;text-underline-offset:2px;outline:none}',
     '.cl-cust{font-family:"DM Mono",monospace;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
     '.cl-cust-name{color:#1a3a3a}',
     '.cl-cust-none{color:#c4c0b0}',
@@ -2822,7 +2829,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // object literal would freeze the values at mount and every reader
   // would see 'articles' forever. Consumers: ta-asf v1.5.50+ (return
   // surface on close).
-  var CL_VERSION = '1.0.90';
+  var CL_VERSION = '1.0.91';
   window.InbxContentLibrary = {
     get mainTab()   { return S.mainTab || ''; },
     get subTab()    { return S.subTab || ''; },
@@ -3250,7 +3257,10 @@ document.addEventListener('DOMContentLoaded', function () {
       var dotClass = item.status === 'live' ? 'cl-dot-live' : 'cl-dot-draft';
       return '<div class="cl-title-cell">' + thumbHtml(item) +
              '<span class="cl-dot ' + dotClass + '"></span>' +
-             '<span class="cl-title">' + esc(item.name) + '</span>' +
+             '<span class="cl-title cl-title--open" role="button" tabindex="0" title="View"' +   // v1.0.91: the name opens View
+             ' onclick="event.stopPropagation();_clOpenView(\'' + item.id + '\')"' +
+             ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();_clOpenView(\'' + item.id + '\')}">' +
+             esc(item.name) + '</span>' +
              (item.archived ? '<span class="cl-tag cl-tag--arch">Archived</span>' : '') +
              '</div>';
     }
