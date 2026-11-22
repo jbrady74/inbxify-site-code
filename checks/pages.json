@@ -3,10 +3,10 @@
   "loginAt": "/portal-login",
   "widths": [1440, 390],
   "pages": {
-    "quill":  { "path": "/quill-admin", "login": true, "tabs": ".ps-nav a" },
+    "quill":  { "path": "/quill-admin", "login": true, "tabs": ".ps-nav a", "widths": [1440, 1280] },
     "portal": { "path": "/publisher/cmhm4p7y402350sqmcj3w6ua3", "login": true, "tabs": ".ps-nav a" },
-    "ta":     { "path": "/title-admin/full-test-3-weekly", "login": true, "tabs": ".w-tab-link[data-w-tab]" },
-    "ipp":    { "path": "/publication-plan/taw-101", "login": true, "tabs": ".ipp-switcher button[data-view]" },
+    "ta":     { "path": "/title-admin/full-test-3-weekly", "login": true, "tabs": ".w-tab-link[data-w-tab]", "widths": [1440, 1280] },
+    "ipp":    { "path": "/publication-plan/taw-101", "login": true, "tabs": ".ipp-switcher button[data-view]", "widths": [1440, 1280] },
     "review": { "path": "/review", "login": false, "tabs": null }
   }
 }
