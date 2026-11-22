@@ -1,7 +1,9 @@
-// ps-review-v1.0.3.js
+// ps-review-v1.0.4.js
 // ============================================================
 // INBXIFY · the advertiser review page (www.inbxify.com/review?t=<token>)
 //
+// v1.0.4 (22 Nov 2026, Ad Maker Build S3): version only. CSS v1.0.4 centres every end message (Thank you, link
+//   used, link expired, not found, could not load) on the page. They sat in the left column of the two-column page.
 // v1.0.3 (18 Nov 2026, Ad Maker Build S3) — THE PUBLISHER'S APPROVAL, BY EMAIL LINK.
 //   The same page now also opens an inbxify "Send for approval" link (ix-sales v1.3.9 answers kind:"approval").
 //   Rulings (Jeff, 18 Nov): approval is by email for now, the link opens with no login, and offers Approve and make
@@ -55,7 +57,7 @@
 // THE PAGE (Webflow static page /review, no Memberstack)
 //   <div id="ps-review" data-sales-url="https://ix-sales…workers.dev"
 //        data-inbxify-logo="<inbxify wordmark url>"></div>
-//   plus this file and ps-review-v1.0.3.css. Fonts: Newsreader, Sen,
+//   plus this file and ps-review-v1.0.4.css. Fonts: Newsreader, Sen,
 //   Josefin Sans (the portal's).
 //
 // HARDCODING (provisional ids, for the tracker)
@@ -65,7 +67,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.3', FILE = 'ps-review-v' + VERSION + '.js';
+  var VERSION = '1.0.4', FILE = 'ps-review-v' + VERSION + '.js';
   var REC_MAX_MS = 4 * 60 * 1000;
   var BOX = null;                                                        // v1.0.2: which ad's message box is open                                        // HC-P-PP8-10
   var W = {                                                              // HC-P-PP8-9

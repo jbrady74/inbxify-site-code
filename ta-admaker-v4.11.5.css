@@ -1,4 +1,4 @@
-/* ta-admaker-v4.11.4.css
+/* ta-admaker-v4.11.5.css
    INBXIFY · AD MAKER and the T-A ADS TAB · companion to ta-admaker-v4.11.4.js
    v4.11.4 (19 Nov 2026): the Drafts in Canva row has five columns (the Canva name went), and a small line for a missing picture.
    v4.11.3 (18 Nov 2026, Ad Maker Build S3): the What happens card and Send to on Check, the send-back note on the Canva screen, and
@@ -1124,3 +1124,12 @@ section.publisher-wrapper .am-frame, section.publisher-wrapper .am-work, section
 .ta-ads-drbtn{height:30px!important;padding:0 12px!important;font-size:var(--ix-fs-12-5)!important;width:128px;flex:none}
 .ta-ads-drx{font-size:var(--ix-fs-12);color:var(--ps-muted);text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
 @media (max-width:1180px){.ta-ads-drrow{grid-template-columns:132px minmax(0,1fr) 76px minmax(0,1fr) 400px}}
+
+/* ════ v4.11.5 (22 Nov 2026, Ad Maker Build S3) · WHAT HAPPENS IN THE RIGHT-HAND COLUMN, AND THE EMAIL'S WORDS ════ */
+.am-panel.scr-check .am-col.am-right .am-what, section.publisher-wrapper .am-panel.scr-check .am-col.am-right .am-what { margin-bottom: 0; }
+.am-panel.scr-check .am-col.am-right .am-sendto, section.publisher-wrapper .am-panel.scr-check .am-col.am-right .am-sendto { margin-left: 0; }
+.am-sendto label.l, section.publisher-wrapper .am-sendto label.l { margin-top: 6px; }
+.am-mailin, section.publisher-wrapper .am-mailin { box-sizing: border-box; width: 100%; font: 400 var(--ix-fs-13-5)/1.45 var(--am-body) !important; padding: 7px 9px; border: 1.5px solid var(--am-border-soft) !important; border-radius: 2px; background: var(--ps-paper) !important; color: var(--am-ink) !important; }
+textarea.am-mailin, section.publisher-wrapper textarea.am-mailin { min-height: 150px; resize: vertical; }
+.am-mailin:focus, section.publisher-wrapper .am-mailin:focus { outline: none; border-color: var(--am-ink) !important; }
+.am-mailin.chg, section.publisher-wrapper .am-mailin.chg { border-color: var(--ps-gold) !important; box-shadow: 0 0 0 3px var(--ps-gold-glow); }

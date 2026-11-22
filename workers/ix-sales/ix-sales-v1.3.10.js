@@ -1,9 +1,20 @@
-// ix-sales-v1.3.9.js
+// ix-sales-v1.3.10.js
 // INBXIFY · Cloudflare Worker · ix-sales
 // SALES RECORDS and OBLIGATIONS: the one place the rules live. The portal
 // (S2) and Studio (S3) both call this; the Revenue Picker (S4) and Scenario
 // 108 (S5) call it too. Scoping: Sales-Records-Obligations-Scoping-v0_7.md.
 // Since v1.3.0 also the portal's Ads tab and the advertiser review page.
+//
+// v1.3.10 (22 Nov 2026, Ad Maker Build S3) — THE APPROVAL EMAIL CAN BE READ AND EDITED BEFORE IT GOES.
+//   Ruling (Jeff, 19 Nov): Send for approval must show the email and let him change it, in place, before sending.
+//   · POST /ads/send-approval { …, preview:true } writes nothing and sends nothing. It answers the email as it would
+//     go: { preview:true, subject, message, to:{ publisher:{name,email}|null, test:email }, until, linkDays }.
+//     With preview, a publisher with no Contact Name or Business Email is not an error (to.publisher is null).
+//     preview may name { customer, shape } in place of items: the words for an ad that is not saved yet.
+//   · POST /ads/send-approval { …, subject?, message? } sends those words in place of the standard ones (subject up
+//     to 200 characters, message up to 4000; a blank line starts a new paragraph). The pictures, the Review and
+//     decide button and the "works until" line are still added under the message. Review Data records edited:true.
+//   HARDCODING: HC-P-AMS3-2 gains the limits MAIL_SUBJECT_MAX 200 and MAIL_MESSAGE_MAX 4000.
 //
 // v1.3.9 (18 Nov 2026, Ad Maker Build S3) — INBXIFY APPROVES, AND APPROVAL BY EMAIL.
 //   Rulings (Jeff, 18 Nov): inbxify always keeps the right to approve, through this Worker, on the same path as the
@@ -285,7 +296,7 @@
 //           month falls back to the calendar month end.
 // ============================================================
 
-const VERSION = '1.3.9';
+const VERSION = '1.3.10';
 // v1.3.7 · CUSTOMERS slugs that make up a customer's brand record (HC-P-AMB1-1)
 const CUST_BRAND = { logo: 'logo-link', logoLight: 'logo-link-light', main: 'brand-color-main', accent: 'brand-color-accent', fontHead: 'brand-font-heading', fontBody: 'brand-font-body',
   phone: ['business-phone', 'phone', 'contact-phone'], website: ['contact-website', 'website', 'business-website'], email: ['business-email', 'email', 'contact-email'],
@@ -1213,6 +1224,7 @@ const APPROVAL_WORDS = {
   noticeSubject: (o) => o.who + ' ' + o.verb + ' ' + (o.count === 1 ? 'the ' + o.shapes : o.count + ' ads') + ' for ' + o.customer,
   verb: { 'approve-current': 'approved and made current', 'approve-hold': 'approved and held', 'send-back': 'sent back' },
 };
+const MAIL_SUBJECT_MAX = 200, MAIL_MESSAGE_MAX = 4000;                    // HC-P-AMS3-2 · v1.3.10
 const MAIL_PROOF = 'ix-mail:';                                         // HC-P-AMS3-3 · the same prefix ix-members checks
 // the ADS picture link per shape is JOIN.ad's (banner, sidebar, splash); read off the row itself, so a version saved a second ago has its picture
 function adPicture(ad, shape) { const v = ad && JOIN.ad[shape] ? String(fd(ad)[JOIN.ad[shape]] || '').trim() : ''; return /^https?:\/\//.test(v) ? v : ''; }
@@ -1683,6 +1695,7 @@ async function sendApproval(run, b) {
   const C = run.cfg.collections, cfg = reviewCfg(run), A = JOIN.ad, test = b.to === 'test';
   if (b.to !== 'publisher' && b.to !== 'test') throw httpErr(400, 'to must be "publisher" or "test".');
   const items = Array.isArray(b.items) ? b.items.filter(i => i && /^[0-9a-f]{24}$/.test(i.adId || '') && ADS_TAB.shapes[i.shape]).slice(0, 12) : [];
+  if (b.preview === true && !items.length && /^[0-9a-f]{24}$/.test(b.customer || '') && ADS_TAB.shapes[b.shape]) return approvalDraft(run, b);   // v1.3.10: the words for an ad not saved yet (Ad Maker's Check)
   if (!items.length) throw httpErr(400, 'Name at least one ad and shape.');
   const coll = needCollection(run, 'reviews', 'PUBLISHER REVIEWS');
   if (![...(await run.optMap(coll, RV.action)).values()].some(l => keyOf(l) === keyOf(RV_ACTION.sendApproval)))
@@ -1697,10 +1710,11 @@ async function sendApproval(run, b) {
     named.push({ adId: it.adId, shape: it.shape, name: String(fd(ad).name || ''), decision: null, note: '', _pic: adPicture(ad, it.shape) });
   }
   const pub = await publisherCard(run, first.sc.publisherId);
-  if (!pub.email) throw httpErr(400, 'The PUBLISHERS record for ' + (pub.company || 'this publisher') + ' has no Business Email, so there is nowhere to send the approval. Add it in the PUBLISHERS collection.');
-  if (!pub.person) throw httpErr(400, 'The PUBLISHERS record for ' + (pub.company || 'this publisher') + ' has no Contact Name. Add it in the PUBLISHERS collection.');
+  const preview = b.preview === true, hasPub = !!(pub.email && pub.person);   // v1.3.10
+  if (!preview && !test && !pub.email) throw httpErr(400, 'The PUBLISHERS record for ' + (pub.company || 'this publisher') + ' has no Business Email, so there is nowhere to send the approval. Add it in the PUBLISHERS collection.');
+  if (!preview && !pub.person) throw httpErr(400, 'The PUBLISHERS record for ' + (pub.company || 'this publisher') + ' has no Contact Name. Add it in the PUBLISHERS collection.');
   const sentTo = test ? String(run.who.email || '') : pub.email;
-  if (!sentTo) throw httpErr(400, 'Your login has no email address, so a test cannot be sent to you.');
+  if (!preview && !sentTo) throw httpErr(400, 'Your login has no email address, so a test cannot be sent to you.');
   const v = named.every(it => it._pic) ? {} : await issueData(run, '/customer-ads?archived=1&customer=' + first.cust).catch(() => ({}));
   const pics = named.map(it => { const row = (((v.versions || {})[it.shape]) || []).find(x => x.id === it.adId); return { label: ADS_TAB.shapes[it.shape].label, name: it.name, picture: it._pic || (row && /^https?:\/\//.test(row.picture || '') ? row.picture : '') }; });
   named.forEach(it => { delete it._pic; });
@@ -1708,17 +1722,21 @@ async function sendApproval(run, b) {
   const link = cfg.pageUrl + (cfg.pageUrl.includes('?') ? '&' : '?') + 't=' + token;
   const until = expires.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
   const customer = String(custRow.name || ''), firstName = pub.person.split(' ')[0];
+  const o = { count: named.length, customer, shapes: shapesPhrase(named), title: first.titleName };
+  const stdSubject = APPROVAL_WORDS.subject(o), stdMessage = [APPROVAL_WORDS.hello(firstName), APPROVAL_WORDS.lede(o), APPROVAL_WORDS.choices].join('\n\n');
+  if (preview) return { ok: true, preview: true, subject: stdSubject, message: stdMessage, to: { publisher: hasPub ? { name: pub.person, email: pub.email } : null, test: String(run.who.email || '') },
+    until: expires.toISOString(), linkDays: cfg.linkDays, added: [APPROVAL_WORDS.button, APPROVAL_WORDS.until(until)] };
+  const subject = String(b.subject || '').replace(/\s+/g, ' ').trim().slice(0, MAIL_SUBJECT_MAX) || stdSubject;
+  const message = String(b.message || '').replace(/\r\n?/g, '\n').trim().slice(0, MAIL_MESSAGE_MAX) || stdMessage;
+  const edited = subject !== stdSubject || message !== stdMessage;
   const row = await createReview(run, { action: RV_ACTION.sendApproval, status: RV_STATUS.open, publisher: first.sc.publisherId, customer: first.cust, customerName: customer,
     token, expires: expires.toISOString(), sentBy: run.actor(),
-    data: { kind: 'approval', test, sentTo, sentToName: pub.person, sentAt: iso(), openedAt: null, decidedAt: null, title: first.titleName, items: named } });
+    data: { kind: 'approval', test, sentTo, sentToName: pub.person, sentAt: iso(), edited, openedAt: null, decidedAt: null, title: first.titleName, items: named } });
   // the email: the same words and pictures whoever it goes to (ruled 18 Nov: the test email is identical to the publisher's)
-  const o = { count: named.length, customer, shapes: shapesPhrase(named), title: first.titleName };
-  const subject = APPROVAL_WORDS.subject(o), lines = [APPROVAL_WORDS.hello(firstName), APPROVAL_WORDS.lede(o), APPROVAL_WORDS.choices];
-  const text = lines.join('\n\n') + '\n\n' + APPROVAL_WORDS.button + ': ' + link + '\n\n' + APPROVAL_WORDS.until(until) + '\n\n' + APPROVAL_WORDS.signoff;
-  const html = mailShell(lines.slice(0, 2).map(l => '<p style="' + MAIL_P + '">' + escH(l) + '</p>').join('') +
+  const text = message + '\n\n' + APPROVAL_WORDS.button + ': ' + link + '\n\n' + APPROVAL_WORDS.until(until) + '\n\n' + APPROVAL_WORDS.signoff;
+  const html = mailShell(message.split(/\n{2,}/).map(par => '<p style="' + MAIL_P + '">' + escH(par).replace(/\n/g, '<br>') + '</p>').join('') +
     pics.map(p => '<p style="margin:0 0 6px;font:600 12px/1.2 Helvetica,Arial,sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:#5A5E66;">' + escH(p.label) + '</p>' +
       (p.picture ? '<p style="margin:0 0 20px;"><a href="' + escH(link) + '"><img src="' + escH(p.picture) + '" alt="' + escH(p.label + ': ' + p.name) + '" width="536" style="display:block;max-width:100%;height:auto;border:1px solid #D9D2C3;"></a></p>' : '<p style="' + MAIL_P + '">' + escH(p.name) + '</p>')).join('') +
-    '<p style="' + MAIL_P + '">' + escH(APPROVAL_WORDS.choices) + '</p>' +
     '<p style="margin:8px 0 24px;"><a href="' + escH(link) + '" style="display:inline-block;padding:14px 24px;background:#22252B;color:#FFFFFF;border-radius:3px;font:600 16px/1 Helvetica,Arial,sans-serif;text-decoration:none;">' + escH(APPROVAL_WORDS.button) + '</a></p>' +
     '<p style="margin:0 0 16px;font:14px/1.5 Helvetica,Arial,sans-serif;color:#5A5E66;">' + escH(APPROVAL_WORDS.until(until)) + '</p>' +
     '<p style="' + MAIL_P + 'margin:0;">' + escH(APPROVAL_WORDS.signoff) + '</p>');
@@ -1729,6 +1747,17 @@ async function sendApproval(run, b) {
     throw e;
   }
   return { ok: true, reviewId: row.id, link, sentTo, sentToName: pub.person, test, until: expires.toISOString(), mailId: mail.id, subject, unconfirmed: row.unconfirmed };
+}
+async function approvalDraft(run, b) {                                // v1.3.10 · preview only: nothing is read from ADS, written or sent
+  const C = run.cfg.collections, cfg = reviewCfg(run), sc = await scope(run, b.publisher);
+  if (!(await customerIds(run, sc)).has(b.customer)) throw httpErr(403, 'That customer is not this publisher\'s.');
+  const custRow = await run.getItem(C.customers, b.customer); if (!custRow) throw httpErr(404, 'The customer was not found.');
+  const custTitles = refIds(fd(custRow)[JOIN.customer.titles]).filter(t => sc.taIds.has(t)), ta = sc.taById.get(custTitles[0]) || sc.tas[0];
+  const pub = await publisherCard(run, sc.publisherId), expires = new Date(Date.now() + cfg.linkDays * 86400000);
+  const o = { count: 1, customer: String(fd(custRow).name || ''), shapes: shapesPhrase([{ shape: b.shape }]), title: String(fd(ta || {}).name || '') };
+  return { ok: true, preview: true, subject: APPROVAL_WORDS.subject(o), message: [APPROVAL_WORDS.hello(String(pub.person || '').split(' ')[0]), APPROVAL_WORDS.lede(o), APPROVAL_WORDS.choices].join('\n\n'),
+    to: { publisher: pub.email && pub.person ? { name: pub.person, email: pub.email } : null, test: String(run.who.email || '') }, until: expires.toISOString(), linkDays: cfg.linkDays,
+    added: [APPROVAL_WORDS.button, APPROVAL_WORDS.until(expires.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }))] };
 }
 async function approvalGet(run, r, expired) {
   const pub = await publisherCard(run, r.publisher);

@@ -1,4 +1,4 @@
-/* ta-admaker-v4.11.4.js
+/* ta-admaker-v4.11.5.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
 
@@ -13,13 +13,25 @@
    ix-success-toast, and AFTER ta-studio (v1_4_13 dispatches
    std:panel:admaker). Companion: ta-admaker-v1.1.0.css (head).
 
+   ── v4.11.5 (22 Nov 2026, Ad Maker Build S3) ── WHAT HAPPENS BESIDE THE AD · THE EMAIL CAN BE CHANGED · BROWSER BACK ──
+   Rulings (Jeff, 19 and 22 Nov): Send for approval from a card must not leave the page; nothing to pick may sit
+   below the fold; the email is shown before it goes; the browser's Back steps back.
+   · The board's Send for approval no longer opens Check. ix-ads-board v1.0.4 sends from inside the card.
+     adsOpenCheck is gone, and with it Check for an ad that is already saved.
+   · On Check, What happens sits in the right-hand column beside the ad, in view without scrolling.
+   · Under Send for approval: Send to, then the email's Subject and Message, filled in from ix-sales
+     (POST /ads/send-approval preview:true with the customer and shape) and editable. Changed words go out with Save.
+   · The browser's Back button goes back one Ad Maker step (the same as the page's own Back) instead of leaving the
+     page. On Start it leaves as before.
+   HARDCODING: HC-P-AMS3-4 gains SAVE_WORDS.mail.
+   Companion: ta-admaker-v4.11.5.css. Needs ix-sales v1.3.10.
    ── v4.11.4 (19 Nov 2026, Test 1 on the live page) ── DRAFTS IN CANVA: NOTHING CUT OFF, NOTHING SAID TWICE ──
    · The row dropped its Canva-name column: the name only repeated the customer and the shape. "Worked on … · not
      brought back yet" has the room and is no longer cut off. A copy of an approved ad says so there.
    · When Canva gives no picture for a draft, the row says why in small type (ix-canva's thumbError) instead of
      showing an empty box with no reason.
    · Pairs with ix-ads-board v1.0.3, whose CSS gives the inbxify side's sections the same card as Drafts in Canva.
-   Companion: ta-admaker-v4.11.4.css.
+   (v4.11.4 companion: ta-admaker-v4.11.4.css.)
    ── v4.11.3 · Ad Maker Build S3 (18 Nov 2026) ── ONE SAVE, "WHAT HAPPENS", AND DRAFTS IN CANVA ──
    Rulings (Jeff, 18 Nov): one Save on Check with a What happens choice above it; inbxify may always approve,
    through ix-sales like a publisher decision; approval goes by email for now; approved ads are frozen.
@@ -894,7 +906,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.11.4', CSS_FILE = 'ta-admaker-v4.11.4.css';   // v4.11.0: the Ads tab and the Canva screens
+  var VERSION = '4.11.5', CSS_FILE = 'ta-admaker-v4.11.5.css';   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
   var ADVICE_BIGGER = 1.25;   // HC-P-SSB8-25
@@ -4824,9 +4836,9 @@
       (fc.issues && fc.issues.length ? '<div class="am-fclist">' + fc.issues.map(function (q) { return '<div class="am-fc"><span class="am-flag warn" style="background:#FBF3DF !important">Second look</span><span class="tx">' + esc(q) + '</span></div>'; }).join('') + '</div>' : '');
     var mid = colh(CANVA_WORDS.checkHead, (img ? img.naturalWidth + ' × ' + img.naturalHeight + ' px' : '') + ' · ' + CANVA_WORDS.checkSub2) +
       '<div class="am-card am-sum">' + fcHead + '<div class="am-sumrow big"><div class="pic" id="am-cvbig"></div><div class="am-sumr"><b>' + esc(shapeLabel(S.shape)) + '</b> · ' + (cv.existing ? 'saved' : 'made in Canva') + '<div class="am-srcl">' + checkNameLine(cv, c) + '</div>' +
-      '<div class="am-phoneh" style="margin-top:8px">On a phone <span>' + PHONE_W + ' px</span></div><div class="am-phonepic" id="am-cvphone"></div></div></div></div>' + (cv.existing ? '' : clickCardHTML()) + whatHTML();   // v4.11.3
+      '<div class="am-phoneh" style="margin-top:8px">On a phone <span>' + PHONE_W + ' px</span></div><div class="am-phonepic" id="am-cvphone"></div></div></div></div>' + clickCardHTML();   // v4.11.5: What happens moved to the right-hand column
     later(function () { if (!img) return; var b = document.getElementById('am-cvbig'), p = document.getElementById('am-cvphone'); if (b) { var i1 = new Image(); i1.src = img.src; i1.style.width = Math.min(dims.w || 700, 700) + 'px'; i1.style.display = 'block'; b.innerHTML = ''; b.appendChild(i1); } if (p) { var i2 = new Image(); i2.src = img.src; i2.style.width = PHONE_W + 'px'; i2.style.display = 'block'; p.innerHTML = ''; p.appendChild(i2); } });
-    shell(mid, barHTML(whatBarMsg(), (cv.existing ? '' : ghost('back', W.back)) + (cv.editUrl ? btn('cvAgain', CANVA_WORDS.again, 'secondary') : '') + btn('cvSave', W.saveBtn, 'primary', !whatCan())), { right: null });   // v4.11.3: one Save; the choice above it decides what it does
+    shell(mid, barHTML(whatBarMsg(), ghost('back', W.back) + (cv.editUrl ? btn('cvAgain', CANVA_WORDS.again, 'secondary') : '') + btn('cvSave', W.saveBtn, 'primary', !whatCan())), { right: whatHTML() });   // v4.11.3: one Save; the choice above it decides what it does
   }
   function canvaAsk() {
     var cv = S.canva, cfg = CFG(); if (!cv || !cv.img || cv.fc.busy) return;
@@ -4855,6 +4867,7 @@
     },
     sendTo: 'Send to', toPublisher: '{name} · {email}', toPublisherUnknown: 'The publisher’s contact', toTest: '{email} (test)', toTestUnknown: 'Me (test)', toTestNote: 'The same email, sent to you.',
     noContact: 'The PUBLISHERS record has no Contact Name or Business Email, so only a test can be sent.',
+    mail: { subject: 'Subject', message: 'Message', loading: 'Reading the email…', fail: 'The email’s words could not be read ({msg}). The standard email goes out.', added: 'Added under your message: the {shape}, a “{button}” button, and “{until}”', need: 'The subject and the message cannot be empty' },   // v4.11.5
     need: 'Choose what happens, then Save', needClick: 'Choose where a click goes first',
     bar: { draft: 'Save keeps the design in Canva as a draft', send: 'Save writes the ad, then emails {to}', current: 'Save writes the ad, approves it and makes it current', hold: 'Save writes the ad, approves it and holds it', plain: 'Save writes the splash to the customer' },
     barSaved: { send: 'Save emails {to}', current: 'Save approves it and makes it current', hold: 'Save approves it and holds it', plain: 'Already saved' },
@@ -4879,6 +4892,26 @@
     return { hasPub: hasPub, pub: k && k.person ? fillW(SAVE_WORDS.toPublisher, { name: k.person, email: k.email }) : SAVE_WORDS.toPublisherUnknown, pubName: (k && k.person) || 'the publisher',
       test: y.email ? fillW(SAVE_WORDS.toTest, { email: y.email }) : SAVE_WORDS.toTestUnknown, testName: y.email || 'you' };
   }
+  // v4.11.5 · the approval email's words, read from ix-sales and editable before Save
+  function mailLoad() {
+    var cv = S.canva, c = cust(); if (!cv || !c || cv.mail) return;
+    var M = cv.mail = { loading: true, err: '', std: null, subject: '', message: '', added: [] };
+    salesCall('/ads/send-approval', { publisher: pagePublisher(), customer: c.id, shape: S.shape, to: 'publisher', preview: true }, SAVE_WORDS.mail.loading)
+      .then(function (j) { M.loading = false; M.std = { subject: j.subject, message: j.message }; M.subject = j.subject; M.message = j.message; M.added = j.added || [];
+        if (j.to) { A.contact = j.to.publisher ? { person: j.to.publisher.name, email: j.to.publisher.email } : (A.contact || { person: '', email: '' }); if (j.to.test) A.you = Object.assign({}, A.you, { email: j.to.test }); } },
+        function (e) { M.loading = false; M.err = fillW(SAVE_WORDS.mail.fail, { msg: e.message }); })
+      .then(function () { if (S.canva === cv && S.screen === 'check') render(); });
+  }
+  function mailHTML() {
+    var cv = S.canva || {}, M = cv.mail, MW = SAVE_WORDS.mail;
+    if (!M) { later(mailLoad); return '<div class="am-light">' + MW.loading + '</div>'; }
+    if (M.loading) return '<div class="am-light">' + MW.loading + '</div>';
+    if (M.err || !M.std) return '<div class="am-light">' + esc(M.err) + '</div>';
+    return '<label class="l" for="am-mailsub">' + MW.subject + '</label><input type="text" id="am-mailsub" class="am-mailin' + (M.subject !== M.std.subject ? ' chg' : '') + '" data-mailf="subject" maxlength="200" value="' + esc(M.subject) + '">' +
+      '<label class="l" for="am-mailmsg">' + MW.message + '</label><textarea id="am-mailmsg" class="am-mailin' + (M.message !== M.std.message ? ' chg' : '') + '" data-mailf="message" maxlength="4000">' + esc(M.message) + '</textarea>' +
+      '<div class="am-light">' + esc(fillW(MW.added, { shape: shapeLabel(S.shape).toLowerCase(), button: M.added[0] || '', until: M.added[1] || '' })) + '</div>';
+  }
+  function mailBad() { var M = (S.canva || {}).mail; return !!(M && M.std && (!String(M.subject).trim() || !String(M.message).trim())); }
   function whatHTML() {
     var cv = S.canva || {}, c = cust() || {}, low = shapeLabel(S.shape).toLowerCase(), SW = SAVE_WORDS, keys = whatKeys();
     if (cv.what && keys.indexOf(cv.what) < 0) cv.what = null;
@@ -4886,15 +4919,16 @@
       if (k === 'send' && on) { var w = sendToWho();
         more = '<div class="am-sendto"><span class="l">' + SW.sendTo + '</span>' +
           '<label class="am-clk"><input type="radio" name="am-sendto" data-sendto="publisher"' + (cv.to === 'publisher' ? ' checked' : '') + (w.hasPub ? '' : ' disabled') + '> ' + esc(w.hasPub ? w.pub : SW.noContact) + '</label>' +
-          '<label class="am-clk"><input type="radio" name="am-sendto" data-sendto="test"' + (cv.to === 'test' ? ' checked' : '') + '> ' + esc(w.test) + ' <span class="am-light">' + SW.toTestNote + '</span></label></div>'; }
+          '<label class="am-clk"><input type="radio" name="am-sendto" data-sendto="test"' + (cv.to === 'test' ? ' checked' : '') + '> ' + esc(w.test) + ' <span class="am-light">' + SW.toTestNote + '</span></label>' + mailHTML() + '</div>'; }
       return '<label class="am-clk am-whatl' + (on ? ' am-what-on' : '') + '"><input type="radio" name="am-what" data-what="' + k + '"' + (on ? ' checked' : '') + '><span class="tx"><b>' + esc(o[0]) + '</b><small>' + esc(fillW((cv.existing && SW.optsSaved[k]) || o[1], { customer: c.name || 'the customer', shape: low })) + '</small></span></label>' + more; }).join('');
     return '<div class="am-card am-what' + (cv.what ? '' : ' need') + '"><div class="am-fch"><b>' + SW.head + '</b><span>' + (cv.what ? esc(SW.opts[cv.what][0]) : SW.sub) + '</span>' + (cv.what ? revert('whatCancel') : '') + '</div>' + rows + '</div>';
   }
-  function whatCan() { var cv = S.canva || {}; if (!cv.what || !cv.img) return false; if (cv.what === 'draft') return true; return !!(cv.existing || S.click); }
+  function whatCan() { var cv = S.canva || {}; if (!cv.what || !cv.img) return false; if (cv.what === 'draft') return true; if (cv.what === 'send' && mailBad()) return false; return !!(cv.existing || S.click); }
   function whatBarMsg() {
     var cv = S.canva || {}, SW = SAVE_WORDS;
     if (!cv.what) return SW.need;
     if (cv.what !== 'draft' && !cv.existing && !S.click) return SW.needClick;
+    if (cv.what === 'send' && mailBad()) return SW.mail.need;
     var w = cv.what === 'send' ? sendToWho() : null;
     return fillW((cv.existing ? SW.barSaved : SW.bar)[cv.what] || SW.bar[cv.what], { to: w ? esc(cv.to === 'test' ? w.testName : w.pubName) : '' });
   }
@@ -4906,6 +4940,7 @@
   function canvaRecipe(cv) { var d = shapeDims(S.shape) || {}; return JSON.stringify({ v: 'canva', designId: cv.job.designId, jobId: cv.job.id, shape: S.shape, w: d.w, h: d.h, scale: 2, made: new Date().toISOString(), by: 'ta-admaker-v' + VERSION }); }
   function isCanvaRecipe(s) { return /^\s*\{\s*"v"\s*:\s*"canva"/.test(String(s || '')); }
   function canvaDesignOf(recipe) { if (!isCanvaRecipe(recipe)) return ''; try { return String(JSON.parse(recipe).designId || ''); } catch (e) { return ''; } }
+  function mailBody(b) { var M = (S.canva || {}).mail; if (M && M.std) { if (M.subject !== M.std.subject) b.subject = M.subject; if (M.message !== M.std.message) b.message = M.message; } return b; }   // v4.11.5: only changed words are sent
   function salesCall(path, body, label) {   // ix-sales under the staff login; an answer that is not ok is an error with ix-sales's own words
     return adsApi(path, { method: 'POST', body: body, label: label }).then(function (r) { if (!r.ok) throw new Error((r.json && r.json.error) || ('ix-sales answered HTTP ' + r.status)); return r.json; });
   }
@@ -4982,7 +5017,7 @@
     }
     // the choice: all three go through ix-sales, the same path as a publisher's decision in the Portal (Scenario G, then 114, then the log row)
     if (what === 'send') chain = chain.then(function () {
-      return run(step(fillW(SAVE_WORDS.step.send, { to: toName }), 'ix-sales · Resend'), salesCall('/ads/send-approval', { publisher: pub, items: [{ adId: row.id, shape: sh }], to: cv.to || 'publisher' }, 'Emailing the review link'))
+      return run(step(fillW(SAVE_WORDS.step.send, { to: toName }), 'ix-sales · Resend'), salesCall('/ads/send-approval', mailBody({ publisher: pub, items: [{ adId: row.id, shape: sh }], to: cv.to || 'publisher' }), 'Emailing the review link'))
         .then(function (j) { row.outcome = 'sent'; row.sentTo = (j.test ? '' : (j.sentToName ? j.sentToName + ' · ' : '')) + j.sentTo; row.sentTest = !!j.test; row.link = j.link || ''; row.days = A.linkDays || 14; });
     });
     if (what === 'current' || what === 'hold') chain = chain.then(function () {
@@ -5132,7 +5167,6 @@
   // Make sidebar / Make banner / Edit in Ad Maker / Open in Ad Maker from the board → an Ad Maker job on that customer (seed rulings 5-8)
   function adsAction(a) {
     var c = a.customer, sh = a.shape, v = a.version;
-    if (a.kind === 'send') { adsOpenCheck(c, sh, v); return; }   // v4.11.3
     if (!(sh === 'banner' || sh === 'sidebar' || sh === 'splash')) { toast(shapeLabel(sh) + ' ads are made in a tool that is coming.', 'err'); return; }
     A.tab = 'maker'; adsShowTab();
     var it = { kind: 'needed', id: 'board-' + c.id + '-' + sh + '-' + (v ? v.id : 'new') + '-' + Date.now(), custId: c.id, shape: sh, title: c.name, what: shapeLabel(sh), m: a.kind === 'make' ? 'From the Ads board' : 'Edit in Ad Maker', q: '', coming: false };
@@ -5146,22 +5180,6 @@
       var vv = v ? (cur && cur.id === v.id ? cur : v) : null, dz = vv ? canvaDesignOf(vv.recipe) : '';   // v4.11.3: the board's version carries no recipe; the page's own copy of the row does
       if (dz) { canvaEditAgain(Object.assign({}, vv, { state: v.state, approval: v.approval }), { designId: dz, shape: sh }, { note: v.state === 'back' && v.sentBack ? v.sentBack.note || '' : '' }); return; }
       render();
-    });
-  }
-  // ── v4.11.3 · the board's "Send for approval": a saved, pending version opens on Check with the What happens choice ──
-  function adsOpenCheck(c, sh, v) {
-    if (!v || !(sh === 'banner' || sh === 'sidebar')) { toast(shapeLabel(sh) + ' ads cannot be sent for approval from here yet.', 'err'); return; }
-    A.tab = 'maker'; adsShowTab();
-    var it = { kind: 'needed', id: 'send-' + v.id + '-' + sh, custId: c.id, shape: sh, title: c.name, what: shapeLabel(sh), m: 'Send for approval', q: '', coming: false };
-    openJob(it, function () {
-      var own = versionsOf(c.id).filter(function (x) { return x.id === v.id; })[0] || null;
-      S.shape = sh; S.mode = 'canva'; S.screen = 'check';
-      var cv = S.canva = { existing: { adId: v.id, name: v.name, picture: v.picture || '', designId: own ? canvaDesignOf(own.recipe) : '' }, what: null, to: '', img: null, job: null, editUrl: '' };
-      render();
-      var img = new Image(); img.crossOrigin = 'anonymous';
-      img.onload = function () { cv.img = img; if (S.canva === cv) render(); };
-      img.onerror = function () { var i2 = new Image(); i2.onload = function () { cv.img = i2; if (S.canva === cv) render(); }; i2.onerror = function () { toast('The saved picture could not be shown.', 'err'); }; i2.src = v.picture; };
-      img.src = v.picture;
     });
   }
   // ── v4.11.3 · DRAFTS IN CANVA: designs kept in Canva and not saved to the site, per customer (ix-canva GET /drafts) ──
@@ -5262,7 +5280,24 @@
   //  Render, events, mount
   // ══════════════════════════════════════════════════════════════
   function toast(msg, kind) { if (window.IxToast && IxToast.show) { try { IxToast.show(msg, kind === 'err' ? 'err' : 'ok', kind === 'err' ? { sticky: true } : undefined); return; } catch (e) {} } log(kind || 'ok', msg); }
+  // v4.11.5 · the browser's Back goes back one step. Every change of screen leaves a history entry; popstate presses the page's own Back.
+  var histDepth = 0, histScreen = '', popping = false;
+  function histNote() {
+    var now = (S.sel ? String(S.sel) : '') + '|' + S.screen;
+    if (now === histScreen) return; var first = !histScreen; histScreen = now;
+    if (first || popping || S.screen === 'start') return;
+    try { history.pushState({ amStep: ++histDepth }, ''); } catch (e) { log('history', e); }
+  }
+  window.addEventListener('popstate', function () {
+    if (!mounted || !histDepth) return;
+    histDepth--;
+    var m = document.getElementById(MOUNT_ID), bk = m && m.offsetParent !== null && !S.saving ? m.querySelector('.am-savebar [data-act="back"]') : null;
+    if (!bk || S.screen === 'start') { var n = histDepth; histDepth = 0; history.go(-(n + 1)); return; }   // nothing to step back from: leave, past any entries left
+    popping = true; try { bk.click(); } finally { popping = false; }
+    if (S.screen !== 'start' && !histDepth) { try { history.pushState({ amStep: ++histDepth }, ''); } catch (e) { log('history', e); } }   // a job opened part-way in: Back keeps stepping until Start
+  });
   function render() {
+    histNote();
     // v2.0.2: every column keeps its scroll position across a re-render (a click on a sidebar draft used to jump the centre back to the top)
     var keep = {}; ['am-left', 'am-main', 'am-right'].forEach(function (k) { var el = document.querySelector('#' + MOUNT_ID + ' .am-col.' + k); keep[k] = el ? el.scrollTop : 0; });
     var v = { start: vStart, read: vRead, clean: vClean, improvewait: vImproveWait, drafts: vPick, make: vPick, pick: vPick, finetune: vMake, tune: vMake, fix: vTune, save: vSave, setup: vSetup, canva: vCanva, check: vCheck }[S.screen] || vStart;   // v4.11.0: the Canva screens   // v3.0.0 · v4.2.0: clean
@@ -5680,6 +5715,7 @@
   }
   function onInput(e) {
     var t = e.target;
+    if (t.matches('[data-mailf]')) { var ml = (S.canva || {}).mail; if (ml && ml.std) { var mk = t.getAttribute('data-mailf'), bad0 = mailBad(); ml[mk] = t.value; t.classList.toggle('chg', t.value !== ml.std[mk]); if (bad0 !== mailBad()) { var keepId = t.id, at = t.selectionStart; render(); var again = document.getElementById(keepId); if (again) { again.focus(); try { again.setSelectionRange(at, at); } catch (x) { /* not a text box */ } } } } return; }   // v4.11.5
     if (t.matches('[data-mt]')) { var mfx = S.ed && forward(), mm = magicEl(mfx, t.getAttribute('data-mt')); if (mm) { if (!t._hist) { pushHist(); t._hist = true; } if (!mm.live) makeLive(mfx, mm); mm.txt = t.value; repaint(mfx); } return; }   // v4.10.0: undoable · v4.10.1: printed words become type
     if (t.matches('[data-mtbox]')) {   // v4.10.1: a box's lines, one per row
       var bfx = S.ed && forward(), pid = t.getAttribute('data-mtbox'); if (!bfx) return; if (!t._hist) { pushHist(); t._hist = true; }

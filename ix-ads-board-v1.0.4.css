@@ -1,4 +1,4 @@
-/* ix-ads-board-v1.0.3.css */
+/* ix-ads-board-v1.0.4.css */
 /* ============================================================
    INBXIFY · ix-ads-board · the Ads board shared by the Publisher Portal and the T-A Ads tab
    v1.0.1 (18 Nov 2026): tokens only — every colour and font size reads ix-tokens v1.0.5 (--ps-*, --ix-fs-*); no other change.
@@ -318,3 +318,22 @@ textarea.ps-ad-in{height:auto;min-height:110px;width:100%;padding:9px 10px;line-
 .side-inbxify .ps-ad-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .side-inbxify .ps-ad-acts .ix-btn{width:100%;justify-content:center;white-space:nowrap}
 .side-inbxify .ps-ad-acts>:first-child:nth-last-child(3),.side-inbxify .ps-ad-acts>:only-child{grid-column:1/3}
+
+/* ════ v1.0.4 (22 Nov 2026, Ad Maker Build S3) · THE SEND FOR APPROVAL BOX, IN THE CARD (inbxify side) ════ */
+.side-inbxify .ps-ad-acts.three>:first-child{grid-column:auto}
+.side-inbxify .ps-ad-acts.three>:last-child{grid-column:1/3}
+.side-inbxify .ps-ad-acts .ps-ad-btnon{border-color:var(--ps-gold)!important;box-shadow:0 0 0 3px var(--ps-gold-glow)}
+.ps-ad-again{margin-left:6px;white-space:nowrap}
+.ps-ad-sendbox{margin-top:12px;padding:14px 16px;border:1.5px solid var(--ps-gold);box-shadow:0 0 0 3px var(--ps-gold-glow);border-radius:3px;background:var(--ps-paper);display:flex;flex-direction:column;gap:10px}
+.ps-ad-sendbox .sbh{display:flex;justify-content:space-between;align-items:baseline}
+.ps-ad-sendbox .sbh b{font-size:var(--ix-fs-15);color:var(--ps-ink)}
+.ps-ad-sendbox .sbf{display:flex;flex-direction:column;gap:5px}
+.ps-ad-sendbox .sbl{font:700 var(--ix-fs-11)/1 var(--ps-caps);letter-spacing:1.4px;text-transform:uppercase;color:var(--ps-muted)}
+.ps-ad-sendbox .sbr{display:flex;align-items:baseline;gap:8px;font-size:var(--ix-fs-13-5);color:var(--ps-ink)}
+.ps-ad-sendbox .sbr input{margin:0;flex:none;position:relative;top:1px}
+.ps-ad-sendin{box-sizing:border-box;width:100%;font:inherit!important;font-size:var(--ix-fs-14)!important;line-height:1.45;padding:8px 10px;border:1.5px solid var(--ps-rule);border-radius:2px;background:var(--ps-paper);color:var(--ps-ink)}
+textarea.ps-ad-sendin{min-height:128px;resize:vertical}
+.ps-ad-sendin:focus{outline:none;border-color:var(--ps-ink)}
+.ps-ad-sendin.chg{border-color:var(--ps-gold);box-shadow:0 0 0 3px var(--ps-gold-glow)}
+.ps-ad-sendbox .sba{display:flex;justify-content:flex-end}
+.ps-ad-sendbox .sba .ix-btn{width:150px;justify-content:center}

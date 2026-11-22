@@ -9,9 +9,9 @@
     "ix-tokens-v1.0.5.css",
     "ix-buttons-v1.0.7.css",
     "ix-form-controls-v1.2.0.css",
-    "ps-review-v1.0.3.css"
+    "ps-review-v1.0.4.css"
   ],
   "body": [
-    "ps-review-v1.0.3.js"
+    "ps-review-v1.0.4.js"
   ]
 }
