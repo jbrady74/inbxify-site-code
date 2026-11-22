@@ -1,7 +1,13 @@
-/* ix-header-v1.0.9.css */
+/* ix-header-v1.1.0.css */
 /* ============================================================
-   ix-header-v1.0.9.css
+   ix-header-v1.1.0.css
    Companion to ix-header-v1.1.0.js / ta-chrome-v1.0.13.js
+
+   v1.1.0 (22 Nov 2026, TA Reskin S1 · the title row) — two sections added at the end; nothing above them changed
+   from v1.0.9 (which never went live on its own: the S1 pull requests merge together).
+     §T  the shared title row (.ix-tr-*), from the S1 title row board: 20px way-back slot, Newsreader 40 title,
+         18px ⓘ, status, actions, Refresh 136px wide with its busy state.
+     §S  the save blur (.ix-save-blur, body.ix-saving, .ix-save-sharp), from the S1 save blur board.
 
    v1.0.9 (22 Nov 2026, TA Reskin S1 · the shell) — §0 IS THE PORTAL HEADER.
    §0 and §0b are replaced whole by the S1 shell board's header: three grid cells; the Quill control (staff
@@ -698,3 +704,171 @@ button.ix-btn.ix-refresh-icon.ix-refresh-icon.is-spinning,
   color: var(--ix-blue, #5B7FFF) !important;
   animation: ix-spin 0.8s linear infinite;
 }
+
+
+/* ═════════════════════════════════════════════
+   §T  THE SHARED TITLE ROW (.ix-tr)   v1.1.0
+   Drawn by IxHeader.titleRow(). The root carries ix-own, so title-admin-page-design's background wildcard
+   skips it. Type carries !important because the site's Webflow h1 and button rules reach inside the T-A card
+   (the ps-shell v1.0.1 armor pattern).
+   ═════════════════════════════════════════════ */
+.ix-tr-wrap.ix-tr-wrap { display: block; margin: 0 0 var(--ix-sp-12); background: transparent; }
+.ix-tr-wrap .ix-tr-back {
+  height: var(--ix-back-slot);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.ix-tr-wrap .ix-tr-backlink {
+  font-family: var(--ix-font-body) !important;
+  font-size: var(--ix-fs-small) !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  color: var(--ix-text-light) !important;
+  text-decoration: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: pointer;
+}
+.ix-tr-wrap .ix-tr-backlink:hover { color: var(--ix-text-dark) !important; text-decoration: underline !important; }
+.ix-tr-wrap .ix-tr {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ix-sp-12);
+  min-height: 40px;
+  margin: 0 0 var(--ix-sp-4);
+}
+.ix-tr-wrap .ix-tr .ix-tr-title {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-family: var(--ix-font-display) !important;
+  font-size: var(--ix-fs-page-title) !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.5px !important;
+  text-transform: none !important;
+  color: var(--ix-text-dark) !important;
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.ix-tr-wrap .ix-tr .ix-tr-info {
+  flex: 0 0 auto;
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 0 4px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  border: 1px solid var(--ix-text-light) !important;
+  background: transparent !important;
+  color: var(--ix-text-light) !important;
+  font-family: var(--ix-font-body) !important;
+  font-size: var(--ix-fs-11) !important;
+  font-weight: 700 !important;
+  font-style: normal !important;
+  line-height: 16px !important;
+  text-align: center !important;
+  cursor: pointer;
+}
+.ix-tr-wrap .ix-tr .ix-tr-info:hover { color: var(--ix-text-dark) !important; border-color: var(--ix-text-dark) !important; }
+.ix-tr-wrap .ix-tr .ix-tr-sp { flex: 1 1 auto; }
+.ix-tr-wrap .ix-tr .ix-tr-status {
+  height: var(--ix-ctl-h);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--ix-font-body) !important;
+  font-size: var(--ix-fs-cell) !important;
+  color: var(--ix-text-mid) !important;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.ix-tr-wrap .ix-tr .ix-tr-warn,
+.ix-tr-wrap .ix-tr .ix-tr-link {
+  height: var(--ix-ctl-h);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  font-family: var(--ix-font-body) !important;
+  font-size: var(--ix-fs-cell) !important;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ix-tr-wrap .ix-tr .ix-tr-warn { color: var(--ix-danger) !important; font-weight: 600 !important; }
+.ix-tr-wrap .ix-tr .ix-tr-link { color: var(--ix-blue-deep) !important; text-decoration: underline !important; font-weight: 400 !important; }
+.ix-tr-wrap .ix-tr > .ix-btn,
+.ix-tr-wrap .ix-tr > button,
+.ix-tr-wrap .ix-tr > input { flex: 0 0 auto; }
+
+/* Refresh: one fixed width, busy in the same box */
+.ix-tr-refresh.ix-tr-refresh {
+  flex: 0 0 auto;
+  width: 136px !important;
+  height: var(--ix-ctl-h) !important;
+  padding: 0 14px !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  border: 1px solid var(--ix-border) !important;
+  border-radius: var(--ix-radius-sm) !important;
+  background: var(--ix-white) !important;
+  color: var(--ix-text-dark) !important;
+  font-family: var(--ix-font-body) !important;
+  font-size: var(--ix-fs-body) !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  white-space: nowrap !important;
+  cursor: pointer;
+  box-shadow: none !important;
+  font-variant-numeric: tabular-nums;
+}
+.ix-tr-refresh.ix-tr-refresh:hover { border-color: var(--ix-hair) !important; background: var(--ix-row-hover) !important; }
+.ix-tr-refresh.ix-tr-refresh:focus-visible { outline: 2px solid var(--ix-blue) !important; outline-offset: 2px !important; }
+.ix-tr-refresh.ix-tr-refresh.is-busy { color: var(--ix-text-light) !important; background: var(--ix-cream-deep) !important; cursor: default; }
+.ix-tr-refresh .ix-tr-ico { flex: 0 0 auto; display: block; }
+.ix-tr-spin {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2px solid var(--ix-border);
+  border-top-color: var(--ix-here);
+  display: inline-block;
+  animation: ix-tr-spin .8s linear infinite;
+}
+@keyframes ix-tr-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ix-tr-spin { animation-duration: 2.4s; } }
+
+
+/* ═════════════════════════════════════════════
+   §S  THE SAVE BLUR   v1.1.0
+   IxSave.blur() adds body.ix-saving and one fixed layer. The layer blurs what is behind it (backdrop-filter)
+   and takes the clicks. It sits under modals (99999), ix-progress cards (100000) and toasts (100001). A kept
+   element (the tab's save bar) gets .ix-save-sharp and is lifted above the layer; it must be positioned
+   (fixed or relative), as save bars are.
+   ═════════════════════════════════════════════ */
+.ix-save-blur {
+  position: fixed;
+  inset: 0;
+  z-index: 99000;
+  display: none;
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  background: transparent;
+  cursor: progress;
+}
+body.ix-saving .ix-save-blur { display: block; }
+body.ix-saving .ix-save-sharp { z-index: 99500 !important; }
+
