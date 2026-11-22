@@ -1,0 +1,697 @@
+/* ix-header-v1.0.9.css */
+/* ============================================================
+   ix-header-v1.0.9.css
+   Companion to ix-header-v1.1.0.js / ta-chrome-v1.0.13.js
+
+   v1.0.9 (22 Nov 2026, TA Reskin S1 · the shell) — §0 IS THE PORTAL HEADER.
+   §0 and §0b are replaced whole by the S1 shell board's header: three grid cells; the Quill control (staff
+   only) and "TA STUDIO" left; the title name in Newsreader 32 with the switcher caret centred, a hairline, the
+   publisher link under it; the inbxify logo and the account avatar right; an ink rule under the band. The band
+   is no longer pinned and no longer 72px: it is in the page's flow, like the Portal's. Desktop only (ruling 2):
+   the narrow-screen block is gone. Every value is a token (ix-tokens-portal-look-v1.0.0.css). Rows 1 to 3
+   below §0 are byte for byte v1.0.8; the shared title row (.ix-tr) is in ix-header-v1.1.0.css (S1 title row).
+   Requires ix-form-controls-v1.0.2.css for .ix-search in the slot.
+
+   Canonical styling for the T-A header rows. Values are the
+   APPROVED mockup's, ported verbatim from title-admin-page-design
+   v1.4.20 (.std-subtabs) and ta-intake-manager v3.0.8 (.bdl-l1).
+   Do not substitute tokens or "improve" contrast here — a darker
+   cream was tried and rejected.
+
+   ── v1.0.3 (Sep 4, 2026) — §0b ADDED ──
+   Three controls for ta-chrome v1.0.5: the operator back control,
+   the publisher line as an anchor, and the title switcher. Also
+   adds .ta-source, the clip rule for the hidden TITLES-ADMIN
+   Collection List the switcher reads.
+
+   ONE RULE IS SECURITY-ADJACENT. `.ix-topbar-back { display:none }`
+   is the default and is revealed only by `body.ix-operator`, a
+   class ta-chrome adds after Memberstack confirms the email
+   domain. Do not un-gate it and do not "simplify" it to always
+   visible. The Memberstack gate on /quill-admin is the actual
+   protection, but a publisher should not be shown a door they
+   cannot open.
+
+   §0b needs no !important armor because .ix-topbar sits outside
+   section.publisher-wrapper. See (a) below.
+
+   ── v1.0.2 (Aug 26, 2026) — ROW 0 ADDED ──
+   The page header and the title banner were two stacked rows
+   costing ~132px. They are now one pinned 72px bar (.ix-topbar),
+   built by ta-chrome v1.0.4 by RELOCATING the live CMS-bound
+   nodes. Nothing here re-authors a tenant value.
+
+   THREE things to know before editing §0:
+
+   a) .ix-topbar lives inside section.publ-navmenu, which is
+      OUTSIDE section.publisher-wrapper. The `section.publisher-
+      wrapper *` whitewash wildcard therefore does NOT reach it.
+      That is deliberate. Do not move this bar inside the wrapper
+      to "keep the header with the page" — it would drag the
+      entire !important war along with it.
+
+   b) EVERY §0 rule is gated on `body.ix-topbar-on`, a class only
+      ta-chrome adds after it has successfully relocated the
+      nodes. No JS, or a missing node, and the page falls back to
+      the v1.4.28 two-row layout untouched. Do not un-gate these
+      rules.
+
+   c) PINNED, NOT STICKY. position:sticky is dead on this page
+      (TD-229 — the overflow:hidden ancestor stack kills it). The
+      bar is position:fixed and the body carries a matching
+      padding-top. Both read --ix-topbar-h so they cannot drift.
+
+   ── TWO CASCADE HAZARDS, both already solved below. Do not
+      remove the defences: ──
+
+   1. `section.publisher-wrapper *` (title-admin-page-design)
+      forces `background-color: var(--ix-white) !important` on
+      EVERY descendant. Any background there needs !important AND
+      enough specificity. It also whitewashes the label element
+      INSIDE a button, not just the button — hence the trailing
+      `*` selectors.
+
+   2. ix-buttons-v1.0.x sets `font-family: DM Sans !important` at
+      `button.ix-btn.ix-btn--tab` (0,2,1) and loads AFTER this
+      file. Beating it needs 0,3,1 — a 0,2,0 selector loses even
+      with !important.
+
+   ── TRANSITIONAL ALIASES ──
+   .std-subtabs and .bdl-l1 are aliased to the new rules so tabs
+   keep rendering correctly while they're migrated one at a time.
+   DELETE the alias selectors once all tabs call IxTabs.
+   ============================================================ */
+
+
+/* ═════════════════════════════════════════════
+   §0  THE HEADER (.ix-topbar)   v1.0.9 · the Portal look
+
+   Built by ta-chrome v1.0.13 inside section.publ-navmenu > .navmenu-container:
+     .ix-topbar                               grid: left · centre · right
+       .ix-topbar-l
+         a.ix-topbar-back                     the Quill control; shown only with body.ix-operator
+         .ix-topbar-place                     "TA Studio"
+       .ix-topbar-c
+         .ix-topbar-titlerow
+           h6.title-label.ix-topbar-pub       MOVED live node
+           .ix-topbar-switch                  caret + menu (only when the publisher has 2+ titles)
+         .ix-topbar-hair
+         a.ix-topbar-parent                   publisher name, the link to the publisher page
+       .ix-topbar-r
+         img.inbxify-logo                     MOVED live node
+         .sign-in-div.ix-topbar-account       MOVED live node; its circle shows the member's initial
+   Every rule is gated on body.ix-topbar-on, which ta-chrome sets only once the bar is built.
+   ═════════════════════════════════════════════ */
+
+body.ix-topbar-on { padding-top: 0 !important; }
+
+body.ix-topbar-on section.publ-navmenu.publ-navmenu {
+  position: static !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  background-color: var(--ix-cream) !important;
+  background-image: none !important;
+  border-bottom: 1px solid var(--ix-rule-ink) !important;
+  box-shadow: none !important;
+  min-width: var(--ix-page-min);
+  box-sizing: border-box !important;
+}
+body.ix-topbar-on section.publ-navmenu .navmenu-container {
+  display: block !important;
+  height: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 18px 24px 14px !important;
+  background: transparent !important;
+}
+
+body.ix-topbar-on .ix-topbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ix-sp-16);
+  width: 100%;
+  font-family: var(--ix-font-body);
+  color: var(--ix-text-dark);
+}
+
+/* ── left ── */
+.ix-topbar-l { display: flex; align-items: center; gap: var(--ix-sp-12); min-width: 0; }
+.ix-topbar-place {
+  font-family: var(--ix-font-caps);
+  font-weight: 600;
+  font-size: var(--ix-fs-12);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--ix-text-light);
+  white-space: nowrap;
+}
+.ix-topbar-back {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ix-border);
+  border-radius: var(--ix-radius-sm);
+  background: var(--ix-white);
+  color: var(--ix-text-dark);
+  text-decoration: none;
+  transition: var(--ix-ease);
+}
+body.ix-operator .ix-topbar-back { display: inline-flex; }
+.ix-topbar-back:hover { background: var(--ix-row-hover); border-color: var(--ix-hair); }
+.ix-topbar-back:focus-visible { outline: 2px solid var(--ix-blue); outline-offset: 2px; }
+.ix-topbar-back svg { width: 14px; height: 14px; display: block; }
+
+/* ── centre ── */
+.ix-topbar-c { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.ix-topbar-titlerow { display: flex; align-items: center; gap: var(--ix-sp-8); min-width: 0; }
+body.ix-topbar-on .ix-topbar h6.title-label,
+body.ix-topbar-on .ix-topbar .ix-topbar-pub {
+  margin: 0 !important;
+  font-family: var(--ix-font-display) !important;
+  font-size: var(--ix-fs-head-title) !important;
+  font-weight: 400 !important;
+  line-height: 40px !important;
+  letter-spacing: -0.3px !important;
+  color: var(--ix-text-dark) !important;
+  text-transform: none !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 720px;
+}
+.ix-topbar-hair { width: 168px; border-top: 1px solid var(--ix-hair); }
+.ix-topbar-parent {
+  font-family: var(--ix-font-body);
+  font-size: var(--ix-fs-11);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.3;
+  color: var(--ix-text-light);
+  white-space: nowrap;
+}
+a.ix-topbar-parent { text-decoration: none; }
+a.ix-topbar-parent:hover { color: var(--ix-text-dark); text-decoration: underline; text-underline-offset: 3px; }
+a.ix-topbar-parent:focus-visible { outline: 2px solid var(--ix-blue); outline-offset: 2px; }
+
+/* the switcher: a small round caret beside the name */
+.ix-topbar-switch { position: relative; flex: 0 0 auto; }
+.ix-topbar-caret {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ix-border);
+  border-radius: 50%;
+  background: var(--ix-white);
+  color: var(--ix-text-light);
+  cursor: pointer;
+  padding: 0;
+  transition: var(--ix-ease);
+}
+.ix-topbar-caret:hover,
+.ix-topbar-switch.ix-switch-open .ix-topbar-caret { color: var(--ix-text-dark); border-color: var(--ix-hair); }
+.ix-topbar-caret:focus-visible { outline: 2px solid var(--ix-blue); outline-offset: 2px; }
+.ix-topbar-caret svg { width: 10px; height: 10px; transition: transform var(--ix-ease); }
+.ix-topbar-switch.ix-switch-open .ix-topbar-caret svg { transform: rotate(180deg); }
+.ix-topbar-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 262px;
+  display: none;
+  z-index: 9001;
+  padding: 6px 0;
+  background: var(--ix-white);
+  border: 1px solid var(--ix-border);
+  border-radius: 0;
+  box-shadow: var(--ix-shadow-lg);
+  text-align: left;
+}
+.ix-topbar-switch.ix-switch-open .ix-topbar-menu { display: block; }
+.ix-topbar-menu-lbl {
+  font-family: var(--ix-font-caps);
+  font-size: var(--ix-fs-11);
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--ix-text-light);
+  padding: 8px 14px 8px;
+  border-bottom: 1px solid var(--ix-border-soft);
+  margin-bottom: 4px;
+}
+.ix-topbar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 14px;
+  text-decoration: none;
+  transition: var(--ix-ease);
+}
+a.ix-topbar-menu-item:hover { background: var(--ix-row-hover); }
+a.ix-topbar-menu-item:focus-visible { outline: 2px solid var(--ix-blue); outline-offset: -2px; }
+span.ix-topbar-menu-item { color: var(--ix-text-light); cursor: default; }
+.ix-topbar-menu-item .code {
+  flex: 0 0 auto;
+  font-family: var(--ix-font-body);
+  font-size: var(--ix-fs-11);
+  font-variant-numeric: tabular-nums;
+  color: var(--ix-text-light);
+  min-width: 52px;
+}
+.ix-topbar-menu-item .nm {
+  font-family: var(--ix-font-body);
+  font-size: var(--ix-fs-13);
+  font-weight: 400;
+  color: var(--ix-text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ix-topbar-menu-item .tick { margin-left: auto; flex: 0 0 auto; color: var(--ix-text-dark); font-size: var(--ix-fs-12); }
+.ix-topbar-menu-item[aria-current="page"] .nm { font-weight: 700; }
+
+/* the hidden TITLES-ADMIN source list (unchanged) */
+.ta-source {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: -1px;
+}
+
+/* ── right ── */
+.ix-topbar-r { display: flex; justify-content: flex-end; align-items: center; gap: 14px; min-width: 0; }
+body.ix-topbar-on .ix-topbar .inbxify-logo { height: 15px !important; width: auto !important; display: block !important; }
+body.ix-topbar-on .ix-topbar .sign-in-div,
+body.ix-topbar-on .ix-topbar .ix-topbar-account {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  white-space: nowrap !important;
+}
+body.ix-topbar-on .ix-topbar .sign-in-div .div-block-20048144 {
+  width: var(--ix-avatar) !important;
+  height: var(--ix-avatar) !important;
+  min-width: var(--ix-avatar) !important;
+  border-radius: 50% !important;
+  background-color: var(--ix-text-dark) !important;
+  background-image: none !important;
+  color: var(--ix-cream) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: var(--ix-font-body) !important;
+  font-size: var(--ix-fs-14) !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+}
+body.ix-topbar-on .ix-topbar .sign-in-div .div-block-20048145,
+body.ix-topbar-on .ix-topbar .sign-in-div .text-block-111499 { display: none !important; }
+
+/* ── the old banner retires once the header is built (as v1.0.8) ── */
+body.ix-topbar-on .publisher-wrapper .title-admin-name-left { display: none !important; }
+body.ix-topbar-on section.publisher-wrapper a.link-615 { display: none !important; }
+
+
+/* ─────────────────────────────────────────────
+   ROW 1 — panel header (.ix-hdr)
+   Base .ix-hdr / -left / -icon / -sub rules live in
+   title-admin-page-design §3. Only the row-gap rule is here so
+   the three rows sit flush with no seam.
+   ───────────────────────────────────────────── */
+/* v1.0.7 — margin-bottom MOVED into the (0,2,0) block below.
+   It sat here at (0,1,0) and tied with title-admin-page-design's
+
+       .cm-hdr, .ix-hdr { margin-bottom: 20px !important }   (0,1,0)
+
+   so which one won depended entirely on load order — and the design
+   file loads AFTER this one, not before, so the 20px won everywhere.
+   Studio escaped it only because v1.4.20 added a Studio-scoped
+   counter at (0,2,0):  .std-root .ix-hdr { margin-bottom: 0 }.
+   Every other surface carried the gap. Ties decided by load order
+   are not decisions, they are accidents waiting on the next head
+   edit. Specificity now settles it. */
+
+/* v1.0.5 — tighten the header's top inset by 10px.
+   The base rule in title-admin-page-design §3 is
+       padding: 12px 0 10px
+   so 12 - 10 = 2. Only the top is touched; the 10px bottom and the
+   0 sides are left to the base rule, which is why this is written
+   as padding-top rather than a shorthand that would silently
+   restate the other three.
+
+   IF THE LIVE BASE IS NOT 12px this lands somewhere other than -10.
+   The value above was read from title-admin-page-design v1.4.30 and
+   the live file is v1.4.38 — check before assuming the arithmetic
+   held. It is one number in one place. */
+/* (0,2,0) — beats both the base rule at §3 and the later
+   .cm-hdr/.ix-hdr override, regardless of which file loads last. */
+.ix-hdr.ix-hdr {
+  padding-top: 2px !important;
+  margin-bottom: 0 !important;
+}
+
+
+/* ─────────────────────────────────────────────
+   ROW 2 — channel tabs (.ix-tabs-l1)
+   ───────────────────────────────────────────── */
+.ix-tabs-l1.ix-tabs-l1,
+.std-subtabs.std-subtabs {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 0 20px;
+  margin-bottom: 0;
+  border-bottom: 1px solid #ece8dc;
+  background-color: #FAF9F5 !important;
+  border-radius: 0;
+}
+
+.ix-tabs-l1 button.ix-btn.ix-btn--tab,
+.ix-tabs-l1 .ix-btn.ix-btn--tab,
+.std-subtabs button.ix-btn.ix-btn--tab,
+.std-subtabs .ix-btn.ix-btn--tab {
+  font-family: var(--ix-font-display) !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  padding: 18px 20px 16px !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border-radius: 0 !important;
+}
+
+/* label element inside the button — see hazard 1 */
+.ix-tabs-l1 button.ix-btn.ix-btn--tab *,
+.ix-tabs-l1 .ix-btn.ix-btn--tab *,
+.std-subtabs button.ix-btn.ix-btn--tab *,
+.std-subtabs .ix-btn.ix-btn--tab * {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+
+/* ─────────────────────────────────────────────
+   ROW 2 — END SLOT (.ix-tabs-l1-end)          added v1.0.4
+
+   WHY THIS EXISTS. Row 3 has shipped a right-pinned slot since
+   v1.0.0 (.ix-tabs-l2-end). Row 2 never did, so every surface
+   that needed a control beside its tabs invented one privately.
+   Asset Library's version cloned this file's own row-2 rule into
+   a .cl-tabrow wrapper, then neutralised the real rule with
+   border-bottom:none !important — the canonical strip was
+   disabled and reimplemented one level up. Five surfaces, five
+   mechanisms. This is the one slot they were all approximating.
+
+   WHY A MODIFIER AND NOT A CHANGE TO .ix-tabs-l1. The base strip
+   is align-items:flex-end so tab labels sit on the border. A
+   control in the slot must centre instead. Opting in per surface
+   means no existing strip moves a pixel when this file lands.
+
+   SPECIFICITY. The base rule is (0,2,0) via .ix-tabs-l1.ix-tabs-l1.
+   The modifier is written (0,3,0) so it wins on specificity rather
+   than on source order — source order alone would break the first
+   time someone appends a rule below this block.
+
+   USAGE
+     <div class="ix-tabs-l1 ix-tabs-l1--slotted">
+       …tab buttons…
+       <div class="ix-tabs-l1-end">…controls…</div>
+     </div>
+   or, preferred, pass `trailing` to IxTabs.l1() in
+   ix-header-v1.0.2.js and let it emit the markup.
+   ───────────────────────────────────────────── */
+.ix-tabs-l1.ix-tabs-l1.ix-tabs-l1--slotted {
+  align-items: stretch;
+}
+
+/* Tabs keep their own baseline inside a stretched strip. Without
+   this they grow to full row height and the underline detaches
+   from the label. */
+.ix-tabs-l1--slotted button.ix-btn.ix-btn--tab,
+.ix-tabs-l1--slotted .ix-btn.ix-btn--tab {
+  display: flex !important;
+  align-items: flex-end !important;
+}
+
+/* The slot itself.
+
+   v1.0.7 — MUST DECLARE ITS OWN BACKGROUND. `section.publisher-wrapper *`
+   forces background-color:#fff !important on every descendant at
+   (0,1,1). v1.0.4 set margin, display and gap here but no background,
+   so the wildcard painted the slot white and it read as a pale
+   rectangle sitting on the cream strip — the controls inside were
+   never the problem. Written at (0,2,0) so it wins outright.
+
+   min-width:0 so a long search input shrinks instead of pushing
+   tabs off the strip. */
+.ix-tabs-l1 .ix-tabs-l1-end,
+.ix-tabs-l1 .ix-tabs-l1-end > *,
+.ix-tabs-l1-end {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+.ix-tabs-l1 .ix-tabs-l1-end,
+.ix-tabs-l1-end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 1 auto;
+  min-width: 0;
+  /* sits on the 1px strip border rather than over it */
+  padding-bottom: 1px;
+}
+
+/* Below this width the slot drops under the tabs and goes full
+   width. Tabs already wrap (.ix-tabs-l1 is flex-wrap:wrap), so
+   without this the slot would land beside a wrapped tab row. */
+@media (max-width: 860px) {
+  .ix-tabs-l1 .ix-tabs-l1-end,
+  .ix-tabs-l1-end {
+    margin-left: 0;
+    width: 100%;
+    padding: 0 0 14px;
+  }
+}
+
+
+/* ── SLOT CONTROLS TAKE THE STRIP'S SURFACE ──   added v1.0.5
+
+   .ix-chip ships white because its home is a form on a white panel.
+   Dropped into the row-2 strip it reads as a lighter rectangle on
+   the cream bed — the same seam this section exists to remove. The
+   override is scoped to .ix-tabs-l1-end, so every chip outside the
+   slot keeps the white it was designed with.
+
+   Specificity: .ix-chip's own rule is (0,1,0) with !important, and
+   .t-a button.ix-chip is (0,2,1). This is written (0,3,1) so it
+   wins on both counts and does not depend on load order between
+   ix-header and ix-form-controls.
+
+   Not applied to .ix-chip--changed: gold-glow on cream is the
+   editing-state signal and must stay visible against the bed. */
+.ix-tabs-l1-end button.ix-chip:not(.ix-chip--changed),
+.ix-tabs-l1-end .ix-chip:not(.ix-chip--changed),
+.t-a .ix-tabs-l1-end button.ix-chip:not(.ix-chip--changed) {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Hover still has to register on a transparent control, so it
+   lifts toward white rather than away from it. */
+.ix-tabs-l1-end button.ix-chip:not(.ix-chip--changed):hover:not(:disabled),
+.ix-tabs-l1-end .ix-chip:not(.ix-chip--changed):hover:not(:disabled),
+.t-a .ix-tabs-l1-end button.ix-chip:not(.ix-chip--changed):hover:not(:disabled) {
+  background-color: var(--ix-white, #FFFFFF) !important;
+}
+
+
+/* ─────────────────────────────────────────────
+   ROW 3 — pill sub-tabs (.ix-tabs-l2)
+   ───────────────────────────────────────────── */
+.ix-tabs-l2.ix-tabs-l2,
+.bdl-l1.bdl-l1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #FCFBF7 !important;
+  border-bottom: 1px solid #f1eee4;
+  margin-top: 0;
+  margin-bottom: 20px;
+  padding: 18px 20px;
+}
+
+.ix-tab-pill.ix-tab-pill,
+.bdl-l1-tab.bdl-l1-tab {
+  font-family: var(--ix-font-mono);
+  background-color: #FAF9F5 !important;
+  border: 1.5px solid #e6e2d6;
+  border-radius: 24px;
+  padding: 10px 22px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: #5a5a52;
+  transition: all var(--ix-ease, .15s ease);
+}
+
+/* ── v1.0.6 · ACTIVE PILL CONTRAST ────────────────────────────
+   White on #5B7FFF (--ix-blue) measures 3.54:1 against the 4.5:1
+   AA floor for normal text. The pill label is 12px uppercase, so
+   it is normal text and not large. Every active row-3 pill on
+   every surface was below AA.
+
+   --ix-blue-deep #3F57B0 already exists in ix-tokens v1.0.4 and
+   measures 6.56:1 with the same white. No new token, no new hex,
+   and the two blues sit close enough that the active pill still
+   reads as the same family as the row-2 tab underline.
+
+   CHANGED IN PLACE, not overridden further down the file. An
+   override would leave the failing declaration sitting above it,
+   so the file would carry two answers and the contrast auditor
+   — which reads rules independently and cannot model the cascade
+   — would keep reporting the old one forever.
+
+   THE UNDERLINE IS NOT CHANGED. It is a 3px rule, not text on a
+   fill, so the text-contrast floor does not apply, and moving it
+   would flatten the distinction between rows 2 and 3.
+
+   STILL OPEN, NOT MINE TO FIX HERE: title-admin-page-design has
+   17 further white-on---ix-blue pairs (.ix-badge, .ix-step.active,
+   .ix-echip.sel, .cm-badge, .cm-tab.active, .cm-step.active and
+   more). Same arithmetic, same failure, different file.
+   ─────────────────────────────────────────────────────────── */
+.ix-tab-pill.ix-tab-pill.is-active,
+.bdl-l1-tab.bdl-l1-tab.is-active {
+  color: #fff !important;
+  background-color: var(--ix-blue-deep, #3F57B0) !important;
+  border-color: var(--ix-blue-deep, #3F57B0) !important;
+}
+
+/* right-pinned slot (refresh button etc.) */
+.ix-tabs-l2 .ix-tabs-l2-end,
+.bdl-l1 .bdl-refresh-icon {
+  margin-left: auto;
+}
+
+/* activity dot */
+.ix-tab-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #C4A35A;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+
+/* ─────────────────────────────────────────────
+   CONTENT GAP                                 added v1.0.8
+
+   The three header rows sit flush with each other by design —
+   that is what every margin-bottom:0 in this file is for. But the
+   CONTENT below them was inheriting that zero too, so a table
+   started hard against the tab strip with no air at all.
+
+   The gap belongs to whatever comes AFTER the last header row,
+   and which row is last varies by surface: Studio ends on row 2,
+   Performance ends on row 2, the Asset Library ends on row 2 with
+   an optional filter strip, and a surface with no tabs at all
+   ends on row 1. An adjacent-sibling rule handles every case
+   without any surface having to declare anything.
+
+   THE EXCLUSIONS ARE LOAD-BEARING. A header row followed by
+   ANOTHER header row must stay flush, so every strip class and
+   strip WRAPPER is excluded. .std-tabs-wrap is the one that is
+   easy to miss: it is a positioning wrapper around .std-subtabs,
+   so it is what actually follows .ix-hdr on Studio, and matching
+   it would push Studio's tab strip 20px down and undo v1.0.7.
+
+   20px matches the row-2 side inset (padding: 0 20px), so content
+   is inset from the strip by the same measure horizontally and
+   vertically. When ix-tokens gains the --ix-space-* scale this
+   becomes a token; it is a literal today because ix-tokens is at
+   v1.0.4 and this file is not bumping it.
+
+   No !important. A surface that needs a different gap should be
+   able to say so without fighting.
+   ───────────────────────────────────────────── */
+.ix-hdr + *:not(.ix-tabs-l1):not(.ix-tabs-l2):not(.std-subtabs):not(.std-tabs-wrap):not(.bdl-l1):not(.ix-channels),
+.ix-tabs-l1 + *:not(.ix-tabs-l2):not(.bdl-l1),
+.std-subtabs + *:not(.ix-tabs-l2):not(.bdl-l1),
+.std-tabs-wrap + *,
+.ix-channels + *,
+.ix-tabs-l2 + *,
+.bdl-l1 + * {
+  margin-top: 20px;
+}
+
+
+/* ───────────────────────────────────────────
+   CANONICAL REFRESH CONTROL (.ix-refresh-icon)   added v1.0.1
+   Emitted by IxHeader.refreshBtn(). One refresh control for every
+   data/file surface.
+
+   Specificity note: the class is doubled to reach (0,3,1) so it
+   beats ix-buttons' `button.ix-btn.ix-btn--icon { width:28px
+   !important }` and `ix-btn--ghost { border:none !important }`,
+   both (0,2,1). A (0,2,1) selector here would only tie, and
+   ix-buttons may load after this file — ties go to the later
+   sheet. Do not reduce the doubling.
+   ─────────────────────────────────────────── */
+button.ix-btn.ix-refresh-icon.ix-refresh-icon,
+.ix-btn.ix-refresh-icon.ix-refresh-icon,
+.bdl-l1 button.ix-btn.bdl-refresh-icon {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  border: 1px solid rgba(196,163,90,.35) !important;
+  border-radius: 8px !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  color: var(--ix-gold, #C4A35A) !important;
+  background-color: transparent !important;
+  cursor: pointer;
+}
+button.ix-btn.ix-refresh-icon.ix-refresh-icon:hover:not(:disabled),
+.bdl-l1 button.ix-btn.bdl-refresh-icon:hover:not(:disabled) {
+  color: var(--ix-blue, #5B7FFF) !important;
+  border-color: var(--ix-blue, #5B7FFF) !important;
+}
+button.ix-btn.ix-refresh-icon.ix-refresh-icon.is-spinning,
+.bdl-refresh-icon.is-spinning {
+  pointer-events: none;
+  color: var(--ix-blue, #5B7FFF) !important;
+  animation: ix-spin 0.8s linear infinite;
+}
