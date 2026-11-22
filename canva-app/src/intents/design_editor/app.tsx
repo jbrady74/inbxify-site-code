@@ -1,4 +1,15 @@
 // inbxify · Ad Maker match sheet · Canva app (side panel)
+// v0.1.1 (18 Nov 2026, Ad Maker Build S3) — LINES KEEP THEIR PLACES; LIGHT SWATCHES GET AN OUTLINE.
+//   · A banner made from a banner stacked every line down the left. Two all-or-nothing tests did it: the original's
+//     proportions had to be within 15 % of the design's, and every single line had to have a place. A print ad cut
+//     a little wider or taller than 700 × 235, or one line read without a place, sent all of them to the stack.
+//     Now each line with a place keeps it, mapped so the whole original fits inside the design (scaled by the
+//     smaller of the two ratios, centred on the other axis); only a line read without a place goes down the left.
+//     Lines stack only when the shape really changed (one side more than 1.6 times the other's ratio, e.g. a
+//     banner made into a sidebar). The panel says which of the two it will do.
+//   · A white or near-white swatch disappeared on the panel. Light swatches now sit in a thin outline.
+//   HARDCODING: HC-P-CAPP1-3 is now SHAPE_RATIO_MAX 1.6 (was SHAPE_TOLERANCE 15 %); HC-P-CAPP1-4 LIGHT_SWATCH 0.82
+//   (the lightness above which a swatch gets its outline).
 // v0.1.0 (18 Nov 2026, Ad Maker Build S1)
 //
 // What it does: opened on a design that inbxify Ad Maker sent to Canva, it asks ix-canva for that design's job and
@@ -10,8 +21,9 @@
 // ix-canva verifies both against this app's public keys and finds the job by the design id.
 //
 // HARDCODING (HC delta Ad Maker Build S1): HC-P-CAPP1-1 BACKEND (from .env CANVA_BACKEND_HOST at build time);
-// HC-P-CAPP1-2 POLL_MS 3 s × 40 while the sheet is being read; HC-P-CAPP1-3 SHAPE_TOLERANCE 15 % (when the design's
-// proportions differ more than this from the original ad, lines stack down the left instead of keeping their places).
+// HC-P-CAPP1-2 POLL_MS 3 s × 40 while the sheet is being read; HC-P-CAPP1-3 SHAPE_RATIO_MAX 1.6 (when the design's
+// proportions differ from the original ad's by more than this factor, lines stack down the left instead of keeping
+// their places); HC-P-CAPP1-4 LIGHT_SWATCH 0.82.
 
 import {
   Alert,
@@ -37,11 +49,12 @@ import { auth } from "@canva/user";
 import { useEffect, useRef, useState } from "react";
 import * as styles from "styles/components.css";
 
-const APP_VERSION = "0.1.0";
+const APP_VERSION = "0.1.1";
 const BACKEND = BACKEND_HOST.replace(/\/+$/, "");
 const POLL_MS = 3000;
 const POLL_MAX = 40;
-const SHAPE_TOLERANCE = 0.15;
+const SHAPE_RATIO_MAX = 1.6; // HC-P-CAPP1-3
+const LIGHT_SWATCH = 0.82; // HC-P-CAPP1-4
 
 type Box4 = { x: number; y: number; w: number; h: number };
 type Line = {
@@ -152,6 +165,30 @@ function hex6(c: string | undefined, fallback = "#000000"): string {
       : g;
   return "#" + h.toLowerCase();
 }
+function isLight(c: string | undefined): boolean {
+  const h = hex6(c);
+  const r = parseInt(h.slice(1, 3), 16) / 255;
+  const g = parseInt(h.slice(3, 5), 16) / 255;
+  const b = parseInt(h.slice(5, 7), 16) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b >= LIGHT_SWATCH;
+}
+// a swatch that would vanish on the panel (white, cream) sits in a thin outline
+function OutlinedSwatch(props: { colour: string | undefined; tip?: boolean }) {
+  const h = hex6(props.colour);
+  const sw = <Swatch fill={[h]} tooltipLabel={props.tip ? h : undefined} />;
+  if (!isLight(h)) return sw;
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        borderRadius: "50%",
+        boxShadow: "0 0 0 1px var(--ui-kit-color-control-strong-border, var(--ui-kit-color-ui-border))",
+      }}
+    >
+      {sw}
+    </div>
+  );
+}
 function norm(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
@@ -234,11 +271,15 @@ export const App = () => {
         }));
   const srcW = (sheet && sheet.srcW) || W;
   const srcH = (sheet && sheet.srcH) || H;
+  // v0.1.1: the original fits inside the design (the smaller ratio scales it, the other axis is centred), so a line
+  // with a place keeps it even when the print ad was a little wider or taller than the design.
+  const ratio = srcW / srcH / (W / H);
   const sameShape =
-    !!sheet &&
-    Math.abs(srcW / srcH - W / H) / (W / H) <= SHAPE_TOLERANCE &&
-    lines.every((l) => !!l.box);
+    !!sheet && ratio <= SHAPE_RATIO_MAX && ratio >= 1 / SHAPE_RATIO_MAX;
   const scale = Math.min(W / srcW, H / srcH);
+  const offX = (W - srcW * scale) / 2;
+  const offY = (H - srcH * scale) / 2;
+  const placed = lines.filter((l) => sameShape && !!l.box).length;
 
   function pickFont(l: Line): { font: Font | null; name: string } {
     const names = [l.font, ...(l.alts || [])].filter(Boolean) as string[];
@@ -254,16 +295,22 @@ export const App = () => {
       Math.min(1000, Math.round((l.sizePx || 18) * (sameShape ? scale : 1))),
     );
     if (sameShape && l.box) {
+      const left = Math.round(offX + l.box.x * srcW * scale);
+      const top = Math.round(offY + l.box.y * srcH * scale);
       return {
-        left: Math.round(l.box.x * W),
-        top: Math.round(l.box.y * H),
-        width: Math.max(20, Math.round(l.box.w * W)),
+        left: Math.max(0, Math.min(W - 20, left)),
+        top: Math.max(0, Math.min(H - 6, top)),
+        width: Math.max(20, Math.min(W, Math.round(l.box.w * srcW * scale))),
         size,
       };
     }
+    // no place read for this line (or the shape changed): down the left, under the lines stacked before it
     let top = 12;
-    for (let k = 0; k < i; k++)
-      top += Math.round((lines[k]?.sizePx || 18) * 1.35) + 6;
+    for (let k = 0; k < i; k++) {
+      const lk = lines[k];
+      if (lk && !(sameShape && lk.box))
+        top += Math.round((lk.sizePx || 18) * (sameShape ? scale : 1) * 1.35) + 6;
+    }
     return { left: 12, top, width: Math.max(40, W - 24), size };
   }
   async function addLine(l: Line, i: number) {
@@ -353,7 +400,13 @@ export const App = () => {
             {job.shape} · {W} × {H}
             {sheet
               ? sameShape
-                ? " · lines keep their places"
+                ? placed === lines.length
+                  ? " · lines keep their places"
+                  : " · " +
+                    placed +
+                    " of " +
+                    lines.length +
+                    " lines keep their places; the rest go down the left"
                 : " · new shape: lines stack down the left"
               : ""}
           </Text>
@@ -381,7 +434,7 @@ export const App = () => {
             colours.map((c, i) => (
               <Columns key={"c" + i} spacing="1u" alignY="center">
                 <Column width="content">
-                  <Swatch fill={[hex6(c.hex)]} tooltipLabel={hex6(c.hex)} />
+                  <OutlinedSwatch colour={c.hex} tip />
                 </Column>
                 <Column>
                   <Text size="small">
@@ -432,7 +485,7 @@ export const App = () => {
                   </Text>
                   <Columns spacing="1u" alignY="center">
                     <Column width="content">
-                      <Swatch fill={[hex6(l.colour)]} />
+                      <OutlinedSwatch colour={l.colour} />
                     </Column>
                     <Column>
                       <Text size="xsmall" tone="tertiary">

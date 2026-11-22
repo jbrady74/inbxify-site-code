@@ -15,7 +15,7 @@
     "ix-info-v1.0.0.css",
     "ps-shell-v1.0.2.css",
     "ps-obligations-v1.0.3.css",
-    "ix-ads-board-v1.0.1.css",
+    "ix-ads-board-v1.0.4.css",
     "ix-progress-v1.0.4.js"
   ],
   "body": [
@@ -23,7 +23,7 @@
     "ix-info-v1.0.2.js",
     "ps-shell-v1.0.5.js",
     "ps-obligations-v1.0.5.js",
-    "ix-ads-board-v1.0.1.js",
+    "ix-ads-board-v1.0.4.js",
     "ps-ads-v1.0.14.js"
   ]
 }

@@ -1,9 +1,50 @@
-// ix-sales-v1.3.7.js
+// ix-sales-v1.3.10.js
 // INBXIFY · Cloudflare Worker · ix-sales
 // SALES RECORDS and OBLIGATIONS: the one place the rules live. The portal
 // (S2) and Studio (S3) both call this; the Revenue Picker (S4) and Scenario
 // 108 (S5) call it too. Scoping: Sales-Records-Obligations-Scoping-v0_7.md.
 // Since v1.3.0 also the portal's Ads tab and the advertiser review page.
+//
+// v1.3.10 (22 Nov 2026, Ad Maker Build S3) — THE APPROVAL EMAIL CAN BE READ AND EDITED BEFORE IT GOES.
+//   Ruling (Jeff, 19 Nov): Send for approval must show the email and let him change it, in place, before sending.
+//   · POST /ads/send-approval { …, preview:true } writes nothing and sends nothing. It answers the email as it would
+//     go: { preview:true, subject, message, to:{ publisher:{name,email}|null, test:email }, until, linkDays }.
+//     With preview, a publisher with no Contact Name or Business Email is not an error (to.publisher is null).
+//     preview may name { customer, shape } in place of items: the words for an ad that is not saved yet.
+//   · POST /ads/send-approval { …, subject?, message? } sends those words in place of the standard ones (subject up
+//     to 200 characters, message up to 4000; a blank line starts a new paragraph). The pictures, the Review and
+//     decide button and the "works until" line are still added under the message. Review Data records edited:true.
+//   HARDCODING: HC-P-AMS3-2 gains the limits MAIL_SUBJECT_MAX 200 and MAIL_MESSAGE_MAX 4000.
+//
+// v1.3.9 (18 Nov 2026, Ad Maker Build S3) — INBXIFY APPROVES, AND APPROVAL BY EMAIL.
+//   Rulings (Jeff, 18 Nov): inbxify always keeps the right to approve, through this Worker, on the same path as the
+//   publisher's Portal decisions (Scenario G approveAd, then 114, then the PUBLISHER REVIEWS row), logged as approved
+//   by inbxify for the publisher. Until the Portal is in use, approval goes by email: a link that needs no login.
+//   · POST /ads/<adId>/decide gains { as:"inbxify" } (honoured for a staff login only): Sent By reads "inbxify for
+//     the publisher · <login>" and Review Data carries by:"inbxify". Nothing else in the route changed, so the same
+//     Make scenarios fire. Without the flag a staff login still acts as the publisher (the Portal's staff view).
+//   · POST /ads/send-approval { publisher, items:[{adId, shape}], to:"publisher"|"test" }   Staff only. One email
+//     with one link for every ad named (same customer; each must be Pending or Sent back, and not live).
+//     to "publisher" = PUBLISHERS Business Email and Contact Name (both required: no fallback address);
+//     to "test" = the staff login's own address, with the very same email. Writes a PUBLISHER REVIEWS row (Action
+//     "Send for approval", Status Open, Token, Expires = now + linkDays; Review Data { kind:"approval", test, sentTo,
+//     sentToName, sentAt, items[] }), then sends through ix-members POST /send (the MEMBERS binding, the caller's
+//     login). Counts only when Resend answers with a message id; a failed send marks the row Expired and errors.
+//   · GET  /review/<token> answers kind:"approval" for such a link: the items with their pictures and what is
+//     running now per shape. An advertiser link answers as before (kind "advertiser").
+//   · POST /review/<token>/decide { items:[{adId, shape, action, note?}] }   No login: the token is the key.
+//     action approve-current | approve-hold | send-back (note required). Each runs the very same decide() as the
+//     Portal. Sent By reads "<Contact Name> · by email link", or "inbxify (test email) · <address>" for a test link
+//     (ruled 18 Nov: an approval from a test email counts). The link row closes (Status Done) once every item has a
+//     decision. The staff login that sent the link is then emailed what was decided (ix-members /send with the
+//     service proof); a failed notice never undoes a decision and is reported in notify.
+//   · GET  /ads also answers contact { person, email } (PUBLISHERS Contact Name and Business Email) and you { email, staff }.
+//   · GET  /ads: a version with an open approval link carries sent { reviewId, to, toName, test, sentAt, openedAt,
+//     until, url }. decided gains inbxify (true for an inbxify approval) and via ("email" for a link decision).
+//   · The daily sweep also expires open approval links past Expires.
+//   WEBFLOW: PUBLISHER REVIEWS Action needs the choice "Send for approval" (the route says so plainly if it is missing).
+//   HARDCODING: HC-P-AMS3-1 RV_ACTION.sendApproval "Send for approval" (Option label); HC-P-AMS3-2 APPROVAL_WORDS
+//   (the email's words and layout, the Sent By phrases); HC-P-AMS3-3 MAIL_PROOF "ix-mail:" (pairs with ix-members).
 //
 // v1.3.7 (18 Nov 2026, Ad Maker Build S1 · the T-A Ads tab) — EACH CUSTOMER CARRIES ITS BRAND RECORD.
 //   GET /ads?publisher= : every customer row gains brand { logo, logoLight, main, accent, fontHead, fontBody, phone,
@@ -255,7 +296,7 @@
 //           month falls back to the calendar month end.
 // ============================================================
 
-const VERSION = '1.3.7';
+const VERSION = '1.3.10';
 // v1.3.7 · CUSTOMERS slugs that make up a customer's brand record (HC-P-AMB1-1)
 const CUST_BRAND = { logo: 'logo-link', logoLight: 'logo-link-light', main: 'brand-color-main', accent: 'brand-color-accent', fontHead: 'brand-font-heading', fontBody: 'brand-font-body',
   phone: ['business-phone', 'phone', 'contact-phone'], website: ['contact-website', 'website', 'business-website'], email: ['business-email', 'email', 'contact-email'],
@@ -319,10 +360,11 @@ export default {
       if (p === '/sweep' && m === 'GET') { run.needKey(); return run.out(await sweep(run), 200); }
       if (p === '/run-log' && m === 'POST') { run.needKey(); return run.out(await runLog(run, await body(request)), 200); }   // v1.3.0, Scenario 114
       // ── v1.3.0 · the advertiser review page: origin + the token in the link, no login ──
-      const rv = p.match(/^\/review\/([0-9a-f]{32})(?:\/(answer|transcribe|file))?$/);
+      const rv = p.match(/^\/review\/([0-9a-f]{32})(?:\/(answer|transcribe|file|decide))?$/);
       if (rv) {
         run.needOrigin();
         if (!rv[2] && m === 'GET') return run.out(await reviewGet(run, rv[1]), 200);
+        if (rv[2] === 'decide' && m === 'POST') return run.out(await reviewDecide(run, rv[1], await body(request)), 200);   // v1.3.9
         if (rv[2] === 'answer' && m === 'POST') return run.out(await reviewAnswer(run, rv[1], await body(request)), 200);
         if (rv[2] === 'transcribe' && m === 'POST') return run.out(await reviewTranscribe(run, rv[1], request), 200);
         if (rv[2] === 'file' && m === 'POST') return run.out(await reviewFile(run, rv[1], request), 200);
@@ -349,6 +391,7 @@ export default {
       if (rq && m === 'POST') return run.out(rq[2] === 'withdraw' ? await withdrawRequest(run, rq[1], await run.body()) : await doneRequest(run, rq[1], await run.body()), 200);
       if (p === '/ads/requests' && m === 'GET') return run.out(await listRequests(run, url), 200);
       if (p === '/ads/requests/counts' && m === 'GET') return run.out(await requestCounts(run), 200);
+      if (p === '/ads/send-approval' && m === 'POST') return run.out(await sendApproval(run, await run.body()), 200);   // v1.3.9
       if (p === '/ads/ask' && m === 'POST') return run.out(await ask(run, await run.body()), 200);           // v1.3.0
       if (id[1] === 'ads' && id[3] === 'decide' && m === 'POST') return run.out(await decide(run, id[2], await run.body()), 200);   // v1.3.0
       if (p === '/pool' && m === 'GET') return run.out(await pool(run, url), 200);
@@ -1154,7 +1197,7 @@ const SHAPE_KEYS = Object.keys(ADS_TAB.shapes);
 const RV = { action: 'action', status: 'status', token: 'token', expires: 'expires', sentBy: 'sent-by', note: 'send-back-note', data: 'review-data', self: 'self-this-item-id' };
 const RV_ACTION = { ask: 'Ask the advertiser', back: 'Send back', approveCurrent: 'Approve and make current', approveHold: 'Approve and hold',
                     makeCurrent: 'Make current', restoreHold: 'Restore and hold', restoreReview: 'Restore for review',
-                    request: 'Request new ad' };                                                    // v1.3.5 · HC-P-PP9-1
+                    request: 'Request new ad', sendApproval: 'Send for approval' };                                                    // v1.3.5 · HC-P-PP9-1
 const RV_STATUS = { open: 'Open', answered: 'Answered', expired: 'Expired', done: 'Done', withdrawn: 'Withdrawn' };   // v1.3.5 · HC-P-PP9-1
 const REQUEST_LIMITS = { note: 4000, files: 20, fileBytes: 20 * 1024 * 1024 };                   // v1.3.5 · HC-P-PP9-2
 const DECIDE = { 'approve-current': RV_ACTION.approveCurrent, 'approve-hold': RV_ACTION.approveHold, 'make-current': RV_ACTION.makeCurrent,
@@ -1167,6 +1210,24 @@ const REVIEW_WORDS = {
   message: (o) => 'Hi,\n\nYour ' + (o.count === 1 ? 'ad' : o.count + ' ads') + ' for ' + o.customer + ' ' + (o.count === 1 ? 'is' : 'are') + ' ready for your OK. Open this link, approve each one or tell me what to change:\n\n' + o.link +
                   '\n\nThe link works until ' + o.until + '.\n\nThanks,\n' + o.person + '\n' + o.company,
 };
+// HC-P-AMS3-2 · the approval email and the Sent By phrases
+const APPROVAL_WORDS = {
+  subject: (o) => (o.count === 1 ? 'An ad' : o.count + ' ads') + ' for ' + o.customer + ' ' + (o.count === 1 ? 'is' : 'are') + ' ready for your OK',
+  hello: (first) => first ? 'Hi ' + first + ',' : 'Hello,',
+  lede: (o) => (o.count === 1 ? 'The new ' + o.shapes + ' for ' + o.customer + ' is' : 'New ads for ' + o.customer + ' (' + o.shapes + ') are') + ' ready' + (o.title ? ' for ' + o.title : '') + '. Take a look and tell us what to do with ' + (o.count === 1 ? 'it' : 'each one') + '.',
+  choices: 'You can approve it and make it the ad that runs, approve it and hold it for later, or send it back with a note.',
+  button: 'Review and decide', until: (d) => 'The link needs no login and works until ' + d + '.',
+  signoff: 'inbxify',
+  byInbxify: (login) => 'inbxify for the publisher' + (login ? ' \u00b7 ' + login : ''),
+  byTest: (addr) => 'inbxify (test email)' + (addr ? ' \u00b7 ' + addr : ''),
+  byLink: (who) => (who || 'The publisher') + ' \u00b7 by email link',
+  noticeSubject: (o) => o.who + ' ' + o.verb + ' ' + (o.count === 1 ? 'the ' + o.shapes : o.count + ' ads') + ' for ' + o.customer,
+  verb: { 'approve-current': 'approved and made current', 'approve-hold': 'approved and held', 'send-back': 'sent back' },
+};
+const MAIL_SUBJECT_MAX = 200, MAIL_MESSAGE_MAX = 4000;                    // HC-P-AMS3-2 · v1.3.10
+const MAIL_PROOF = 'ix-mail:';                                         // HC-P-AMS3-3 · the same prefix ix-members checks
+// the ADS picture link per shape is JOIN.ad's (banner, sidebar, splash); read off the row itself, so a version saved a second ago has its picture
+function adPicture(ad, shape) { const v = ad && JOIN.ad[shape] ? String(fd(ad)[JOIN.ad[shape]] || '').trim() : ''; return /^https?:\/\//.test(v) ? v : ''; }
 const PUB_FIELDS = { person: 'Contact Name', email: 'Business Email', logo: 'Publisher Logo' };       // PUBLISHERS display names, slugs read from the schema
 
 function reviewCfg(run) { return Object.assign({}, REVIEW_DEFAULTS, (run.cfg.review && typeof run.cfg.review === 'object') ? run.cfg.review : {}); }
@@ -1268,7 +1329,7 @@ async function adsTab(run, url) {
   const [custRows, versions, sold, reviews] = await Promise.all([run.listAll(C.customers), versionsFor(run, ids), soldShapes(run, sc), reviewRows(run)]);
   const mine = reviews.filter(r => r.publisher === sc.publisherId);
   // per ad+shape: the open or answered link item, the last decision, the last send-back note
-  const link = {}, decided = {}, backNote = {}, reqs = {};
+  const link = {}, decided = {}, backNote = {}, reqs = {}, sent = {};
   mine.forEach(r => { if (r.action !== RV_ACTION.request || r.status !== RV_STATUS.open) return;   // v1.3.5: open requests per customer and shape
     const k = r.customer + '|' + (r.data.shape || ''); (reqs[k] = reqs[k] || []).push(requestOut(r)); });
   mine.slice().sort((a, b) => String(a.createdOn).localeCompare(String(b.createdOn))).forEach(r => {
@@ -1278,7 +1339,13 @@ async function adsTab(run, url) {
         link[k] = { reviewId: r.id, status: r.status, sentBy: r.sentBy, sentAt: r.data.sentAt || r.createdOn, openedAt: r.data.openedAt || null, until: r.expires,
           url: r.token ? cfg.pageUrl + (cfg.pageUrl.includes('?') ? '&' : '?') + 't=' + r.token : null,   // v1.3.1
           answeredAt: r.data.answeredAt || null, answeredBy: r.data.answeredBy || null, answer: it.answer || null, like: it.like || '', change: it.change || '', files: it.files || [] };
-      if (r.action !== RV_ACTION.ask) decided[k] = { action: r.action, by: r.sentBy, at: r.createdOn };
+      if (r.action === RV_ACTION.sendApproval) {                       // v1.3.9: an approval link out to the publisher (or a test)
+        if (r.status === RV_STATUS.open && !(r.expires && new Date(r.expires).getTime() < Date.now()) && !it.decision)
+          sent[k] = { reviewId: r.id, to: r.data.sentTo || '', toName: r.data.sentToName || '', test: !!r.data.test, sentBy: r.sentBy, sentAt: r.data.sentAt || r.createdOn, openedAt: r.data.openedAt || null, until: r.expires,
+            url: r.token ? cfg.pageUrl + (cfg.pageUrl.includes('?') ? '&' : '?') + 't=' + r.token : null };
+        else delete sent[k];
+        return; }
+      if (r.action !== RV_ACTION.ask) { decided[k] = { action: r.action, by: r.sentBy, at: r.createdOn, inbxify: r.data.by === 'inbxify', via: r.data.via || '' }; delete sent[k]; }
       if (r.action === RV_ACTION.back) backNote[k] = { note: r.note, by: r.sentBy, at: r.createdOn }; });
   });
   const customers = custRows.filter(c => ids.has(c.id) && !c.isArchived && !c.isDraft).map(c => {
@@ -1298,15 +1365,18 @@ async function adsTab(run, url) {
         const ago = ranTo ? monthsAgo(dayOf(ranTo)) : null;
         const stale = state === 'earlier' && (ago === null || ago >= cfg.staleMonths);
         return { id: x.id, name: x.name, picture: x.picture, approval: x.approval || '', archived: !!x.archived, createdOn: x.createdOn, state,
-          ranFrom, ranTo, monthsAgo: ago, stale, decided: decided[k] || null, link: link[k] || null, sentBack: backNote[k] || null };
+          ranFrom, ranTo, monthsAgo: ago, stale, decided: decided[k] || null, link: link[k] || null, sentBack: backNote[k] || null,
+          sent: (state === 'needs' || state === 'adv' || state === 'answered' || state === 'back') ? (sent[k] || null) : null };
       });
       shapes[shape] = { sold: !!((sold[c.id] || {})[shape]), current: cur, versions: list,
         requests: (reqs[c.id + '|' + shape] || []).sort((a, b) => String(a.askedAt).localeCompare(String(b.askedAt))) };   // v1.3.5
     });
     return { id: c.id, name: String(fd(c).name || ''), brand: brandOf(fd(c)), shapes, problems: v.problems || [] };   // v1.3.7: the brand record
   }).sort((a, b) => a.name.localeCompare(b.name));
+  const pc = await publisherCard(run, sc.publisherId).catch(() => null);   // v1.3.9: who an approval email goes to, and who is asking
   return { ok: true, publisher: sc.publisherId, shapes: SHAPE_KEYS.map(k => ({ key: k, label: ADS_TAB.shapes[k].label })),
-    staleMonths: cfg.staleMonths, linkDays: cfg.linkDays, customers };
+    staleMonths: cfg.staleMonths, linkDays: cfg.linkDays, customers,
+    contact: pc ? { person: pc.person, email: pc.email } : { person: '', email: '' }, you: run.who ? { email: run.who.email || '', staff: !!run.who.staff } : null };
 }
 
 // ── POST /ads/<adId>/decide · one choice on one version, through Scenario G and 114, logged ──
@@ -1328,12 +1398,13 @@ async function adContext(run, adId, publisherId) {
   const ta = sc.taById.get(custTitles[0]) || sc.tas[0];
   return { ad, cust, custRow, sc, titleSlug: String(fd(ta).slug || ''), titleName: String(fd(ta).name || '') };
 }
-async function decide(run, adId, b) {
+async function decide(run, adId, b, o) {                           // o (v1.3.9): { sentBy, data } from the email link; never from a request body
   const C = run.cfg.collections, A = JOIN.ad;
   const shape = String(b.shape || ''), action = String(b.action || ''), note = String(b.note || '').trim();
   if (!ADS_TAB.shapes[shape]) throw httpErr(400, 'Unknown shape.');
   if (!DECIDE[action]) throw httpErr(400, 'Unknown action.');
   if (action === 'send-back' && !note) throw httpErr(400, 'A send-back needs a note: say what to change.');
+  const asInbxify = !o && b.as === 'inbxify' && !!(run.who && run.who.staff);   // v1.3.9: inbxify's own approval, not the publisher's
   const X = await adContext(run, adId, b.publisher), S = ADS_TAB.shapes[shape], f = fd(X.ad);
   const apMap = await run.optMap(C.ads, S.approval), cur = keyOf(apMap.get(f[S.approval]) || '');
   const isCurrent = refId(fd(X.custRow)[S.pointer]) === adId;
@@ -1370,8 +1441,10 @@ async function decide(run, adId, b) {
   }
   // 4 · the log row
   const log = await createReview(run, { action: DECIDE[action], status: RV_STATUS.done, publisher: X.sc.publisherId, customer: X.cust, customerName: String(fd(X.custRow).name || ''),
-    sentBy: run.actor(), note: action === 'send-back' ? note : '', data: { at: iso(), items: [{ adId, shape, name: String(f.name || ''), from: apMap.get(f[S.approval]) || '', to: want || apMap.get(f[S.approval]) || '', madeCurrent: action === 'approve-current' || action === 'make-current' }] } });
-  return { ok: true, ad: adId, shape, action, logged: log.id, unconfirmed: unconfirmed.concat(log.unconfirmed.map(k => 'log:' + k)) };
+    sentBy: (o && o.sentBy) || (asInbxify ? APPROVAL_WORDS.byInbxify(run.actor()) : run.actor()), note: action === 'send-back' ? note : '',
+    data: Object.assign({ at: iso(), items: [{ adId, shape, name: String(f.name || ''), from: apMap.get(f[S.approval]) || '', to: want || apMap.get(f[S.approval]) || '', madeCurrent: action === 'approve-current' || action === 'make-current' }] },
+      asInbxify ? { by: 'inbxify', via: 'override' } : {}, (o && o.data) || {}) });
+  return { ok: true, ad: adId, shape, action, logged: log.id, by: asInbxify ? 'inbxify' : '', unconfirmed: unconfirmed.concat(log.unconfirmed.map(k => 'log:' + k)) };
 }
 
 // ── POST /ads/ask · one link for every ad the publisher marked for a customer ──
@@ -1526,7 +1599,7 @@ async function requestFile(run, b) {
 // ── the advertiser review page (no login; the token is the key) ──
 async function reviewByToken(run, token) {
   if (!/^[0-9a-f]{32}$/.test(token || '')) throw httpErr(404, 'This link is not one we made.');
-  const r = (await reviewRows(run)).find(x => x.token === token && x.action === RV_ACTION.ask);
+  const r = (await reviewRows(run)).find(x => x.token === token && (x.action === RV_ACTION.ask || x.action === RV_ACTION.sendApproval));
   if (!r) throw httpErr(404, 'This link is not one we made.');
   const expired = r.status === RV_STATUS.expired || (r.expires && new Date(r.expires).getTime() < Date.now());
   return { r, expired };
@@ -1541,6 +1614,7 @@ async function publisherCard(run, publisherId) {
 }
 async function reviewGet(run, token) {
   const { r, expired } = await reviewByToken(run, token);
+  if (r.action === RV_ACTION.sendApproval) return approvalGet(run, r, expired);   // v1.3.9
   const pub = await publisherCard(run, r.publisher);
   if (expired) return { ok: true, expired: true, publisher: pub, linkDays: reviewCfg(run).linkDays };
   const C = run.cfg.collections, cust = await run.getItem(C.customers, r.customer);
@@ -1549,11 +1623,12 @@ async function reviewGet(run, token) {
     return { adId: it.adId, shape: it.shape, label: (ADS_TAB.shapes[it.shape] || {}).label || it.shape, name: it.name || (row && row.name) || '', picture: row ? row.picture : null,
       answer: it.answer || null, like: it.like || '', change: it.change || '', files: it.files || [] }; });
   if (!r.data.openedAt) { r.data.openedAt = iso(); await patchReview(run, r.id, { [RV.data]: JSON.stringify(r.data) }).catch(e => run.warn('Could not record the open: ' + e.message)); }
-  return { ok: true, expired: false, publisher: pub, title: r.data.title || pub.company, customer: String(fd(cust || {}).name || ''), until: r.expires,
+  return { ok: true, kind: 'advertiser', expired: false, publisher: pub, title: r.data.title || pub.company, customer: String(fd(cust || {}).name || ''), until: r.expires,
     answered: r.status === RV_STATUS.answered, answeredBy: r.data.answeredBy || null, items };
 }
 async function reviewAnswer(run, token, b) {
   const { r, expired } = await reviewByToken(run, token);
+  if (r.action !== RV_ACTION.ask) throw httpErr(400, 'This link is for the publisher\'s decision, not an advertiser answer.');
   if (expired) throw httpErr(410, 'This link has expired.');
   const name = String(b.name || '').trim().slice(0, 120); if (!name) throw httpErr(400, 'Your name is needed.');
   const sent = Array.isArray(b.items) ? b.items : [];
@@ -1594,11 +1669,160 @@ async function reviewFile(run, token, request) {
   if (!res.ok || !j || !j.file) throw httpErr(502, 'The upload did not land (Uploadcare ' + res.status + ').');
   return { ok: true, name: file.name || 'file', url: 'https://ucarecdn.com/' + j.file + '/', size: file.size };
 }
+// ── v1.3.9 · approval by email: POST /ads/send-approval, the link's page data, POST /review/<token>/decide ──
+function escH(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+async function sha256Hex(s) { const b = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))); return [...b].map(x => x.toString(16).padStart(2, '0')).join(''); }
+async function sendMail(run, mail, useLogin) {                        // through ix-members (it holds the Resend key); TOAST-TRUTH: sent only with a message id
+  if (!run.env.MEMBERS || typeof run.env.MEMBERS.fetch !== 'function') throw httpErr(500, 'The MEMBERS service binding (to ix-members) is not set on this Worker.');
+  const headers = { 'Content-Type': 'application/json' };
+  const auth = useLogin && run.request ? (run.request.headers.get('Authorization') || '') : '';
+  if (auth) headers.Authorization = auth;
+  else { const secret = run.env.MAIL_KEY || run.env.WEBFLOW_WRITE_TOKEN; if (!secret) throw httpErr(500, 'Neither MAIL_KEY nor WEBFLOW_WRITE_TOKEN is set, so ix-sales cannot prove itself to ix-members.'); headers['X-IX-Service'] = await sha256Hex(MAIL_PROOF + secret); }
+  let res, j = null;
+  try { res = await run.env.MEMBERS.fetch(new Request('https://ix-members/send', { method: 'POST', headers, body: JSON.stringify(mail) })); j = await res.json().catch(() => null); }
+  catch (e) { throw httpErr(502, 'ix-members did not answer: ' + ((e && e.message) || e)); }
+  if (!res.ok || !j || !j.ok || !j.id) throw httpErr(502, 'The email was not sent: ' + ((j && j.error) || ('ix-members HTTP ' + res.status)) + (res.status === 404 ? ' (ix-members needs v1.1.1 for POST /send)' : ''));
+  return { id: j.id, to: j.to };
+}
+function mailShell(inner) {
+  return '<!doctype html><html><body style="margin:0;padding:0;background:#FAF6EE;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FAF6EE;"><tr><td align="center" style="padding:32px 16px;">' +
+    '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#FFFFFF;border:1px solid #D9D2C3;border-radius:3px;"><tr><td style="padding:32px;">' + inner + '</td></tr></table></td></tr></table></body></html>';
+}
+const MAIL_P = 'margin:0 0 16px;font:16px/1.55 Helvetica,Arial,sans-serif;color:#22252B;';
+function shapesPhrase(items) { const n = items.map(i => ((ADS_TAB.shapes[i.shape] || {}).label || i.shape).toLowerCase()); return n.length <= 1 ? (n[0] || 'ad') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1]; }
+async function sendApproval(run, b) {
+  if (!run.who || !run.who.staff) throw httpErr(403, 'Only inbxify staff send an ad for approval.');
+  const C = run.cfg.collections, cfg = reviewCfg(run), A = JOIN.ad, test = b.to === 'test';
+  if (b.to !== 'publisher' && b.to !== 'test') throw httpErr(400, 'to must be "publisher" or "test".');
+  const items = Array.isArray(b.items) ? b.items.filter(i => i && /^[0-9a-f]{24}$/.test(i.adId || '') && ADS_TAB.shapes[i.shape]).slice(0, 12) : [];
+  if (b.preview === true && !items.length && /^[0-9a-f]{24}$/.test(b.customer || '') && ADS_TAB.shapes[b.shape]) return approvalDraft(run, b);   // v1.3.10: the words for an ad not saved yet (Ad Maker's Check)
+  if (!items.length) throw httpErr(400, 'Name at least one ad and shape.');
+  const coll = needCollection(run, 'reviews', 'PUBLISHER REVIEWS');
+  if (![...(await run.optMap(coll, RV.action)).values()].some(l => keyOf(l) === keyOf(RV_ACTION.sendApproval)))
+    throw httpErr(500, 'The PUBLISHER REVIEWS collection has no Action choice "' + RV_ACTION.sendApproval + '". Add that choice to the Action field in Webflow, then send again. Nothing was sent.');
+  const first = await adContext(run, items[0].adId, b.publisher), custRow = fd(first.custRow), named = [];
+  for (const it of items) {
+    const ad = it.adId === first.ad.id ? first.ad : await run.getItem(C.ads, it.adId), S = ADS_TAB.shapes[it.shape];
+    if (!ad || refId(fd(ad)[A.customer]) !== first.cust) throw httpErr(400, 'Every ad in one email must belong to the same customer.');
+    const ap = keyOf(await run.optLabel(C.ads, S.approval, fd(ad)[S.approval]));
+    if (refId(custRow[S.pointer]) === it.adId) throw httpErr(400, 'The ' + S.label.toLowerCase() + ' "' + String(fd(ad).name || '') + '" is live now, so there is nothing to approve.');
+    if (ap === keyOf(ADS_TAB.approval.approved)) throw httpErr(400, 'The ' + S.label.toLowerCase() + ' "' + String(fd(ad).name || '') + '" is already approved.');
+    named.push({ adId: it.adId, shape: it.shape, name: String(fd(ad).name || ''), decision: null, note: '', _pic: adPicture(ad, it.shape) });
+  }
+  const pub = await publisherCard(run, first.sc.publisherId);
+  const preview = b.preview === true, hasPub = !!(pub.email && pub.person);   // v1.3.10
+  if (!preview && !test && !pub.email) throw httpErr(400, 'The PUBLISHERS record for ' + (pub.company || 'this publisher') + ' has no Business Email, so there is nowhere to send the approval. Add it in the PUBLISHERS collection.');
+  if (!preview && !pub.person) throw httpErr(400, 'The PUBLISHERS record for ' + (pub.company || 'this publisher') + ' has no Contact Name. Add it in the PUBLISHERS collection.');
+  const sentTo = test ? String(run.who.email || '') : pub.email;
+  if (!preview && !sentTo) throw httpErr(400, 'Your login has no email address, so a test cannot be sent to you.');
+  const v = named.every(it => it._pic) ? {} : await issueData(run, '/customer-ads?archived=1&customer=' + first.cust).catch(() => ({}));
+  const pics = named.map(it => { const row = (((v.versions || {})[it.shape]) || []).find(x => x.id === it.adId); return { label: ADS_TAB.shapes[it.shape].label, name: it.name, picture: it._pic || (row && /^https?:\/\//.test(row.picture || '') ? row.picture : '') }; });
+  named.forEach(it => { delete it._pic; });
+  const token = randomToken(), expires = new Date(Date.now() + cfg.linkDays * 86400000);
+  const link = cfg.pageUrl + (cfg.pageUrl.includes('?') ? '&' : '?') + 't=' + token;
+  const until = expires.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  const customer = String(custRow.name || ''), firstName = pub.person.split(' ')[0];
+  const o = { count: named.length, customer, shapes: shapesPhrase(named), title: first.titleName };
+  const stdSubject = APPROVAL_WORDS.subject(o), stdMessage = [APPROVAL_WORDS.hello(firstName), APPROVAL_WORDS.lede(o), APPROVAL_WORDS.choices].join('\n\n');
+  if (preview) return { ok: true, preview: true, subject: stdSubject, message: stdMessage, to: { publisher: hasPub ? { name: pub.person, email: pub.email } : null, test: String(run.who.email || '') },
+    until: expires.toISOString(), linkDays: cfg.linkDays, added: [APPROVAL_WORDS.button, APPROVAL_WORDS.until(until)] };
+  const subject = String(b.subject || '').replace(/\s+/g, ' ').trim().slice(0, MAIL_SUBJECT_MAX) || stdSubject;
+  const message = String(b.message || '').replace(/\r\n?/g, '\n').trim().slice(0, MAIL_MESSAGE_MAX) || stdMessage;
+  const edited = subject !== stdSubject || message !== stdMessage;
+  const row = await createReview(run, { action: RV_ACTION.sendApproval, status: RV_STATUS.open, publisher: first.sc.publisherId, customer: first.cust, customerName: customer,
+    token, expires: expires.toISOString(), sentBy: run.actor(),
+    data: { kind: 'approval', test, sentTo, sentToName: pub.person, sentAt: iso(), edited, openedAt: null, decidedAt: null, title: first.titleName, items: named } });
+  // the email: the same words and pictures whoever it goes to (ruled 18 Nov: the test email is identical to the publisher's)
+  const text = message + '\n\n' + APPROVAL_WORDS.button + ': ' + link + '\n\n' + APPROVAL_WORDS.until(until) + '\n\n' + APPROVAL_WORDS.signoff;
+  const html = mailShell(message.split(/\n{2,}/).map(par => '<p style="' + MAIL_P + '">' + escH(par).replace(/\n/g, '<br>') + '</p>').join('') +
+    pics.map(p => '<p style="margin:0 0 6px;font:600 12px/1.2 Helvetica,Arial,sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:#5A5E66;">' + escH(p.label) + '</p>' +
+      (p.picture ? '<p style="margin:0 0 20px;"><a href="' + escH(link) + '"><img src="' + escH(p.picture) + '" alt="' + escH(p.label + ': ' + p.name) + '" width="536" style="display:block;max-width:100%;height:auto;border:1px solid #D9D2C3;"></a></p>' : '<p style="' + MAIL_P + '">' + escH(p.name) + '</p>')).join('') +
+    '<p style="margin:8px 0 24px;"><a href="' + escH(link) + '" style="display:inline-block;padding:14px 24px;background:#22252B;color:#FFFFFF;border-radius:3px;font:600 16px/1 Helvetica,Arial,sans-serif;text-decoration:none;">' + escH(APPROVAL_WORDS.button) + '</a></p>' +
+    '<p style="margin:0 0 16px;font:14px/1.5 Helvetica,Arial,sans-serif;color:#5A5E66;">' + escH(APPROVAL_WORDS.until(until)) + '</p>' +
+    '<p style="' + MAIL_P + 'margin:0;">' + escH(APPROVAL_WORDS.signoff) + '</p>');
+  let mail;
+  try { mail = await sendMail(run, { to: sentTo, subject, html, text, replyTo: run.who.email || '' }, true); }
+  catch (e) {                                                         // no email, no open link: close the row so the board never shows a link that was not sent
+    await patchReview(run, row.id, { [RV.status]: await run.optId(coll, RV.status, RV_STATUS.expired) }).catch(x => run.warn('The unsent link row ' + row.id + ' could not be closed: ' + x.message));
+    throw e;
+  }
+  return { ok: true, reviewId: row.id, link, sentTo, sentToName: pub.person, test, until: expires.toISOString(), mailId: mail.id, subject, unconfirmed: row.unconfirmed };
+}
+async function approvalDraft(run, b) {                                // v1.3.10 · preview only: nothing is read from ADS, written or sent
+  const C = run.cfg.collections, cfg = reviewCfg(run), sc = await scope(run, b.publisher);
+  if (!(await customerIds(run, sc)).has(b.customer)) throw httpErr(403, 'That customer is not this publisher\'s.');
+  const custRow = await run.getItem(C.customers, b.customer); if (!custRow) throw httpErr(404, 'The customer was not found.');
+  const custTitles = refIds(fd(custRow)[JOIN.customer.titles]).filter(t => sc.taIds.has(t)), ta = sc.taById.get(custTitles[0]) || sc.tas[0];
+  const pub = await publisherCard(run, sc.publisherId), expires = new Date(Date.now() + cfg.linkDays * 86400000);
+  const o = { count: 1, customer: String(fd(custRow).name || ''), shapes: shapesPhrase([{ shape: b.shape }]), title: String(fd(ta || {}).name || '') };
+  return { ok: true, preview: true, subject: APPROVAL_WORDS.subject(o), message: [APPROVAL_WORDS.hello(String(pub.person || '').split(' ')[0]), APPROVAL_WORDS.lede(o), APPROVAL_WORDS.choices].join('\n\n'),
+    to: { publisher: pub.email && pub.person ? { name: pub.person, email: pub.email } : null, test: String(run.who.email || '') }, until: expires.toISOString(), linkDays: cfg.linkDays,
+    added: [APPROVAL_WORDS.button, APPROVAL_WORDS.until(expires.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }))] };
+}
+async function approvalGet(run, r, expired) {
+  const pub = await publisherCard(run, r.publisher);
+  if (expired) return { ok: true, kind: 'approval', expired: true, publisher: pub, linkDays: reviewCfg(run).linkDays, sentBy: /@/.test(r.sentBy) ? r.sentBy : '' };
+  const C = run.cfg.collections, cust = await run.getItem(C.customers, r.customer);
+  const v = await issueData(run, '/customer-ads?archived=1&customer=' + r.customer);
+  const rows = await Promise.all((r.data.items || []).map(it => run.getItem(C.ads, it.adId).catch(() => null)));   // the ADS rows themselves: a version saved a moment ago has its picture here
+  const items = (r.data.items || []).map((it, i) => { const list = ((v.versions || {})[it.shape]) || [], row = list.find(x => x.id === it.adId), curId = refId(fd(cust || {})[(ADS_TAB.shapes[it.shape] || {}).pointer]) || (v.current || {})[it.shape] || null, cur = curId && curId !== it.adId ? list.find(x => x.id === curId) : null;
+    return { adId: it.adId, shape: it.shape, label: (ADS_TAB.shapes[it.shape] || {}).label || it.shape, name: it.name || (row && row.name) || '', picture: adPicture(rows[i], it.shape) || (row ? row.picture : null),
+      current: cur ? { name: cur.name || '', picture: cur.picture || null } : null, decision: it.decision || null, note: it.note || '', decidedAt: it.decidedAt || null }; });
+  if (!r.data.openedAt) { r.data.openedAt = iso(); await patchReview(run, r.id, { [RV.data]: JSON.stringify(r.data) }).catch(e => run.warn('Could not record the open: ' + e.message)); }
+  return { ok: true, kind: 'approval', expired: false, publisher: pub, title: r.data.title || pub.company, customer: String(fd(cust || {}).name || ''), until: r.expires,
+    decided: r.status === RV_STATUS.done, decidedAt: r.data.decidedAt || null, items };
+}
+async function reviewDecide(run, token, b) {
+  const { r, expired } = await reviewByToken(run, token);
+  if (r.action !== RV_ACTION.sendApproval) throw httpErr(400, 'This link is for an advertiser\'s answer. The publisher decides in the portal.');
+  if (expired) throw httpErr(410, 'This link has expired.');
+  if (r.status !== RV_STATUS.open) throw httpErr(409, 'This link has already been used.');
+  const OK = ['approve-current', 'approve-hold', 'send-back'];
+  const want = (Array.isArray(b.items) ? b.items : []).filter(x => x && OK.includes(x.action));
+  const todo = (r.data.items || []).map(it => ({ it, a: it.decision ? null : want.find(x => x.adId === it.adId && x.shape === it.shape) })).filter(x => x.a);
+  if (!todo.length) throw httpErr(400, 'Choose what to do with at least one ad.');
+  todo.forEach(x => { if (x.a.action === 'send-back' && !String(x.a.note || '').trim()) throw httpErr(400, 'A send-back needs a note: say what to change.'); });
+  const sentBy = r.data.test ? APPROVAL_WORDS.byTest(r.data.sentTo) : APPROVAL_WORDS.byLink(r.data.sentToName);
+  const results = [], failed = [];
+  for (const x of todo) {                                             // one at a time: each is Scenario G, then 114, then the log row
+    try {
+      const d = await decide(run, x.it.adId, { publisher: r.publisher, shape: x.it.shape, action: x.a.action, note: String(x.a.note || '').slice(0, 4000) },
+        { sentBy, data: { via: 'email', linkId: r.id, test: !!r.data.test, by: r.data.test ? 'inbxify' : '' } });
+      x.it.decision = x.a.action; x.it.note = x.a.action === 'send-back' ? String(x.a.note || '').trim().slice(0, 4000) : ''; x.it.decidedAt = iso();
+      results.push({ adId: x.it.adId, shape: x.it.shape, action: x.a.action, logged: d.logged, unconfirmed: d.unconfirmed });
+    } catch (e) { failed.push({ adId: x.it.adId, shape: x.it.shape, action: x.a.action, error: (e && e.message) || String(e) }); }
+  }
+  const all = (r.data.items || []).every(it => it.decision), coll = needCollection(run, 'reviews', 'PUBLISHER REVIEWS');
+  if (results.length) {
+    const data = Object.assign({}, r.data, { decidedAt: all ? iso() : (r.data.decidedAt || null) }), fields = { [RV.data]: JSON.stringify(data) };
+    if (all) fields[RV.status] = await run.optId(coll, RV.status, RV_STATUS.done);
+    await patchReview(run, r.id, fields).catch(e => run.warn('The decisions stand, but the link row could not be updated: ' + e.message));
+  }
+  // tell the staff login that sent the link (never the other way round: a failed notice does not undo a decision)
+  let notify = { sent: false, error: '' };
+  if (results.length && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.sentBy || '')) {
+    try {
+      const cust = await run.getItem(run.cfg.collections.customers, r.customer), customer = String(fd(cust || {}).name || 'the customer');
+      const who = r.data.test ? 'You (test email)' : (r.data.sentToName || 'The publisher');
+      const done = (r.data.items || []).filter(it => results.some(z => z.adId === it.adId && z.shape === it.shape));
+      const sameVerb = done.every(it => it.decision === done[0].decision) ? APPROVAL_WORDS.verb[done[0].decision] : 'decided on';
+      const subject = APPROVAL_WORDS.noticeSubject({ who, verb: sameVerb, count: done.length, shapes: shapesPhrase(done), customer });
+      const rows = done.map(it => ((ADS_TAB.shapes[it.shape] || {}).label || it.shape) + ' \u00b7 ' + it.name + ': ' + APPROVAL_WORDS.verb[it.decision] + (it.note ? '\nNote: ' + it.note : ''));
+      const text = subject + '.\n\n' + rows.join('\n\n') + (failed.length ? '\n\nNot saved: ' + failed.map(f => f.shape + ' (' + f.error + ')').join('; ') : '');
+      const html = mailShell('<p style="' + MAIL_P + '"><b>' + escH(subject) + '.</b></p>' + rows.map(x => '<p style="' + MAIL_P + 'white-space:pre-line;">' + escH(x) + '</p>').join('') +
+        (failed.length ? '<p style="' + MAIL_P + 'color:#C2271A;">Not saved: ' + escH(failed.map(f => f.shape + ' (' + f.error + ')').join('; ')) + '</p>' : ''));
+      const m = await sendMail(run, { to: r.sentBy, subject, html, text }, false);
+      notify = { sent: true, id: m.id, to: r.sentBy };
+    } catch (e) { notify = { sent: false, error: (e && e.message) || String(e) }; run.warn('The decision stands, but inbxify was not emailed: ' + notify.error); }
+  }
+  if (!results.length) throw httpErr(502, 'Nothing was saved: ' + failed.map(f => f.error).join(' '));
+  return { ok: true, decided: results, failed, closed: all, notify };
+}
 async function expireReviews(run) {                                   // part of the daily sweep
   const coll = (run.cfg.collections || {}).reviews; if (!/^[0-9a-f]{24}$/.test(coll || '')) return { skipped: 'no reviews collection' };
   const rows = await reviewRows(run), now = Date.now(), done = [];
   for (const r of rows) {
-    if (r.action !== RV_ACTION.ask || r.status !== RV_STATUS.open || !r.expires || new Date(r.expires).getTime() >= now) continue;
+    if ((r.action !== RV_ACTION.ask && r.action !== RV_ACTION.sendApproval) || r.status !== RV_STATUS.open || !r.expires || new Date(r.expires).getTime() >= now) continue;
     await patchReview(run, r.id, { [RV.status]: await run.optId(coll, RV.status, RV_STATUS.expired) }); done.push(r.id);
   }
   return { expired: done };

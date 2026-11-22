@@ -1,4 +1,56 @@
-// ix-issue-data-v1.0.191.js
+// ix-issue-data-v1.0.192.js
+// v1.0.192 (22 Nov 2026, Image Links S1): EVERY PICTURE THE WORKER HANDS OUT IS SIZED WHERE IT IS SHOWN.
+//   Jeff's ruling, 22 Nov (WLN-124B closure, ruling 1): every Uploadcare link is stored clean (host and photo ID,
+//   nothing after) and sized where it is shown, for every image field. Ruling 2: no clean-up project; ucBase() drops
+//   any stored resize, crop or file name as the Worker reads. Found: the banner (lightBlock f_adImage) and the paid
+//   ad went out as stored, so JH Renovations' and Kitchen Wise's banners loaded full size.
+//   Built on S13's v1.0.191 (Jeff sequenced it: S13 first, this on top). Nothing of v1.0.191 changes.
+//   1 · NEW RECIPES in ASM.uc (HC-P-IL1-1). Every one keeps the whole picture except headshot:
+//         ad       -/preview/1400x1400/-/format/auto/-/quality/smart/   banners, sidebars, sponsor, paid, splash ads.
+//                                                                       Whole artwork, never cropped, never enlarged.
+//         art      -/preview/1400x1400/-/format/auto/-/quality/smart/   franchise art and wordmark, masthead art.
+//         logo     -/preview/800x800/-/format/auto/-/quality/smart/     business, agent, title and splash logos, mascots.
+//         headshot -/scale_crop/240x240/smart_faces/-/format/auto/-/quality/smart/
+//                                                                       the publisher's headshot. Both surfaces show it
+//                                                                       as a 50 px square (circle); email forces 50x50,
+//                                                                       so a tall photo was squashed there until now.
+//         icon     -/preview/256x256/-/format/png/                      the site's tab icon (favicon). PNG, not auto.
+//   2 · THE FIELDS, from the code (HC-P-IL1-3). Each goes through ucSized(); a link that is not Uploadcare (a Webflow
+//       asset, words in a text ad) comes back exactly as stored.
+//       /assemble, light lane:  f_adImage (banner) · ad.
+//       /assemble, heavy lane:  f_sponsorAd, f_paidAd · ad. f_authorLogo, f_reAgentLogo, TXA card logo,
+//                               f_franchiseMascot · logo. f_franchiseWordmark · art (measured after sizing; the
+//                               email band reads only its proportions, which a preview keeps).
+//                               f_franchiseArt · see 3.
+//                               Event photos (photo, photoLead, photoRow) and listing photos (photo, photoLead,
+//                               f_rePhoto) now start from ucBase() too. Until now they only dropped a file name, so a
+//                               stored resize stayed in front of the recipe; a link that is not Uploadcare got a
+//                               recipe glued on. Same recipes as before (ev, evLead, evRow, re, reLead).
+//       /assemble, context:     publisherHeadshot · headshot. masthead · art. title.logoOnMain · logo.
+//       /site:                  title.logo · logo. title.favicon · icon. publisher.photo · headshot.
+//       /site-ads, /site?article=, /site?franchise= (siteCustEntry):  banner, sidebar · ad (were card: a resize that
+//                               could enlarge a small ad). House banners on /site-ads · ad.
+//       /site?article=:         franchise art · art, mascot · logo, wordmark · art. business.logo · logo.
+//       /site?franchise=:       franchise art · art, mascot · logo, wordmark · art.
+//       /directory:             listings[].logo · logo.
+//       /splash:                logo · logo; ad, ad2 · ad (splash-v3.6 still re-bases the logo to its own 920 wide).
+//       /plan-board (IPP):      item thumbs: ad · ad, event and listing · card (as articles); in-article ad thumbs · ad;
+//                               Revenue shelf banner, splash and current pictures · ad; the house splash · ad.
+//       /customer-ads:          versions[].picture · ad (Clients tab and the Portal Ads board show it; neither writes it).
+//   3 · FRANCHISE ART IN THE EMAIL STAYS BARE (HC-P-IL1-4). newsletter-render v1.23.0 sizeArtForEmail() sizes an
+//       email <img> that has a height and no width to that height (Outlook, D197), and only when the src is a bare
+//       Uploadcare base. Three email designs show franchise art that way. So /assemble sends f_franchiseArt clean
+//       (ucBase, no recipe) in the email blocks and sized (art) in the web blocks. Email designs that give the art a
+//       width (EV and TXA franchise headers, 552 and 568) take the clean original until the render Worker learns to
+//       re-base a sized link.
+//   NOT SIZED, on purpose: NEWSLETTER splash-ad-image on /plan-board (splash.newsletters[].current.image), the value
+//       the IPP edits; /media?photo=1 (the crop panel needs the original); the one-time /image-fields-cleanup report.
+//       Article photos are unchanged (sized since v1.0.123 and v1.0.166).
+//   HARDCODING (provisional): HC-P-IL1-1 the five recipes; HC-P-IL1-2 the storage rule (clean link stored, sized at
+//   delivery, ucBase on every read); HC-P-IL1-3 which field takes which recipe (this list); HC-P-IL1-4 email franchise
+//   art sent bare for the render Worker. /health says 1.0.192.
+//
+// v1.0.191 header follows.
 // v1.0.191 (22 Nov 2026, Content Home S13): /plans COUNTS A CLONE'S UNFINISHED ITEMS THE WAY THE IPP RAIL DOES.
 //   Found in S13 Test 5 on WLN-910B: /plans said 36 items to confirm (the Pub Plans tab), the IPP rail banner said 41
 //   (ipp-shell v1.52 cloneCount). Same rows, two counting rules. Jeff, 22 Nov: fix it in the Data Worker.
@@ -3948,7 +4000,7 @@
 const ARTICLE_FORMATS = { 'standard': 'standard', 'photo-essay': 'photo-essay', 'video': 'video' };
 // v1.0.106: the photo essay treatment when the article names none. HC-P-CB-20.
 const DEFAULT_TREATMENT = 'polaroid';
-const VERSION = '1.0.191';   // v1.0.191 (/plans counts a clone's items as the IPP rail does);   // v1.0.190   // v1.0.190 (/links, /greeting-context, /release-check on the read switch);   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
+const VERSION = '1.0.192';   // v1.0.192 (every picture handed out is sized where it is shown);   // v1.0.191 (/plans counts a clone's items as the IPP rail does);   // v1.0.190   // v1.0.190 (/links, /greeting-context, /release-check on the read switch);   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
 // v1.0.170 — the X-IX-Key header against both secrets: IX_KEY (Make, 206) or IX_SERVICE_KEY (ix-content).
 function anyKey(env) { return !!(env.IX_KEY || env.IX_SERVICE_KEY); }
 function keyOk(env, request) {
@@ -4756,12 +4808,12 @@ async function buildBoard(run, planId) {
       thumb = ucSized(f['main-image-ulc-link---1-1-ratio'], ASM.uc.card) || (f['main-image'] && f['main-image'].url) || null;   // v1.0.123 sized
     } else if (kind === 'ad') {
       customer = custName(f[JOIN.ad.customer]);
-      thumb = f[JOIN.ad.bannerLink] || null;
+      thumb = ucSized(f[JOIN.ad.bannerLink], ASM.uc.ad) || null;                                                   // v1.0.192 sized
     } else if (kind === 're') {
       customer = custName(f[JOIN.re.agent]);
-      thumb = f['property-image-link'] || null;
+      thumb = ucSized(f['property-image-link'], ASM.uc.card) || null;                                              // v1.0.192 sized
     } else if (kind === 'event') {
-      thumb = f['event-hero-image-ulc-link-ev-1-only'] || f['event-image-url'] || null;
+      thumb = ucSized(f['event-hero-image-ulc-link-ev-1-only'] || f['event-image-url'], ASM.uc.card) || null;      // v1.0.192 sized
     }
     const out = { kind, id, name: String(f.name || ''), customer, thumb };
     if (kind === 'article') out.ogSrc = String(f[JOIN.article.ogSrc] || '').trim() || null;   // v1.0.33
@@ -4815,7 +4867,7 @@ async function buildBoard(run, planId) {
   const firstBanner = { get(cid) {
     const c = cid ? custBy.get(cid) : null;
     const r = c ? currentRowsOf(c, adByLive, null).banner : null;
-    return r ? { thumb: shapeContent(fdOf(r), 'banner') || null, redirect: String(fdOf(r)[JOIN.ad.redirectLink] || '').trim() } : null;
+    return r ? { thumb: ucSized(shapeContent(fdOf(r), 'banner'), ASM.uc.ad) || null, redirect: String(fdOf(r)[JOIN.ad.redirectLink] || '').trim() } : null;
   } };
   const paidYes = (() => {
     const m = blockOpts[ASM.slugs.isPaid];
@@ -5731,8 +5783,8 @@ async function splashBoardOf(run, planId, ads, taId, plan) {
   const fields = { image: S.paidAd, go: S.paidGo, name: S.paidName };
   const h = houseSplashOf(ads, taId, o);
   const hf = (h && h.fieldData) || {};
-  const house = h ? { id: h.id, name: String(hf.name || ''), image: String(hf[JOIN.ad.splashLink] || ''),
-                      image2: String(hf[JOIN.ad.splashLink2] || '') || null,
+  const house = h ? { id: h.id, name: String(hf.name || ''), image: ucSized(hf[JOIN.ad.splashLink], ASM.uc.ad),   // v1.0.192 sized
+                      image2: ucSized(hf[JOIN.ad.splashLink2], ASM.uc.ad) || null,
                       go: String(hf[JOIN.ad.redirectLink] || '') || null } : null;
   if (!o.houseKindSplash) run.warn('IX_CONFIG.options.houseKindSplash is not set, so the Splash tile cannot name the house splash.');
   if (!/^[0-9a-f]{24}$/.test(C.newsletter || '')) {
@@ -5810,7 +5862,7 @@ function customersOf(run, customers, ads, taId) {
     const cur = currentRowsOf(c, adBy, null);
     const current = {};
     SHAPES.forEach(shape => { const r = cur[shape], rf = fdOf(r); current[shape] = r ? { id: r.id, name: String(rf.name || '').trim() || r.id,
-      picture: shapeContent(rf, shape),
+      picture: ucSized(shapeContent(rf, shape), ASM.uc.ad),   // v1.0.192 sized (a text ad's words pass as stored)
       title: plainOf(String(rf['short-title'] || ''), 0), text: plainOf(String(rf['short-text'] || ''), 0),   // v1.0.159, HC-P-SSA1-1 slugs
       link: String(rf[JOIN.ad.redirectLink] || '').trim() } : null; });
     return { id: c.id, name: String(f.name || '').trim() || c.id, source: mine ? 'titles' : 'ads', hasBanner: !!current.banner || !!viaAds.get(c.id),
@@ -5842,8 +5894,8 @@ function adPoolOf(run, ads, adSchema, taId, custName) {
         status: optName(maps, J.status, f[J.status]) || null,
         houseKind,
         house: !!houseKind,
-        banner: String(f[J.bannerLink] || '').trim() || null,
-        splash: String(f[J.splashLink] || '').trim() || null,     // v1.0.27
+        banner: ucSized(f[J.bannerLink], ASM.uc.ad) || null,       // v1.0.192 sized
+        splash: ucSized(f[J.splashLink], ASM.uc.ad) || null,       // v1.0.27; v1.0.192 sized
         redirect: String(f[J.redirectLink] || '').trim() || null,
         createdOn: String(a.createdOn || '') || null,                                   // v1.0.84
         houseWords: houseKind ? houseWordsOf(f) : null,                                 // v1.0.84
@@ -7313,7 +7365,7 @@ function itemsOf(CX, assetType, ids) {
     const f = it.fieldData || {};
     const o = { id, name: String(f.name || '') };
     if (assetType === 'event') { o.start = f[JOIN.event.start] || null; o.photo = !!String(f[JOIN.event.photo] || '').trim();
-      o.thumb = f['event-hero-image-ulc-link-ev-1-only'] || f['event-image-url'] || null;                       // thumb v1.0.45
+      o.thumb = ucSized(f['event-hero-image-ulc-link-ev-1-only'] || f['event-image-url'], ASM.uc.card) || null;   // thumb v1.0.45; v1.0.192 sized
       const tz = CX.tz || ASM.tzDefault, st = f[JOIN.event.start];                                            // v1.0.46
       o.when = fmtDate(st, 'ddd, MMM D, YYYY', tz) || null;
       o.time = fmtDate(st, 'h:mm A', tz) || null;
@@ -7326,7 +7378,7 @@ function itemsOf(CX, assetType, ids) {
       o.teaser = firstWords(f['event-description'], 24);
       o.hasLink = !!String(f['event-link'] || '').trim(); }
     if (assetType === 're') { o.photo = !!String(f[JOIN.re.photo] || '').trim(); o.mediaId = refId(f[JOIN.reMedia]) || null;   // mediaId v1.0.34
-      o.thumb = f['property-image-link'] || null;                                                                 // thumb v1.0.45
+      o.thumb = ucSized(f['property-image-link'], ASM.uc.card) || null;                                           // thumb v1.0.45; v1.0.192 sized
       o.priceHidden = f['hide-price'] === true;                                                                   // v1.0.46
       o.price = (!o.priceHidden && num0(f['property-price']) > 0) ? '$' + fmtNumber0(f['property-price']) : null;
       o.beds = String(f.bedrooms == null ? '' : f.bedrooms).trim() || null;
@@ -7611,7 +7663,7 @@ async function buildDirectory(run, key) {
       tagline: tx(get(fd, 'tagline')), phone: tx(get(fd, 'phone')), email: tx(get(fd, 'email')),
       website: link(get(fd, 'website')), place: place || address, address,
       directions: (address || place) ? DIR_DIRECTIONS + encodeURIComponent(where) : '',
-      logo: link(logo), initials: tx(get(fd, 'initials')) || name.split(/\s+/).filter(w => /^[A-Za-z0-9]/.test(w)).slice(0, 2).map(w => w[0].toUpperCase()).join(''),
+      logo: ucSized(link(logo), ASM.uc.logo), initials: tx(get(fd, 'initials')) || name.split(/\s+/).filter(w => /^[A-Za-z0-9]/.test(w)).slice(0, 2).map(w => w[0].toUpperCase()).join(''),
       socials: ['facebook', 'instagram', 'x', 'linkedin', 'youtube', 'pinterest', 'houzz'].reduce((o, k) => { const u = link(get(fd, k)); if (u) o[k] = u; return o; }, {}),
       services: services.map(sl => tx(fd[sl])).filter(Boolean),
       expert: get(fd, 'expert') === true,
@@ -7888,8 +7940,8 @@ async function buildArticlePage(run, slug) {
         (String(optName(secOpts, JOIN.sections.type, sfd[JOIN.sections.type]) || '').trim().split(/\s+/)[0] || '').toUpperCase().replace(/[^A-Z]/g, '');
       franchise = { name: String(sfd.name || pfd.name || '').trim(),
                     format: format === 'TS' || format === 'FA' ? format : '',
-                    art: String(sfd['section-art'] || pfd['ulc-section-image-link'] || '').trim(),
-                    mascot: imgUrl(pfd[FRANCHISE_MASCOT]), wordmark: imgUrl(pfd[FRANCHISE_WORDMARK]),   // v1.0.116
+                    art: ucSized(sfd['section-art'] || pfd['ulc-section-image-link'] || '', ASM.uc.art),   // v1.0.192 sized
+                    mascot: ucSizedImg(pfd[FRANCHISE_MASCOT], ASM.uc.logo), wordmark: ucSizedImg(pfd[FRANCHISE_WORDMARK], ASM.uc.art),   // v1.0.116; v1.0.192 sized
                     bandColor: String(pfd[FRANCHISE_BAND] || '').trim(),                                // v1.0.116
                     slug: String(pfd.slug || '').toLowerCase(),                                          // v1.0.142
                     url: pl && pfd.slug ? paths.franchise + pfd.slug + (latestNl && taSlugOf(latestNl.ta) ? '?title=' + encodeURIComponent(taSlugOf(latestNl.ta)) : '') : '' };   // ?title= v1.0.112
@@ -7979,7 +8031,7 @@ async function buildArticlePage(run, slug) {
     let au = null;
     try { au = index(await run.listAll(C.customers)).get(auId) || null; } finally { run.live = keepB; }
     const ufd = fdOf(au);
-    if (au && tx(ufd.name)) business = { name: tx(ufd.name), logo: tx(ufd['logo-link']) };
+    if (au && tx(ufd.name)) business = { name: tx(ufd.name), logo: ucSized(tx(ufd['logo-link']), ASM.uc.logo) };   // v1.0.192 sized
     expert = !!au && EC_RULE(afd, ufd) === 1;
   }
   const showTitles = afd['hide-writer-titles'] !== true;                                   // v1.0.113
@@ -8475,8 +8527,8 @@ function siteCustEntry(custId, ctx, problems) {
   return {
     adId: main ? main.id : null, adName: String(fdOf(main).name || '').trim(),
     customerId: custId || null, advertiser: String(cfd.name || '').trim(),
-    banner: banner ? ucSized(banner, ASM.uc.card) : '',
-    sidebar: sidebar ? ucSized(sidebar, ASM.uc.card) : '', sidebarAdId: sidebar ? cur.sidebar.id : null,
+    banner: banner ? ucSized(banner, ASM.uc.ad) : '',      // v1.0.192: the ad recipe (was card)
+    sidebar: sidebar ? ucSized(sidebar, ASM.uc.ad) : '', sidebarAdId: sidebar ? cur.sidebar.id : null,
     link: String(bfd[A.redirectLink] || '').trim() || String(sfd[A.redirectLink] || '').trim(),
     noSidebar: !sidebar,
   };
@@ -8599,7 +8651,7 @@ async function buildSiteAds(run, key, env) {
     const hf = fdOf(ad), kind = keyOf(optName(maps, A.houseKind, hf[A.houseKind]) || '');
     housesOut.push({ adId: ad.id, kind, eyebrow: String(hf[A.eyebrow] || '').trim(), headline: String(hf[A.headline] || '').trim(),
       copy: String(hf[A.copy] || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(), button: String(hf[A.buttonText] || '').trim(),
-      link: String(hf['house-button-link'] || '').trim(), banner: String(hf[A.bannerLink] || '').trim() });
+      link: String(hf['house-button-link'] || '').trim(), banner: ucSized(hf[A.bannerLink], ASM.uc.ad) });   // v1.0.192 sized
   });
   const noSide = adsOut.filter(a => a.noSidebar).map(a => a.advertiser);
   if (noSide.length) problems.push('No current sidebar yet (the rail skips them): ' + noSide.join(', ') + '.');
@@ -8691,7 +8743,7 @@ async function buildSiteAds(run, key, env) {
     house = { adId: houses[0].id, kind, eyebrow: String(hf[A.eyebrow] || '').trim(), headline: String(hf[A.headline] || '').trim(),
               copy: String(hf[A.copy] || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),
               button: String(hf[A.buttonText] || '').trim() || String((tok && tok['ha-' + kind + '-button']) || '').trim(),
-              link, banner: String(hf[A.bannerLink] || '').trim() };
+              link, banner: ucSized(hf[A.bannerLink], ASM.uc.ad) };   // v1.0.192 sized
     if (!link) problems.push('The house ad has no House Button Link and no default link, so its button is left off.');
   } else problems.push('This title has no ADS house ad of the Advertise kind, so the franchise sponsor slot has no last fallback.');
 
@@ -8881,15 +8933,15 @@ async function buildSite(run, key, env) {
     adminId: ta ? String(ta.id || '') : '',                                     // v1.0.150: TITLES-ADMIN item id (subscribe)
     home: s(sfd.slug) ? (paths.title || '/titles/') + s(sfd.slug) : '',         // v1.0.150: always the current issue (Bookmark)
     description: descSlug ? s(sfd[descSlug]) : '',
-    logo: s(td.logoOnMain) || s(sfd[S.titleLogo]),
-    favicon: favSlug ? s(sfd[favSlug]) : '',                                   // v1.0.147
+    logo: ucSized(s(td.logoOnMain) || s(sfd[S.titleLogo]), ASM.uc.logo),       // v1.0.192 sized
+    favicon: favSlug ? ucSized(s(sfd[favSlug]), ASM.uc.icon) : '',              // v1.0.147; v1.0.192 sized
   };
   if (!favSlug) problems.push('TITLES has no field with "' + S.titleFaviconMatch + '" in its name, so no tab icon.');
   else if (!title.favicon) problems.push('TITLES ' + favSlug + ' is empty, so no tab icon.');
   if (!descSlug) problems.push('TITLES has no field named "Footer Description".');
   if (!title.logo) problems.push('TITLES logo-on-main and ' + S.titleLogo + ' are both empty.');
   const publisher = {
-    name: s(pfd.name), slug: s(pfd.slug), person: s(pfd[S.pubPerson]), photo: s(afd[S.adminPhoto]),
+    name: s(pfd.name), slug: s(pfd.slug), person: s(pfd[S.pubPerson]), photo: ucSized(s(afd[S.adminPhoto]), ASM.uc.headshot),   /* v1.0.192 sized */
     phone: s(pfd[S.pubPhone]), email: s(pfd[S.pubEmail]),
   };
   if (pub) ['person', 'phone', 'email'].forEach(k => { if (!publisher[k]) problems.push('PUBLISHERS ' + S['pub' + k[0].toUpperCase() + k.slice(1)] + ' is empty.'); });
@@ -8992,9 +9044,9 @@ async function buildFranchiseSite(run, plSlug, key, env) {
     (String(optName(secOpts, JOIN.sections.type, sfd[JOIN.sections.type]) || '').trim().split(/\s+/)[0] || '').toUpperCase().replace(/[^A-Z]/g, '');
   const franchise = { slug: plSlug, name: String(sfd.name || pfd['short-name'] || pfd.name || '').trim(),
                       format: format === 'TS' || format === 'FA' ? format : '',
-                      art: String(sfd['section-art'] || pfd['ulc-section-image-link'] || '').trim(),
+                      art: ucSized(sfd['section-art'] || pfd['ulc-section-image-link'] || '', ASM.uc.art),   // v1.0.192 sized
                       description: String(pfd[FRANCHISE_DESC] || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),   // v1.0.114
-                      mascot: imgUrl(pfd[FRANCHISE_MASCOT]), wordmark: imgUrl(pfd[FRANCHISE_WORDMARK]),                       // v1.0.115
+                      mascot: ucSizedImg(pfd[FRANCHISE_MASCOT], ASM.uc.logo), wordmark: ucSizedImg(pfd[FRANCHISE_WORDMARK], ASM.uc.art),   // v1.0.115; v1.0.192 sized
                       bandColor: String(pfd[FRANCHISE_BAND] || '').trim(),                                                    // v1.0.115
                       sponsor: null, articles: [], count: 0 };
   if (!secIds.length) site.problems.push('PRODUCT LIBRARY "' + plSlug + '" has no SECTIONS row in this title, so the page lists no articles.');
@@ -9288,10 +9340,10 @@ async function buildSplash(run, n) {
   const site = titlesSite.filter(t => refIds((t.fieldData || {})[JOIN.titleSite.titleAdmin]).includes(title.id));
   if (site.length !== 1) throw httpErr(422, (site.length ? 'More than one' : 'No') + ' TITLES item points at TITLES-ADMIN ' + title.id + '.');
   const publisher = byId(publishers, refId((title.fieldData || {})[JOIN.title.publisher]));
-  const logo = String((site[0].fieldData || {})[JOIN.splash.logo] || '');
+  const logo = ucSized((site[0].fieldData || {})[JOIN.splash.logo], ASM.uc.logo);   // v1.0.192 sized
   const look = await splashColors(title, site[0]);                        // v1.0.6; TITLES item v1.0.87
 
-  const paidAd = String(nfd[JOIN.splash.paidAd] || '');
+  const paidAd = ucSized(nfd[JOIN.splash.paidAd], ASM.uc.ad);   // v1.0.192 sized
   if (paidAd) {
     return Object.assign({ ok: true, source: 'paid', logo, ad: paidAd, ad2: '', house: false,
              su: String(nfd[JOIN.splash.paidGo] || ''), sn: String(nfd[JOIN.splash.paidName] || '') }, look);
@@ -9310,8 +9362,8 @@ async function buildSplash(run, n) {
   }).sort((a, b) => String(b.lastUpdated || '').localeCompare(String(a.lastUpdated || '')));
   if (houses.length) {
     const f = houses[0].fieldData || {};
-    return Object.assign({ ok: true, source: 'house', logo, ad: String(f[JOIN.ad.splashLink]),
-             ad2: String(f[JOIN.ad.splashLink2] || ''), house: true,
+    return Object.assign({ ok: true, source: 'house', logo, ad: ucSized(f[JOIN.ad.splashLink], ASM.uc.ad),   // v1.0.192 sized
+             ad2: ucSized(f[JOIN.ad.splashLink2], ASM.uc.ad), house: true,
              su: String(f[JOIN.ad.redirectLink] || ''),
              sn: String(((publisher && publisher.fieldData) || {}).name || '') }, look);
   }
@@ -10104,6 +10156,12 @@ const ASM = {
     wide: '-/scale_crop/1360x907/smart_faces/-/format/auto/-/quality/smart/',
     photoSide: '-/scale_crop/800x800/smart_faces/-/format/auto/-/quality/smart/',
     photoSmall: '-/scale_crop/240x240/smart/-/format/auto/-/quality/smart/',
+    // v1.0.192 — every other picture the Worker hands out (HC-P-IL1-1). Whole picture, never enlarged, except headshot.
+    ad: '-/preview/1400x1400/-/format/auto/-/quality/smart/',         // banners, sidebars, sponsor, paid and splash ads
+    art: '-/preview/1400x1400/-/format/auto/-/quality/smart/',        // franchise art and wordmark, masthead art
+    logo: '-/preview/800x800/-/format/auto/-/quality/smart/',         // logos and mascots
+    headshot: '-/scale_crop/240x240/smart_faces/-/format/auto/-/quality/smart/',   // shown as a 50 px square on both surfaces
+    icon: '-/preview/256x256/-/format/png/',                          // the site's tab icon
   },
   // v1.0.167 — a cut that follows another shape's frame (same proportions).
   ucFrame: { photoSide: 'photo', photoSmall: 'photo' },
@@ -10171,6 +10229,10 @@ function ucBase(v) {
   return 'https://' + m[1].toLowerCase() + '/' + m[2].toLowerCase() + '/';
 }
 function ucSized(v, recipe) { const b = ucBase(v); return b ? b + (recipe || '') : t(v).trim(); }
+// v1.0.192 — the clean link (host and photo ID) with no recipe; a link that is not Uploadcare comes back as stored.
+function ucClean(v) { return ucBase(v) || t(v).trim(); }
+// v1.0.192 — a Webflow image field ({ url }) or a plain link, sized.
+function ucSizedImg(v, recipe) { return ucSized(imgUrl(v), recipe); }
 // v1.0.166 — positioned crops (see header).
 function ucShapeList(kind) {
   return (ASM.ucShapes[kind] || []).map(([key, label, where]) => {
@@ -10549,14 +10611,17 @@ function assemble(run, data, F) {
     const txaCards = (b.txaAds || []).map(ad => {                        // 241, 244
       const af = fdOf(ad);
       const link = tagLink(af['redirect-link'], '&utm_content=' + ASM.utm.txa + t(pos));   // v1.0.182
-      return { logo: q(gp(ad, 'customer.fieldData.logo-link')), business: q(af['customer-name']),
+      return { logo: q(ucSized(gp(ad, 'customer.fieldData.logo-link'), ASM.uc.logo)), business: q(af['customer-name']),
                title: q(af['short-title']), body: q(af['short-text']), meta: q(af['txa-meta']), link: q(link),
                adId: q(ad && ad.id), customerId: q(af['customer-id']), slot: q(ASM.utm.txa + t(pos)) };   // v1.0.187: the collector's ad markers
     });
     const evN = (b.events || []).length;                                 // v1.0.81 (kept for a count-based rule later)
     const evCards = (b.events || []).map((ev, evI) => {                  // 246, 248, 249
       const ef = fdOf(ev);
-      const photoBase = t(ef[JOIN.event.photo]).replace(RX.photo, '/');
+      // v1.0.192 — from the photo ID (ucBase), so a stored resize no longer stays in front of the recipe;
+      // a link that is not Uploadcare goes out as stored, with no recipe glued on.
+      const photoRaw = t(ef[JOIN.event.photo]).trim(), photoBase = ucBase(photoRaw);
+      const evPic = r => len(photoRaw) > 0 ? (photoBase ? photoBase + r : photoRaw) : '';
       const venue = t(ef['event-location']) +
         (len(ef['venue-room']) > 0 ? ', ' + t(ef['venue-room']) : '') +
         (len(ef['event-city']) > 0 ? ' · ' + t(ef['event-city']) : '') +
@@ -10570,13 +10635,13 @@ function assemble(run, data, F) {
         dtEndTime: q(ef['dt-end-time']), address: q(ef['event-address']),
         x_hasEndTime: len(ef['dt-end-time']) > 0 ? 1 : 0,
         venue: q(venue), teaser: q(noComments(ef['event-description'])), link: q(link),   // v1.0.62 (D5): comments out
-        photo: len(photoBase) > 0 ? photoBase + ASM.uc.ev : '',
-        x_hasPhoto: len(photoBase) > 0 ? 1 : 0,
+        photo: evPic(ASM.uc.ev),
+        x_hasPhoto: len(photoRaw) > 0 ? 1 : 0,
         teaserShort: q(shortTeaser(noComments(ef['event-description']))),   // v1.0.81; v1.0.82 plain text
         x_lead: evI === 0 ? 1 : 0,                                                  // v1.0.82
-        photoLead: len(photoBase) > 0 ? photoBase + ASM.uc.evLead : '',
-        photoRow: len(photoBase) > 0 ? photoBase + ASM.uc.evRow : '',
-        x_rowpic: (evI > 0 && len(photoBase) > 0) ? 1 : 0,
+        photoLead: evPic(ASM.uc.evLead),
+        photoRow: evPic(ASM.uc.evRow),
+        x_rowpic: (evI > 0 && len(photoRaw) > 0) ? 1 : 0,
         x_hasTeaser: len(ef['event-description']) > 0 ? 1 : 0,
         x_hasEyebrow: len(ef['event-eyebrow']) > 0 ? 1 : 0,
         dtSort: isoOf(ef[JOIN.event.start]),   // v1.0.41: render sorts merged runs by it
@@ -10591,8 +10656,8 @@ function assemble(run, data, F) {
         beds: q(lf.bedrooms), baths: q(lf.bathrooms), sqft: q(lf['sq-ft']),
         description: q(noComments(lf['property-description'])).replace(/\n/g, ' '),   // v1.0.62 (D5): comments out
         agent: q(gp(l, 'agent.fieldData.name')), brokerage: q(lf.brokerage),
-        photo: len(lf[JOIN.re.photo]) > 0 ? t(lf[JOIN.re.photo]).replace(RX.rePhoto, '/') + ASM.uc.re : '',
-        photoLead: len(lf[JOIN.re.photo]) > 0 ? t(lf[JOIN.re.photo]).replace(RX.rePhoto, '/') + ASM.uc.reLead : '',   // v1.0.82
+        photo: ucSized(lf[JOIN.re.photo], ASM.uc.re),             // v1.0.192 from the photo ID (was: file name dropped only)
+        photoLead: ucSized(lf[JOIN.re.photo], ASM.uc.reLead),     // v1.0.82; v1.0.192 from the photo ID
         x_lead: reI === 0 ? 1 : 0,                                                                                    // v1.0.82
         link: (u => q(len(u) > 0 ? tagLink(u, '&utm_content=' + ASM.utm.re + t(pos)) : ''))(t(lf['listing-link']) || t(reDefaultLink(lf.name, run))),   // v1.0.80 Zillow when empty; v1.0.187 tagged
       };
@@ -10636,7 +10701,7 @@ function assemble(run, data, F) {
       dekFull: t(summary),
       linkDirect: site + ASM.paths.article + t(afd.slug),
       paidBy: isPaid ? t(gp(b, 'payer.fieldData.name')) : '',
-      paidAdImage: (isPaid && len(payerRedirect) > 0) ? firstAd('bannerLink', payerId) : '',
+      paidAdImage: (isPaid && len(payerRedirect) > 0) ? ucSized(firstAd('bannerLink', payerId), ASM.uc.ad) : '',   // v1.0.192 sized
       paidAdLink: (isPaid && len(payerRedirect) > 0)
         ? tagLink(payerRedirect, '&utm_content=' + ASM.utm.pa + t(pos) + '&utm_term=' + t(payerId)) : '',   // v1.0.182
       photoBase: ucBase(afd[JOIN.article.ogSrc]) || t(afd[JOIN.article.ogSrc]).replace(RX.photo, '/'),   // v1.0.123 from the photo ID
@@ -10680,7 +10745,7 @@ function assemble(run, data, F) {
       f_coAuthor: q(afd['co-writername']),
       f_coAuthorTitle: afd['hide-writer-titles'] === true ? '' : q(afd['co-writertitle']),       // v1.0.141
       f_authorBusiness: afd['show-business-in-byline'] === true ? q(au.name) : '',              // v1.0.141: the switch alone
-      f_authorLogo: q(au['logo-link']),
+      f_authorLogo: q(ucSized(au['logo-link'], ASM.uc.logo)),   // v1.0.192 sized
       f_rubric: q(fd.rubric),
       f_txaKicker: q(ifempty(dj.txaKicker, ifempty(gp(djI.types, 'txaKicker'), ifempty(djI.txaKicker,   // v1.0.77: the block's own theme first
         ifempty(gp(djT.types, 'txaKicker'), ifempty(djT.txaKicker, ASM.txaKickerDefault)))))),
@@ -10689,20 +10754,20 @@ function assemble(run, data, F) {
       f_shortSummary: q(afd['short-article-summary']),
       f_link: q(d.linkUrl),
       f_sponsorName: q(sp.name),
-      f_sponsorAd: q(sponsorId ? firstAd('bannerLink', sponsorId) : ''),   // v1.0.154: current banner only, no default-paid-ad fallback
+      f_sponsorAd: q(sponsorId ? ucSized(firstAd('bannerLink', sponsorId), ASM.uc.ad) : ''),   // v1.0.154: current banner only, no default-paid-ad fallback; v1.0.192 sized
       f_sponsorLink: q(len(sponsorRedirect) > 0 ? tagLink(sponsorRedirect, '&utm_content=' + ASM.utm.sp + t(pos) + '&utm_term=' + t(sponsorId)) : ''),   // v1.0.187 fix 4
       f_sponsorId: q(sponsorId || ''), f_sponsorAdId: q(sponsorId ? firstAd('adId', sponsorId) : ''), f_sponsorSlot: q(ASM.utm.sp + t(pos)),   // v1.0.187
       f_payerId: q(payerId || ''), f_paidAdId: q(payerId ? firstAd('adId', payerId) : ''), f_paidSlot: q(ASM.utm.pa + t(pos)),          // v1.0.187
       f_franchiseName: q(frName),
-      f_franchiseArt: q(ifempty(sec['section-art'], fr['ulc-section-image-link'])),
-      f_franchiseMascot: q(imgUrl(bandFd[FRANCHISE_MASCOT])),                                       // v1.0.131
-      f_franchiseWordmark: q(imgUrl(bandFd[FRANCHISE_WORDMARK])),                                   // v1.0.131
+      f_franchiseArt: q(ucClean(ifempty(sec['section-art'], fr['ulc-section-image-link']))),      // v1.0.192 clean here; the web blocks get ASM.uc.art below (HC-P-IL1-4)
+      f_franchiseMascot: q(ucSizedImg(bandFd[FRANCHISE_MASCOT], ASM.uc.logo)),                     // v1.0.131; v1.0.192 sized
+      f_franchiseWordmark: q(ucSizedImg(bandFd[FRANCHISE_WORDMARK], ASM.uc.art)),                  // v1.0.131; v1.0.192 sized
       f_franchiseWordmarkPx: '',                                                                    // v1.0.131: filled by wordmarkSizes()
       f_franchiseBandColor: q(String(bandFd[FRANCHISE_BAND] || '').trim()),                         // v1.0.131
       f_franchiseLink: frLink,                                                                      // v1.0.131
       f_franchiseLinkEmail: frLink ? frLink + utmAmp + '&utm_content=' + ASM.utm.fr + t(pos) : '',  // v1.0.131
       f_reAddress: q(re.name),
-      f_rePhoto: len(re[JOIN.re.photo]) > 0 ? t(re[JOIN.re.photo]).replace(RX.rePhoto, '/') + ASM.uc.re : '',
+      f_rePhoto: ucSized(re[JOIN.re.photo], ASM.uc.re),   // v1.0.192 from the photo ID (was: file name dropped only)
       f_reLink: q(len(re['listing-link']) > 0 ? tagLink(re['listing-link'], '&utm_content=' + ASM.utm.re + t(pos)) : ''),   // v1.0.187 fix 5
       f_rePrice: re['hide-price'] === true ? '' : (num0(re['property-price']) > 0 ? '$' + fmtNumber0(re['property-price']) : ''),
       f_reBeds: q(re.bedrooms),
@@ -10710,7 +10775,7 @@ function assemble(run, data, F) {
       f_reSqft: q(re['sq-ft']),
       f_reBrokerage: q(re.brokerage),
       f_reAgent: q(ag.name),
-      f_reAgentLogo: q(ag['business-logo-ulc-link']),
+      f_reAgentLogo: q(ucSized(ag['business-logo-ulc-link'], ASM.uc.logo)),   // v1.0.192 sized
       x_sponsored: d.sponsored,
       x_hasPhoto: len(afd[JOIN.article.ogSrc]) > 0 ? 1 : 0,
       x_hasAuthor: len(afd.writername) > 0 ? 1 : 0,
@@ -10743,12 +10808,12 @@ function assemble(run, data, F) {
     ogImage: og.ogImage,
     titleName: q(tfd.name),
     titleTagline: q(tfd['title-tagline']),
-    masthead: q(sfd['email-masthead-url']),
+    masthead: q(ucSized(sfd['email-masthead-url'], ASM.uc.art)),   // v1.0.192 sized
     publisherName: q(ufd.name),
     publisherPerson: q(ufd['contact-name']),
     publisherPhone: q(ufd['business-phone']),
     publisherPhoneTel: t(ufd['business-phone']).replace(/[^0-9+]/g, ''),
-    publisherHeadshot: q(tfd['publisher-headshot-ulc-link']),
+    publisherHeadshot: q(ucSized(tfd['publisher-headshot-ulc-link'], ASM.uc.headshot)),   // v1.0.192 sized
     issueNo: q(nfd['issue-no']),
     issueTitle: q(ifempty(grTitle, nfd[JOIN.publish.greetTitle])),   // v1.0.62 (D6): Greeting block title, legacy field as fallback
     emailTitle: q(nfd[JOIN.publish.subject]),   // v1.0.62 (D13): the email <title> only; never body copy
@@ -10779,7 +10844,7 @@ function assemble(run, data, F) {
     'weather-tz': q(tfd['title-timezone']),
     'weather-date': q(sendDayOf(nfd[JOIN.publish.sendAt], tz) || pd),   // v1.0.117: the send day, else the issue date
     publisherEmail: q(ufd['business-email']),
-    title: titleDesignOf(sfd),   // v1.0.87, Title Design S1
+    title: (td => Object.assign(td, { logoOnMain: ucSized(td.logoOnMain, ASM.uc.logo) }))(titleDesignOf(sfd)),   // v1.0.87, Title Design S1; v1.0.192 logo sized
     djTitle: rawJson(tfd['design-json'], 'TITLES-ADMIN design-json', run),
     djIssue: rawJson(pfd['design-json'], 'PUBLICATION PLAN design-json', run),
   };
@@ -10788,7 +10853,8 @@ function assemble(run, data, F) {
   const clone = v => JSON.parse(JSON.stringify(v));
   return {
     email: { surface: 'email', shell: t(tfd['shell-template']), tokens: t(tfd[JOIN.title.tokens]), context: ctx, blocks },
-    web: { surface: 'web', shell: t(tfd['web-shell-template']), tokens: t(tfd[JOIN.title.tokens]), context: clone(ctx), blocks: clone(blocks) },
+    web: { surface: 'web', shell: t(tfd['web-shell-template']), tokens: t(tfd[JOIN.title.tokens]), context: clone(ctx),
+           blocks: clone(blocks).map(b => (b && b.f_franchiseArt) ? Object.assign(b, { f_franchiseArt: ucSized(b.f_franchiseArt, ASM.uc.art) }) : b) },   // v1.0.192 (HC-P-IL1-4)
     og,
     counts: { blocks: blocks.length, heavy: heavy.length, light: light.length,
               blocksInPlan: data.blocks.length - skipped.filter(s => s.kind === 'not-email').length,   // v1.0.62 (D1): a not-email block is not a block the email could hold
@@ -10812,7 +10878,7 @@ function lightBlock(b, fd, D, F, tfd, nfd, tagFor, tagLink) {   // v1.0.183: + t
     position: pos,
     x_endGroup: gp(fd, JOIN.block.endGroup) ? 1 : 0,
     x_pinned: fd[JOIN.block.pin] === true ? 1 : 0,   // v1.0.173: the web rotator leaves this banner in its spot
-    f_adImage: q(ad['banner-ad-link']),
+    f_adImage: q(ucSized(ad['banner-ad-link'], ASM.uc.ad)),   // v1.0.192 sized (was as stored)
     f_adLink: q(len(redirect) > 0
       ? tagLink(redirect, '&utm_content=' + ASM.utm.ba + t(pos) + '&utm_term=' + t(ad['customer-id'])) : ''),   // v1.0.182
     f_adName: q(ad['customer-name']),
@@ -11772,7 +11838,7 @@ function customerAdsOf(X, cust, custId) {
       if (archived && !X.withArchived) return;
       let badLog = false;
       SHAPES.forEach(shape => {
-        const picture = archived ? shapeContentAny(fd, shape) : shapeContent(fd, shape);
+        const picture = ucSized(archived ? shapeContentAny(fd, shape) : shapeContent(fd, shape), ASM.uc.ad);   // v1.0.192 sized (words pass as stored)
         if (!picture) return;
         const approval = shapeApproval(maps, fd, shape), runLog = runLogOf(fd, shape);
         if (runLog.bad) { badLog = true; delete runLog.bad; }
