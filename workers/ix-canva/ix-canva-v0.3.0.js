@@ -1,8 +1,32 @@
-// workers/ix-canva/ix-canva-v0.2.0.js
+// workers/ix-canva/ix-canva-v0.3.0.js
 // ============================================================
 // INBXIFY · Cloudflare Worker · ix-canva
 // Host: ix-canva.jeff-2cd.workers.dev
 //
+// v0.3.0 (18 Nov 2026, Ad Maker Build S1) — THE INBXIFY APP INSIDE CANVA.
+//   The inbxify Canva app (side panel, canva-app/ in the repo) shows the match sheet for the design that is open: the
+//   colours with hex codes, each line of text with the closest Canva font, weight, size and colour, and Add buttons
+//   that place the text on the design. This Worker serves it:
+//   · GET  /app/job          the job for the design the app is open on. Proof of who and which design: the Canva user
+//                            token (Authorization: Bearer) and the design token (X-Design-Token), both verified against
+//                            the app's public keys with aud = CANVA_APP_ID. The design id finds the job (design→job map,
+//                            or a scan of the jobs for designs sent before v0.3.0).
+//   · POST /job/<id>/sheet   Ad Maker stores the match sheet it read off the ad (staff login). {failed:"why"} records
+//                            a failed read so the app stops waiting.
+//   · POST /job              now also keeps Ad Maker's words list and the colours, and sheetPending:true marks the
+//                            sheet as on its way.
+//   · CORS: the app's own origin (https://app-<app id lower-case>.canva-apps.com) is allowed without a setting, with
+//     the X-Design-Token header.
+//   · verifyJwt takes the audience it must match (client id for Canva's Return token, app id for app tokens).
+//   HARDCODING: HC-P-CANVA1-9 the app origin pattern; HC-P-CANVA1-10 SHEET_MAX 64 KB; HC-P-CANVA1-11 job scan limit 1000.
+// v0.2.1 (18 Nov 2026, Ad Maker Build S1, test 1) — NAMES CANVA ACCEPTS, AND THE CUSTOMER'S OWN FOLDER NAME.
+//   · Canva refuses an asset name over 50 characters ("Invalid upload metadata header", 400). Every uploaded
+//     piece's name is now cut to 50, keeping the extension (found on Senior Care Authority - Northern & Central
+//     New Jersey; the Graze Craze test names were short).
+//   · The Projects folder is named for the customer alone, no "inbxify · " in front (Jeff, 18 Nov). Folders made
+//     by v0.2.0 keep their old name and are left alone; the next job for that customer makes the new one.
+//   · A remembered folder is checked before use: if it was deleted in Canva, the Worker forgets it and finds or
+//     makes the folder again instead of leaving the pieces loose. A renamed folder keeps receiving (matched by id).
 // v0.2.0 (18 Nov 2026, Ad Maker Build S1) — THE JOB API FOR AD MAKER.
 //   The test Worker (v0.1.x) proved the trip. This version is what the T-A Ads tab talks to:
 //   · POST /job                 Ad Maker sends the pieces of one ad (PNGs as data URLs), the customer, the shape
@@ -43,7 +67,9 @@
 // v0.1.3 (18 Nov 2026) — the test Worker: /connect, /test, /return; see the git history for its notes.
 // ============================================================
 
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
+const SHEET_MAX = 65536;   // HC-P-CANVA1-10
+const SCAN_MAX = 1000;     // HC-P-CANVA1-11
 const CANVA_API = 'https://api.canva.com/rest/v1';
 const CANVA_AUTH = 'https://www.canva.com/api/oauth/authorize';
 const SCOPES = ['asset:read', 'asset:write', 'design:content:read', 'design:content:write', 'design:meta:read', 'design:meta:write', 'folder:read', 'folder:write', 'profile:read'];   // HC-P-CANVA1-2
@@ -51,7 +77,9 @@ const SHAPES = { banner: { w: 700, h: 235, label: 'Banner' }, sidebar: { w: 480,
 const POLL_MS = 1500, POLL_MAX = 60;   // HC-P-CANVA1-3
 const EXPORT_SCALE = 2;                // HC-P-CANVA1-4
 const JOB_TTL = 86400 * 30;            // HC-P-CANVA1-5
-const FOLDER_PREFIX = 'inbxify · ';   // HC-P-CANVA1-6
+const FOLDER_PREFIX = '';   // HC-P-CANVA1-6 · v0.2.1: none (Jeff, 18 Nov); the folder carries the customer's name alone
+const NAME_MAX = 50;       // HC-P-CANVA1-8 · Canva's limit on an asset name (unencoded)
+function canvaName(n) { n = String(n || 'piece.png').trim(); if (n.length <= NAME_MAX) return n; const m = n.match(/(\.[A-Za-z0-9]{2,5})$/), ext = m ? m[1] : ''; return n.slice(0, NAME_MAX - ext.length).replace(/[\s.\-\u00b7]+$/, '') + ext; }
 function dot(x, delay) { return { ddd: 0, ind: 1, ty: 4, nm: 'dot', sr: 1, ks: { o: { a: 0, k: 100 }, r: { a: 0, k: 0 }, p: { a: 0, k: [x, 80, 0] }, a: { a: 0, k: [0, 0, 0] },
   s: { a: 1, k: [{ i: { x: [.4, .4, .4], y: [1, 1, 1] }, o: { x: [.6, .6, .6], y: [0, 0, 0] }, t: delay, s: [60, 60, 100] }, { i: { x: [.4, .4, .4], y: [1, 1, 1] }, o: { x: [.6, .6, .6], y: [0, 0, 0] }, t: delay + 15, s: [130, 130, 100] }, { t: delay + 30, s: [60, 60, 100] }] } },
   ao: 0, shapes: [{ ty: 'gr', it: [{ ty: 'el', p: { a: 0, k: [0, 0] }, s: { a: 0, k: [22, 22] } }, { ty: 'fl', c: { a: 0, k: [0.133, 0.145, 0.169, 1] }, o: { a: 0, k: 100 } }, { ty: 'tr', p: { a: 0, k: [0, 0] }, a: { a: 0, k: [0, 0] }, s: { a: 0, k: [100, 100] }, r: { a: 0, k: 0 }, o: { a: 0, k: 100 } }] }], ip: 0, op: 60, st: 0, bm: 0 }; }
@@ -80,11 +108,14 @@ export default {
       if (m && req.method === 'GET') { await authorize(env, req, origin); return jobPng(env, origin, m[1]); }
       m = p.match(/^\/job\/([A-Za-z0-9_-]+)\/export$/);
       if (m && req.method === 'POST') { await authorize(env, req, origin); return json(env, origin, await jobExport(env, m[1], 'page')); }
+      m = p.match(/^\/job\/([A-Za-z0-9_-]+)\/sheet$/);
+      if (m && req.method === 'POST') { await authorize(env, req, origin); return json(env, origin, await jobSheet(env, m[1], await readJson(req))); }   // v0.3.0
+      if (p === '/app/job' && req.method === 'GET') return json(env, origin, await appJob(env, req));   // v0.3.0: the Canva app
       if (p === '/design/link' && req.method === 'POST') { await authorize(env, req, origin); return json(env, origin, await designLink(env, await readJson(req))); }
       return json(env, origin, { ok: false, error: 'Not found' }, 404);
     } catch (e) {
       const status = e && e.status ? e.status : 500, msg = (e && e.message) || String(e);
-      if (req.headers.get('Accept') && /text\/html/.test(req.headers.get('Accept')) && !p.startsWith('/job') && !p.startsWith('/design')) return html(page('Something went wrong', `<p class="bad">${esc(msg)}</p><p><a href="/test">Back to the test page</a></p>`), status);
+      if (req.headers.get('Accept') && /text\/html/.test(req.headers.get('Accept')) && !p.startsWith('/job') && !p.startsWith('/design') && !p.startsWith('/app')) return html(page('Something went wrong', `<p class="bad">${esc(msg)}</p><p><a href="/test">Back to the test page</a></p>`), status);
       return json(env, origin, { ok: false, error: msg }, status);
     }
   }
@@ -93,8 +124,9 @@ export default {
 // ── helpers ───────────────────────────────────────────────────────────────
 function httpErr(status, msg) { const e = new Error(msg); e.status = status; return e; }
 function base(env) { return String(env.BASE_URL || 'https://ix-canva.jeff-2cd.workers.dev').replace(/\/$/, ''); }
-function origins(env) { return String(env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean); }
-function corsHeaders(env, origin) { const h = { 'Vary': 'Origin' }; if (origin && origins(env).includes(origin)) { h['Access-Control-Allow-Origin'] = origin; h['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'; h['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'; } return h; }
+function appOrigin(env) { return env.CANVA_APP_ID ? 'https://app-' + String(env.CANVA_APP_ID).toLowerCase() + '.canva-apps.com' : ''; }   // HC-P-CANVA1-9
+function origins(env) { return String(env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean).concat(appOrigin(env) ? [appOrigin(env)] : []); }
+function corsHeaders(env, origin) { const h = { 'Vary': 'Origin' }; if (origin && origins(env).includes(origin)) { h['Access-Control-Allow-Origin'] = origin; h['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Design-Token'; h['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'; } return h; }
 function preflight(env, origin) { return new Response(null, { status: 204, headers: Object.assign({ 'Access-Control-Max-Age': '86400' }, corsHeaders(env, origin)) }); }
 function json(env, origin, o, status) { return new Response(JSON.stringify(o), { status: status || 200, headers: Object.assign({ 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }, corsHeaders(env, origin)) }); }
 function html(s, status) { return new Response(s, { status: status || 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }); }
@@ -231,7 +263,8 @@ async function callback(env, url) {
 // ── Canva pieces: folders, uploads, designs, exports ──────────────────────
 async function folderFor(env, customer) {
   const want = FOLDER_PREFIX + customer;
-  const key = 'folder:' + want; const known = await env.CANVA_KV.get(key); if (known) return known;
+  const key = 'folder:' + want; const known = await env.CANVA_KV.get(key);
+  if (known) { try { await api(env, '/folders/' + encodeURIComponent(known)); return known; } catch (e) { await env.CANVA_KV.delete(key); } }   // v0.2.1: deleted in Canva → find or make it again
   try {
     const list = await api(env, '/folders/root/items?item_types=folder&limit=100');
     const hit = (list.items || []).find(it => it.folder && it.folder.name === want);
@@ -243,6 +276,7 @@ async function folderFor(env, customer) {
 }
 async function moveTo(env, folderId, itemId) { try { await api(env, '/folders/move', { method: 'POST', body: { to_folder_id: folderId, item_id: itemId } }); return true; } catch (e) { return false; } }
 async function uploadBytes(env, bytes, name) {
+  name = canvaName(name);   // v0.2.1
   const meta = JSON.stringify({ name_base64: btoa(unescape(encodeURIComponent(name))) });
   const j = await api(env, '/asset-uploads', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'Asset-Upload-Metadata': meta }, body: bytes });
   const asset = await poll(env, '/asset-uploads/' + j.job.id, job => job.asset);
@@ -271,7 +305,7 @@ async function exportPng(env, designId, shape) {
 // ── jobs ──────────────────────────────────────────────────────────────────
 function jobKey(id) { return 'job:' + id; }
 async function loadJob(env, id) { const j = await env.CANVA_KV.get(jobKey(id), 'json'); if (!j) throw httpErr(404, 'No job ' + id + ' (jobs are kept 30 days).'); return j; }
-async function saveJob(env, j) { await env.CANVA_KV.put(jobKey(j.id), JSON.stringify(j), { expirationTtl: JOB_TTL }); return j; }
+async function saveJob(env, j) { await env.CANVA_KV.put(jobKey(j.id), JSON.stringify(j), { expirationTtl: JOB_TTL }); if (j.designId) await env.CANVA_KV.put('design:' + j.designId, j.id, { expirationTtl: JOB_TTL }); return j; }   // v0.3.0: design → newest job
 function jobOut(j) { return { id: j.id, designId: j.designId, customer: j.customer, shape: j.shape, title: j.title, status: j.status, exportedAt: j.exportedAt || null, exportFrom: j.exportFrom || '', folderId: j.folderId || '', notes: j.notes || [], error: j.error || '', taUrl: j.taUrl || '' }; }
 async function jobCreate(env, b, who) {
   const customer = b.customer && typeof b.customer === 'object' ? { id: String(b.customer.id || ''), name: String(b.customer.name || '').trim() } : null;
@@ -293,9 +327,14 @@ async function jobCreate(env, b, who) {
   const d = await api(env, '/designs', { method: 'POST', body: { design_type: { type: 'custom', width: S.w, height: S.h }, title } });
   const design = d.design; await moveTo(env, folderId, design.id); notes.push('Blank ' + S.label + ' design, ' + S.w + ' × ' + S.h);
   const id = rnd(9);
-  const job = { id, designId: design.id, customer, shape, title, taUrl: String(b.taUrl || ''), folderId, assets: assets.map(a => a.id), status: 'open', notes, by: who.email || who.memberId, made: new Date().toISOString(), ms: Date.now() - t0 };
+  const job = { id, designId: design.id, customer, shape, title, taUrl: String(b.taUrl || ''), folderId, assets: assets.map(a => a.id), status: 'open', notes, by: who.email || who.memberId, made: new Date().toISOString(), ms: Date.now() - t0,
+    words: cleanWords(b.words), colours: cleanColours(b.colours), sheetState: b.sheetPending ? 'pending' : 'none' };   // v0.3.0
   await saveJob(env, job);
   return { ok: true, job: jobOut(job), editUrl: editUrlWithState(design.urls.edit_url, id) };
+}
+async function carry(env, designId) {   // v0.3.0: a later job on the same design keeps the words and the sheet
+  const prev = await jobForDesign(env, designId).catch(() => null);
+  return prev ? { words: prev.words || [], colours: prev.colours || [], sheet: prev.sheet || null, sheetState: prev.sheet ? 'ready' : 'none' } : {};
 }
 async function jobFromDesign(env, b, who) {
   const designId = String(b.designId || '').trim(); if (!designId) throw httpErr(400, 'designId is required.');
@@ -303,7 +342,7 @@ async function jobFromDesign(env, b, who) {
   const shape = SHAPES[String(b.shape)] ? String(b.shape) : '';
   const customer = b.customer && typeof b.customer === 'object' ? { id: String(b.customer.id || ''), name: String(b.customer.name || '').trim() } : { id: '', name: '' };
   const id = rnd(9);
-  const job = { id, designId, customer, shape, title: (d.design && d.design.title) || designId, taUrl: String(b.taUrl || ''), status: 'open', notes: ['Opened again from a saved version'], by: who.email || who.memberId, made: new Date().toISOString() };
+  const job = { ...(await carry(env, designId)), id, designId, customer, shape, title: (d.design && d.design.title) || designId, taUrl: String(b.taUrl || ''), status: 'open', notes: ['Opened again from a saved version'], by: who.email || who.memberId, made: new Date().toISOString() };
   await saveJob(env, job);
   return { ok: true, job: jobOut(job), editUrl: editUrlWithState(d.design.urls.edit_url, id) };
 }
@@ -327,8 +366,59 @@ async function designLink(env, b) {
   const designId = String(b.designId || '').trim(); if (!designId) throw httpErr(400, 'designId is required.');
   const d = await api(env, '/designs/' + encodeURIComponent(designId));
   let state = String(b.jobId || '');
-  if (!state) { const id = rnd(9); await saveJob(env, { id, designId, customer: b.customer || { id: '', name: '' }, shape: SHAPES[String(b.shape)] ? String(b.shape) : '', title: (d.design && d.design.title) || designId, taUrl: String(b.taUrl || ''), status: 'open', notes: ['Edit link'], made: new Date().toISOString() }); state = id; }
+  if (!state) { const id = rnd(9); await saveJob(env, { ...(await carry(env, designId)), id, designId, customer: b.customer || { id: '', name: '' }, shape: SHAPES[String(b.shape)] ? String(b.shape) : '', title: (d.design && d.design.title) || designId, taUrl: String(b.taUrl || ''), status: 'open', notes: ['Edit link'], made: new Date().toISOString() }); state = id; }
   return { ok: true, jobId: state, editUrl: editUrlWithState(d.design.urls.edit_url, state), title: (d.design && d.design.title) || '' };
+}
+
+
+// ── v0.3.0 · the match sheet and the app ──────────────────────────────────
+function cleanHex(c) { const m = String(c || '').trim().match(/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i); if (!m) return ''; const g = m[1].length === 3 ? m[1].split('').map(x => x + x).join('') : m[1]; return '#' + g.toUpperCase(); }
+function cleanWords(a) { return (Array.isArray(a) ? a : []).slice(0, 30).map(w => ({ slot: String(w.slot || '').slice(0, 40), text: String(w.text || '').slice(0, 400), font: String(w.font || '').slice(0, 60), weight: +w.weight || 400, size: +w.size || 0, colour: cleanHex(w.colour) })).filter(w => w.text); }
+function cleanColours(a) { return (Array.isArray(a) ? a : []).slice(0, 16).map(c => ({ hex: cleanHex(c.hex || c), where: String(c.where || '').slice(0, 60) })).filter(c => c.hex); }
+function cleanSheet(x) {
+  if (!x || typeof x !== 'object') throw httpErr(400, 'sheet must be an object.');
+  const num = (v, d) => (isFinite(+v) && +v >= 0 ? +v : d), frac = v => Math.max(0, Math.min(1, +v || 0));
+  const lines = (Array.isArray(x.lines) ? x.lines : []).slice(0, 30).map(l => ({
+    text: String(l.text || '').slice(0, 400), role: String(l.role || '').slice(0, 40), font: String(l.font || '').slice(0, 60),
+    alts: (Array.isArray(l.alts) ? l.alts : []).slice(0, 4).map(a => String(a).slice(0, 60)), weight: l.weight == null ? 400 : (isFinite(+l.weight) ? +l.weight : String(l.weight).slice(0, 20)),
+    sizePx: num(l.sizePx, 16), colour: cleanHex(l.colour) || '#000000', align: ['start', 'center', 'end'].includes(l.align) ? l.align : 'start',
+    box: l.box && typeof l.box === 'object' ? { x: frac(l.box.x), y: frac(l.box.y), w: frac(l.box.w), h: frac(l.box.h) } : null
+  })).filter(l => l.text);
+  return { srcW: num(x.srcW, 0), srcH: num(x.srcH, 0), background: cleanHex(x.background), colours: cleanColours(x.colours), lines, made: new Date().toISOString(), by: String(x.by || '').slice(0, 60) };
+}
+async function jobSheet(env, id, b) {
+  const job = await loadJob(env, id);
+  if (b && b.failed) { job.sheetState = 'failed'; job.sheetError = String(b.failed).slice(0, 300); await saveJob(env, job); return { ok: true, sheetState: 'failed' }; }
+  const raw = JSON.stringify((b && b.sheet) || b || {}); if (raw.length > SHEET_MAX) throw httpErr(413, 'The sheet is over ' + SHEET_MAX + ' bytes.');
+  job.sheet = cleanSheet((b && b.sheet) || b); job.sheetState = 'ready'; job.sheetError = '';
+  await saveJob(env, job);
+  return { ok: true, sheetState: 'ready', lines: job.sheet.lines.length, colours: job.sheet.colours.length };
+}
+async function jobForDesign(env, designId) {
+  const id = await env.CANVA_KV.get('design:' + designId);
+  if (id) { const j = await env.CANVA_KV.get(jobKey(id), 'json'); if (j) return j; }
+  let cursor, best = null, seen = 0;   // designs sent before v0.3.0: scan the jobs once, then remember
+  do {
+    const page = await env.CANVA_KV.list({ prefix: 'job:', cursor, limit: 1000 }); cursor = page.list_complete ? null : page.cursor;
+    for (const k of page.keys) { if (++seen > SCAN_MAX) break; const j = await env.CANVA_KV.get(k.name, 'json'); if (j && j.designId === designId && (!best || String(j.made) > String(best.made))) best = j; }
+  } while (cursor && seen < SCAN_MAX);
+  if (best) await env.CANVA_KV.put('design:' + designId, best.id, { expirationTtl: JOB_TTL });
+  return best;
+}
+async function appJob(env, req) {
+  if (!env.CANVA_APP_ID) throw httpErr(500, 'CANVA_APP_ID is not set on ix-canva.');
+  const auth = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  const dt = req.headers.get('X-Design-Token') || '';
+  if (!auth || !dt) throw httpErr(401, 'The app sent no Canva user token or design token.');
+  await verifyJwt(env, auth, env.CANVA_APP_ID);
+  const d = await verifyJwt(env, dt, env.CANVA_APP_ID);
+  const designId = String(d.designId || d.design_id || '');
+  if (!designId) throw httpErr(400, 'The design token named no design.');
+  const job = await jobForDesign(env, designId);
+  if (!job) return { ok: false, error: 'This design was not opened from inbxify Ad Maker (design ' + designId + '). Open it with Edit in Canva in the Ads tab.', designId };
+  const S = SHAPES[job.shape] || null;
+  return { ok: true, job: { id: job.id, designId: job.designId, customer: job.customer, shape: job.shape, title: job.title, w: S ? S.w : 0, h: S ? S.h : 0 },
+    words: job.words || [], colours: job.colours || [], sheet: job.sheet || null, sheetState: job.sheetState || (job.sheet ? 'ready' : 'none'), sheetError: job.sheetError || '' };
 }
 
 // ── the test page (kept for diagnosis) ────────────────────────────────────
@@ -406,7 +496,7 @@ async function jwks(env) {
   await env.CANVA_KV.put(key, JSON.stringify({ at: Date.now(), keys }), { expirationTtl: 86400 });
   return keys;
 }
-async function verifyJwt(env, jwt) {
+async function verifyJwt(env, jwt, aud) {   // v0.3.0: aud is the id the token must be for
   const parts = String(jwt || '').split('.'); if (parts.length !== 3) throw httpErr(400, 'The return token is not in the shape Canva documents.');
   const header = JSON.parse(new TextDecoder().decode(b64urlDecode(parts[0])));
   const payload = JSON.parse(new TextDecoder().decode(b64urlDecode(parts[1])));
@@ -420,8 +510,10 @@ async function verifyJwt(env, jwt) {
   const sigAlgo = alg === 'ES256' ? { name: 'ECDSA', hash: 'SHA-256' } : algo;
   const ok = await crypto.subtle.verify(sigAlgo, pub, b64urlDecode(parts[2]), new TextEncoder().encode(parts[0] + '.' + parts[1]));
   if (!ok) throw httpErr(403, 'The return token’s signature did not verify.');
-  if (payload.aud && env.CANVA_CLIENT_ID && String(payload.aud) !== String(env.CANVA_CLIENT_ID)) throw httpErr(403, 'The return token is for another app.');
-  if (payload.exp && Date.now() / 1000 > payload.exp) throw httpErr(403, 'The return token has expired.');
+  const want = aud === undefined ? env.CANVA_CLIENT_ID : aud;
+  if (!want) throw httpErr(500, 'The Worker does not know which app id the token must be for (CANVA_APP_ID / CANVA_CLIENT_ID).');
+  if (String(payload.aud || '') !== String(want)) throw httpErr(403, 'The token is for another app.');
+  if (payload.exp && Date.now() / 1000 > payload.exp) throw httpErr(403, 'The token has expired.');
   return payload;
 }
 function returnShell(url) {

@@ -1,4 +1,16 @@
-/* ipp-words-v1.2.1.js */
+/* ipp-words-v1.2.2.js */
+/* v1.2.2 (22 Nov 2026, Jeff on WLN-124B: "Words clears entries at some point ... only some of the Words are cleared"): A
+   NEWSLETTER THAT DID NOT LOAD IS NEVER SHOWN AS "NOT WRITTEN". The subject line, preview text and closing live on the
+   NEWSLETTER item; the title, short greeting and paragraph live on the Greeting block. When one plan read came back without
+   the NEWSLETTER, the inbox and end cards said "Not written yet" and "subject line missing" though every word was saved.
+   Now, when the page names a NEWSLETTER and the board does not hold it (nlFail):
+   1 · the header and the band say "Couldn't load this issue's newsletter. Reload the page (Cmd+R)." in red;
+   2 · the inbox and end cards read "Couldn't load. Reload the page." under each part, their state says "Couldn't load",
+       and their Write and Edit are hidden, so nothing can be written over words that are only unseen;
+   3 · those three parts raise no "missing" problem; AI writing stays off with the same sentence.
+   "No newsletter linked to this plan." is kept for a page that names no NEWSLETTER at all. ipp-shell v1.52 reads the board
+   once more first, so this shows only after two misses. Nothing else changed. CSS stays ipp-words-v1.0.5.css.
+   HARDCODING: HC-P-WD122-1 the new words (NL_FAIL, NL_FAIL_PART, NL_FAIL_STATE). */
 /* v1.2.1 (14 Nov 2026, Content Home S9, Jeff on WLN-910A: "You have to save all in each major tile - should be able to save
    individually"): A CARD SAVES WHAT YOU CHANGED, EVEN WHEN ITS OTHER BOXES ARE EMPTY. Before, a card's Save stayed off until
    every box on it was filled and in range, so a new title could not be saved until the short greeting and paragraph were
@@ -304,7 +316,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  var VERSION = '1.2.1', FILE = 'ipp-words-v1.2.1.js', VIEW = 'words', MOUNTED = 'data-words-mounted';
+  var VERSION = '1.2.2', FILE = 'ipp-words-v1.2.2.js', VIEW = 'words', MOUNTED = 'data-words-mounted';
 
   // ── constants ───────────────────────────────────────────────
   var GR = 'GR';                                                            // the Greeting block type (HC-P-S16-1 class)
@@ -527,16 +539,19 @@
   function writtenKeys() { var s = saved(); return KEYS.filter(function (k) { return !!s[k]; }); }
 
   // the facts every paint reads
+  var NL_FAIL = 'Couldn\u2019t load this issue\u2019s newsletter. Reload the page (Cmd+R).', NL_FAIL_PART = 'Couldn\u2019t load. Reload the page.', NL_FAIL_STATE = 'Couldn\u2019t load';   // v1.2.2, HC-P-WD122-1
+  function nlFailNow() { return !!boardData() && !!nlId() && !pubRow(); }   // v1.2.2: the page names a NEWSLETTER the board did not bring
+  function nlKey(k) { return GROUPS.inbox.indexOf(k) >= 0 || GROUPS.end.indexOf(k) >= 0; }   // v1.2.2: the parts kept on the NEWSLETTER
   function facts() {
-    var hasRanges = syncRanges();                                           // v1.0.8
+    var hasRanges = syncRanges(), nlFail = nlFailNow();                                           // v1.0.8
     var gs = grSlot(), flag = gs ? gs.greetingDone : null, basis = (gs && gs.greeting && gs.greeting.basis) || null;
     var written = writtenKeys(), empty = written.length === 0;
     var isStale = !!(basis && basis.stale) && !empty;
     var sv = saved(), problems = [];                                      // v1.0.2: what Compile would call red
     if (!hasRanges) problems.push({ key: 'subject', text: NO_RANGES });   // v1.0.8: one line, on the inbox card
-    KEYS.forEach(function (k) { var v = sv[k]; if (!hasRanges) return; if (!v) problems.push({ key: k, text: LABEL[k].toLowerCase() + ' missing' }); else if (!inRange(k, v)) problems.push({ key: k, text: LABEL[k].toLowerCase() + ' is ' + v.length + ' characters, needs ' + rangeTxt(k).replace('\u2013', ' to ') }); });
+    KEYS.forEach(function (k) { var v = sv[k]; if (!hasRanges) return; if (nlFail && nlKey(k)) return; if (!v) problems.push({ key: k, text: LABEL[k].toLowerCase() + ' missing' }); else if (!inRange(k, v)) problems.push({ key: k, text: LABEL[k].toLowerCase() + ' is ' + v.length + ' characters, needs ' + rangeTxt(k).replace('\u2013', ' to ') }); });
     return { gs: gs, flag: flag, basis: basis, written: written, empty: empty, stale: isStale, changes: (basis && basis.changes) || [], problems: problems,
-      done: flag === true && !isStale, noField: !!gs && flag === null, noBasis: !!gs && !(basis && basis.hasField), locked: planLocked(), nl: !!pubRow(), ranges: hasRanges };   // ranges v1.0.8
+      done: flag === true && !isStale, noField: !!gs && flag === null, noBasis: !!gs && !(basis && basis.hasField), locked: planLocked(), nl: !!pubRow(), nlFail: nlFail, ranges: hasRanges };   // ranges v1.0.8
   }
 
   // ── the done tick (v1.2.0: one update op on the GR row's greeting-done, through ix-content) ──
@@ -643,6 +658,7 @@
     if (f.locked) return 'This plan is locked.';
     if (!f.ranges) return NO_RANGES + '.';                                  // v1.0.8
     if (!f.gs) return 'This plan has no Greeting block.';
+    if (f.nlFail) return NL_FAIL;                                          // v1.2.2
     if (!f.nl) return 'This plan has no newsletter linked, so the subject, preview and closing have nowhere to save.';
     if (!hooks().anthropicProxy) return 'AI writing is not set up on this page (PP_WEBHOOKS.anthropicProxy).';
     if (!f.done && !f.stale && !f.noField) return 'Mark the newsletter done first.';
@@ -985,15 +1001,15 @@
     else if (window.IPP && IPP.head) {
       var left = KEYS.length - f.written.length;
       IPP.head('words', { badge: wdInfo(), action: null,
-        tone: !f.gs || !f.nl ? '' : (f.stale || (!f.done && !f.noField) || left ? 'bad' : 'ok'),
-        status: !f.gs ? 'This plan has no Greeting block.' : !f.nl ? 'No newsletter linked to this plan.'
+        tone: f.nlFail ? 'bad' : !f.gs || !f.nl ? '' : (f.stale || (!f.done && !f.noField) || left ? 'bad' : 'ok'),
+        status: f.nlFail ? NL_FAIL : !f.gs ? 'This plan has no Greeting block.' : !f.nl ? 'No newsletter linked to this plan.'
               : f.stale ? 'The issue changed after the words were written'
               : (!f.done && !f.noField) ? 'Mark the newsletter done first'
               : left ? left + ' of ' + KEYS.length + ' still to write' : 'Every part written' });
     }
     // the band
     var sub = p.querySelector('[data-wd-sub]');
-    if (sub) { sub.textContent = !f.gs ? 'This plan has no Greeting block.' : !f.nl ? 'No newsletter linked to this plan.' : f.empty ? 'Not written' : 'Written \u00b7 ' + f.written.length + ' of ' + KEYS.length + (f.stale ? ' \u00b7 older than the issue' : f.problems.length ? ' \u00b7 ' + f.problems.map(function (x) { return x.text; }).join('; ') : (!f.noBasis && f.written.length === KEYS.length && f.basis && f.basis.stored) ? ' \u00b7 fits the issue' : ''); sub.classList.toggle('is-bad', !f.empty && (f.stale || f.problems.length > 0)); }   // v1.0.2
+    if (sub) { sub.textContent = f.nlFail ? NL_FAIL : !f.gs ? 'This plan has no Greeting block.' : !f.nl ? 'No newsletter linked to this plan.' : f.empty ? 'Not written' : 'Written \u00b7 ' + f.written.length + ' of ' + KEYS.length + (f.stale ? ' \u00b7 older than the issue' : f.problems.length ? ' \u00b7 ' + f.problems.map(function (x) { return x.text; }).join('; ') : (!f.noBasis && f.written.length === KEYS.length && f.basis && f.basis.stored) ? ' \u00b7 fits the issue' : ''); sub.classList.toggle('is-bad', f.nlFail || (!f.empty && (f.stale || f.problems.length > 0))); }   // v1.0.2; v1.2.2 nlFail
     var g = gate(f);
     var ai = p.querySelector('[data-wd-ai]'), aiL = p.querySelector('[data-wd-ai-label]');
     if (ai) { ai.hidden = f.locked; ai.disabled = !!g || busy; ai.title = g || 'Offers a spread for all six parts, written from the issue'; ai.className = 'ix-btn ' + (f.empty || f.stale ? 'ix-btn--primary' : 'ix-btn--secondary') + ' ipp-wd-ai'; }
@@ -1040,7 +1056,8 @@
       GROUPS[gk].forEach(function (k) {
         var fe = field(k), rd = cd.querySelector('[data-wd-read="' + k + '"]'), txt = sv[k];
         if (txt) have++;
-        if (rd) { rd.textContent = txt || 'Not written yet.'; rd.classList.toggle('is-none', !txt); rd.hidden = open; }
+        var lost = f.nlFail && nlKey(k);                                   // v1.2.2: unseen, not unwritten
+        if (rd) { rd.textContent = lost ? NL_FAIL_PART : (txt || 'Not written yet.'); rd.classList.toggle('is-none', lost || !txt); rd.hidden = open; }
         if (!fe) return;
         fe.hidden = !open;
         if (values) fe.value = val(k);
@@ -1067,9 +1084,11 @@
       });
       var rl = cd.querySelector('[data-wd-rule="' + gk + '"]'); if (rl) rl.textContent = groupRule(gk);   // v1.0.8
       var st = cd.querySelector('[data-wd-state="' + gk + '"]'), gp = f.problems.filter(function (x) { return groupOf(x.key) === gk; });   // v1.0.2
-      if (st) { var tot = GROUPS[gk].length; st.textContent = !gp.length ? 'Saved' : (f.empty ? (gk === 'inbox' ? 'Not set' : 'Not written') : gp.map(function (x) { return x.text; }).join('; ')); st.className = 'ipp-wd-gs' + (!gp.length ? ' is-ok' : f.empty ? '' : ' is-bad'); }
-      var ed = cd.querySelector('[data-wd-edit="' + gk + '"]'); if (ed) { ed.hidden = open || f.locked; ed.disabled = waiting || busy; }
-      var ga = cd.querySelector('[data-wd-gai="' + gk + '"]'); if (ga) { ga.hidden = f.locked; ga.disabled = !!g || busy; ga.title = g || 'Writes only this card\u2019s parts, around the others'; }   // v1.0.3
+      var cardLost = f.nlFail && gk !== 'top';                             // v1.2.2
+      if (st && cardLost) { st.textContent = NL_FAIL_STATE; st.className = 'ipp-wd-gs is-bad'; }
+      else if (st) { var tot = GROUPS[gk].length; st.textContent = !gp.length ? 'Saved' : (f.empty ? (gk === 'inbox' ? 'Not set' : 'Not written') : gp.map(function (x) { return x.text; }).join('; ')); st.className = 'ipp-wd-gs' + (!gp.length ? ' is-ok' : f.empty ? '' : ' is-bad'); }
+      var ed = cd.querySelector('[data-wd-edit="' + gk + '"]'); if (ed) { ed.hidden = open || f.locked || cardLost; ed.disabled = waiting || busy; }
+      var ga = cd.querySelector('[data-wd-gai="' + gk + '"]'); if (ga) { ga.hidden = f.locked || cardLost; ga.disabled = !!g || busy; ga.title = g || 'Writes only this card\u2019s parts, around the others'; }   // v1.0.3
       var ft = cd.querySelector('[data-wd-foot="' + gk + '"]'); if (ft) ft.hidden = !open;
       var cancel = cd.querySelector('[data-wd-cancel="' + gk + '"]'); if (cancel) cancel.hidden = f.locked || W.saving === gk;
       var kg = keepsIn(gk).length;                                         // v1.1.0 a Keep alone can save; edits follow the card's range rule as before

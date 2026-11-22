@@ -1,4 +1,18 @@
-/* ipp-publish-v2.82.js */
+/* ipp-publish-v2.83.js */
+/* v2.83 (22 Nov 2026, Jeff on WLN-124B): A NEWSLETTER THAT DID NOT LOAD STOPS THE PAGE HONESTLY, AND A SLOW SITE GETS A
+   SECOND LOOK. Two things Jeff hit after unlocking WLN-124B:
+   1 · THE NEWSLETTER DID NOT LOAD. One plan read came back without the issue's NEWSLETTER. Send Setup said "This plan's
+       newsletter was not found in the plan data", and Compile, with no publish-step-state to read, lost the issue's saved
+       "It works" links and its compile stamp. Now, when the page names a NEWSLETTER and the board does not hold it (after
+       ipp-shell v1.52's one fresh re-read), Send Setup says "Couldn't load this issue's newsletter, so its send settings
+       can't show. Reload the page (Cmd+R)." and Compile shows that one job, red, with a Reload button, and nothing else:
+       no link jobs, no stamps read from a newsletter that is not there. "Not found" stays for a page that names none.
+   2 · A LINK THAT FAILS IS CHECKED ONCE MORE. Ed Kalpagian's site answered the checker 404 after Unlock and answered on the
+       next compile (22 of 22). Now, when the compiled-email link check comes back with a link that is neither working nor
+       confirmed with It works, the check runs once more, fresh, 3 s later; a link that answers on either run counts as
+       working. Only a link that fails twice becomes a job. It works stays remembered for the issue, as since v2.10.
+   Nothing else changed. CSS stays ipp-publish-v2.29.css.
+   HARDCODING: HC-P-PUB83-1 the new words (NL_FAIL_*); HC-P-PUB83-2 the one re-check and its 3 s wait. */
 /* v2.82 (17 Nov 2026, Performance Report S5, Jeff by voice: "just do download for Stirista, download for Mailchimp, buttons"):
    THE EMAIL FILE IS DOWNLOADED FOR A NAMED SENDER, AND ALWAYS CARRIES OUR OPEN PICTURE.
      · THE HEADER'S ONE "Download" IS TWO BUTTONS: "Download for Stirista" and "Download for Mailchimp" (160 px each, the
@@ -961,7 +975,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '2.82';   // v2.42: FILE is derived from this
+  var VERSION = '2.83';   // v2.42: FILE is derived from this
   var DEFAULT_SEND_TIME = '08:00'; // HC-P-S7-17
   var FILE = 'ipp-publish-v' + VERSION + '.js';
   var MOUNTED = 'data-publish-mounted';
@@ -1041,6 +1055,9 @@
     for (var i = 0; i < (p.newsletters || []).length; i++) if (p.newsletters[i].id === nl) return p.newsletters[i];
     return null;
   }
+  var NL_FAIL_SETUP = 'Couldn\u2019t load this issue\u2019s newsletter, so its send settings can\u2019t show. Reload the page (Cmd+R).',   // v2.83, HC-P-PUB83-1
+      NL_FAIL_JOB = 'Couldn\u2019t load this issue\u2019s newsletter.', NL_FAIL_WHY = 'The plan data came back without it, twice. Nothing is lost: reload the page and it reads again.';
+  function nlFail() { return !!boardData() && !!pubBoard() && !!ids().nlId && !pubRow(); }   // v2.83: the page names a NEWSLETTER the board did not bring
   function rawVal(k) { var r = pubRow(); var v = r && r.values ? r.values[k] : null; return v == null ? '' : String(v); }
   // v2.4 — put the newsletter status into a PATCH. Returns the id written,
   // or '' when this page cannot (no field, or no id for that label).
@@ -1163,7 +1180,7 @@
     if (!boardData()) return { ok: false, wait: true, html: 'Reading the send settings\u2026' };
     var p = pubBoard();
     if (!p) return { ok: false, html: 'The plan data has no send settings (needs Data Worker v1.0.29 or later).' };
-    if (!pubRow()) return { ok: false, html: 'This plan\u2019s newsletter was not found in the plan data.' };
+    if (!pubRow()) return { ok: false, html: ids().nlId ? NL_FAIL_SETUP : 'This plan\u2019s newsletter was not found in the plan data.' };   // v2.83
     var miss = SETUP_KEYS.filter(fieldMissing);
     if (miss.length) return { ok: false, html: 'Create the NEWSLETTER field' + (miss.length > 1 ? 's ' : ' ') + miss.map(function (k) { return p.fields[k]; }).join(', ') + ' (Plain text) in Webflow.' };
     var t = titleInfo();
@@ -1901,6 +1918,7 @@
   function jobsModel() {
     var b = boardData(), J = [], grey = [];
     if (!b) return { wait: true, jobs: J, grey: grey };
+    if (nlFail()) { J.push(J_('first', 'red', NL_FAIL_JOB, NL_FAIL_WHY, 'Reload', { run: 'reload' })); return { jobs: J, grey: grey }; }   // v2.83: one honest job, nothing read from a missing newsletter
     var held = {}; boardHolds().forEach(function (h) { if (h && h.slotId) held[h.slotId] = 1; });
     var by = { article: [], ad: [], event: [], re: [], 'text-ad': [], greeting: [], other: [] }, inPlan = {};
     (b.slots || []).forEach(function (s) { var gk = groupOf(s); if (!gk) return; var k = kindOf(gk); inPlan[k] = 1; if (held[s.id]) return; (by[k] || by.other).push(s); });
@@ -2083,6 +2101,7 @@
     if (!j.btn) return '<span class="ipp-wl-btn is-none"></span>';
     if (j.fix) return '<button type="button" class="ipp-wl-btn" data-cor="' + (FIXES.push(j.fix) - 1) + '">' + esc(j.btn) + '</button>';
     if (j.run === 'compile') return '<button type="button" class="ipp-wl-btn" data-publish-go' + (state.running || state.stopped ? ' disabled' : '') + '>' + esc(j.btn) + '</button>';
+    if (j.run === 'reload') return '<button type="button" class="ipp-wl-btn" data-publish-reload>' + esc(j.btn) + '</button>';   // v2.83
     if (j.run === 'recheck') return '<button type="button" class="ipp-wl-btn" data-publish-recheck>' + esc(j.btn) + '</button>';
     if (j.go) return '<button type="button" class="ipp-wl-btn" data-pub-go="' + esc(j.go) + '"' + (j.slot ? ' data-pub-slot="' + esc(j.slot) + '"' : '') + '>' + esc(j.btn) + '</button>';
     return '<span class="ipp-wl-btn is-none"></span>';
@@ -2197,8 +2216,19 @@
     var u = linkCheckUrl(), nl = ids().nlId;
     if (!u || !nl) { state.links = { error: 'the link-check address is not known (PP_WEBHOOKS.planBoard or linkCheck)' }; drawBoard(); return; }
     state.links = { running: true }; drawBoard();
-    fetch(u + (u.indexOf('?') < 0 ? '?' : '&') + 'n=' + encodeURIComponent(nl) + (fresh ? '&fresh=1' : ''), { method: 'GET', credentials: 'omit' })
-      .then(function (r) { return r.json().catch(function () { return { ok: false, error: 'HTTP ' + r.status }; }); })
+    var get = function (fr) { return fetch(u + (u.indexOf('?') < 0 ? '?' : '&') + 'n=' + encodeURIComponent(nl) + (fr ? '&fresh=1' : ''), { method: 'GET', credentials: 'omit' })
+      .then(function (r) { return r.json().catch(function () { return { ok: false, error: 'HTTP ' + r.status }; }); }); };
+    get(fresh)
+      .then(function (j) {                                                 // v2.83: a link that fails gets one more look, 3 s later (HC-P-PUB83-2)
+        var bad = j && j.ok && j.links ? j.links.filter(function (x) { return !x.ok && !remembered(x.url); }) : [];
+        if (!bad.length) return j;
+        return new Promise(function (res) { setTimeout(res, 3000); }).then(function () { return get(true); }).then(function (j2) {
+          if (!(j2 && j2.ok && j2.links)) return j;
+          var okNow = {}; j2.links.forEach(function (x) { if (x.ok) okNow[bareUrl(x.url)] = x; });
+          j.links = j.links.map(function (x) { var y = !x.ok && okNow[bareUrl(x.url)]; return y ? Object.assign({}, x, { ok: true, status: y.status, error: '', rechecked: true }) : x; });
+          return j;
+        }, function () { return j; });
+      })
       .then(function (j) { state.links = j && j.ok ? j : { error: (j && j.error) || 'no answer' }; refreshAll(); writeLinksOnStamp(); })      // v2.24: the panes and the bar follow; v2.46: links onto the stamp
       .catch(function (e) { state.links = { error: (e && e.message) || 'request failed' }; refreshAll(); });
   }
@@ -3787,6 +3817,7 @@
       if ((el = t.closest('[data-publish-go]'))) { e.preventDefault(); compile(el); return; }
       if ((el = t.closest('[data-cx-nav]'))) { e.preventDefault(); var nk = el.getAttribute('data-cx-nav'); CX.open = CX.open === nk ? '' : nk; CX.review = false; drawBoard(); return; }   // v2.47: a cell opens its section's checks under the header; again closes them
       if ((el = t.closest('[data-cx-back]'))) { e.preventDefault(); CX.review = false; drawReview(); return; }   // v2.47
+      if ((el = t.closest('[data-publish-reload]'))) { e.preventDefault(); location.reload(); return; }   // v2.83
       if ((el = t.closest('[data-publish-recheck]'))) { e.preventDefault(); state.links = null; runCheck(); runLinks(true); return; }
       if ((el = t.closest('[data-cor]'))) { e.preventDefault(); openCor(FIXES[Number(el.getAttribute('data-cor'))]); return; }   // v2.33: the greeting is on its own tab
       if ((el = t.closest('[data-pub-go]'))) {

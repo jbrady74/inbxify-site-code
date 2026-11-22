@@ -1,4 +1,13 @@
-/* ipp-shell-v1.51.js */
+/* ipp-shell-v1.52.js */
+/* v1.52 (22 Nov 2026, Jeff on WLN-124B): A NEWSLETTER THAT DID NOT LOAD IS READ AGAIN, AND SAID SO. On WLN-124B the plan
+   board came back without the issue's NEWSLETTER (one failed read, right after the plan was unlocked and published). Words then
+   showed the subject line, preview text and closing as "Not written yet", Send Setup said "This plan's newsletter was not
+   found in the plan data", and Compile lost the issue's saved "It works" links. A reload showed every word was still there.
+   Now, when the page names a NEWSLETTER and the board's publish.newsletters does not hold it, the board is read once more,
+   fresh, 1.5 s later. If it is still missing, IPP.board.nlMissing() answers true (false once a read finds it), and Words,
+   Send Setup and Compile (ipp-words v1.2.2, ipp-publish v2.83) say "Couldn't load this issue's newsletter" with a Reload,
+   never "Not written yet". Nothing else changed. CSS unchanged.
+   HARDCODING: HC-P-SH52-1 the one fresh re-read and its 1.5 s wait. */
 /* v1.51 (17 Nov 2026, Performance Report S4): A SENT PLAN STILL HANDS OVER ITS EMAIL FILE. Jeff (17 Nov): on a sent plan the
    Compile page's "View the email" and "Download" did nothing. The sent guard (v1.39) refuses every press inside a view
    except the tabs, Open newsletter, the ids and Unlock, and the two file buttons were caught by it. Reading the file
@@ -435,7 +444,7 @@ window.IPP = (function () {
   }
 
   // ── the plan board (v1.6) ───────────────────────────────────
-  var B = { data:null, error:'', pending:null };
+  var B = { data:null, error:'', pending:null, nlMissing:false };
   function announce(detail){ document.dispatchEvent(new CustomEvent('ipp:board', { detail:detail })); }
   function loadBoard(opts){
     opts = opts || {};
@@ -461,9 +470,24 @@ window.IPP = (function () {
         throw e;
       });
     };
+    // v1.52: the page names a NEWSLETTER the board did not bring: read once more, fresh, before telling the tabs
+    var lacksNl = function(j){
+      var want = nlIdOnPage(); if (!want) return false;
+      var rows = (j && j.publish && Array.isArray(j.publish.newsletters)) ? j.publish.newsletters : null;
+      if (!rows) return false;
+      return !rows.some(function(r){ return r && r.id === want; });
+    };
+    var again = function(){
+      var u2 = base + (base.indexOf('?') < 0 ? '?' : '&') + 'planId=' + encodeURIComponent(id) + '&fresh=1';
+      return new Promise(function(res){ setTimeout(res, 1500); }).then(function(){ return getJSON(u2); });
+    };
     B.pending = attempt().then(function(j){
-      B.pending = null; B.data = j; B.error = '';
-      announce({ ok:true, data:j, error:'' });
+      if (!lacksNl(j)) return j;
+      return again().then(function(j2){ return j2; }, function(){ return j; });
+    }).then(function(j){
+      B.pending = null; B.data = j; B.error = ''; B.nlMissing = lacksNl(j);
+      if (B.nlMissing) console.warn('[IPP] the plan board came back without this page\u2019s NEWSLETTER (' + nlIdOnPage() + '), after one fresh re-read.');
+      announce({ ok:true, data:j, error:'', nlMissing:B.nlMissing });
       return j;
     }, function(e){
       B.pending = null;
@@ -476,6 +500,7 @@ window.IPP = (function () {
   var board = {
     load: loadBoard,
     data: function(){ return B.data; },
+    nlMissing: function(){ return !!B.nlMissing; },   // v1.52
     error: function(){ return B.error; }
   };
 
@@ -1424,7 +1449,7 @@ window.IPP = (function () {
     q: q, qa: qa, root: root,
     tenant: tenant, post: post, toast: toast, saving: saving,
     getJSON: getJSON, board: board,
-    planInfo: planInfo, requestClose: requestClose, version: '1.51', head: head,   // head v1.28
+    planInfo: planInfo, requestClose: requestClose, version: '1.52', head: head,   // head v1.28
     locked: function(){ return LOCKED; }, LOCK_VIEWS: LOCK_VIEWS   // v1.26
   };
 })();
