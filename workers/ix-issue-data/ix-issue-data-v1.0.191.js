@@ -1,4 +1,55 @@
-// ix-issue-data-v1.0.189.js
+// ix-issue-data-v1.0.191.js
+// v1.0.191 (22 Nov 2026, Content Home S13): /plans COUNTS A CLONE'S UNFINISHED ITEMS THE WAY THE IPP RAIL DOES.
+//   Found in S13 Test 5 on WLN-910B: /plans said 36 items to confirm (the Pub Plans tab), the IPP rail banner said 41
+//   (ipp-shell v1.52 cloneCount). Same rows, two counting rules. Jeff, 22 Nov: fix it in the Data Worker.
+//   The IPP rule (ipp-shell v1.52, cloneCount, HC-P-SH36-2) is now the one rule:
+//     - each copied token the rail knows counts once (a token it has no tab for is not counted), except:
+//     - an "ad" token counts only while the row still holds its ad;
+//     - a "sponsor" token counts once PER SECTION, not once per row (a section's sponsor is one decision);
+//     - the NEWSLETTER's copied keys count once each, except "sponsors", which counts every section the issue has
+//       (a non-ad slot with a section), and "spon:<section id>", which counts that section; a section is counted once
+//       however many rows or keys name it.
+//   How: /plans still finds which plans have anything unfinished with its quick per-row read (unchanged). For each such
+//   plan, and only those, it now builds the plan's board (as /plan-board does, on the same read switch) and counts it
+//   with cloneCountOf(), a line-for-line port of ipp-shell's cloneCount. Usually zero to two plans; on "d1" a board
+//   costs about two Webflow calls. If a board cannot be built, that plan keeps the quick count and /plans warns.
+//   cloneOpen is now total > 0 by the same rule (the rail's own test), so the tile and the banner always agree.
+//   Nothing else changed. /health says 1.0.191.
+//   HARDCODING (provisional): HC-P-CH13-6 the counting rule, ported from ipp-shell v1.52 (HC-P-SH36-2). If the rail's
+//   rule changes, this function must change with it.
+//
+// v1.0.190 header follows.
+// v1.0.190 (22 Nov 2026, Content Home S13 · phase 3, reads switch): /links, /greeting-context AND /release-check GO ON
+//   THE READ SWITCH.
+//   Content Home scoping §5d and §5f (ruled 9 Nov). /plan-board, /plans and /clone-rows are on "d1" (S11, S13 Tests 2 and 5).
+//   1 · THE SWITCH. Three more keys in KV contentHome.reads: "links", "greeting-context", "release-check". For each:
+//         (no value)  exactly as v1.0.189: every read from Webflow (none of the three used the D1 copy before)
+//         "webflow"   the same as no value
+//         "d1"        the reads in 2 to 4
+//       None of the three keys is in the KV value today, so deploying this version changes nothing.
+//   2 · /links with "d1": the plan board is built as /plan-board builds it on "d1": NL-BLOCKS and ALLOCATIONS from the
+//       home tables for the plan's title, the staying collections from the copy, the PUBLICATION PLAN and its NEWSLETTER
+//       fresh from Webflow by id (scoping ruling 3). The link probes and the 10-minute cached answer are unchanged.
+//   3 · /greeting-context with "d1": the same board read as 2. Its answer is unchanged.
+//   4 · /release-check with "d1": the NL-BLOCKS rows and the ALLOCATIONS print item it reads by id come from the home
+//       tables. A row D1 does not hold is read from Webflow, as before. STILL FRESH FROM WEBFLOW BY ID: the PUBLICATION
+//       PLAN (its planning status is the sent lock and the hold check) and the NEWSLETTER (its stamps are the release lock).
+//       Those two are the lock itself, so they are never read from a copy. Why this is safe: since phase 2 every page
+//       writes NL-BLOCKS and ALLOCATIONS through ix-content, which stores the row in D1 before it answers.
+//       The 503 "Webflow is busy" answer and the time budget are unchanged.
+//   5 · EVERY ANSWER SAYS WHERE IT CAME FROM. The three answers' meta gain reads { route, value, from }, and copyAge when
+//       D1 answered. /links had no meta: it gains one beside its old fields (version, warnings, webflowCalls stay).
+//   6 · /read-compare?route=greeting-context&planId=… builds that answer twice (Webflow only, then "d1") and lists every
+//       difference. /links is not on the compare: its rows are the /plan-board read (route=plan-board compares it), and
+//       its link probes give different answers from one minute to the next. /release-check is not on it either: its
+//       answer is a yes or no on one save; Test 7 in the S13 closure checks it with real saves.
+//   /greeting-context's body moved into buildGreetingContext() so the compare can build it twice; its answer is unchanged.
+//   /health says 1.0.190. Nothing else changed.
+//   HARDCODING (provisional): HC-P-CH13-4 "links", "greeting-context", "release-check" join the routes on the switch
+//   (extends HC-P-CH11-2); HC-P-CH13-5 the release check's two lock reads (PUBLICATION PLAN, NEWSLETTER) are never
+//   switched to D1.
+//
+// v1.0.189 header follows.
 // v1.0.189 (18 Nov 2026, Content Home S13 · phase 3, reads switch): /clone-rows GOES ON THE READ SWITCH, AND THE COMPARE
 //   COVERS IT.
 //   Content Home scoping §5d and §5f (ruled 9 Nov). /plan-board and /plans are on "d1" (S11, S13 Test 2). This is the next route.
@@ -3897,7 +3948,7 @@
 const ARTICLE_FORMATS = { 'standard': 'standard', 'photo-essay': 'photo-essay', 'video': 'video' };
 // v1.0.106: the photo essay treatment when the article names none. HC-P-CB-20.
 const DEFAULT_TREATMENT = 'polaroid';
-const VERSION = '1.0.189';   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
+const VERSION = '1.0.191';   // v1.0.191 (/plans counts a clone's items as the IPP rail does);   // v1.0.190   // v1.0.190 (/links, /greeting-context, /release-check on the read switch);   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
 // v1.0.170 — the X-IX-Key header against both secrets: IX_KEY (Make, 206) or IX_SERVICE_KEY (ix-content).
 function anyKey(env) { return !!(env.IX_KEY || env.IX_SERVICE_KEY); }
 function keyOk(env, request) {
@@ -3914,7 +3965,7 @@ const MAX_RETRIES = 4;     // per call, on 429 or 5xx
 const PAGE_WAIT_EACH_MS = 3000;   // v1.0.169, HC-P-RC-3: the longest single wait on a busy Webflow, planner reads
 // v1.0.184 — the read switch (Content Home scoping §5f). HC-P-CH11-1, HC-P-CH11-2.
 const READS_KV_KEY = 'contentHome.reads';
-const READS_ROUTES = ['plan-board', 'plans', 'clone-rows'];   // 'clone-rows' v1.0.189 (HC-P-CH13-1)
+const READS_ROUTES = ['plan-board', 'plans', 'clone-rows', 'links', 'greeting-context', 'release-check'];   // 'clone-rows' v1.0.189 (HC-P-CH13-1); the last three v1.0.190 (HC-P-CH13-4)
 const READS_VALUES = ['d1', 'webflow'];
 async function readSwitch(env, route) {
   const out = { route, value: null, from: 'default' };
@@ -4389,7 +4440,8 @@ async function readCompareRoute(env, ctx, url, request) {
   if (!env.WEBFLOW_TOKEN) return out({ ok: false, error: 'WEBFLOW_TOKEN is not set on this Worker.' }, 500);
   if (!env.IX_DB) return out({ ok: false, error: 'This Worker has no IX_DB binding (database ix-content), so there is nothing to compare.' }, 500);
   const route = (url.searchParams.get('route') || 'plan-board').trim();
-  if (!READS_ROUTES.includes(route)) return out({ ok: false, error: 'route must be one of: ' + READS_ROUTES.join(', ') + '.' }, 400);
+  const COMPARABLE = ['plan-board', 'plans', 'clone-rows', 'greeting-context'];             // v1.0.190: links and release-check are not compared
+  if (!COMPARABLE.includes(route)) return out({ ok: false, error: 'route must be one of: ' + COMPARABLE.join(', ') + '.' }, 400);
   const C = cfg.collections || {};
   const id = (url.searchParams.get(route === 'plans' ? 'titleAdminId' : 'planId') || '').trim();
   if (!/^[0-9a-f]{24}$/.test(id)) return out({ ok: false, error: 'Missing or malformed ' + (route === 'plans' ? 'titleAdminId' : 'planId') + '.' }, 400);
@@ -4399,11 +4451,12 @@ async function readCompareRoute(env, ctx, url, request) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(cDate)) cDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
   const cEdition = url.searchParams.get('edition') === '1';
   const build = async (value) => {
-    const run = route === 'clone-rows'
+    const run = (route === 'clone-rows' || route === 'greeting-context')
       ? new Run(env, ctx, cfg, true, Object.assign({ waitCapMs: PAGE_WAIT_CAP_MS }, cloneReadOpts({ value })))
       : new Run(env, ctx, cfg, true, readOpts({ value }, { waitCapMs: PAGE_WAIT_CAP_MS }));
     let body;
     if (route === 'plans') body = await buildPlans(run, cfg, C, id);
+    else if (route === 'greeting-context') body = await buildGreetingContext(run, id);      // v1.0.190
     else if (route === 'clone-rows') body = cloneForCompare(await buildClone(run, id, cName, cDate, NEW_PLAN, NEW_NL, cEdition));
     else { body = await buildBoard(run, id); delete body._recs; }
     return { body, meta: Object.assign(run.meta(null), { copyAge: await run.copyAge() }) };
@@ -4412,7 +4465,7 @@ async function readCompareRoute(env, ctx, url, request) {
     const w = await build('webflow');                      // one after the other, so the two never share Webflow's minute
     const d = await build('d1');
     const diffs = [];
-    diffJson(w.body, d.body, route === 'plans' ? 'plans' : (route === 'clone-rows' ? 'clone' : 'board'), diffs);
+    diffJson(w.body, d.body, route === 'plans' ? 'plans' : (route === 'clone-rows' ? 'clone' : (route === 'greeting-context' ? 'greeting' : 'board')), diffs);
     return out({ ok: true, route, id, same: diffs.length === 0, differenceCount: diffs.length,
       differences: diffs.slice(0, COMPARE_CAP), truncated: diffs.length > COMPARE_CAP,
       webflowMeta: w.meta, d1Meta: d.meta, version: VERSION }, 200);
@@ -5232,7 +5285,9 @@ async function linksRoute(env, ctx, url, request) {
   const fresh = url.searchParams.get('fresh') === '1';
   const cacheKey = new Request('https://ix-cache.local/links/' + planId);
   if (!fresh) { try { const hit = await caches.default.match(cacheKey); if (hit) return out(Object.assign(await hit.json(), { cached: true }), 200); } catch (e) {} }
-  const run = new Run(env, ctx, cfg, fresh);
+  const sw = await readSwitch(env, 'links');                                                // v1.0.190
+  const run = new Run(env, ctx, cfg, fresh, cloneReadOpts(sw));
+  if (sw.why) run.warn(sw.why);
   try {
     const board = await buildBoard(run, planId);
     const R = board._recs; delete board._recs;
@@ -5275,7 +5330,8 @@ async function linksRoute(env, ctx, url, request) {
       x.cls = (x.url && !/^https?:\/\//i.test(x.url) && !callLink(x.url)) ? 'dead' : linkClass(a, x.url);
     });
     const body = { ok: true, planId, checked: urls.length, links: list, version: VERSION, warnings: run.meta(null).warnings,
-                   webflowCalls: run.calls, probes: urls.length };   // v1.0.38 counts
+                   webflowCalls: run.calls, probes: urls.length,   // v1.0.38 counts
+                   meta: Object.assign(run.meta(list.length), { reads: readsMeta(sw), copyAge: await run.copyAge() }) };   // v1.0.190
     try { ctx.waitUntil(caches.default.put(cacheKey, new Response(JSON.stringify(body), { headers: { 'Cache-Control': 'max-age=600' } }))); } catch (e) {}
     return out(body, 200);
   } catch (e) {
@@ -5973,6 +6029,16 @@ async function buildPlans(run, cfg, C, taId) {
       });
     } else run.warn('IX_CONFIG.collections.blocks is not set, so no plan shows an unfinished clone.');
   } catch (e) { run.warn('Unfinished clones could not be counted: ' + ((e && e.message) || e)); }
+  // v1.0.191 — the IPP rail's count for each plan with anything unfinished (HC-P-CH13-6).
+  for (const pid of Object.keys(cloneItems).filter(k => cloneItems[k] > 0)) {
+    try {
+      const board = await buildBoard(run, pid);
+      delete board._recs;
+      cloneItems[pid] = cloneCountOf(board);
+    } catch (e) {
+      run.warn('The unfinished clone on plan ' + pid + ' was counted roughly: its board could not be built (' + ((e && e.message) || e) + ').');
+    }
+  }
   const plans = rows
     .filter(r => refId((r.fieldData || {})[P.titleAdmin]) === taId)
     .map(r => {
@@ -6584,6 +6650,33 @@ function compileCurrentOf(run, nl, rows) {
 }
 // v1.0.132 — what a row still waits on after a clone (HC-P-CF1-2).
 // The old single value (ackPending, "yes") meant the row's paid ad or sponsor.
+// v1.0.191 — a clone's unfinished items, counted as ipp-shell v1.52's cloneCount counts them (HC-P-CH13-6).
+// The tokens the rail knows (ipp-shell v1.52 CL_OWN and CL_PREFIX, HC-P-SH36-1). A token it does not know is not counted.
+const CLONE_TOKENS = ['article', 'ad', 'sponsor', 'splash', 'house', 'block', 'gr-title', 'gr-short', 'gr-para',
+  'subject', 'preview', 'closing', 'volume', 'sectors', 'sendAt'];
+const CLONE_PREFIXES = ['ev:', 're:', 'txa:', 'spon:'];
+const cloneTokenKnown = t => CLONE_TOKENS.includes(t) || CLONE_PREFIXES.some(p => String(t).indexOf(p) === 0);
+function cloneCountOf(board) {
+  let total = 0;
+  const spSecs = new Set(), secs = new Set();
+  (board.slots || []).forEach(s => {
+    if (s.assetType !== 'ad' && s.section && s.section.id) secs.add(s.section.id);
+    (Array.isArray(s.pending) ? s.pending : []).forEach(t => {
+      if (t === 'ad' && !(s.asset && s.asset.id)) return;               // the ad is already gone
+      if (t === 'sponsor') { if (s.sponsor && s.sponsor.id && s.section && s.section.id) spSecs.add(s.section.id); return; }
+      if (cloneTokenKnown(t)) total++;
+    });
+  });
+  const nls = (board.publish && Array.isArray(board.publish.newsletters)) ? board.publish.newsletters : [];
+  nls.forEach(n => {
+    ((n && n.values && Array.isArray(n.values.clonePending)) ? n.values.clonePending : []).forEach(k => {
+      if (k === 'sponsors') { secs.forEach(id => spSecs.add(id)); return; }
+      if (k.indexOf('spon:') === 0) { spSecs.add(k.slice(5)); return; }
+      if (cloneTokenKnown(k)) total++;
+    });
+  });
+  return total + spSecs.size;
+}
 function pendingOf(v, cc) {
   const s = String(v == null ? '' : v).trim();
   if (!s) return [];
@@ -9908,6 +10001,16 @@ class Run {
       return out;
     } catch (e) { return this.d1Err(e); }
   }
+  // v1.0.190 — one home-table row by id: from D1 when the route is on "d1", else (or when D1 lacks it) Webflow by id.
+  async getHome(table, label, collId, id) {
+    if (this.homeFresh && ['nl_blocks', 'allocations'].includes(table) && /^[0-9a-f]{24}$/.test(id || '')) {
+      try {
+        const r = await this.env.IX_DB.prepare('SELECT * FROM ' + table + ' WHERE id=?').bind(id).first();
+        if (r) { this.from(label, 'd1'); return this.homeItem(r); }
+      } catch (e) { this.d1Err(e); }
+    }
+    return this.getItem(label, collId, id);
+  }
   async d1Home(table, taId) {                                                   // nl_blocks or allocations; v1.0.184: one title
     if (!this.d1on || !['nl_blocks', 'allocations'].includes(table)) return null;
     try {
@@ -10887,7 +10990,7 @@ async function planOfBatch(run, C, batch) {
   if (!/^[0-9a-f]{24}$/.test(C.blocks || '')) return { why: 'IX_CONFIG.collections.blocks is not set' };
   for (const o of ops) {                                                   // a row that exists: read its plan
     const id = idOf(o); if (!id) continue;
-    const row = await run.getItem('NL-BLOCKS', C.blocks, id);
+    const row = await run.getHome('nl_blocks', 'NL-BLOCKS', C.blocks, id);   // v1.0.190: the home table on "d1"
     const p = row ? refId((row.fieldData || {})[JOIN.block.plan]) : null;
     if (p) return { planId: p };
   }
@@ -10948,9 +11051,11 @@ async function releaseCheckRoute(env, ctx, url, request) {
   if (planId && !/^[0-9a-f]{24}$/.test(planId)) return fail(400, 'Malformed planId.');
   if (nlParam && !/^[0-9a-f]{24}$/.test(nlParam)) return fail(400, 'Malformed nlId.');
   const deadline = t0 + RC_BUDGET_MS;
-  const run = new Run(env, ctx, cfg, true, { noWait: true, deadline });     // v1.0.168
+  const sw = await readSwitch(env, 'release-check');                                       // v1.0.190
+  const run = new Run(env, ctx, cfg, true, Object.assign({ noWait: true, deadline }, cloneReadOpts(sw)));     // v1.0.168; switch v1.0.190
+  if (sw.why) run.warn(sw.why);
   let nlFrom = nlParam ? 'param' : 'none';
-  const meta = () => Object.assign(run.meta(null), { nlFrom, budgetMs: RC_BUDGET_MS });
+  const meta = () => Object.assign(run.meta(null), { nlFrom, budgetMs: RC_BUDGET_MS, reads: readsMeta(sw) });   // reads v1.0.190
   const busy = why => json({ ok: false, released: false, checked: false, planId: planId || null, nlId: null,
     error: 'Webflow is busy; the release check could not run.', why, meta: meta() }, 503);
   const work = (async () => {
@@ -11096,8 +11201,20 @@ async function greetingContextRoute(env, ctx, url, request) {
   if (!env.WEBFLOW_TOKEN) return out({ ok: false, error: 'WEBFLOW_TOKEN is not set on this Worker.' }, 500);
   const planId = (url.searchParams.get('planId') || '').trim();
   if (!/^[0-9a-f]{24}$/.test(planId)) return out({ ok: false, error: 'Missing or malformed planId.' }, 400);
-  const run = new Run(env, ctx, cfg, url.searchParams.get('fresh') === '1');
+  const sw = await readSwitch(env, 'greeting-context');                                     // v1.0.190
+  const run = new Run(env, ctx, cfg, url.searchParams.get('fresh') === '1', cloneReadOpts(sw));
+  if (sw.why) run.warn(sw.why);
   try {
+    const got = await buildGreetingContext(run, planId);                                      // v1.0.190: body moved, answer unchanged
+    const n = got.counts.articles + got.counts.events + got.counts.finds;
+    return out(Object.assign({ ok: true }, got, { meta: Object.assign(run.meta(n), { reads: readsMeta(sw), copyAge: await run.copyAge() }) }), 200);
+  } catch (e) {
+    return out({ ok: false, error: (e && e.message) || String(e), meta: run.meta(null) }, (e && e.status) || 502);
+  }
+}
+// v1.0.190 — /greeting-context's answer, built on a given Run (so /read-compare can build it from each source).
+async function buildGreetingContext(run, planId) {
+  {
     const board = await buildBoard(run, planId);
     const R = board._recs || {}; delete board._recs;
     const articles = [], events = [], finds = [];
@@ -11122,12 +11239,9 @@ async function greetingContextRoute(env, ctx, url, request) {
     });
     const plan = board.plan || {};
     const grs = (board.slots || []).filter(s => s.greeting && s.greeting.basis)[0];   // v1.0.68
-    return out({ ok: true, plan: { id: planId, titleName: plan.titleName || null, date: plan.date || null }, articles, events, finds,
+    return { plan: { id: planId, titleName: plan.titleName || null, date: plan.date || null }, articles, events, finds,
       basis: grs ? grs.greeting.basis : null,   // v1.0.68
-      counts: { articles: articles.length, events: events.length, finds: finds.length }, bodyMax: GC.bodyMax,
-      meta: run.meta(articles.length + events.length + finds.length) }, 200);
-  } catch (e) {
-    return out({ ok: false, error: (e && e.message) || String(e), meta: run.meta(null) }, (e && e.status) || 502);
+      counts: { articles: articles.length, events: events.length, finds: finds.length }, bodyMax: GC.bodyMax };
   }
 }
 
@@ -12074,13 +12188,13 @@ async function holdRefusalOf(run, C, planId, batch) {
       if (fieldOf(o) !== B.allocation) continue;
       const id = String(o.id || '').trim();
       if (!/^[0-9a-f]{24}$/.test(id) || clearsArticle.has(id)) continue;
-      const row = await run.getItem('NL-BLOCKS', C.blocks, id);
+      const row = await run.getHome('nl_blocks', 'NL-BLOCKS', C.blocks, id);   // v1.0.190: the home table on "d1"
       const fd = (row && row.fieldData) || {};
       if (!refId(fd[B.article])) continue;
       const allocId = String(fd[B.allocation] || '').trim();
       let t = 'This print item';
       if (/^[0-9a-f]{24}$/.test(allocId) && /^[0-9a-f]{24}$/.test(C.allocations || '')) {
-        const a = await run.getItem('ALLOCATIONS', C.allocations, allocId), afd = (a && a.fieldData) || {};
+        const a = await run.getHome('allocations', 'ALLOCATIONS', C.allocations, allocId), afd = (a && a.fieldData) || {};   // v1.0.190
         t = String(afd[JOIN.alloc.printTitle] || afd.name || '').trim() || t;
       }
       return '\u201c' + t + '\u201d already has an article matched on ' + planName + '. Empty the tile on the Picker first.';
