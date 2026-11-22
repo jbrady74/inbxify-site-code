@@ -35,7 +35,7 @@
            html: function (r) { return '<a class="ix-table-btn" href="…" target="_blank">Open ↗</a>'; } }
        ],
        rows:      [ … ],                       // plain objects; a column reads r[key] unless it gives text()/html()
-       rowId:     function (r) { return r.id; },
+       rowId:     function (r) { return r.id; },   // default: r.id, else the first column, else position
        zebra:     true,                        // default true when no expand is given (a read-only list)
        dense:     false,
        minWidth:  1080,
@@ -118,7 +118,9 @@
     var pageSize = o.pageSize == null ? DEFAULTS.pageSize : o.pageSize;
     var noun = o.noun || ['row', 'rows'];
     var words = o.words || {};
-    var rowId = o.rowId || function (r, i) { return r.id != null ? r.id : i; };
+    // a row's id keeps it open across filters and pages: r.id, else the first column's value, else its position
+    var firstKey = (o.columns && o.columns[0] && o.columns[0].key) || null;
+    var rowId = o.rowId || function (r, i) { return r.id != null ? r.id : (firstKey && r[firstKey] != null && typeof r[firstKey] !== 'object' ? r[firstKey] : i); };
     var timer = null;
 
     function colByKey(k) { for (var i = 0; i < cols.length; i++) if (cols[i].key === k) return cols[i]; return null; }
