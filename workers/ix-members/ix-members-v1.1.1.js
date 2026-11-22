@@ -1,8 +1,20 @@
-// ix-members-v1.1.0.js
+// ix-members-v1.1.1.js
 // INBXIFY · Cloudflare Worker · ix-members
 // Who is logged in, and which publisher they may see. The one place the
 // Memberstack secret key lives. Publisher Portal S2.
 //
+// v1.1.1 (18 Nov 2026, Ad Maker Build S3) — SENDING MAIL FOR ix-sales.
+//   ix-sales emails the publisher a link to approve an ad, and emails inbxify when the publisher decides. The
+//   Resend key lives only here, so ix-sales asks this Worker to send (Jeff keeps no copy of a key to paste twice).
+//   · POST /send { to, subject, html, text, replyTo? }   to: one address or up to 3. Sent from IX_CONFIG.mail.from,
+//     else IX_CONFIG.welcome.from. Answers { ok, sent, id, to }. Counts as sent only when Resend answers with a
+//     message id (TOAST-TRUTH); otherwise 502 with Resend's reason.
+//   · WHO MAY CALL: an inbxify staff login (Authorization: Bearer, the same check as every other route), or
+//     ix-sales itself with no login (the publisher's decision by email link has none). ix-sales proves itself with
+//     X-IX-Service: the SHA-256 of "ix-mail:" + the Webflow token both Workers hold (ix-sales WEBFLOW_WRITE_TOKEN is
+//     this Worker's WEBFLOW_TOKEN, set 2 Nov). If both Workers have a MAIL_KEY secret, that is used instead.
+//     A browser origin is refused on the proof path.
+//   HARDCODING: HC-P-PP2-16 MAIL_LIMITS (3 recipients, subject 200, body 200 KB); HC-P-PP2-17 the proof prefix "ix-mail:".
 // v1.1.0 (2 Nov 2026, Publisher Portal S2) — OUR OWN WELCOME EMAIL.
 //   Memberstack's welcome template can show only app name, logo, email,
 //   member id and year, so it cannot be personal. Its welcome is switched
@@ -100,7 +112,7 @@
 //   HC-P-PP2-15 Resend API address (RESEND). Platform constant.
 // ============================================================
 
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 const WF = 'https://api.webflow.com/v2';
 const MS = 'https://admin.memberstack.com';
 const RESEND = 'https://api.resend.com/emails';                       // HC-P-PP2-15
@@ -108,6 +120,8 @@ const PAGE = 100, MAX_PAGES = 50, MAX_RETRIES = 4;
 const JOIN = { pub: { members: 'portal-member-ids' }, ta: { publisher: 'associated-client' } };   // HC-P-PP2-6
 const MEM_RE = /^mem_[A-Za-z0-9]+$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAIL_LIMITS = { to: 3, subject: 200, body: 200 * 1024 };   // HC-P-PP2-16 · v1.1.1
+const MAIL_PROOF = 'ix-mail:';                                    // HC-P-PP2-17 · v1.1.1
 
 // per-instance caches
 const TOKENS = new Map();                         // token → { id, until }
@@ -123,9 +137,10 @@ export default {
     try {
       const cfg = loadConfig(env);
       run = new Run(env, cfg, request);
+      const m = request.method;
+      if (p === '/send' && m === 'POST') return run.out(await sendMail(run, await body(request)), 200);   // v1.1.1: staff login, or ix-sales with its proof
       run.needOrigin();
       const me = await run.member();                                   // every route below needs a login
-      const m = request.method;
       const rm = p.match(/^\/members\/(mem_[A-Za-z0-9]+)\/remove$/);
       const wm = p.match(/^\/members\/(mem_[A-Za-z0-9]+)\/welcome$/);
       if (p === '/whoami' && m === 'GET') return run.out(await whoami(run, me), 200);
@@ -384,6 +399,42 @@ async function sendWelcome(run, member, pub) {
     run.warn('Welcome email not sent: ' + ((e && e.message) || e));
     return { sent: false, error: (e && e.message) || String(e) };
   }
+}
+// ── v1.1.1 · POST /send: one email, for ix-sales ──
+async function sha256Hex(s) { const b = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))); return [...b].map(x => x.toString(16).padStart(2, '0')).join(''); }
+async function mailCaller(run) {
+  const proof = run.request.headers.get('X-IX-Service') || '';
+  if (proof) {
+    if (run.origin) throw httpErr(403, 'The service proof is not accepted from a browser.');
+    const secret = run.env.MAIL_KEY || run.env.WEBFLOW_TOKEN;
+    if (!secret) throw httpErr(500, 'Neither MAIL_KEY nor WEBFLOW_TOKEN is set on ix-members, so a service proof cannot be checked.');
+    if (proof !== await sha256Hex(MAIL_PROOF + secret)) throw httpErr(401, 'The service proof did not match. ix-sales and ix-members must hold the same Webflow token (ix-sales WEBFLOW_WRITE_TOKEN = ix-members WEBFLOW_TOKEN), or the same MAIL_KEY.');
+    return 'service';
+  }
+  run.needOrigin();
+  const me = await run.member();
+  if (!me.staff) throw httpErr(403, 'Only inbxify staff can send mail through ix-members.');
+  return me.id;
+}
+async function sendMail(run, b) {
+  const caller = await mailCaller(run);
+  const W = Object.assign({}, run.cfg.welcome || {}, run.cfg.mail || {});
+  if (!run.env.RESEND_API_KEY) throw httpErr(500, 'RESEND_API_KEY is not set on this Worker.');
+  if (!W.from) throw httpErr(500, 'IX_CONFIG.mail.from (or welcome.from) is not set, so there is no sender.');
+  const to = (Array.isArray(b.to) ? b.to : [b.to]).map(x => String(x || '').trim()).filter(Boolean);
+  if (!to.length || to.length > MAIL_LIMITS.to || to.some(x => !EMAIL_RE.test(x))) throw httpErr(400, 'to must be 1 to ' + MAIL_LIMITS.to + ' email addresses.');
+  const subject = String(b.subject || '').trim().slice(0, MAIL_LIMITS.subject), html = String(b.html || ''), text = String(b.text || '');
+  if (!subject || (!html && !text)) throw httpErr(400, 'subject and html or text are required.');
+  if (html.length > MAIL_LIMITS.body || text.length > MAIL_LIMITS.body) throw httpErr(413, 'The email body is too large.');
+  const mail = { from: W.from, to, subject };
+  if (html) mail.html = html; if (text) mail.text = text;
+  const replyTo = EMAIL_RE.test(String(b.replyTo || '').trim()) ? String(b.replyTo).trim() : (W.replyTo || '');
+  if (replyTo) mail.reply_to = replyTo;
+  const res = await fetch(RESEND, { method: 'POST', headers: { Authorization: 'Bearer ' + run.env.RESEND_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(mail) });
+  const j = await res.json().catch(() => null);
+  if (!res.ok || !j || !j.id) throw httpErr(502, 'Resend HTTP ' + res.status + (j && (j.message || j.name) ? ' · ' + (j.message || j.name) : ''));
+  run.writes++;
+  return { ok: true, sent: true, id: j.id, to, from: W.from, caller: caller === 'service' ? 'service' : 'staff' };
 }
 async function titlesOf(run, publisherId) {
   const coll = (run.cfg.collections || {}).titlesAdmin;
