@@ -1,4 +1,44 @@
-// ix-issue-data-v1.0.194.js
+// ix-issue-data-v1.0.195.js
+// v1.0.195 (22 Nov 2026, Content Home S14 · phase 3, reads switch): THE PUBLIC PAGES GO ON THE READ SWITCH.
+//   Built on v1.0.194. Nothing of v1.0.194 changes. Rulings (Jeff, 22 Nov): public pages read an item from the D1 copy
+//   only when it has not changed since it was published, else that one item's published version from Webflow; and the
+//   page rebuild after a publish is started by ix-content once its copy holds the new version (ix-content v1.2.3).
+//   1 · THE SWITCH. One key, "site", in KV contentHome.reads, for every public builder: /site (title, ?issue=, ?article=,
+//       ?franchise=), /archives, /directory, /site-ads, /article, /splash, /form's title read, /warm and /changed.
+//         (no value) or "webflow"   exactly as v1.0.194
+//         "d1"                      the reads in 2 and 3
+//       The KV value holds "site":"webflow" today, so deploying this version changes nothing.
+//   2 · WHAT "d1" READS. The change is in the Run's read layer (listAll, getItem, getMany, cachedList), not in the
+//       builders, so every builder reads the same way:
+//         NL-BLOCKS and ALLOCATIONS   the home tables (as /plan-board on "d1")
+//         a read of what Webflow holds in the Designer (run.live off: plans, customers, sections, franchises, titles,
+//         media ...)                  the copy, as it is
+//         a read of the published site (run.live on: ARTICLES, NEWSLETTERS, ADS ...) the published-version rule:
+//           draft, archived, never published, or taken off the site (ix-content's live_off_at, newer than its last
+//           publish)                  left out, as Webflow's published list leaves it out
+//           changed since it was published (lastUpdated after lastPublished)
+//                                     that item's published version, from Webflow by id; when more items need it than
+//                                     Webflow's published list has pages, the whole published list is read instead
+//                                     (whichever costs fewer calls)
+//           otherwise                 the copy (it holds exactly the published version)
+//         a collection the copy does not hold   Webflow, as before
+//       buildIssueSite skips its published ?slug= lookup on "d1" and finds the issue in the published list.
+//       meta gains reads { route, value, from } and siteLive { <collection>: { copy, webflow, off, wholeList? } }.
+//   3 · /changed takes X-IX-Key (ix-content's ISSUE_DATA_KEY) as well as ?key=<WARM_KEY>, and an item may carry
+//       titleAdminId. When a page's build answers 404 (the item left the site), its kept copies are removed (this data
+//       centre's cache, KV) and its title's page, Archives and Directory are rebuilt. A kept page whose background
+//       rebuild answers 404 is also dropped, so an item taken off the site stops showing in other locations too.
+//   4 · /read-compare?route=site&page=<title|issue|article|franchise|archives|directory|site-ads|splash|article-page>
+//       builds one public page twice, Webflow only and then "d1", and lists every difference. Parameters: title=<slug>
+//       (title, archives, directory, site-ads, franchise), issue=<NEWSLETTER slug>, article=<ARTICLES slug>,
+//       franchise=<PRODUCT LIBRARY slug>, n=<NEWSLETTER id> (splash), slug=<ARTICLES slug> (article-page). The compare
+//       writes no page copy.
+//   /health says 1.0.195. Nothing else changed.
+//   HARDCODING (provisional): HC-P-CH14-1 "site" joins the routes on the switch (extends HC-P-CH11-2); HC-P-CH14-2 the
+//   published-version rule above (Webflow's own lastUpdated, lastPublished, isDraft, isArchived; ix-content's
+//   live_off_at); HC-P-CH14-3 /changed accepts X-IX-Key.
+//
+// ix-issue-data-v1.0.194.js header follows.
 // v1.0.194 (22 Nov 2026, Content Home S13 · phase 3, reads switch): /quill-status AND /article-print GO ON THE READ SWITCH.
 //   Built on v1.0.193 (Publisher Portal S10, branch agent-pp-s10-build1), which is built on v1.0.192 (Image Links S1).
 //   Nothing of v1.0.193, v1.0.192 or v1.0.191 changes.
@@ -4042,7 +4082,7 @@
 const ARTICLE_FORMATS = { 'standard': 'standard', 'photo-essay': 'photo-essay', 'video': 'video' };
 // v1.0.106: the photo essay treatment when the article names none. HC-P-CB-20.
 const DEFAULT_TREATMENT = 'polaroid';
-const VERSION = '1.0.194';   // v1.0.194 (/quill-status and /article-print on the read switch);   // v1.0.193 (franchise sponsor from ix-sales /sponsors: /site-ads and /site?franchise=);   // v1.0.192 (every picture handed out is sized where it is shown);   // v1.0.191 (/plans counts a clone's items as the IPP rail does);   // v1.0.190   // v1.0.190 (/links, /greeting-context, /release-check on the read switch);   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
+const VERSION = '1.0.195';   // v1.0.195 (public pages on the read switch: "site");   // v1.0.194 (/quill-status and /article-print on the read switch);   // v1.0.193 (franchise sponsor from ix-sales /sponsors: /site-ads and /site?franchise=);   // v1.0.192 (every picture handed out is sized where it is shown);   // v1.0.191 (/plans counts a clone's items as the IPP rail does);   // v1.0.190   // v1.0.190 (/links, /greeting-context, /release-check on the read switch);   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
 // v1.0.170 — the X-IX-Key header against both secrets: IX_KEY (Make, 206) or IX_SERVICE_KEY (ix-content).
 function anyKey(env) { return !!(env.IX_KEY || env.IX_SERVICE_KEY); }
 function keyOk(env, request) {
@@ -4059,7 +4099,7 @@ const MAX_RETRIES = 4;     // per call, on 429 or 5xx
 const PAGE_WAIT_EACH_MS = 3000;   // v1.0.169, HC-P-RC-3: the longest single wait on a busy Webflow, planner reads
 // v1.0.184 — the read switch (Content Home scoping §5f). HC-P-CH11-1, HC-P-CH11-2.
 const READS_KV_KEY = 'contentHome.reads';
-const READS_ROUTES = ['plan-board', 'plans', 'clone-rows', 'links', 'greeting-context', 'release-check', 'quill-status', 'article-print'];   // last two v1.0.194 (HC-P-CH13-7);   // 'clone-rows' v1.0.189 (HC-P-CH13-1); the last three v1.0.190 (HC-P-CH13-4)
+const READS_ROUTES = ['plan-board', 'plans', 'clone-rows', 'links', 'greeting-context', 'release-check', 'quill-status', 'article-print', 'site'];   // 'site' v1.0.195 (HC-P-CH14-1);   // last two v1.0.194 (HC-P-CH13-7);   // 'clone-rows' v1.0.189 (HC-P-CH13-1); the last three v1.0.190 (HC-P-CH13-4)
 const READS_VALUES = ['d1', 'webflow'];
 async function readSwitch(env, route) {
   const out = { route, value: null, from: 'default' };
@@ -4085,6 +4125,14 @@ function readOpts(sw, base) {
   return o;
 }
 function readsMeta(sw) { return { route: sw.route, value: sw.value || 'today', from: sw.from }; }
+// v1.0.195 — the public pages' switch ("site"). Sets run.siteD1 on "d1"; the answer's meta names it. HC-P-CH14-1.
+async function siteSwitch(env, run) {
+  const sw = await readSwitch(env, 'site');
+  run.siteD1 = sw.value === 'd1' && !!env.IX_DB;
+  run.reads = readsMeta(sw);
+  if (sw.why) run.warn(sw.why);
+  return sw;
+}
 // v1.0.189 — Run options for /clone-rows. Only "d1" turns the D1 reads on; no value and "webflow" are v1.0.188's reads.
 function cloneReadOpts(sw) { return (sw && sw.value === 'd1') ? { d1: true, homeFresh: true } : {}; }
 // v1.0.189 — a whole staying collection: from the copy when the route is on "d1", else Webflow's list (as before).
@@ -4534,8 +4582,9 @@ async function readCompareRoute(env, ctx, url, request) {
   if (!env.WEBFLOW_TOKEN) return out({ ok: false, error: 'WEBFLOW_TOKEN is not set on this Worker.' }, 500);
   if (!env.IX_DB) return out({ ok: false, error: 'This Worker has no IX_DB binding (database ix-content), so there is nothing to compare.' }, 500);
   const route = (url.searchParams.get('route') || 'plan-board').trim();
-  const COMPARABLE = ['plan-board', 'plans', 'clone-rows', 'greeting-context', 'quill-status', 'article-print'];   // v1.0.190: links and release-check are not compared; last two v1.0.194
+  const COMPARABLE = ['plan-board', 'plans', 'clone-rows', 'greeting-context', 'quill-status', 'article-print', 'site'];   // v1.0.190: links and release-check are not compared; last two v1.0.194; site v1.0.195
   if (!COMPARABLE.includes(route)) return out({ ok: false, error: 'route must be one of: ' + COMPARABLE.join(', ') + '.' }, 400);
+  if (route === 'site') return siteCompare(env, ctx, url, cfg, out);           // v1.0.195
   const C = cfg.collections || {};
   const id = (url.searchParams.get(route === 'plans' ? 'titleAdminId' : 'planId') || '').trim();
   if (route !== 'quill-status' && !/^[0-9a-f]{24}$/.test(id)) return out({ ok: false, error: 'Missing or malformed ' + (route === 'plans' ? 'titleAdminId' : 'planId') + '.' }, 400);
@@ -4569,6 +4618,48 @@ async function readCompareRoute(env, ctx, url, request) {
     return out({ ok: false, error: (e && e.message) || String(e) }, (e && e.status) || 502);
   }
 }
+// v1.0.195 — /read-compare?route=site&page=…: one public page built from Webflow only, then from "d1". No page copy is
+// written (run.noStore). The builders are the ones the public routes use; only the read layer differs.
+const SITE_PAGES = {
+  title:          { need: ['title'], key: q => 'site:' + q.title, build: (run, q, env) => buildSite(run, q.title, env) },
+  issue:          { need: ['issue'], key: q => 'site:i:' + q.issue, build: (run, q, env) => buildIssueSite(run, q.issue, env) },
+  article:        { need: ['article'], key: q => 'site:a:' + q.article, build: (run, q, env) => buildArticleSite(run, q.article, env) },
+  franchise:      { need: ['franchise'], key: q => 'site:f:' + q.franchise + ':' + q.title, build: (run, q, env) => buildFranchiseSite(run, q.franchise, q.title, env) },
+  archives:       { need: ['title'], key: q => 'archives:' + q.title, build: (run, q) => buildArchives(run, q.title) },
+  directory:      { need: ['title'], key: q => 'directory:' + q.title, build: (run, q) => buildDirectory(run, q.title) },
+  'site-ads':     { need: ['title'], key: q => 'siteads:' + q.title, build: (run, q, env) => buildSiteAds(run, q.title, env) },
+  splash:         { need: ['n'], staged: true, key: q => 'splash:' + q.n, build: (run, q) => buildSplash(run, q.n) },
+  'article-page': { need: ['slug'], key: q => 'article:' + q.slug, build: (run, q) => buildArticlePage(run, q.slug) },
+};
+async function siteCompare(env, ctx, url, cfg, out) {
+  const page = (url.searchParams.get('page') || '').trim();
+  const def = SITE_PAGES[page];
+  if (!def) return out({ ok: false, error: 'page must be one of: ' + Object.keys(SITE_PAGES).join(', ') + '.' }, 400);
+  const q = {};
+  ['title', 'issue', 'article', 'franchise', 'n', 'slug'].forEach(k => { q[k] = (url.searchParams.get(k) || '').trim().toLowerCase(); });
+  const miss = def.need.filter(k => !q[k]);
+  if (miss.length) return out({ ok: false, error: 'page=' + page + ' needs ' + miss.join(' and ') + '.' }, 400);
+  if (page === 'splash' && !/^[0-9a-f]{24}$/.test(q.n)) return out({ ok: false, error: 'n must be a NEWSLETTER id.' }, 400);
+  const build = async (value) => {
+    const run = new Run(env, ctx, cfg, true, { site: value === 'd1', noStore: true });
+    run.live = !def.staged;
+    run.reads = { route: 'site', value, from: 'compare' };
+    const body = await def.build(run, q, env);
+    return { body, meta: Object.assign(run.meta(null), { copyAge: await run.copyAge() }) };
+  };
+  try {
+    const w = await build('webflow');                      // one after the other, so the two never share Webflow's minute
+    const d = await build('d1');
+    const diffs = [];
+    diffJson(w.body, d.body, page, diffs);
+    return out({ ok: true, route: 'site', page, id: def.key(q), same: diffs.length === 0, differenceCount: diffs.length,
+      differences: diffs.slice(0, COMPARE_CAP), truncated: diffs.length > COMPARE_CAP,
+      webflowMeta: w.meta, d1Meta: d.meta, version: VERSION }, 200);
+  } catch (e) {
+    return out({ ok: false, route: 'site', page, error: (e && e.message) || String(e) }, (e && e.status) || 502);
+  }
+}
+
 // v1.0.189 — a clone answer with its JSON-in-a-string parts opened, so a difference names its row and field.
 function cloneForCompare(c) {
   const o = Object.assign({}, c);
@@ -7659,6 +7750,7 @@ async function directoryRoute(env, ctx, url) {
   const withFields = url.searchParams.get('fields') === '1';
   const run = new Run(env, ctx, cfg, fresh);
   run.live = true;
+  await siteSwitch(env, run);                                                   // v1.0.195
   try {
     const value = await run.cached('directory:' + key, () => buildDirectory(run, key), 'directory');
     const body = Object.assign({}, value, { version: VERSION });
@@ -7770,6 +7862,7 @@ async function archivesRoute(env, ctx, url) {
   if (!/^[a-z0-9][a-z0-9-]{0,120}$/.test(key)) return out({ ok: false, error: 'Missing or malformed title (the TITLES slug).' }, 400);
   const run = new Run(env, ctx, cfg, fresh);
   run.live = true;
+  await siteSwitch(env, run);                                                   // v1.0.195
   try {
     const value = await run.cached('archives:' + key, () => buildArchives(run, key), 'archives');
     return out(Object.assign({}, value, { version: VERSION }), 200, run.ttl);
@@ -7939,6 +8032,7 @@ async function articleRoute(env, ctx, url) {
   if (!/^[a-z0-9][a-z0-9-]{0,250}$/.test(slug)) return out({ ok: false, error: 'Missing or malformed slug (the ARTICLES slug).' }, 400);
   const run = new Run(env, ctx, cfg, fresh);
   run.live = true;
+  await siteSwitch(env, run);                                                   // v1.0.195
   try {
     const value = await run.cached('article:' + slug, () => buildArticlePage(run, slug), 'article');   // v1.0.103 key
     const body = Object.assign({}, value, { version: VERSION });
@@ -8224,9 +8318,10 @@ async function changedRoute(env, ctx, url, request) {
   const cfg = await loadConfig(env, false);
   if (!cfg) return out({ ok: false, error: 'IX_CONFIG is missing or is not valid JSON.' }, 500);
   const wk = String(env.WARM_KEY || cfg.warmKey || '');
-  if (!wk || url.searchParams.get('key') !== wk) return out({ ok: false, error: 'Wrong or missing key.' }, 403);
+  const byKey = keyOk(env, request);                                            // v1.0.195: ix-content (X-IX-Key), HC-P-CH14-3
+  if (!byKey && (!wk || url.searchParams.get('key') !== wk)) return out({ ok: false, error: 'Wrong or missing key.' }, 403);
   const C = cfg.collections || {};
-  const jobs = [];   // { kind: 'article'|'issue', slug } or { kind: 'articleId'|'issueId', id }
+  const jobs = [];   // { kind: 'article'|'issue', slug, ta? } or { kind: 'articleId'|'issueId', id, ta? }
   const art = (url.searchParams.get('article') || '').trim().toLowerCase();
   const iss = (url.searchParams.get('issue') || '').trim().toLowerCase();
   if (art) jobs.push({ kind: 'article', slug: art });
@@ -8242,8 +8337,9 @@ async function changedRoute(env, ctx, url, request) {
       const fd = it.fieldData || {};
       const slug = String(fd.slug || it.slug || '').toLowerCase();
       const id = String(it.id || it._id || '');
-      if (coll && coll === C.articles) jobs.push(slug ? { kind: 'article', slug } : { kind: 'articleId', id });
-      else if (coll && coll === C.newsletter) jobs.push(slug ? { kind: 'issue', slug } : { kind: 'issueId', id });
+      const ta = /^[0-9a-f]{24}$/.test(String(it.titleAdminId || '')) ? String(it.titleAdminId) : '';   // v1.0.195: from ix-content
+      if (coll && coll === C.articles) jobs.push(slug ? { kind: 'article', slug, ta } : { kind: 'articleId', id, ta });
+      else if (coll && coll === C.newsletter) jobs.push(slug ? { kind: 'issue', slug, ta } : { kind: 'issueId', id, ta });
       else if (!coll && id) jobs.push({ kind: 'anyId', id });   // the payload names no collection: look the id up
     });
   }
@@ -8251,8 +8347,18 @@ async function changedRoute(env, ctx, url, request) {
   ctx.waitUntil((async () => {
     const run = new Run(env, ctx, cfg, true);   // fresh: rebuild and rewrite every copy
     run.live = true;
-    const once = new Set();
-    const go = async (k, name, fn) => { if (once.has(k)) return null; once.add(k); try { return await run.cached(k, fn, name); } catch (e) { return null; } };
+    await siteSwitch(env, run);                                                 // v1.0.195
+    const once = new Set(), gone = new Set();
+    // v1.0.195: a page that answers 404 has left the site; its kept copies go
+    const go = async (k, name, fn) => { if (once.has(k)) return null; once.add(k); try { return await run.cached(k, fn, name); }
+      catch (e) { if (e && e.status === 404) { gone.add(k); await run.forget(k, name).catch(() => {}); } return null; } };
+    // v1.0.195: the TITLES slug (the key the title's pages are kept under) from a TITLES-ADMIN id, for a page that left
+    // the site (no built page to read it from)
+    const taSlug = async (ta) => { if (!ta) return ''; const keep = run.live; run.live = false;
+      try { const it = await run.getItem('TITLES-ADMIN', C.titles, ta); const as = it ? String(fdOf(it).slug || '').toLowerCase() : '';
+        if (!as) return '';
+        const { tItem } = await findSiteTitle(run, as); return String(fdOf(tItem).slug || '').toLowerCase(); }
+      catch (e) { return ''; } finally { run.live = keep; } };
     const titleRefresh = async (titleKey) => {
       if (!titleKey) return;
       await go('site:' + titleKey, 'site', () => buildSite(run, titleKey, env));
@@ -8272,10 +8378,11 @@ async function changedRoute(env, ctx, url, request) {
       if (!j.slug) continue;
       if (j.kind === 'article') {
         const s = await go('site:a:' + j.slug, 'site', () => buildArticleSite(run, j.slug, env));
-        await titleRefresh(s && s.title && s.title.slug);
+        if (gone.has('site:a:' + j.slug)) await run.forget('article:' + j.slug, 'article').catch(() => {});   // v1.0.195: the /article copy too
+        await titleRefresh((s && s.title && s.title.slug) || await taSlug(j.ta));   // v1.0.195: taSlug
       } else if (j.kind === 'issue') {
         const s = await go('site:i:' + j.slug, 'site', () => buildIssueSite(run, j.slug, env));
-        const tk = s && s.title && s.title.slug;
+        const tk = (s && s.title && s.title.slug) || await taSlug(j.ta);           // v1.0.195: taSlug
         await titleRefresh(tk);
         // the issue's own articles: every published article whose newest edition is this issue
         try {
@@ -8309,6 +8416,7 @@ async function warmRoute(env, ctx, url) {
   const offset = Math.max(Number(url.searchParams.get('offset')) || 0, 0);   // v1.0.121
   const run = new Run(env, ctx, cfg, true);   // fresh: rebuild and rewrite every copy
   run.live = true;
+  await siteSwitch(env, run);                                                   // v1.0.195
   const built = [], failed = [];
   const step = async (label, k, name, fn) => {
     const t = Date.now();
@@ -8389,6 +8497,7 @@ async function siteRoute(env, ctx, url) {
   } else if (!/^[a-z0-9][a-z0-9-]{0,120}$/.test(key)) return siteOut({ ok: false, error: 'Missing or malformed title (the page slug).' }, 400);
   const run = new Run(env, ctx, cfg, fresh);
   run.live = true;
+  await siteSwitch(env, run);                                                   // v1.0.195
   try {
     const value = franchise                                                    // v1.0.112
       ? await run.cached('site:f:' + franchise + ':' + key, () => buildFranchiseSite(run, franchise, key, env), 'site')
@@ -8460,6 +8569,7 @@ async function siteAdsRoute(env, ctx, url) {
   const gen = await siteAdsGen(env);
   const run = new Run(env, ctx, cfg, fresh);
   run.live = true;
+  await siteSwitch(env, run);                                                   // v1.0.195
   try {
     const value = await run.cached('siteads:' + key + ':g' + gen, () => buildSiteAds(run, key, env), 'siteads');
     return siteOut(Object.assign({}, value, { gen, version: VERSION }), 200, SITE_ADS.browserSeconds);
@@ -9041,7 +9151,7 @@ async function buildIssueSite(run, slug, env) {
   const C = run.cfg.collections;
   const paths = Object.assign({}, ARCHIVE_PATHS, run.cfg.sitePaths || {});
   const exact = list => (list || []).filter(n => !n.isArchived && String(fdOf(n).slug || '').toLowerCase() === slug);
-  let hits = exact(((await run.wf('/collections/' + C.newsletter + '/items/live?slug=' + encodeURIComponent(slug) + '&limit=10')) || {}).items);
+  let hits = run.siteD1 ? [] : exact(((await run.wf('/collections/' + C.newsletter + '/items/live?slug=' + encodeURIComponent(slug) + '&limit=10')) || {}).items);   // v1.0.195: "d1" finds it in the published list
   if (!hits.length) hits = exact(await run.listAll(C.newsletter));
   if (!hits.length) throw httpErr(404, 'No published NEWSLETTER has the slug "' + slug + '".');
   const nl = hits[0], nfd = fdOf(nl);
@@ -9317,6 +9427,7 @@ async function formRoute(env, ctx, request) {
   if (!cfg) return bad(500, 'IX_CONFIG is missing or is not valid JSON.', 'setup');
   const run = new Run(env, ctx, cfg, false);
   run.live = true;
+  await siteSwitch(env, run);                                                   // v1.0.195
   let site;
   try { site = await run.cached('site:' + key, () => buildSite(run, key, env), 'site'); }
   catch (e) { return bad((e && e.status) || 502, (e && e.message) || String(e), 'setup'); }
@@ -9397,6 +9508,7 @@ async function splashRoute(env, ctx, url) {
   if (!legacy && !/^[0-9a-f]{24}$/.test(n)) return out({ ok: false, error: 'Missing or malformed n (NEWSLETTER id), and no logo.' }, 400);
 
   const run = new Run(env, ctx, cfg, url.searchParams.get('fresh') === '1');
+  await siteSwitch(env, run);                                                   // v1.0.195
   try {
     const value = legacy
       ? await run.cached('splashlogo:' + (ucId(logo) || logo), () => buildLegacySplash(run, logo), 'splash')
@@ -9895,6 +10007,9 @@ class Run {
     this.d1on = !!(opts && opts.d1) && !!env.IX_DB && cfg.readMode !== 'live';   // v1.0.175: the D1 copy, planner routes only
     this.readFrom = {};                                                          // v1.0.175: where each part came from
     this.homeFresh = !!(opts && opts.homeFresh) && this.d1on;                    // v1.0.184: home tables from D1 on fresh=1 too ("d1")
+    this.siteD1 = !!(opts && opts.site) && !!env.IX_DB;                          // v1.0.195: public pages on "d1" (siteSwitch sets it too)
+    this.noStore = !!(opts && opts.noStore);                                     // v1.0.195: /read-compare keeps no page copy
+    this.reads = null; this.siteLive = {};                                       // v1.0.195: meta.reads, meta.siteLive
     if (cfg.catalogNote) this.warn(cfg.catalogNote);   // v1.0.58, from loadConfig
   }
 
@@ -9914,6 +10029,8 @@ class Run {
       ms: Date.now() - this.t0,
       blockCount,
       warnings: this.warnings,
+      ...(this.reads ? { reads: this.reads } : {}),                                // v1.0.195
+      ...(Object.keys(this.siteLive).length ? { siteLive: this.siteLive } : {}),   // v1.0.195
     };
   }
 
@@ -9976,6 +10093,10 @@ class Run {
 
   async getItem(label, collId, id) {
     if (!id) return null;
+    if (this.siteD1) {                                                           // v1.0.195: public pages on "d1"
+      const got = await this.siteItem(label, collId, id);
+      if (got !== undefined) return got;
+    }
     if (this.d1on && !this.fresh) {                                              // v1.0.175: the copy first on an ordinary read
       const hit = await this.d1Item(collId, id);
       if (hit) { this.from(label, 'd1'); return hit; }
@@ -10014,6 +10135,11 @@ class Run {
   // the only thing that ends the list, so a wrong or missing total cannot
   // cut it off.
   async listAll(collId) {
+    if (this.siteD1) {                                                           // v1.0.195: public pages on "d1"
+      const rows = await this.siteList(collId);
+      if (rows) return rows;
+      this.from(this.collName(collId), 'webflow');
+    }
     const mk = 'list:' + (this.live ? 'L:' : 'S:') + collId;   // v1.0.120
     if (this.memo.has(mk)) return this.memo.get(mk);   // within one request a list is read once, fresh or not
     const p = this.listAllRaw(collId);
@@ -10045,6 +10171,7 @@ class Run {
   }
 
   async cachedList(name, collId) {
+    if (this.siteD1) return this.listAll(collId);                               // v1.0.195: D1 needs no cache
     if (this.d1on) {                                                             // v1.0.175: the copy, fresh or not
       const rows = await this.d1List(collId);
       if (rows) { this.from(name, 'd1'); return rows; }
@@ -10053,7 +10180,7 @@ class Run {
   }
 
   async cachedSchema(name, collId) {
-    return this.cached('schema:' + collId, () => this.wf('/collections/' + collId), name + ' schema', this.d1on);   // v1.0.175: cache even on fresh
+    return this.cached('schema:' + collId, () => this.wf('/collections/' + collId), name + ' schema', this.d1on || this.siteD1);   // v1.0.175: cache even on fresh
   }
 
   // ── v1.0.175 · the D1 copy kept by ix-content (binding IX_DB). Every reader answers null when it cannot answer, and
@@ -10084,11 +10211,13 @@ class Run {
       return (r && /^[0-9a-f]{24}$/.test(r.title_admin_id || '')) ? r.title_admin_id : '';
     } catch (e) { this.d1Err(e); return ''; }
   }
-  d1Err(e) { this.warn('The D1 copy could not be read (' + ((e && e.message) || e) + '); Webflow was read instead.'); this.d1on = false; return null; }
+  d1Err(e) { this.warn('The D1 copy could not be read (' + ((e && e.message) || e) + '); Webflow was read instead.'); this.d1on = false; this.siteD1 = false; return null; }
   copyItem(r) {
     let fd = {}; try { fd = JSON.parse(r.field_data || '{}'); } catch (e) { fd = {}; }
-    return { id: r.item_id, fieldData: fd, isDraft: !!r.is_draft, isArchived: !!r.is_archived,
+    const o = { id: r.item_id, fieldData: fd, isDraft: !!r.is_draft, isArchived: !!r.is_archived,
              createdOn: r.created_on || null, lastUpdated: r.last_updated || null, lastPublished: r.last_published || null };
+    Object.defineProperty(o, 'liveOffAt', { value: r.live_off_at || null, enumerable: false });   // v1.0.195: ix-content v1.2.3, schema v1.3.0
+    return o;
   }
   homeItem(r) {
     let fd = {}; try { fd = JSON.parse(r.fields || '{}'); } catch (e) { fd = {}; }
@@ -10104,7 +10233,7 @@ class Run {
     return p;
   }
   async d1List(collId) {
-    if (!this.d1on || !/^[0-9a-f]{24}$/.test(collId || '')) return null;
+    if (!(this.d1on || this.siteD1) || !/^[0-9a-f]{24}$/.test(collId || '')) return null;   // siteD1 v1.0.195
     const k = 'd1list:' + collId;
     if (this.memo.has(k)) return this.memo.get(k);
     const p = (async () => {
@@ -10118,14 +10247,14 @@ class Run {
     return p;
   }
   async d1Item(collId, id) {
-    if (!this.d1on || !(await this.d1Has(collId))) return null;
+    if (!(this.d1on || this.siteD1) || !(await this.d1Has(collId))) return null;   // siteD1 v1.0.195
     try {
       const r = await this.env.IX_DB.prepare('SELECT * FROM copy_items WHERE collection_id=? AND item_id=?').bind(collId, id).first();
       return r ? this.copyItem(r) : null;
     } catch (e) { return this.d1Err(e); }
   }
   async d1Items(collId, ids) {
-    if (!this.d1on || !(await this.d1Has(collId))) return null;
+    if (!(this.d1on || this.siteD1) || !(await this.d1Has(collId))) return null;   // siteD1 v1.0.195
     try {
       const out = [];
       for (let i = 0; i < ids.length; i += 90) {                                 // D1 caps bound values per statement
@@ -10137,6 +10266,107 @@ class Run {
       return out;
     } catch (e) { return this.d1Err(e); }
   }
+  // ── v1.0.195 · public pages on "d1" (siteD1). See the v1.0.195 header, point 2. HC-P-CH14-2.
+  collName(collId) {                                                            // the IX_CONFIG.collections key, for meta
+    const C = this.cfg.collections || {};
+    return Object.keys(C).find(k => C[k] === collId) || String(collId || '');
+  }
+  homeTableOfColl(collId) {
+    const C = this.cfg.collections || {};
+    if (collId && collId === C.blocks) return 'nl_blocks';
+    if (collId && collId === C.allocations) return 'allocations';
+    return null;
+  }
+  // 'copy' the copy holds the published version · 'webflow' changed since published · 'off' not on the live site
+  pubState(it) {
+    if (!it || it.isDraft || it.isArchived) return 'off';
+    const pub = Date.parse(it.lastPublished || '');
+    if (isNaN(pub)) return 'off';
+    const offAt = Date.parse(it.liveOffAt || '');
+    if (!isNaN(offAt) && offAt >= pub) return 'off';
+    const upd = Date.parse(it.lastUpdated || '');
+    if (!isNaN(upd) && upd > pub) return 'webflow';
+    return 'copy';
+  }
+  // A whole collection from D1, or null (Webflow decides). Memoised per request, per live/staged.
+  async siteList(collId) {
+    if (!/^[0-9a-f]{24}$/.test(collId || '')) return null;
+    const home = this.homeTableOfColl(collId), name = this.collName(collId);
+    const mk = 'sitelist:' + (home ? 'H:' : (this.live ? 'L:' : 'S:')) + collId;
+    if (this.memo.has(mk)) return this.memo.get(mk);
+    const live = this.live;
+    const p = (async () => {
+      if (home) {                                                               // every write is published (ix-content)
+        const rows = await this.d1Home(home, null);
+        if (rows) this.from(name, 'd1');
+        return rows;
+      }
+      const rows = await this.d1List(collId);
+      if (!rows) return null;
+      if (!live) { this.from(name, 'd1'); return rows; }
+      return this.publishedOf(collId, name, rows);
+    })();
+    this.memo.set(mk, p);
+    p.catch(() => this.memo.delete(mk));
+    return p;
+  }
+  // The published list from the copy: 'copy' rows as they are, 'webflow' rows swapped for Webflow's published item,
+  // 'off' rows left out. Order kept. Fewer calls wins: one per changed item, or Webflow's whole published list.
+  async publishedOf(collId, name, rows) {
+    const st = { copy: 0, webflow: 0, off: 0 };
+    const ask = [];
+    rows.forEach(it => { const s = this.pubState(it); if (s === 'copy') st.copy++; else if (s === 'webflow') ask.push(it.id); else st.off++; });
+    const swap = new Map();
+    if (ask.length) {
+      const pages = Math.max(1, Math.ceil(rows.length / PAGE));
+      if (ask.length > pages) {
+        st.wholeList = true;
+        const keep = this.live; this.live = true;
+        let all;
+        try { all = await this.listAllRaw(collId); } finally { this.live = keep; }
+        const by = new Map(all.map(x => [x.id, x]));
+        ask.forEach(id => { if (by.has(id)) swap.set(id, by.get(id)); });
+      } else {
+        const got = await Promise.all(ask.map(id => this.wf('/collections/' + collId + '/items/' + id + '/live', true)));
+        got.forEach(it => { if (it && it.id) swap.set(it.id, it); });
+      }
+      st.webflow = swap.size;
+      st.off += ask.length - swap.size;                                         // not on the live site after all
+    }
+    this.siteLive[name] = st;
+    this.from(name, ask.length ? 'd1+webflow(' + swap.size + ')' : 'd1');
+    const askSet = new Set(ask);
+    return rows.filter(it => (askSet.has(it.id) ? swap.has(it.id) : this.pubState(it) === 'copy')).map(it => swap.get(it.id) || it);
+  }
+  // One item: the answer, null (not on the live site), or undefined (Webflow decides).
+  async siteItem(label, collId, id) {
+    const home = this.homeTableOfColl(collId);
+    if (home) {
+      try {
+        const r = await this.env.IX_DB.prepare('SELECT * FROM ' + home + ' WHERE id=?').bind(id).first();
+        if (r) { this.from(label, 'd1'); return this.homeItem(r); }
+      } catch (e) { this.d1Err(e); }
+      return undefined;
+    }
+    const it = await this.d1Item(collId, id);
+    if (!it) return undefined;                                                  // not in the copy
+    if (!this.live) { this.from(label, 'd1'); return it; }
+    const s = this.pubState(it);
+    if (s === 'copy') { this.from(label, 'd1'); return it; }
+    if (s === 'off') { this.from(label, 'd1'); this.warn(label + ' item ' + id + ' was not found (deleted or unpublished).'); return null; }
+    return undefined;                                                           // changed since published: Webflow's live item
+  }
+  // v1.0.195 — remove a page's kept copies (this data centre's cache, both modes; KV for public pages).
+  async forget(key, name) {
+    const cache = caches.default;
+    for (const mode of ['live/', 'staged/']) {
+      const base = 'https://ix-issue-data.cache/' + mode + encodeURIComponent(key);
+      await cache.delete(new Request(base)).catch(() => false);
+      await cache.delete(new Request(base + '?stale=1')).catch(() => false);
+    }
+    if (this.env.IX_KV && KV_PAGES.includes(name)) for (const m of ['live:', 'staged:']) await this.env.IX_KV.delete('pg:' + m + key).catch(() => {});
+  }
+
   // v1.0.190 — one home-table row by id: from D1 when the route is on "d1", else (or when D1 lacks it) Webflow by id.
   async getHome(table, label, collId, id) {
     if (this.homeFresh && ['nl_blocks', 'allocations'].includes(table) && /^[0-9a-f]{24}$/.test(id || '')) {
@@ -10148,7 +10378,7 @@ class Run {
     return this.getItem(label, collId, id);
   }
   async d1Home(table, taId) {                                                   // nl_blocks or allocations; v1.0.184: one title
-    if (!this.d1on || !['nl_blocks', 'allocations'].includes(table)) return null;
+    if (!(this.d1on || this.siteD1) || !['nl_blocks', 'allocations'].includes(table)) return null;   // siteD1 v1.0.195
     try {
       const n = await this.env.IX_DB.prepare('SELECT COUNT(*) AS n FROM ' + table).first();
       if (!n || !Number(n.n)) return null;                                       // never backfilled: Webflow decides
@@ -10162,6 +10392,7 @@ class Run {
   // Cloudflare Cache API, per data centre (D154). fresh=1 skips the read
   // but still refills, so the next run is warm.
   async cached(key, produce, name, keepOnFresh) {   // keepOnFresh v1.0.175
+    if (this.noStore) return produce();                                        // v1.0.195: /read-compare
     const cache = caches.default;
     const base = 'https://ix-issue-data.cache/' + (this.live ? 'live/' : 'staged/') + encodeURIComponent(key);
     const req = new Request(base);
@@ -10183,7 +10414,8 @@ class Run {
         if (rec && rec.body !== undefined) {
           const old = (Date.now() - Number(rec.at || 0)) > this.ttl * 1000 || rec.v !== VERSION;
           this.cachedNames.push(name + (old ? ' (kv, refreshing)' : ' (kv)'));
-          if (old) this.ctx.waitUntil((async () => { try { await putAll(await produce()); } catch (e) {} })());
+          if (old) this.ctx.waitUntil((async () => { try { await putAll(await produce()); }
+            catch (e) { if (e && e.status === 404) await this.forget(key, name).catch(() => {}); } })());   // v1.0.195: gone from the site
           else this.ctx.waitUntil(cache.put(req, new Response(JSON.stringify(rec.body), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=' + this.ttl } })).catch(() => {}));
           return rec.body;
         }
@@ -10194,7 +10426,8 @@ class Run {
       if (old) {
         this.cachedNames.push(name + ' (stale, refreshing)');
         this.ctx.waitUntil((async () => {
-          try { await putAll(await produce()); } catch (e) {}   // v1.0.120: KV too
+          try { await putAll(await produce()); }   // v1.0.120: KV too
+          catch (e) { if (e && e.status === 404) await this.forget(key, name).catch(() => {}); }   // v1.0.195: gone from the site
         })());
         return old.json();
       }
