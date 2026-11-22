@@ -4329,7 +4329,7 @@ section.dashboard.dashboard {
   padding: 14px 0 32px !important;
   overflow: visible !important;
   position: static !important;
-  background-color: var(--ix-rail) !important;
+  background-color: var(--ix-rail-ground) !important;
   background-image: none !important;
   border: none !important;
   border-right: 1px solid var(--ix-border) !important;
@@ -4374,7 +4374,7 @@ section.dashboard.dashboard {
   letter-spacing: 0 !important;
   text-transform: none !important;
   text-align: left !important;
-  color: var(--ix-rail-text) !important;
+  color: var(--ix-rail-label) !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -4383,15 +4383,15 @@ section.dashboard.dashboard {
   background-color: var(--ix-cream-warm) !important;
 }
 .publisher-wrapper .dashboard-tabs.w-tabs .w-tab-menu .pl-link-tabs.w-tab-link:hover .pl-label-sm {
-  color: var(--ix-rail-text-on) !important;
+  color: var(--ix-rail-label-on) !important;
 }
 .publisher-wrapper .dashboard-tabs.w-tabs .w-tab-menu .pl-link-tabs.w-tab-link.w--current {
-  background-color: var(--ix-rail-lift) !important;
+  background-color: var(--ix-rail-open) !important;
   box-shadow: inset 3px 0 0 var(--ix-here) !important;
   z-index: 1 !important;
 }
 .publisher-wrapper .dashboard-tabs.w-tabs .w-tab-menu .pl-link-tabs.w-tab-link.w--current .pl-label-sm {
-  color: var(--ix-rail-text-on) !important;
+  color: var(--ix-rail-label-on) !important;
   font-weight: 700 !important;
 }
 .publisher-wrapper .dashboard-tabs.w-tabs .w-tab-menu .pl-link-tabs.w-tab-link:focus-visible {
