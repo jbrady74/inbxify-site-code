@@ -118,14 +118,15 @@
   --ix-row-zebra:       #F8F4EB;
   --ix-scrim:           rgba(22, 24, 29, 0.45);
 
-  /* ── The rail (light, Portal look) ─────────────────────────
-     The dark teal rail of v1.4.24 ends here. Light ground, the open tab white with a coral bar on its left
-     edge. Coral is the "you are here" marker and nothing else.                                                */
-  --ix-rail:            #F1ECE2;
-  --ix-rail-lift:       #FFFFFF;
-  --ix-rail-text:       #3A3E46;
-  --ix-rail-text-on:    #22252B;
-  --ix-rail-alert:      #C2271A;
+  /* ── The rail (light, Portal look) ──────────────────────────
+     The dark teal rail of v1.4.24 ends with the shell build. Light ground, the open tab white with a coral bar
+     on its left edge. Coral is the "you are here" marker and nothing else. NEW NAMES, on purpose: the old
+     --ix-rail tokens are read by title-admin-page-design v1.4.41's dark rail and are left alone, so this file
+     on its own changes no rail; title-admin-page-design v1.4.42 §38 reads these.                              */
+  --ix-rail-ground:     #F1ECE2;
+  --ix-rail-open:       #FFFFFF;
+  --ix-rail-label:      #3A3E46;
+  --ix-rail-label-on:   #22252B;
   --ix-here:            #F48164;
 
   /* ── Text ──────────────────────────────────────────────── */
