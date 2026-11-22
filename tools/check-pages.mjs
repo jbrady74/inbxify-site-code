@@ -15,6 +15,9 @@
 //       (addendum finding 1). Now a failure is the branch's only when main never failed on that element, or the
 //       branch made it worse (a lower ratio). The colours are still shown.
 //   (3) THE REPORT COUNTS WHAT THE BRANCH REMOVES: elements that fail on main and pass on the branch.
+//   (4) THE PROGRESS CARDS ARE NEVER MEASURED (#ixp-rail). They come and go on their own clock, so a card can
+//       start fading after the fading pass and before the measurement (run 45081059380: .ixp-msg at 1.01:1).
+//       They are a passing overlay, not the page; ix-progress's own colours are checked in its own file.
 //   Widths may be set per page in checks/pages.json ("widths"); TA Studio, the IPP and Quill are desktop only
 //   (1440 and 1280, design closure ruling 2).
 // v1.0.2 (17 Nov 2026) — main is opened a second time before a console error or contrast failure is blamed on the
@@ -189,7 +192,7 @@ async function pass(ctx, name, cfg, which, width) {
     try {
       const fading = await markFading(page);
       if (fading) log.fading = (log.fading || 0) + fading;
-      const res = await new AxeBuilder({ page }).withRules(['color-contrast']).exclude('[data-ix-fading]').analyze();
+      const res = await new AxeBuilder({ page }).withRules(['color-contrast']).exclude('[data-ix-fading]').exclude('#ixp-rail').analyze();
       for (const v of res.violations) for (const nd of v.nodes) {
         const d = (nd.any && nd.any[0] && nd.any[0].data) || {};
         log.contrast.push({ view: label, target: nd.target.join(' '), fg: d.fgColor, bg: d.bgColor, ratio: d.contrastRatio, need: d.expectedContrastRatio });
