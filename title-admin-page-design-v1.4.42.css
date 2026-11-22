@@ -4309,7 +4309,7 @@ section.dashboard.dashboard {
   width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
-  min-height: calc(100vh - 101px) !important;
+  min-height: calc(100vh - 100px) !important;   /* the header is 100px tall */
   background-color: transparent !important;
 }
 

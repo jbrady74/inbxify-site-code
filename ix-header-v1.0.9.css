@@ -175,6 +175,9 @@ body.ix-operator .ix-topbar-back { display: inline-flex; }
 body.ix-topbar-on .ix-topbar h6.title-label,
 body.ix-topbar-on .ix-topbar .ix-topbar-pub {
   margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  height: auto !important;
   font-family: var(--ix-font-display) !important;
   font-size: var(--ix-fs-head-title) !important;
   font-weight: 400 !important;
