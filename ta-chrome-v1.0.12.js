@@ -1,9 +1,21 @@
-// ta-chrome-v1.0.11.js
+// ta-chrome-v1.0.12.js
 // ============================================================
-// ta-chrome-v1.0.11.js
+// ta-chrome-v1.0.12.js
 // INBXIFY Title-Admin Page Chrome Enhancer
 //
-// v1.0.11 changes (18 Nov 2026, TA Reskin S1):
+// v1.0.12 changes (22 Nov 2026, TA Reskin S1):
+//   A TAB RENAMED IN THE DESIGNER NO LONGER BREAKS THE PAGE. On 18 Nov the Print Issues tab's name in the
+//   Designer's Tabs settings became 'Allocator'. Four scripts find that pane by the name 'PrintIssue'
+//   (ta-print-issues, ta-print-review, ta-cadence-board, this file). Finding none, the Allocator board fell back
+//   to drawing inside the Studio pane, so Studio showed the Allocator, and the Issues tab sat blank under Other.
+//   · TAB_ALIASES maps a Designer name to the name the code knows ('Allocator' -> 'PrintIssue'). At load, before
+//     any later script looks for its pane, the link and the pane carrying the alias get the known name. It runs
+//     only when no tab already has the known name. Webflow's own tab switching reads the name at click time,
+//     from link and pane alike, so both change together. (HC-P-RESKIN-9)
+//   · This file must stay ahead of ta-print-issues and ta-cadence-board in manifests/ta.json.
+//   v1.0.11 was never on main; its one change ships here.
+//
+// v1.0.11 changes (18 Nov 2026, TA Reskin S1; not shipped on its own, carried in v1.0.12):
 //   THE ASSET LIBRARY TAB HIDES ONLY WHEN ITS REPLACEMENTS EXIST. v1.0.10 retired 'ContentLibrary' outright, but
 //   the typed library tabs ('Articles', 'Events', 'RealEstate') are not in the Designer yet (only 'Ads' is), so
 //   the rail lost its only way to Articles, Events and Real Estate. 'ContentLibrary' is now retired only when at
@@ -261,7 +273,23 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.0.11';
+  var VERSION = '1.0.12';
+
+  // v1.0.12 — Designer tab name -> the name every module finds its
+  // pane by. Runs now, at script load, not in init(): the scripts
+  // listed after this one look for their panes as soon as they run.
+  var TAB_ALIASES = { 'Allocator': 'PrintIssue' };   // HC-P-RESKIN-9
+  (function normaliseTabNames() {
+    try {
+      Object.keys(TAB_ALIASES).forEach(function (from) {
+        var to = TAB_ALIASES[from];
+        if (document.querySelector('.w-tab-pane[data-w-tab="' + to + '"]')) return;
+        var els = document.querySelectorAll('.w-tab-link[data-w-tab="' + from + '"], .w-tab-pane[data-w-tab="' + from + '"]');
+        for (var i = 0; i < els.length; i++) els[i].setAttribute('data-w-tab', to);
+        if (els.length) console.info('[ta-chrome] tab "' + from + '" is known to the code as "' + to + '"; renamed on the page (' + els.length + ' elements).');
+      });
+    } catch (e) { console.error('[ta-chrome] tab name pass failed', e); }
+  })();
 
   // ══════════════════════════════════════════════════════════
   // CONFIG — TA_CONFIG wins, these are defaults. No tenant value
