@@ -1,9 +1,25 @@
-// ix-sales-v1.3.11.js
+// ix-sales-v1.3.12.js
 // INBXIFY · Cloudflare Worker · ix-sales
 // SALES RECORDS and OBLIGATIONS: the one place the rules live. The portal
 // (S2) and Studio (S3) both call this; the Revenue Picker (S4) and Scenario
 // 108 (S5) call it too. Scoping: Sales-Records-Obligations-Scoping-v0_7.md.
 // Since v1.3.0 also the portal's Ads tab and the advertiser review page.
+//
+// v1.3.12 (23 Nov 2026, Ad Maker Build S3) — DELETE AN AD FOR GOOD. Staff only.
+//   Ruling (Jeff, 23 Nov): Delete is a true delete, behind an acknowledgement that says it cannot be undone.
+//   · POST /ads/delete { publisher, adId }
+//     Refuses (409) when the ad is a customer's current ad for any shape, when an OBLIGATIONS row points at it, or
+//     when the Run Log shows it has run. Otherwise, in this order:
+//       1. every open or answered PUBLISHER REVIEWS row whose items are all this ad → Withdrawn (its link stops);
+//          a row that also carries other ads is left and named in "kept";
+//       2. the ADS row: unpublished (DELETE …/live), then deleted (DELETE);
+//       3. MEDIA rows that hold one of the ad's picture files, when IX_CONFIG.collections.media is set: the same two
+//          calls. A row is matched by the Uploadcare file id found anywhere in its fields (no MEDIA slug is typed).
+//     Answers { ok, deleted:{ ad, media, links }, kept:[…], pictures:[urls], name }.
+//     NOT done here, and said in "kept": the picture files on Uploadcare (this Worker has only the public key, which
+//     cannot delete) and the Canva design (Canva's API cannot delete; the page opens it).
+//   · Run.remove(collId, id): the two Webflow calls.
+//   HARDCODING: HC-P-AMS3-9 UC_FILE_ID (the shape of an Uploadcare file id in a link).
 //
 // v1.3.11 (22 Nov 2026, Publisher Portal S10 · Build 1) — THE LIVE FRANCHISE SPONSOR, ONE READ FOR THE SITE AND THE IPP.
 //   Rulings (Jeff, 15, 18, 19 Nov): a franchise sponsor comes from the Franchise Sponsor sale first. One sponsor per
@@ -321,7 +337,7 @@
 //           month falls back to the calendar month end.
 // ============================================================
 
-const VERSION = '1.3.11';
+const VERSION = '1.3.12';
 // v1.3.7 · CUSTOMERS slugs that make up a customer's brand record (HC-P-AMB1-1)
 const CUST_BRAND = { logo: 'logo-link', logoLight: 'logo-link-light', main: 'brand-color-main', accent: 'brand-color-accent', fontHead: 'brand-font-heading', fontBody: 'brand-font-body',
   phone: ['business-phone', 'phone', 'contact-phone'], website: ['contact-website', 'website', 'business-website'], email: ['business-email', 'email', 'contact-email'],
@@ -417,6 +433,7 @@ export default {
       if (rq && m === 'POST') return run.out(rq[2] === 'withdraw' ? await withdrawRequest(run, rq[1], await run.body()) : await doneRequest(run, rq[1], await run.body()), 200);
       if (p === '/ads/requests' && m === 'GET') return run.out(await listRequests(run, url), 200);
       if (p === '/ads/requests/counts' && m === 'GET') return run.out(await requestCounts(run), 200);
+      if (p === '/ads/delete' && m === 'POST') return run.out(await deleteAd(run, await run.body()), 200);                 // v1.3.12
       if (p === '/ads/send-approval' && m === 'POST') return run.out(await sendApproval(run, await run.body()), 200);   // v1.3.9
       if (p === '/ads/ask' && m === 'POST') return run.out(await ask(run, await run.body()), 200);           // v1.3.0
       if (id[1] === 'ads' && id[3] === 'decide' && m === 'POST') return run.out(await decide(run, id[2], await run.body()), 200);   // v1.3.0
@@ -572,6 +589,10 @@ class Run {
     const r = await this.wf('/collections/' + collId + '/items/' + id, { method: 'PATCH', body: { fieldData } });
     await this.publish(collId, [id]);
     return { id, item: r, unconfirmed: echoes(r, fieldData) };
+  }
+  async remove(collId, id) {                                           // v1.3.12: off the live site, then out of the collection
+    await this.wf('/collections/' + collId + '/items/' + id + '/live', { method: 'DELETE', allow404: true }).catch(e => { if (!/HTTP (400|404|409)/.test(String(e && e.message))) throw e; });   // never published: nothing live to take down
+    await this.wf('/collections/' + collId + '/items/' + id, { method: 'DELETE', allow404: true });
   }
   async publish(collId, ids) {
     try { await this.wf('/collections/' + collId + '/items/publish', { method: 'POST', body: { itemIds: ids } }); }
@@ -1805,6 +1826,46 @@ function mailShell(inner) {
 }
 const MAIL_P = 'margin:0 0 16px;font:16px/1.55 Helvetica,Arial,sans-serif;color:#22252B;';
 function shapesPhrase(items) { const n = items.map(i => ((ADS_TAB.shapes[i.shape] || {}).label || i.shape).toLowerCase()); return n.length <= 1 ? (n[0] || 'ad') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1]; }
+const UC_FILE_ID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ig;   // HC-P-AMS3-9 · an Uploadcare file id inside a link
+async function deleteAd(run, b) {                                     // v1.3.12 · a true delete; the page asks first
+  if (!run.who || !run.who.staff) throw httpErr(403, 'Only inbxify staff delete an ad.');
+  if (!/^[0-9a-f]{24}$/.test(b.adId || '')) throw httpErr(400, 'Name the ad.');
+  const C = run.cfg.collections, A = JOIN.ad, ctx = await adContext(run, b.adId, b.publisher), f = fd(ctx.ad), adId = ctx.ad.id;
+  // 0 · the three refusals
+  const cf = fd(ctx.custRow), live = Object.keys(ADS_TAB.shapes).filter(k => refId(cf[ADS_TAB.shapes[k].pointer]) === adId);
+  if (live.length) throw httpErr(409, 'This is the customer\'s current ' + live.map(k => ADS_TAB.shapes[k].label.toLowerCase()).join(' and ') + '. Make another version current first.');
+  const obs = (await run.listAll(C.obligations)).filter(o => !o.isArchived && refId(fd(o)[JOIN.ob.ad]) === adId);
+  if (obs.length) throw httpErr(409, obs.length + ' obligation' + (obs.length === 1 ? ' points' : 's point') + ' at this ad (' + obs.slice(0, 3).map(o => String(fd(o).name || o.id)).join('; ') + '). An ad that was scheduled or ran is kept.');
+  const v = (await versionsFor(run, new Set([ctx.cust])))[ctx.cust] || {};
+  const ran = Object.keys(v.versions || {}).some(k => (v.versions[k] || []).some(x => x.id === adId && x.runLog && (x.runLog.from || x.runLog.to)));
+  if (ran) throw httpErr(409, 'The Run Log shows this ad has run. An ad that ran is kept.');
+  const pictures = [A.banner, A.sidebar, A.splash].map(k => { const x = f[k]; return String((x && x.url) || x || ''); }).filter(u => /^https?:/.test(u));
+  const kept = [];
+  // 1 · stop every link that is only about this ad
+  let links = 0;
+  if (C.reviews) {
+    const coll = C.reviews, withdrawn = await run.optId(coll, RV.status, RV_STATUS.withdrawn);
+    for (const r of (await reviewRows(run)).filter(r => r.status === RV_STATUS.open || r.status === RV_STATUS.answered)) {
+      const items = Array.isArray(r.data.items) ? r.data.items : []; if (!items.some(it => it.adId === adId)) continue;
+      if (items.every(it => it.adId === adId)) { await patchReview(run, r.id, { [RV.status]: withdrawn }); links++; }
+      else kept.push('A link that also carries other ads is still open (' + r.action + ', ' + dayOf(r.createdOn) + ').');
+    }
+  }
+  // 2 · the ADS row
+  await run.remove(C.ads, adId);
+  // 3 · MEDIA rows that hold one of its picture files
+  let media = 0;
+  const fileIds = [...new Set(pictures.flatMap(u => u.match(UC_FILE_ID) || []).map(x => x.toLowerCase()))];
+  if (!/^[0-9a-f]{24}$/.test(C.media || '')) kept.push('MEDIA rows were not looked for: IX_CONFIG.collections.media is not set on ix-sales.');
+  else if (fileIds.length) {
+    for (const m of await run.listAll(C.media)) {
+      const blob = JSON.stringify(m.fieldData || {}).toLowerCase(); if (!fileIds.some(id => blob.includes(id))) continue;
+      try { await run.remove(C.media, m.id); media++; } catch (e) { kept.push('MEDIA row ' + String(fd(m).name || m.id) + ' could not be deleted: ' + e.message); }
+    }
+  }
+  if (pictures.length) kept.push('The picture file' + (pictures.length === 1 ? ' is' : 's are') + ' still on Uploadcare. inbxify cannot delete files there yet.');
+  return { ok: true, name: String(f.name || ''), deleted: { ad: true, media, links }, kept, pictures };
+}
 async function sendApproval(run, b) {
   if (!run.who || !run.who.staff) throw httpErr(403, 'Only inbxify staff send an ad for approval.');
   const C = run.cfg.collections, cfg = reviewCfg(run), A = JOIN.ad, test = b.to === 'test';
