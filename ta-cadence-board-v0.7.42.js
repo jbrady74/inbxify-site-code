@@ -1,4 +1,11 @@
-/* ta-cadence-board-v0.7.41.js
+/* ta-cadence-board-v0.7.42.js
+   ── v0.7.42 (23 Nov 2026, Image Links S1 · phase 1b) — NO main-image FALLBACK ──
+   Legacy Sunset S2 hand-off v0.2: every reader moves off the ARTICLES
+   field main-image (LEGACY) so Legacy Sunset S3 can delete it.
+   firstImage() no longer reads it: the article Main link first, then
+   image-url, main-image-url and ad-image as before, else none.
+   HARDCODING: none. Includes all of v0.7.41.
+   ═════════════════════════════════════════════════
    ── v0.7.41 (17 Nov 2026, Content Home S12) — LANE PANELS LOAD CLOSED ──
    Jeff, 17 Nov: both lane search boxes opened on page load. The board
    saved which lane panel (Search, Filter, Sort) was open and reopened it
@@ -2369,7 +2376,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '0.7.41';
+  var VERSION = '0.7.42';
   var TAG = '[cadence-board v' + VERSION + ']';
 
   var RAIL_PX = 44;           // D-CB-3 — matches the mockup lock
@@ -3491,8 +3498,7 @@
     var fd = rec.fieldData || {};
     var main = String(fd['main-image-ulc-link---1-1-ratio'] || '').trim();   /* v0.7.30: the article Main link first, sized */
     if (main) return (window.IxUc && window.IxUc.sized) ? window.IxUc.sized(main, 'card') : main;
-    return fd['image-url'] || fd['main-image-url'] || fd['ad-image'] ||
-           (fd['main-image'] && fd['main-image'].url) || '';
+    return fd['image-url'] || fd['main-image-url'] || fd['ad-image'] || '';   /* v0.7.42: no main-image fallback */
   }
 
   /* Ads are a picture, so the lightbox IS the reader view. Events and

@@ -1,4 +1,4 @@
-/* ta-admaker-v4.11.6.js
+/* ta-admaker-v4.11.7.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
 
@@ -13,13 +13,20 @@
    ix-success-toast, and AFTER ta-studio (v1_4_13 dispatches
    std:panel:admaker). Companion: ta-admaker-v1.1.0.css (head).
 
+   ── v4.11.7 (23 Nov 2026, Ad Maker Build S3) ── DELETE AN AD FOR GOOD (the board's link) ──
+   ix-ads-board v1.0.6 deletes an ad through ix-sales. This file gives the board two things:
+   · designUrl(adId): the Canva address of the ad's design, read from the ADS row's reformat-recipe, so the board's
+     "left for you" notice can link to it.
+   · onDeleted(adId): the ad leaves this page's list, and its ix-canva record is removed (POST /draft/remove with
+     adDeleted:true, ix-canva v0.3.3) so nothing about it stays on our side.
+   Companion: ta-admaker-v4.11.7.css (version only). Needs ix-sales v1.3.12 and ix-canva v0.3.3.
    ── v4.11.6 (23 Nov 2026, Ad Maker Build S3) ── DELETE IN CANVA, FROM THE DRAFTS LIST ──
    Ruling (Jeff, 23 Nov): yes to a way to delete a draft's design from T-A. Canva's API cannot delete a design, so:
    · Remove from list now asks with two answers: "Yes, remove" (as before, the design stays in Canva) and
      "Remove and delete in Canva". The second takes the row off the list and opens that design in Canva in a new
      tab, where File > Move to trash deletes it. The toast says so.
    HARDCODING: HC-P-AMS3-8 CANVA_DESIGN_URL (Canva's address for a design); HC-P-AMS3-6 gains the new words.
-   Companion: ta-admaker-v4.11.6.css.
+   (v4.11.6 companion: ta-admaker-v4.11.6.css.)
    ── v4.11.5 (22 Nov 2026, Ad Maker Build S3) ── WHAT HAPPENS BESIDE THE AD · THE EMAIL CAN BE CHANGED · BROWSER BACK ──
    Rulings (Jeff, 19 and 22 Nov): Send for approval from a card must not leave the page; nothing to pick may sit
    below the fold; the email is shown before it goes; the browser's Back steps back.
@@ -913,7 +920,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.11.6', CSS_FILE = 'ta-admaker-v4.11.6.css';   // v4.11.0: the Ads tab and the Canva screens
+  var VERSION = '4.11.7', CSS_FILE = 'ta-admaker-v4.11.7.css';   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
   var ADVICE_BIGGER = 1.25;   // HC-P-SSB8-25
@@ -5163,7 +5170,7 @@
     if (!pub.id) { host.innerHTML = '<div class="am-err">This page names no publisher (TA_CONFIG.publisherId or #title-admin-id data-pub), so the ads cannot be read.</div>'; return; }
     A.board = IxAdsBoard.mount(host, { side: 'inbxify', title: '', api: adsApi, publisher: pub, who: { staff: true, email: '', name: '' }, info: null,
       onLoad: function (custs, ans) { adsBrand(custs); if (ans) { A.contact = ans.contact || null; A.you = ans.you || null; A.linkDays = ans.linkDays || 14; } adsDraftsLoad(custs); },
-      onAction: function (a) { adsAction(a); } });
+      onAction: function (a) { adsAction(a); }, designUrl: adsDesignUrl, onDeleted: adsDeleted });   // v4.11.7
   }
   // the board's customers carry their brand record (ix-sales v1.3.7); a customer not in the page's hidden list joins CUST from it
   function adsBrand(custs) {
@@ -5197,6 +5204,14 @@
     removed: 'Taken off the list. The design is still in Canva.', removedDel: 'Taken off the list. The design is open in Canva: use File > Move to trash to delete it.', blocked: 'The browser blocked the Canva tab. The row is still on the list.',
     noPic: 'No picture from Canva', noPicYet: 'Canva has no picture of it yet', worked: 'Worked on {on}', notBack: 'not brought back yet', back: 'brought back {on}', copy: 'A copy of an approved ad', noShape: 'Shape not recorded'
   };
+  // v4.11.7 · what the board's Delete needs from this page
+  function adsDesignOf(adId) { var m = adsCanvaVersions(), k; for (k in m) if (m[k].adId === adId) return k; return ''; }
+  function adsDesignUrl(adId) { var d = adsDesignOf(adId); return d ? CANVA_DESIGN_URL.replace('{id}', encodeURIComponent(d)) : ''; }
+  function adsDeleted(adId) {
+    var d = adsDesignOf(adId), it = (S.ads || []).filter(function (x) { return x.id === adId; })[0], ra = it ? (it.fieldData || {})['associated-advertiser'] : '', cid = typeof ra === 'string' ? ra : (Array.isArray(ra) ? String(ra[0] || '') : String((ra && ra.id) || ''));
+    S.ads = (S.ads || []).filter(function (x) { return x.id !== adId; });
+    if (d && cid) canvaApi('/draft/remove', { method: 'POST', body: { designId: d, customerId: cid, adDeleted: true } }).catch(function (e) { log('draft remove after delete', e); });
+  }
   function adsCanvaVersions() {   // design id → { adId, shape, approved } for every ADS row on this page made in Canva
     var out = {};
     (S.ads || []).forEach(function (it) { var fd = it.fieldData || {}, rc = fd['reformat-recipe']; if (!isCanvaRecipe(rc)) return; var o = null; try { o = JSON.parse(rc); } catch (e) {} if (!o || !o.designId) return;

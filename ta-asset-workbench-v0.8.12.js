@@ -1,11 +1,18 @@
-/* ta-asset-workbench-v0.8.11.js
+/* ta-asset-workbench-v0.8.12.js
    ============================================================
-   ta-asset-workbench-v0.8.11.js
+   ta-asset-workbench-v0.8.12.js
    INBXIFY TA Studio — Asset Workbench (detail/management surface)
    Companion stylesheet: ta-asset-workbench-v0.8.6.css  (UNCHANGED —
                          keep the existing head link)
    Shared stylesheet:    ix-internal-notes-v1_0_0.css
                          (self-loaded AND belongs in the Webflow head)
+
+   v0.8.12 (23 Nov 2026, Image Links S1 · phase 1b) — main-image IS NOT
+   READ. Legacy Sunset S2 hand-off v0.2: every reader moves off the
+   ARTICLES field main-image (LEGACY) so Legacy Sunset S3 can delete it.
+   resolveHeroSrc() no longer tries the name 'main-image'; it tries the
+   Main link, then mainImage, main_image, hero and image, then the first
+   media row, as before. Stylesheet unchanged (v0.8.6). Nothing else changed.
 
    v0.8.11 (18 Nov 2026, TA Reskin S1) — THE STYLESHEET IS NAMED BY
    ITS OWN VERSION, NOT THE SCRIPT'S.
@@ -433,7 +440,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '0.8.11';
+  var VERSION = '0.8.12';
   // The companion stylesheet's own version. It moves only when the CSS
   // file is bumped (v0.8.11: it had been read off VERSION, a dead request).
   var CSS_VERSION = '0.8.6';
@@ -815,7 +822,7 @@
   function resolveHeroSrc(a) {
     var mainLink = String(fld(a, ['main-image-ulc-link---1-1-ratio']) || '').trim();   // v0.8.9
     if (mainLink) return (window.IxUc && window.IxUc.sized) ? window.IxUc.sized(mainLink, 'card') : mainLink;
-    var direct = fld(a, ['main-image', 'mainImage', 'main_image', 'hero', 'image']);
+    var direct = fld(a, ['mainImage', 'main_image', 'hero', 'image']);   // v0.8.12: 'main-image' is not read
     if (direct && typeof direct === 'object') {
       direct = direct.url || direct.src || direct['image-url'] || '';
     }

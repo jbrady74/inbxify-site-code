@@ -1,4 +1,8 @@
-// content-library-v1.0.91.js
+// content-library-v1.0.92.js
+// v1.0.92 (23 Nov 2026, Image Links S1 · phase 1b): THE ARTICLE PICTURE NO LONGER FALLS BACK TO main-image.
+//   Legacy Sunset S2 hand-off v0.2: every reader moves off the ARTICLES field main-image (LEGACY) so Legacy Sunset
+//   S3 can delete it. An article's picture on the Asset Library is its Uploadcare Main link
+//   (main-image-ulc-link---1-1-ratio), else none. Nothing else changed.
 // v1.0.91 (22 Nov 2026, Content Home S13): THE TITLE OPENS VIEW.
 //   Jeff, 22 Nov: on the Asset Library, clicking an asset's name must open its View, the same as the View button
 //   (openView, the Asset Workbench). The name is a button now: pointer and underline on hover, and the keyboard can
@@ -1329,8 +1333,7 @@ document.addEventListener('DOMContentLoaded', function () {
       base.customerId   = refOne(fd['associated-business-coc']);
       base.newsletterId = refOne(fd['associated-newsletter']);
       base.pubplanId    = refOne(fd['publication-plan']);
-      base.mainImage    = fd['main-image-ulc-link---1-1-ratio'] ||
-                          (fd['main-image'] && fd['main-image'].url) || null;
+      base.mainImage    = fd['main-image-ulc-link---1-1-ratio'] || null;   // v1.0.92: no main-image fallback
       base.statusLabel  = optLabel(tab, 'status', fd.status);   // optional field
     } else if (tab === 'ads') {
       base.titles           = refMany(fd.titles);
@@ -2829,7 +2832,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // object literal would freeze the values at mount and every reader
   // would see 'articles' forever. Consumers: ta-asf v1.5.50+ (return
   // surface on close).
-  var CL_VERSION = '1.0.91';
+  var CL_VERSION = '1.0.92';
   window.InbxContentLibrary = {
     get mainTab()   { return S.mainTab || ''; },
     get subTab()    { return S.subTab || ''; },
