@@ -1,4 +1,4 @@
-/* ix-ads-board-v1.0.7.css */
+/* ix-ads-board-v1.0.8.css */
 /* ============================================================
    INBXIFY · ix-ads-board · the Ads board shared by the Publisher Portal and the T-A Ads tab
    v1.0.1 (18 Nov 2026): tokens only — every colour and font size reads ix-tokens v1.0.5 (--ps-*, --ix-fs-*); no other change.
@@ -362,3 +362,5 @@ textarea.ps-ad-sendin{min-height:128px;resize:vertical}
 /* ════ v1.0.7 (23 Nov 2026) · the deleted notice inside the customer's area ════ */
 .ps-ad-tabbody>.ps-ad-gone{margin:0 0 12px}
 .ps-ad-gone .gl{margin-top:6px}
+
+/* ════ v1.0.8 (23 Nov 2026) · version only ════ */

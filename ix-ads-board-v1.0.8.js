@@ -1,7 +1,9 @@
-// ix-ads-board-v1.0.7.js
+// ix-ads-board-v1.0.8.js
 // ============================================================
 // INBXIFY · ix-ads-board · the Ads board, shared by the Publisher Portal and the T-A Ads tab
 //
+// v1.0.8 (23 Nov 2026, Ad Maker Build S3): the deleted notice also counts the picture files ix-sales v1.3.13 removed
+//   from Uploadcare (deleted.files). CSS v1.0.8 is a version only. HARDCODING: HC-P-AMB1-2 gains W.ix.del.withFiles*.
 // v1.0.7 (23 Nov 2026, Ad Maker Build S3) — THE DELETED NOTICE SITS WHERE THE WORK IS. JS and CSS v1.0.7.
 //   Rulings (Jeff, 23 Nov, Test 5 on the live page): the notice was at the top of the page, scrolls away from the
 //   customer being worked on, and was not seen; and there was no way to tell which MEDIA row went.
@@ -106,7 +108,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.7', CSS_VERSION = '1.0.7', FILE = 'ix-ads-board-v' + VERSION + '.js';
+  var VERSION = '1.0.8', CSS_VERSION = '1.0.8', FILE = 'ix-ads-board-v' + VERSION + '.js';
   var SH = ['banner', 'sidebar', 'splash', 'text'];                        // HC-P-PP8-8
   var SHN = { banner: 'Banner', sidebar: 'Sidebar', splash: 'Splash', text: 'Text ad' };
   var W = {                                                              // HC-P-PP8-7
@@ -183,7 +185,7 @@
                needs: 'Approving the new {shape}', answered: 'Advertiser answered on the {shape}', advIn: 'Reviewing the new {shape}' },
       act: { edit: 'Edit in Ad Maker', open: 'Open in Ad Maker', make: 'Make {shape}', approve: 'Approve & make current', makeCurrent: 'Make current', coming: 'Tool coming', send: 'Send for approval', sendAgain: 'Send again', hold: 'Approve & hold' },
         del: { link: 'Delete this ad', ask: 'Delete this ad for good?', what: 'The ad comes off the site. Any approval link for it stops working.', never: 'This cannot be undone.', go: 'Delete for good', going: 'Deleting\u2026', cancel: 'cancel',
-          done: 'Deleted: {name}', withHead: 'Deleted with it:', withAd: 'the ADS row', withMedia1: '1 MEDIA row (the one holding its picture)', withMediaN: '{n} MEDIA rows (the ones holding its pictures)', withMedia0: 'no MEDIA row (none held its picture)', withLinks1: '1 open link stopped', withLinksN: '{n} open links stopped', pic: 'picture file', left: 'Left for you to do:', canva: 'Open the design in Canva and move it to trash (File > Move to trash).', close: 'close', fail: 'Not deleted: {msg}', deleting: 'Deleting the ad' },
+          done: 'Deleted: {name}', withHead: 'Deleted with it:', withAd: 'the ADS row', withMedia1: '1 MEDIA row (the one holding its picture)', withMediaN: '{n} MEDIA rows (the ones holding its pictures)', withMedia0: 'no MEDIA row (none held its picture)', withFiles1: 'its picture file on Uploadcare', withFilesN: '{n} picture files on Uploadcare', withLinks1: '1 open link stopped', withLinksN: '{n} open links stopped', pic: 'picture file', left: 'Left for you to do:', canva: 'Open the design in Canva and move it to trash (File > Move to trash).', close: 'close', fail: 'Not deleted: {msg}', deleting: 'Deleting the ad' },
         send: { head: 'Send for approval', headAgain: 'Send again', again: '{name} already has a link from {on}. That link keeps working; this sends a new one.', to: 'Send to', test: '(test)', testNote: 'the same email, sent to you', noPub: 'The PUBLISHERS record has no Contact Name or Business Email, so only a test can be sent.',
           subject: 'Subject', message: 'Message', added: 'Added under your message: the {shape}, a \u201c{button}\u201d button, and \u201c{until}\u201d', go: 'Send email', going: 'Sending\u2026', loading: 'Reading the email\u2026', cancel: 'cancel',
           done: 'Approval email sent to {to}.', doneTest: 'Test approval email sent to {to}.', fail: 'The email was not sent: {msg}', need: 'The subject and the message cannot be empty.' },
@@ -417,6 +419,7 @@
     function goneHTML() {
       var G = S.gone, X = W.ix.del; if (!G) return '';
       var m = Number(G.d.media) || 0, l = Number(G.d.links) || 0, w = [X.withAd, m === 1 ? X.withMedia1 : m ? fill(X.withMediaN, { n: m }) : X.withMedia0];
+      var fl = Number(G.d.files) || 0; if (fl) w.push(fl === 1 ? X.withFiles1 : fill(X.withFilesN, { n: fl }));
       if (l) w.push(l === 1 ? X.withLinks1 : fill(X.withLinksN, { n: l }));
       var li = (G.url ? '<li><a href="' + esc(G.url) + '" target="_blank" rel="noopener">' + esc(X.canva) + '</a></li>' : '') + G.kept.map(function (k) {
         var pics = /Uploadcare/.test(k) ? G.pics.map(function (u, i) { return ' <a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(X.pic + (G.pics.length > 1 ? ' ' + (i + 1) : '')) + '</a>'; }).join('') : '';
