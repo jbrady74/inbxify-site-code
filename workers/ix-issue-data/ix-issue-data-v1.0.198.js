@@ -1,3 +1,24 @@
+// ix-issue-data-v1.0.198.js
+// v1.0.198 (23 Nov 2026, Content Home S14 · phase 3, last route): /assemble (Compile) GOES ON THE READ SWITCH.
+//   Built on v1.0.197. Scoping v0.4 §5 and ruling 3: home tables from D1; collections that stay in Webflow fresh from
+//   Webflow, as today.
+//   1 · THE SWITCH. Key "assemble" in KV contentHome.reads (it holds "webflow" today, so deploying changes nothing).
+//         (no value) or "webflow"   exactly as v1.0.197
+//         "d1"                      buildIssue's NL-BLOCKS come from the D1 home table for the newsletter's title
+//                                   (plus rows with no title), instead of a full Webflow list of every publisher's
+//                                   NL-BLOCKS. If the table is empty or D1 fails, Webflow's list as before.
+//       Nothing else /assemble reads changes: NEWSLETTER and PLAN by id, articles, events and listings by id, and the
+//       lists (titles, designs, ads, customers, sections, franchises ...) stay fresh from Webflow on every Compile
+//       (ruling 3; "every compile reads fresh", 30 Oct). The planner's d1 copy is never turned on here.
+//       /assemble's error answer and meta carry reads { route, value, from }; meta.readFrom names NL-BLOCKS' source.
+//   2 · /read-compare?route=assemble&n=<NEWSLETTER id>&parentId=<PLAN id or the NEWSLETTER id> builds the issue twice
+//       (Webflow's list, then the home table) and compares the assembled email and web bodies, counts and og. It writes
+//       nothing: assembleIssue only reads.
+//   With this, buildIssue no longer lists every NL-BLOCKS row on "d1"; only pageFrameBackfill (a one-time tool) does.
+//   /health says 1.0.198. Nothing else changed.
+//   HARDCODING (provisional): HC-P-CH14-7 "assemble" joins the routes on the switch (extends HC-P-CH11-2).
+//
+// ix-issue-data-v1.0.197.js header follows.
 // ix-issue-data-v1.0.197.js
 // v1.0.197 (23 Nov 2026, Content Home S14): THE PUBLISHED-VERSION RULE ASKS THE DATES FIRST.
 //   Built on v1.0.196. Found by the compare probe on "Chewy Molasses Cookies": a published item saved with changes it
@@ -4108,7 +4129,7 @@
 const ARTICLE_FORMATS = { 'standard': 'standard', 'photo-essay': 'photo-essay', 'video': 'video' };
 // v1.0.106: the photo essay treatment when the article names none. HC-P-CB-20.
 const DEFAULT_TREATMENT = 'polaroid';
-const VERSION = '1.0.197';   // v1.0.197 (published-version rule: dates first); v1.0.196   // v1.0.196 (site compare: each side, probe);    // v1.0.195 (public pages on the read switch: "site");   // v1.0.194 (/quill-status and /article-print on the read switch);   // v1.0.193 (franchise sponsor from ix-sales /sponsors: /site-ads and /site?franchise=);   // v1.0.192 (every picture handed out is sized where it is shown);   // v1.0.191 (/plans counts a clone's items as the IPP rail does);   // v1.0.190   // v1.0.190 (/links, /greeting-context, /release-check on the read switch);   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
+const VERSION = '1.0.198';   // v1.0.198 (/assemble on the read switch); v1.0.197   // v1.0.197 (published-version rule: dates first); v1.0.196   // v1.0.196 (site compare: each side, probe);    // v1.0.195 (public pages on the read switch: "site");   // v1.0.194 (/quill-status and /article-print on the read switch);   // v1.0.193 (franchise sponsor from ix-sales /sponsors: /site-ads and /site?franchise=);   // v1.0.192 (every picture handed out is sized where it is shown);   // v1.0.191 (/plans counts a clone's items as the IPP rail does);   // v1.0.190   // v1.0.190 (/links, /greeting-context, /release-check on the read switch);   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
 // v1.0.170 — the X-IX-Key header against both secrets: IX_KEY (Make, 206) or IX_SERVICE_KEY (ix-content).
 function anyKey(env) { return !!(env.IX_KEY || env.IX_SERVICE_KEY); }
 function keyOk(env, request) {
@@ -4125,7 +4146,7 @@ const MAX_RETRIES = 4;     // per call, on 429 or 5xx
 const PAGE_WAIT_EACH_MS = 3000;   // v1.0.169, HC-P-RC-3: the longest single wait on a busy Webflow, planner reads
 // v1.0.184 — the read switch (Content Home scoping §5f). HC-P-CH11-1, HC-P-CH11-2.
 const READS_KV_KEY = 'contentHome.reads';
-const READS_ROUTES = ['plan-board', 'plans', 'clone-rows', 'links', 'greeting-context', 'release-check', 'quill-status', 'article-print', 'site'];   // 'site' v1.0.195 (HC-P-CH14-1);   // last two v1.0.194 (HC-P-CH13-7);   // 'clone-rows' v1.0.189 (HC-P-CH13-1); the last three v1.0.190 (HC-P-CH13-4)
+const READS_ROUTES = ['plan-board', 'plans', 'clone-rows', 'links', 'greeting-context', 'release-check', 'quill-status', 'article-print', 'site', 'assemble'];   // 'site' v1.0.195 (HC-P-CH14-1); 'assemble' v1.0.198 (HC-P-CH14-7);   // last two v1.0.194 (HC-P-CH13-7);   // 'clone-rows' v1.0.189 (HC-P-CH13-1); the last three v1.0.190 (HC-P-CH13-4)
 const READS_VALUES = ['d1', 'webflow'];
 async function readSwitch(env, route) {
   const out = { route, value: null, from: 'default' };
@@ -4401,6 +4422,10 @@ export default {
 
     const run = new Run(env, ctx, cfg, url.pathname === '/assemble' || url.searchParams.get('fresh') === '1');   // v1.0.133: Compile never builds from a cached copy
     if (url.pathname === '/assemble') {                                                          // v1.0.37
+      const sw = await readSwitch(env, 'assemble');                                             // v1.0.198
+      run.assembleHome = sw.value === 'd1' && !!env.IX_DB;
+      run.reads = readsMeta(sw);
+      if (sw.why) run.warn(sw.why);
       try { return await assembleKeyed(run, nlId, parentId); }
       catch (e) { return json({ ok: false, error: (e && e.message) || String(e), meta: run.meta(null) }, (e && e.status) || 502); }
     }
@@ -4608,9 +4633,10 @@ async function readCompareRoute(env, ctx, url, request) {
   if (!env.WEBFLOW_TOKEN) return out({ ok: false, error: 'WEBFLOW_TOKEN is not set on this Worker.' }, 500);
   if (!env.IX_DB) return out({ ok: false, error: 'This Worker has no IX_DB binding (database ix-content), so there is nothing to compare.' }, 500);
   const route = (url.searchParams.get('route') || 'plan-board').trim();
-  const COMPARABLE = ['plan-board', 'plans', 'clone-rows', 'greeting-context', 'quill-status', 'article-print', 'site'];   // v1.0.190: links and release-check are not compared; last two v1.0.194; site v1.0.195
+  const COMPARABLE = ['plan-board', 'plans', 'clone-rows', 'greeting-context', 'quill-status', 'article-print', 'site', 'assemble'];   // v1.0.190: links and release-check are not compared; last two v1.0.194; site v1.0.195
   if (!COMPARABLE.includes(route)) return out({ ok: false, error: 'route must be one of: ' + COMPARABLE.join(', ') + '.' }, 400);
   if (route === 'site') return siteCompare(env, ctx, url, cfg, out);           // v1.0.195
+  if (route === 'assemble') return assembleCompare(env, ctx, url, cfg, out);   // v1.0.198
   const C = cfg.collections || {};
   const id = (url.searchParams.get(route === 'plans' ? 'titleAdminId' : 'planId') || '').trim();
   if (route !== 'quill-status' && !/^[0-9a-f]{24}$/.test(id)) return out({ ok: false, error: 'Missing or malformed ' + (route === 'plans' ? 'titleAdminId' : 'planId') + '.' }, 400);
@@ -4694,6 +4720,37 @@ async function siteCompare(env, ctx, url, cfg, out) {
     return out({ ok: false, route: 'site', page, error: (e && e.message) || String(e) }, (e && e.status) || 502);
   }
 }
+// v1.0.198 — /read-compare?route=assemble: one issue assembled from Webflow's NL-BLOCKS list, then from the home table.
+async function assembleCompare(env, ctx, url, cfg, out) {
+  const nlId = (url.searchParams.get('n') || '').trim();
+  const parentId = (url.searchParams.get('parentId') || nlId).trim();
+  if (!/^[0-9a-f]{24}$/.test(nlId)) return out({ ok: false, error: 'n must be a NEWSLETTER id.' }, 400);
+  if (!/^[0-9a-f]{24}$/.test(parentId)) return out({ ok: false, error: 'parentId must be a PLAN id or the NEWSLETTER id.' }, 400);
+  const build = async (value) => {
+    const run = new Run(env, ctx, cfg, true, { assembleHome: value === 'd1', noStore: true });
+    run.reads = { route: 'assemble', value, from: 'compare' };
+    let body = null, error = null;
+    try { const { out: o } = await assembleIssue(run, nlId, parentId); body = { email: o.email, web: o.web, counts: o.counts, og: o.og }; }
+    catch (e) { error = { status: (e && e.status) || 502, message: (e && e.message) || String(e) }; }
+    return { body, error, meta: run.meta(null) };
+  };
+  try {
+    const w = await build('webflow');
+    const d = await build('d1');
+    const diffs = [];
+    if (w.error || d.error) {
+      if (!(w.error && d.error && w.error.status === d.error.status))
+        diffs.push({ path: 'assemble', webflow: w.error ? 'error ' + w.error.status : 'built', d1: d.error ? 'error ' + d.error.status : 'built' });
+    } else diffJson(w.body, d.body, 'assemble', diffs);
+    return out({ ok: true, route: 'assemble', id: nlId, same: diffs.length === 0, differenceCount: diffs.length,
+      differences: diffs.slice(0, COMPARE_CAP), truncated: diffs.length > COMPARE_CAP,
+      ...(w.error ? { webflowError: w.error } : {}), ...(d.error ? { d1Error: d.error } : {}),
+      webflowMeta: w.meta, d1Meta: d.meta, version: VERSION }, 200);
+  } catch (e) {
+    return out({ ok: false, route: 'assemble', error: (e && e.message) || String(e) }, (e && e.status) || 502);
+  }
+}
+
 // v1.0.196 — one item as the copy holds it and as Webflow's published site holds it.
 async function siteProbe(env, ctx, cfg, key, slug) {
   const collId = (cfg.collections || {})[key];
@@ -9799,6 +9856,16 @@ function ucId(u) {
 
 // ── The issue ───────────────────────────────────────────────
 
+// v1.0.198 — Compile's NL-BLOCKS: the home table for the title with "assemble":"d1", else Webflow's full list (as before).
+async function assembleBlocks(run, C, taId) {
+  if (run.assembleHome) {
+    const ta = /^[0-9a-f]{24}$/.test(taId || '') ? taId : null;
+    const rows = await run.d1Home('nl_blocks', ta);
+    if (rows) { run.from('NL-BLOCKS', ta ? 'd1 (one title)' : 'd1'); return rows; }
+  }
+  run.from('NL-BLOCKS', 'webflow');
+  return run.listAll(C.blocks);
+}
 async function buildIssue(run, nlId, parentId) {
   const C = run.cfg.collections;
 
@@ -9815,7 +9882,7 @@ async function buildIssue(run, nlId, parentId) {
   const [plan, blocksAll, titles, titlesSite, publishers, designs, ads, customers, sections, franchisesAll] =
     await Promise.all([
       run.getItem('plan', C.plan, planId),
-      run.listAll(C.blocks),
+      assembleBlocks(run, C, refId(nfd[JOIN.newsletter.title])),             // v1.0.198: the home table on "d1"
       run.cachedList('titles', C.titles),
       run.cachedList('titlesSite', C.titlesSite),
       run.cachedList('publishers', C.publishers),
@@ -10059,6 +10126,7 @@ class Run {
     this.siteD1 = !!(opts && opts.site) && !!env.IX_DB;                          // v1.0.195: public pages on "d1" (siteSwitch sets it too)
     this.noStore = !!(opts && opts.noStore);                                     // v1.0.195: /read-compare keeps no page copy
     this.reads = null; this.siteLive = {};                                       // v1.0.195: meta.reads, meta.siteLive
+    this.assembleHome = !!(opts && opts.assembleHome) && !!env.IX_DB;            // v1.0.198: Compile's NL-BLOCKS from D1
     if (cfg.catalogNote) this.warn(cfg.catalogNote);   // v1.0.58, from loadConfig
   }
 
@@ -10260,7 +10328,7 @@ class Run {
       return (r && /^[0-9a-f]{24}$/.test(r.title_admin_id || '')) ? r.title_admin_id : '';
     } catch (e) { this.d1Err(e); return ''; }
   }
-  d1Err(e) { this.warn('The D1 copy could not be read (' + ((e && e.message) || e) + '); Webflow was read instead.'); this.d1on = false; this.siteD1 = false; return null; }
+  d1Err(e) { this.warn('The D1 copy could not be read (' + ((e && e.message) || e) + '); Webflow was read instead.'); this.d1on = false; this.siteD1 = false; this.assembleHome = false; return null; }
   copyItem(r) {
     let fd = {}; try { fd = JSON.parse(r.field_data || '{}'); } catch (e) { fd = {}; }
     const o = { id: r.item_id, fieldData: fd, isDraft: !!r.is_draft, isArchived: !!r.is_archived,
@@ -10428,7 +10496,7 @@ class Run {
     return this.getItem(label, collId, id);
   }
   async d1Home(table, taId) {                                                   // nl_blocks or allocations; v1.0.184: one title
-    if (!(this.d1on || this.siteD1) || !['nl_blocks', 'allocations'].includes(table)) return null;   // siteD1 v1.0.195
+    if (!(this.d1on || this.siteD1 || this.assembleHome) || !['nl_blocks', 'allocations'].includes(table)) return null;   // siteD1 v1.0.195; assembleHome v1.0.198
     try {
       const n = await this.env.IX_DB.prepare('SELECT COUNT(*) AS n FROM ' + table).first();
       if (!n || !Number(n.n)) return null;                                       // never backfilled: Webflow decides
