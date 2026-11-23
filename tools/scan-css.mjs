@@ -2,6 +2,8 @@
 // ============================================================
 // INBXIFY · the Checks Action, part 1: scan the CSS a branch adds (Agent Groundwork G2, scoping §3 point 5)
 //
+// v1.0.1 (22 Nov 2026, TA Reskin S1) — a second token file: ix-tokens-portal-look-v….css (the Portal look, loaded
+//   only by the pages that wear it) may hold typed values like ix-tokens-v….css. HC-P-AG-10 widened.
 // v1.0.0 (17 Nov 2026).   node tools/scan-css.mjs            (run from the repo root, on an agent branch)
 //   env BASE_REF  what to compare with (default origin/main)
 //   env OUT       where the report goes (default check-out)
@@ -26,7 +28,7 @@ import { execFileSync } from 'node:child_process';
 
 const BASE = process.env.BASE_REF || 'origin/main';
 const OUT = process.env.OUT || 'check-out';
-const TOKEN_FILES = /^ix-tokens-v[\d._]+\.css$/;                 // HC-P-AG-10
+const TOKEN_FILES = /^ix-tokens(-portal-look)?-v[\d._]+\.css$/;   // HC-P-AG-10 (v1.0.1: the Portal-look token file too)
 const VERSIONED = /-v\d[\d._]*\.(css|js)$/i;
 const SKIP_DIRS = /^(tools|loaders|manifests|checks|\.github|node_modules)\//;
 

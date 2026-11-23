@@ -3,6 +3,23 @@
 // INBXIFY · the Checks Action, part 2: open the changed pages on the test title, on main and on the branch
 // (Agent Groundwork G2, scoping §3 points 1 to 4). Runs in GitHub's cloud with Playwright.
 //
+// v1.0.3 (22 Nov 2026, TA Reskin S1) — three fixes from the reskin's first runs:
+//   (1) ELEMENTS THAT ARE FADING ARE NOT MEASURED. axe measured the progress card's text mid-fade (.ixp-msg,
+//       .ixp-time) and blamed the branch (design closure finding 6). Before each measurement the check waits up to
+//       2.5 s for animations to end; anything still animating, or part-way through an opacity transition, is
+//       marked data-ix-fading and left out, with everything inside it. The report says how many were left out.
+//   (2) A CONTRAST FAILURE IS MATCHED TO THE SAME ELEMENT ON MAIN, WHATEVER TAB IT WAS SEEN ON, AND WHATEVER ITS
+//       COLOURS. Before, a failure was "new" unless main had it on the same tab with the same colours, so a branch
+//       that made a surface draw where main drew it on another tab (pull request #4: Print Issues drew inside
+//       Studio on main), or that re-pointed a colour token, was blamed for every failure main already had
+//       (addendum finding 1). Now a failure is the branch's only when main never failed on that element, or the
+//       branch made it worse (a lower ratio). The colours are still shown.
+//   (3) THE REPORT COUNTS WHAT THE BRANCH REMOVES: elements that fail on main and pass on the branch.
+//   (4) THE PROGRESS CARDS ARE NEVER MEASURED (#ixp-rail). They come and go on their own clock, so a card can
+//       start fading after the fading pass and before the measurement (run 45081059380: .ixp-msg at 1.01:1).
+//       They are a passing overlay, not the page; ix-progress's own colours are checked in its own file.
+//   Widths may be set per page in checks/pages.json ("widths"); TA Studio, the IPP and Quill are desktop only
+//   (1440 and 1280, design closure ruling 2).
 // v1.0.2 (17 Nov 2026) — main is opened a second time before a console error or contrast failure is blamed on the
 //   branch: live data can arrive on one pass and not the other (Quill Performance did, run 44228896517).
 // v1.0.1 (17 Nov 2026) — from the first runs with the agent login: (1) a page that sends the member away AFTER it has
@@ -100,6 +117,32 @@ async function quiet(page) {
   await sleep(SETTLE);
 }
 
+// v1.0.3 — wait for animations to end, then mark whatever is still moving or part-way through a fade.
+// Endless animations (spinners, placeholder shimmer) are marked at once: they never end.
+async function markFading(page) {
+  return page.evaluate(async () => {
+    const live = () => document.getAnimations().filter((a) => a.playState === 'running' &&
+      !(a.effect && a.effect.getComputedTiming && a.effect.getComputedTiming().iterations === Infinity));
+    const t0 = Date.now();
+    while (live().length && Date.now() - t0 < 2500) await new Promise((r) => setTimeout(r, 150));
+    document.querySelectorAll('[data-ix-fading]').forEach((e) => e.removeAttribute('data-ix-fading'));
+    const mark = new Set();
+    for (const a of document.getAnimations()) {
+      const t = a.playState === 'running' && a.effect && a.effect.target;
+      if (t && t.nodeType === 1) mark.add(t);
+    }
+    for (const el of document.querySelectorAll('body *')) {
+      const cs = getComputedStyle(el), o = parseFloat(cs.opacity);
+      if (o > 0 && o < 1 && /opacity|all/.test(cs.transitionProperty) && parseFloat(cs.transitionDuration) > 0) mark.add(el);
+    }
+    mark.forEach((e) => e.setAttribute('data-ix-fading', '1'));
+    return mark.size;
+  }).catch(() => 0);
+}
+
+// v1.0.3 — a failure belongs to an element, not to a tab or a colour pair
+const conEl = (c) => c.target;
+
 async function signIn(ctx) {
   const page = await ctx.newPage();
   try {
@@ -147,7 +190,9 @@ async function pass(ctx, name, cfg, which, width) {
       } catch (e2) { log.stops.push(`no picture of "${label}": ${String(e.message || e).replace(/\s+/g, ' ').slice(0, 400)} / ${String(e2.message || e2).slice(0, 120)}`); }
     }
     try {
-      const res = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
+      const fading = await markFading(page);
+      if (fading) log.fading = (log.fading || 0) + fading;
+      const res = await new AxeBuilder({ page }).withRules(['color-contrast']).exclude('[data-ix-fading]').exclude('#ixp-rail').analyze();
       for (const v of res.violations) for (const nd of v.nodes) {
         const d = (nd.any && nd.any[0] && nd.any[0].data) || {};
         log.contrast.push({ view: label, target: nd.target.join(' '), fg: d.fgColor, bg: d.bgColor, ratio: d.contrastRatio, need: d.expectedContrastRatio });
@@ -262,7 +307,7 @@ if (pages.length && !cdnWait) {
     result.pages.push(rec);
     if (!cfg || !cfg.path) { rec.fails.push(`checks/pages.json has no test address for "${name}". Add one, then push again.`); continue; }
     if (cfg.login && (!EMAIL || !PASSWORD)) { rec.fails.push('This page needs the agent login. The repo secrets IX_AGENT_EMAIL and IX_AGENT_PASSWORD are not set.'); continue; }
-    for (const width of CFG.widths) {
+    for (const width of (cfg.widths || CFG.widths)) {
       const ctx = await browser.newContext({ viewport: { width, height: width < 600 ? 844 : 900 } });
       const w = { width, main: null, branch: null, newErrors: [], newContrast: [], newCdn: [] };
       rec.widths.push(w);
@@ -276,18 +321,25 @@ if (pages.length && !cdnWait) {
         w.branch = await pass(ctx, name, cfg, 'branch', width);
         // Live data can arrive on one pass and not the other. Before blaming the branch for an error or a
         // contrast failure, open main once more and count what either main pass showed.
-        const errKey = (e) => keyOf(e.text), conKey = (c) => `${c.view}|${c.target}|${c.fg}|${c.bg}`;
-        const mainErr = new Set(w.main.errors.map(errKey)), mainCon = new Set(w.main.contrast.map(conKey));
-        if (w.branch.errors.some((e) => !mainErr.has(errKey(e))) || w.branch.contrast.some((c) => !mainCon.has(conKey(c)))) {
+        const errKey = (e) => keyOf(e.text);
+        // v1.0.3: the worst ratio main showed for each element, on any tab
+        const worst = (list) => { const m = new Map(); for (const c of list) { const r = Number(c.ratio) || 0; if (!m.has(conEl(c)) || r < m.get(conEl(c))) m.set(conEl(c), r); } return m; };
+        const isNew = (c, m) => !m.has(conEl(c)) || (Number(c.ratio) || 0) < m.get(conEl(c)) - 0.05;
+        const mainErr = new Set(w.main.errors.map(errKey));
+        let mainCon = worst(w.main.contrast);
+        if (w.branch.errors.some((e) => !mainErr.has(errKey(e))) || w.branch.contrast.some((c) => isNew(c, mainCon))) {
           const again = await pass(ctx, name, cfg, 'main', width);
           w.main.errors.push(...again.errors.filter((e) => !mainErr.has(errKey(e))));
-          w.main.contrast.push(...again.contrast.filter((c) => !mainCon.has(conKey(c))));
+          w.main.contrast.push(...again.contrast.filter((c) => !mainCon.has(conEl(c))));
+          w.main.fading = (w.main.fading || 0) + (again.fading || 0);
+          mainCon = worst(w.main.contrast);
           w.mainTwice = true;
         }
         const seen = new Set(w.main.errors.map((e) => keyOf(e.text)));
         w.newErrors = w.branch.errors.filter((e) => !seen.has(keyOf(e.text)));
-        const had = new Set(w.main.contrast.map((c) => `${c.view}|${c.target}|${c.fg}|${c.bg}`));
-        w.newContrast = w.branch.contrast.filter((c) => !had.has(`${c.view}|${c.target}|${c.fg}|${c.bg}`));
+        w.newContrast = w.branch.contrast.filter((c) => isNew(c, mainCon));
+        const branchEls = new Set(w.branch.contrast.map(conEl));
+        w.removed = [...mainCon.keys()].filter((t) => !branchEls.has(t));
         for (const s of w.branch.stops) rec.fails.push(`${width} wide, branch: ${s}`);
         const saw = w.branch.saw || w.main.saw;
         if (saw) rec.fails.push(`${width} wide: the page was at \`${saw.url}\`, titled "${saw.title}", and showed: "${saw.text}"`);
@@ -312,6 +364,8 @@ for (const n of result.notes) md.push(n, '');
 if (result.member) md.push(`The agent member \`${result.member.id}\` has ${result.member.plans.length} Memberstack plan(s)${result.member.plans.length ? ': ' + result.member.plans.map((x) => '`' + x + '`').join(', ') : ''}.`, '');
 for (const p of result.pages) {
   md.push(`#### ${p.page}: ${p.fails.length ? 'FAILED' : 'passed'}`);
+  const rm = p.widths.map((w) => `${w.width} wide: ${(w.removed || []).length}`).join(', ');
+  if (p.widths.some((w) => w.main && w.branch)) md.push('', `Contrast failures the branch removes against main: ${rm}.`);
   md.push('');
   for (const f of p.fails) md.push(`- ${f}`);
   if (p.fails.length) md.push('');
@@ -336,7 +390,10 @@ for (const p of result.pages) {
     const writes = [...new Set(w.branch.writes.map((x) => `${x.method} ${x.to}`))];
     md.push(`<details><summary>${p.page} at ${w.width} wide: ${w.branch.views.length} view(s), main beside branch</summary>`, '');
     const oldCdn = [...new Set(w.main.cdn.map((c) => `${c.url} (${c.why})`))];
-    md.push(`Already on main, not failed: ${oldErr.length} console error(s), ${oldCdn.length} failed request(s) to jsDelivr, ${w.main.contrast.length} contrast failure(s).`);
+    const mainEls = new Set(w.main.contrast.map(conEl)).size, branchEls = new Set(w.branch.contrast.map(conEl)).size;
+    md.push(`Contrast: main fails on ${mainEls} element(s), the branch on ${branchEls}. **The branch removes ${(w.removed || []).length}** and adds ${w.newContrast.length}.` +
+      (w.branch.fading || w.main.fading ? ` Left out while fading: ${w.branch.fading || 0} on the branch, ${w.main.fading || 0} on main.` : ''));
+    md.push(`Already on main, not failed: ${oldErr.length} console error(s), ${oldCdn.length} failed request(s) to jsDelivr.`);
     if (oldErr.length || oldCdn.length) { md.push(''); for (const e of oldErr.slice(0, 15)) md.push(`- \`${cell(e)}\``); for (const e of oldCdn.slice(0, 15)) md.push(`- failed request: \`${cell(e)}\``); }
     md.push('');
     md.push(writes.length ? `Requests that were not plain reads (the check clicked rail tabs only): ${writes.map((x) => `\`${x}\``).join(', ')}.` : 'Every request was a plain read.');
