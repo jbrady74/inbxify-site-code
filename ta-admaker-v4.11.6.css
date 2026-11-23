@@ -1,4 +1,4 @@
-/* ta-admaker-v4.11.5.css
+/* ta-admaker-v4.11.6.css
    INBXIFY · AD MAKER and the T-A ADS TAB · companion to ta-admaker-v4.11.4.js
    v4.11.4 (19 Nov 2026): the Drafts in Canva row has five columns (the Canva name went), and a small line for a missing picture.
    v4.11.3 (18 Nov 2026, Ad Maker Build S3): the What happens card and Send to on Check, the send-back note on the Canva screen, and
@@ -1133,3 +1133,6 @@ section.publisher-wrapper .am-frame, section.publisher-wrapper .am-work, section
 textarea.am-mailin, section.publisher-wrapper textarea.am-mailin { min-height: 150px; resize: vertical; }
 .am-mailin:focus, section.publisher-wrapper .am-mailin:focus { outline: none; border-color: var(--am-ink) !important; }
 .am-mailin.chg, section.publisher-wrapper .am-mailin.chg { border-color: var(--ps-gold) !important; box-shadow: 0 0 0 3px var(--ps-gold-glow); }
+
+/* ════ v4.11.6 (23 Nov 2026) · version only: the Drafts list's remove question has a second answer, styled by the v4.11.3 rules ════ */
+.ta-ads-drrow.asking .ta-ads-drbtn, section.publisher-wrapper .ta-ads-drrow.asking .ta-ads-drbtn { width: auto !important; min-width: 0; padding-left: 14px; padding-right: 14px; white-space: nowrap; }
