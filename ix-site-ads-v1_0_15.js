@@ -484,7 +484,16 @@
   }
   /* v1.0.15 · the sponsor's line over its banner, above the card */
   function byLine(holder, an) {
-    var fr = String((an.franchise && an.franchise.name) || an.franchiseName || '').trim();
+    /* The franchise's name as readers know it: /site-ads carries the short
+       name (PRODUCT LIBRARY Short Name, e.g. "Pet Spotlight"), the same one
+       the past-issue label uses. The page's own name stands in until then. */
+    var sps = (state.data && state.data.sponsors) || {}, known = '';
+    if (an.franchise && an.franchise.slug && sps[an.franchise.slug]) known = sps[an.franchise.slug].franchise || '';
+    else if (holder.customerId) {
+      var hits = Object.keys(sps).filter(function (k) { return sps[k] && sps[k].customerId === holder.customerId; });
+      if (hits.length === 1) known = sps[hits[0]].franchise || '';
+    }
+    var fr = String(known || (an.franchise && an.franchise.name) || an.franchiseName || '').trim();
     var row = el('div', 'ixsa-by');
     row.appendChild(el('span', 'ixsa-by-l', fr ? fr + BY_WORDS.withFranchise : BY_WORDS.plain));
     var h = safeHref(holder.link);
