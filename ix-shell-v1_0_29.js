@@ -1,4 +1,15 @@
-/* ix-shell-v1_0_28.js
+/* ix-shell-v1_0_29.js
+   v1.0.29 (23 Nov 2026, Content Home S14) AN ARTICLE IN NO ISSUE GOES TO THE CURRENT ISSUE (Jeff, 23 Nov).
+          The article band was empty when the article has no newest edition
+          (/site?article= article.latest empty): no way back, no date. It now
+          shows "Go to Current Issue" with the drawn back arrow, linked to the
+          title's current issue (site.current.url), centred, no date. When
+          the title has no current issue either, the band stays empty as
+          before. Words: PAGES.article.toCurrent (HC-P-CH14-9). Articles with
+          an issue are unchanged. VERSION now says 1.0.29 (v1.0.28 still said
+          1.0.27). Pairs with ix-shell-v1_0_22.css (unchanged).
+
+   ix-shell-v1_0_28.js
    v1.0.28 (7 Nov 2026, SS-Fork A · Mechanics S5) THE FOOTER, FIXED (Jeff, 7 Nov,
           "the footer is very fucked"). Three things:
             1 · The links column lists the nav items only, in the nav's own
@@ -396,7 +407,7 @@
   'use strict';
   if (window.IXShell) return;
 
-  var VERSION = '1.0.27';
+  var VERSION = '1.0.29';
   var REVEAL_MS = 20000;   // HC-P-CBS7-1 · v1.0.13: longest the article words stay hidden while /site is still answering (was 6000)
   var WORKER = 'https://ix-issue-data.jeff-2cd.workers.dev';                    // HC-P-CB-2
   var PHONE = 991;                                                               // HC-P-CB-3
@@ -467,7 +478,7 @@
             none: 'The current issue is not online yet.' },
     issue: { name: 'Current issue', date: '{date}', toCurrent: 'Current issue \u2192', wait: 'Opening the issue',   // v1.0.25: split band; v1.0.23: no sub
              none: 'This issue\u2019s web page is not ready yet.' },      // v1.0.1
-    article: { name: '', date: '{date}', back: 'Back to the issue', wait: 'Opening the article',   // v1.0.12 wait   // v1.0.3: no issue number; arrow drawn
+    article: { name: '', date: '{date}', back: 'Back to the issue', toCurrent: 'Go to Current Issue', wait: 'Opening the article',   // toCurrent v1.0.29   // v1.0.12 wait   // v1.0.3: no issue number; arrow drawn
                none: 'This article could not be found on the page.' },    // v1.0.2
     franchise: { name: '{franchise}', sub: '{name}', wait: 'Loading the section' }   // v1.0.9
   };
@@ -821,7 +832,11 @@
     var i = issueOf();
     if (!site) return;
     if (safeHref(i.url)) band.appendChild(backLink(i.url, def.back, 'ixs-bt'));
-    else band.classList.add('ixs-band--one');
+    else {
+      band.classList.add('ixs-band--one');
+      var cur = site.current && safeHref(site.current.url);                     // v1.0.29: in no issue
+      if (cur && !i.date) { band.appendChild(backLink(cur, def.toCurrent, 'ixs-bt')); return; }
+    }
     if (i.date) band.appendChild(el('span', 'ixs-bt ixs-bdate', fill(def.date)));
   }
 

@@ -1,7 +1,16 @@
--- ix-content-schema-v1.3.0.sql
--- INBXIFY · D1 database "ix-content" (Worker binding IX_DB, HC-P-CH1-1) · Content Home phase 1, 2 and 3.
+-- ix-content-schema-v1.4.0.sql
+-- INBXIFY · D1 database "ix-content" (Worker binding IX_DB, HC-P-CH1-1) · Content Home phases 1 to 4.
 -- A NEW, EMPTY database: paste the whole file into the D1 Console and run it once. Every CREATE is IF NOT EXISTS.
 -- The D1 Console flattens a paste to one line, so for a live database use the comment-free single lines below.
+--
+-- v1.4.0 (23 Nov 2026, Content Home S16 · phase 4b): D1 FIRST (ix-content v1.3.0 needs this before it is deployed).
+--   nl_blocks.wf_id and allocations.wf_id: the row's Webflow item id. Every row today took Webflow's id, so wf_id = id;
+--   a row made while its table is on "d1" has an id of its own and gets wf_id when the trailing copy reaches Webflow.
+--   wf_outbox: one line per change to copy to Webflow; done_at is set when it got there.
+--   save_guard: always empty. A save inserts 0 into it only when a row moved since its check, and the CHECK makes the
+--   whole save roll back (HC-P-CH16-6).
+--   The live database (at v1.3.0) takes all of it as one line in the D1 Console:
+--   ALTER TABLE nl_blocks ADD COLUMN wf_id TEXT; ALTER TABLE allocations ADD COLUMN wf_id TEXT; UPDATE nl_blocks SET wf_id=id WHERE wf_id IS NULL; UPDATE allocations SET wf_id=id WHERE wf_id IS NULL; CREATE INDEX IF NOT EXISTS nl_blocks_wf ON nl_blocks (wf_id); CREATE INDEX IF NOT EXISTS allocations_wf ON allocations (wf_id); CREATE TABLE IF NOT EXISTS wf_outbox (seq INTEGER PRIMARY KEY AUTOINCREMENT, table_name TEXT NOT NULL, row_id TEXT NOT NULL, wf_id TEXT, queued_at TEXT NOT NULL, tries INTEGER NOT NULL DEFAULT 0, last_try_at TEXT, last_error TEXT, done_at TEXT); CREATE INDEX IF NOT EXISTS wf_outbox_waiting ON wf_outbox (done_at, seq); CREATE INDEX IF NOT EXISTS wf_outbox_row ON wf_outbox (table_name, row_id); CREATE TABLE IF NOT EXISTS save_guard (ok INTEGER NOT NULL CHECK (ok = 1));
 --
 -- v1.3.0 (22 Nov 2026, Content Home S14): copy_items gains live_off_at, the time ix-content heard that Webflow took the
 -- item off the live site (collection_item_unpublished); a later publish clears it (ix-content v1.2.3). The live
@@ -83,8 +92,10 @@ CREATE TABLE IF NOT EXISTS nl_blocks (
   updated_by      TEXT,
   is_draft        INTEGER NOT NULL DEFAULT 0,
   is_archived     INTEGER NOT NULL DEFAULT 0,
-  wf_updated      TEXT
+  wf_updated      TEXT,
+  wf_id           TEXT
 );
+CREATE INDEX IF NOT EXISTS nl_blocks_wf        ON nl_blocks (wf_id);
 CREATE INDEX IF NOT EXISTS nl_blocks_plan      ON nl_blocks (plan_id, position);
 CREATE INDEX IF NOT EXISTS nl_blocks_plan_live ON nl_blocks (plan_id, is_archived);
 CREATE INDEX IF NOT EXISTS nl_blocks_title     ON nl_blocks (title_admin_id);
@@ -103,8 +114,10 @@ CREATE TABLE IF NOT EXISTS allocations (
   updated_by      TEXT,
   is_draft        INTEGER NOT NULL DEFAULT 0,
   is_archived     INTEGER NOT NULL DEFAULT 0,
-  wf_updated      TEXT
+  wf_updated      TEXT,
+  wf_id           TEXT
 );
+CREATE INDEX IF NOT EXISTS allocations_wf        ON allocations (wf_id);
 CREATE INDEX IF NOT EXISTS allocations_title_live ON allocations (title_admin_id, is_archived);
 CREATE INDEX IF NOT EXISTS allocations_issue     ON allocations (title_admin_id, print_issue, page);
 CREATE INDEX IF NOT EXISTS allocations_publisher ON allocations (publisher_id);
@@ -186,4 +199,25 @@ CREATE TABLE IF NOT EXISTS site_facts (
   k       TEXT PRIMARY KEY,
   v_json  TEXT NOT NULL,
   at      TEXT NOT NULL
+);
+
+-- ── D1 FIRST (v1.4.0) ───────────────────────────────────────────────────────────────────
+-- The trailing copy to Webflow: one line per changed row, oldest first. Several lines for one row are sent as one.
+CREATE TABLE IF NOT EXISTS wf_outbox (
+  seq          INTEGER PRIMARY KEY AUTOINCREMENT,
+  table_name   TEXT NOT NULL,
+  row_id       TEXT NOT NULL,
+  wf_id        TEXT,
+  queued_at    TEXT NOT NULL,
+  tries        INTEGER NOT NULL DEFAULT 0,
+  last_try_at  TEXT,
+  last_error   TEXT,
+  done_at      TEXT
+);
+CREATE INDEX IF NOT EXISTS wf_outbox_waiting ON wf_outbox (done_at, seq);
+CREATE INDEX IF NOT EXISTS wf_outbox_row     ON wf_outbox (table_name, row_id);
+
+-- Always empty: a save that finds a row moved inserts 0 here, and the CHECK rolls the whole save back.
+CREATE TABLE IF NOT EXISTS save_guard (
+  ok  INTEGER NOT NULL CHECK (ok = 1)
 );

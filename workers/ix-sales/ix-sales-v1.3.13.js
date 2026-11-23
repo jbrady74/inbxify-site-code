@@ -1,10 +1,59 @@
-// ix-sales-v1.3.10.js
+// ix-sales-v1.3.13.js
 // INBXIFY · Cloudflare Worker · ix-sales
 // SALES RECORDS and OBLIGATIONS: the one place the rules live. The portal
 // (S2) and Studio (S3) both call this; the Revenue Picker (S4) and Scenario
 // 108 (S5) call it too. Scoping: Sales-Records-Obligations-Scoping-v0_7.md.
 // Since v1.3.0 also the portal's Ads tab and the advertiser review page.
 //
+// v1.3.13 (23 Nov 2026, Ad Maker Build S3) — DELETE ALSO REMOVES THE PICTURE FILE FROM UPLOADCARE.
+//   Ruling (Jeff, 23 Nov): yes, store the Uploadcare secret key on ix-sales so Delete removes the file too.
+//   · New secret UPLOADCARE_SECRET_KEY (with the existing UPLOADCARE_PUB_KEY). Without it Delete works as in
+//     v1.3.12 and says the file is still there.
+//   · POST /ads/delete, step 4, after the rows are gone: for each of the ad's picture file ids,
+//     DELETE https://api.uploadcare.com/files/<id>/storage/ (REST v0.7, Uploadcare.Simple).
+//     A file is KEPT, and said so, when another ADS row or a remaining MEDIA row still holds its id.
+//     The answer gains deleted.files (a count). Uploadcare's CDN may go on serving a copy for a while.
+//   HARDCODING: HC-P-AMS3-11 UC_API (Uploadcare's REST address and version header).
+// v1.3.12 (23 Nov 2026, Ad Maker Build S3) — DELETE AN AD FOR GOOD. Staff only.
+//   Ruling (Jeff, 23 Nov): Delete is a true delete, behind an acknowledgement that says it cannot be undone.
+//   · POST /ads/delete { publisher, adId }
+//     Refuses (409) when the ad is a customer's current ad for any shape, when an OBLIGATIONS row points at it, or
+//     when the Run Log shows it has run. Otherwise, in this order:
+//       1. every open or answered PUBLISHER REVIEWS row whose items are all this ad → Withdrawn (its link stops);
+//          a row that also carries other ads is left and named in "kept";
+//       2. the ADS row: unpublished (DELETE …/live), then deleted (DELETE);
+//       3. MEDIA rows that hold one of the ad's picture files, when IX_CONFIG.collections.media is set: the same two
+//          calls. A row is matched by the Uploadcare file id found anywhere in its fields (no MEDIA slug is typed).
+//     Answers { ok, deleted:{ ad, media, links }, kept:[…], pictures:[urls], name }.
+//     NOT done here, and said in "kept": the picture files on Uploadcare (this Worker has only the public key, which
+//     cannot delete) and the Canva design (Canva's API cannot delete; the page opens it).
+//   · Run.remove(collId, id): the two Webflow calls.
+//   HARDCODING: HC-P-AMS3-9 UC_FILE_ID (the shape of an Uploadcare file id in a link).
+//
+// v1.3.11 (22 Nov 2026, Publisher Portal S10 · Build 1) — THE LIVE FRANCHISE SPONSOR, ONE READ FOR THE SITE AND THE IPP.
+//   Rulings (Jeff, 15, 18, 19 Nov): a franchise sponsor comes from the Franchise Sponsor sale first. One sponsor per
+//   franchise at a time; the sponsor is shown for the whole month its sale covers. Several sponsors on one franchise
+//   in the same month is deferred (when it comes: up to a set limit, someone always shown, site displays split by
+//   alternating page views, the newsletter not split). The limit is a setting now so that change is not a rewrite.
+//   · GET /sponsors?title=<TITLES-ADMIN id>  (X-IX-Key: this Worker's IX_KEY, or ISSUE_DATA_KEY, the value
+//     ix-issue-data holds as IX_SERVICE_KEY, so ix-issue-data can call through a service binding with no new secret).
+//     Answers { ok, title, month, limit, sponsors:[{ franchiseId, franchise, customerId, customer, salesId, sales,
+//     runFrom, runTo, qty, remaining, thisMonth:{ state, obligationId, name } | null }], waiting:[…same shape],
+//     problems:[] }. A record is LIVE when it is not archived, its status is not Ended, its product's slot-shape is
+//     the sponsor band, it names a franchise and a customer, it is sold on the title, and this month (UTC) falls
+//     inside its run (the first to the last due month of its sends that are not cancelled; a Window ends at its
+//     window end). sponsors holds at most `limit` per franchise, the earliest run first; any further live record
+//     goes in waiting and is named in problems. thisMonth is the state of the send due this month (ran, planned,
+//     due, missed, toCome), null when the record has no send this month.
+//   · POST /sales and PATCH /sales/<id> refuse (409) a Franchise Sponsor record whose months overlap `limit` other
+//     records that are not Ended on the same franchise and title, naming them. Scoping v0_7 open item 3: a state the
+//     rule forbids is not reachable. An Ended record never blocks.
+//   · IX_CONFIG gains optional "sponsorsPerFranchise" (whole number, default 1).
+//   Nothing else changes. Built on v1.3.10 (Ad Maker Build S3).
+//   HARDCODING: HC-P-PP10-1 the sponsor slot-shape label 'sponsor band' (SPONSOR_SHAPE; validateSale tested the same
+//   words since v1.0). HC-P-PP10-2 the limit's default of 1 when IX_CONFIG.sponsorsPerFranchise is not set.
+//   HC-P-PP10-3 "this month" is the UTC month, not the title's time zone (a few hours' difference at a month's turn).
+//   HC-P-PP10-4 /sponsors accepts ISSUE_DATA_KEY as well as IX_KEY (the secret both Workers already share).
 // v1.3.10 (22 Nov 2026, Ad Maker Build S3) — THE APPROVAL EMAIL CAN BE READ AND EDITED BEFORE IT GOES.
 //   Ruling (Jeff, 19 Nov): Send for approval must show the email and let him change it, in place, before sending.
 //   · POST /ads/send-approval { …, preview:true } writes nothing and sends nothing. It answers the email as it would
@@ -266,6 +315,7 @@
 //     "shapeBundleDefault": "banner>sidebar",      // HC-P-SR-8
 //     "noCreativeLeadDefault": 2,                   // when a title has none
 //     "paceSlack": 1,                              // HC-S-7, optional
+//     "sponsorsPerFranchise": 1,                   // HC-P-PP10-2, optional (v1.3.11)
 //     "cacheSeconds": 600 }
 //   (a titlesSite entry left over from v1.0.x is harmless and unused)
 // SECRETS  WEBFLOW_TOKEN (CMS read), WEBFLOW_WRITE_TOKEN (CMS read+write), IX_KEY
@@ -296,7 +346,7 @@
 //           month falls back to the calendar month end.
 // ============================================================
 
-const VERSION = '1.3.10';
+const VERSION = '1.3.13';
 // v1.3.7 · CUSTOMERS slugs that make up a customer's brand record (HC-P-AMB1-1)
 const CUST_BRAND = { logo: 'logo-link', logoLight: 'logo-link-light', main: 'brand-color-main', accent: 'brand-color-accent', fontHead: 'brand-font-heading', fontBody: 'brand-font-body',
   phone: ['business-phone', 'phone', 'contact-phone'], website: ['contact-website', 'website', 'business-website'], email: ['business-email', 'email', 'contact-email'],
@@ -358,6 +408,7 @@ export default {
       // ── Make routes (key) ──
       if (p === '/fulfil' && m === 'POST') { run.needKey(); return run.out(await fulfil(run, await body(request)), 200); }
       if (p === '/sweep' && m === 'GET') { run.needKey(); return run.out(await sweep(run), 200); }
+      if (p === '/sponsors' && m === 'GET') { run.needServiceKey(); return run.out(await liveSponsors(run, url), 200); }   // v1.3.11, ix-issue-data
       if (p === '/run-log' && m === 'POST') { run.needKey(); return run.out(await runLog(run, await body(request)), 200); }   // v1.3.0, Scenario 114
       // ── v1.3.0 · the advertiser review page: origin + the token in the link, no login ──
       const rv = p.match(/^\/review\/([0-9a-f]{32})(?:\/(answer|transcribe|file|decide))?$/);
@@ -391,6 +442,7 @@ export default {
       if (rq && m === 'POST') return run.out(rq[2] === 'withdraw' ? await withdrawRequest(run, rq[1], await run.body()) : await doneRequest(run, rq[1], await run.body()), 200);
       if (p === '/ads/requests' && m === 'GET') return run.out(await listRequests(run, url), 200);
       if (p === '/ads/requests/counts' && m === 'GET') return run.out(await requestCounts(run), 200);
+      if (p === '/ads/delete' && m === 'POST') return run.out(await deleteAd(run, await run.body()), 200);                 // v1.3.12
       if (p === '/ads/send-approval' && m === 'POST') return run.out(await sendApproval(run, await run.body()), 200);   // v1.3.9
       if (p === '/ads/ask' && m === 'POST') return run.out(await ask(run, await run.body()), 200);           // v1.3.0
       if (id[1] === 'ads' && id[3] === 'decide' && m === 'POST') return run.out(await decide(run, id[2], await run.body()), 200);   // v1.3.0
@@ -400,7 +452,7 @@ export default {
       if (p === '/customers' && m === 'GET') return run.out(await customers(run, url), 200);
       if (p === '/franchises' && m === 'GET') return run.out(await franchises(run, url), 200);
       if (p === '/options' && m === 'GET') return run.out(await options(run), 200);
-      return run.out({ ok: false, error: 'Unknown route. See the v1.3.6 header.' }, 404);
+      return run.out({ ok: false, error: 'Unknown route. See the header of this file.' }, 404);
     } catch (e) {
       const status = (e && e.status) || 502;
       const o = run ? run.out.bind(run) : (b, s) => json(b, s);
@@ -442,6 +494,11 @@ class Run {
   warn(m) { if (!this.warnings.includes(m)) this.warnings.push(m); }
   meta() { return { version: VERSION, webflowCalls: this.calls, writes: this.writes, retries: this.retries, ms: Date.now() - this.t0, warnings: this.warnings }; }
   needKey() { if (!this.env.IX_KEY || !this.request || this.request.headers.get('X-IX-Key') !== this.env.IX_KEY) throw httpErr(401, 'Missing or wrong X-IX-Key header.'); }
+  // v1.3.11 · a call from ix-issue-data through its service binding: IX_KEY, or the secret both Workers already share (HC-P-PP10-4)
+  needServiceKey() {
+    const k = this.request ? this.request.headers.get('X-IX-Key') : '';
+    if (!k || (k !== this.env.IX_KEY && k !== this.env.ISSUE_DATA_KEY)) throw httpErr(401, 'Missing or wrong X-IX-Key header.');
+  }
   needOrigin() {
     const allowed = Array.isArray(this.cfg.allowedOrigins) ? this.cfg.allowedOrigins : [];
     if (!allowed.length) throw httpErr(403, 'IX_CONFIG.allowedOrigins is not set, so this route answers no one.');
@@ -541,6 +598,10 @@ class Run {
     const r = await this.wf('/collections/' + collId + '/items/' + id, { method: 'PATCH', body: { fieldData } });
     await this.publish(collId, [id]);
     return { id, item: r, unconfirmed: echoes(r, fieldData) };
+  }
+  async remove(collId, id) {                                           // v1.3.12: off the live site, then out of the collection
+    await this.wf('/collections/' + collId + '/items/' + id + '/live', { method: 'DELETE', allow404: true }).catch(e => { if (!/HTTP (400|404|409)/.test(String(e && e.message))) throw e; });   // never published: nothing live to take down
+    await this.wf('/collections/' + collId + '/items/' + id, { method: 'DELETE', allow404: true });
   }
   async publish(collId, ids) {
     try { await this.wf('/collections/' + collId + '/items/publish', { method: 'POST', body: { itemIds: ids } }); }
@@ -739,6 +800,7 @@ async function createSale(run, b) {
   const C = run.cfg.collections, S = JOIN.sales;
   const sc = await scope(run, b.publisher);
   const v = await validateSale(run, b, sc);
+  await sponsorClash(run, Object.assign({}, b, v), null);              // v1.3.11
   const name = await nextSrName(run);
   const fields = {
     name, slug: name.toLowerCase(),
@@ -773,6 +835,7 @@ async function editSale(run, id, b) {
   }, b);
   if (Array.isArray(b.months) && (b.sends == null || b.sends === '')) merged.sends = null;   // Specific months: sends follows the months
   const v = await validateSale(run, merged, sc, { customer: refId(cur[S.customer]), franchise: refId(cur[S.franchise]) || '', title: refIds(cur[S.titles])[0] || null });
+  await sponsorClash(run, Object.assign({}, merged, v), id);            // v1.3.11
   const obStatus = await run.optMap(C.obligations, O.status);
   const obs = (await run.listAll(C.obligations)).filter(o => !o.isArchived && refId(fd(o)[O.sales]) === id);
   // C2: a placed send keeps its customer and product, so neither changes while one is placed
@@ -904,6 +967,88 @@ async function generate(run, saleId, saleName, v, standing, seq) {
     out.push({ id: w.id, name, title: r.title, dueMonth: r.dueMonth, unconfirmed: w.unconfirmed });
   }
   return out;
+}
+
+// ── v1.3.11 · franchise sponsors: who is live, and no two at once ──
+const SPONSOR_SHAPE = 'sponsor band';                                    // HC-P-PP10-1
+const SPONSOR_LIMIT_DEFAULT = 1;                                         // HC-P-PP10-2
+function sponsorLimit(run) { const n = Number(run.cfg.sponsorsPerFranchise); return Number.isInteger(n) && n > 0 ? n : SPONSOR_LIMIT_DEFAULT; }
+function monthWords(v) {                                                 // "2026-11" → "Nov 2026"
+  const m = /^(\d{4})-(\d{2})$/.exec(String(v || '')); if (!m) return String(v || '');
+  return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(m[2]) - 1] + ' ' + m[1];
+}
+// Every Franchise Sponsor sales record that is not archived, with its run.
+async function sponsorRecords(run) {
+  const C = run.cfg.collections, S = JOIN.sales, O = JOIN.ob;
+  const [sales, obs, prods, srStatus, shapeOf, obStatus] = await Promise.all([run.listAll(C.sales), run.listAll(C.obligations), run.listAll(C.franchises),
+    run.optMap(C.sales, S.status), run.optMap(C.franchises, JOIN.product.shape), run.optMap(C.obligations, O.status)]);
+  const prodBy = index(prods);
+  const obsBySale = new Map();
+  obs.forEach(o => { if (o.isArchived) return; const s = refId(fd(o)[O.sales]); if (!s) return; if (!obsBySale.has(s)) obsBySale.set(s, []); obsBySale.get(s).push(o); });
+  const rows = [];
+  sales.forEach(s => {
+    const f = fd(s); if (s.isArchived) return;
+    const prod = prodBy.get(refId(f[S.product]));
+    if (keyOf(shapeOf.get(fd(prod)[JOIN.product.shape]) || '') !== keyOf(SPONSOR_SHAPE)) return;
+    const franchiseId = refId(f[S.franchise]), customerId = refId(f[S.customer]);
+    if (!franchiseId || !customerId) return;
+    const mine = obsBySale.get(s.id) || [];
+    const live = mine.filter(o => obStatus.get(fd(o)[O.status]) !== STATUS.cancelled);
+    const months = live.map(o => String(fd(o)[O.dueMonth] || '')).filter(Boolean).sort();
+    const fr = prodBy.get(franchiseId);
+    rows.push({ id: s.id, name: String(f.name || ''), titles: refIds(f[S.titles]), franchiseId, franchise: fr ? String(fd(fr).name || '') : null,
+      customerId, ended: srStatus.get(f[S.status]) === SR_STATUS.ended,
+      runFrom: months[0] || String(f[S.startMonth] || '') || null,
+      runTo: f[S.windowEnd] ? ym(f[S.windowEnd]) : (months[months.length - 1] || String(f[S.startMonth] || '') || null), obs: mine });
+  });
+  return { rows, obStatus };
+}
+// GET /sponsors?title=<TITLES-ADMIN id> · key
+async function liveSponsors(run, url) {
+  const C = run.cfg.collections, O = JOIN.ob;
+  const titleId = (url.searchParams.get('title') || '').trim();
+  if (!/^[0-9a-f]{24}$/.test(titleId)) throw httpErr(400, 'Missing or malformed title (the TITLES-ADMIN item id).');
+  const nowYm = ym(new Date().toISOString()), limit = sponsorLimit(run);       // HC-P-PP10-3
+  const [{ rows, obStatus }, custs] = await Promise.all([sponsorRecords(run), run.listAll(C.customers)]);
+  const custBy = index(custs);
+  const live = rows.filter(r => !r.ended && r.titles.includes(titleId) && r.runFrom && r.runTo && r.runFrom <= nowYm && nowYm <= r.runTo)
+    .sort((a, b) => String(a.runFrom).localeCompare(String(b.runFrom)) || a.name.localeCompare(b.name));
+  const shape = r => {
+    const b = boardOf(r.obs, obStatus), mgOf = liveMakeGoods(r.obs, obStatus);
+    const due = r.obs.filter(o => obStatus.get(fd(o)[O.status]) !== STATUS.cancelled && String(fd(o)[O.dueMonth] || '') === nowYm)
+      .sort((x, y) => String(fd(x).name || '').localeCompare(String(fd(y).name || '')))[0] || null;
+    const cust = custBy.get(r.customerId);
+    return { franchiseId: r.franchiseId, franchise: r.franchise, customerId: r.customerId, customer: cust ? String(fd(cust).name || '') : null,
+      salesId: r.id, sales: r.name, runFrom: r.runFrom, runTo: r.runTo, qty: b.qty, remaining: b.remaining,
+      thisMonth: due ? { state: stateOf(due, obStatus, mgOf, nowYm), obligationId: due.id, name: String(fd(due).name || '') } : null };
+  };
+  const sponsors = [], waiting = [], problems = [], count = new Map();
+  live.forEach(r => {
+    const n = count.get(r.franchiseId) || 0; count.set(r.franchiseId, n + 1);
+    if (n < limit) sponsors.push(shape(r));
+    else { waiting.push(shape(r)); problems.push('"' + (r.franchise || r.franchiseId) + '" has more live sponsor records than the limit of ' + limit + ': ' + r.name + ' is not shown.'); }
+  });
+  return { ok: true, title: titleId, month: nowYm, limit, sponsors, waiting, problems };
+}
+// A Franchise Sponsor record may not overlap `limit` others on the same franchise and title. v = the validated sale
+// (shape, titles, franchise, the schedule's inputs); selfId = the record being edited, null on create.
+async function sponsorClash(run, v, selfId) {
+  if (keyOf(v.shape || '') !== keyOf(SPONSOR_SHAPE) || !/^[0-9a-f]{24}$/.test(v.franchise || '')) return;
+  const months = (await schedule(run, v)).map(s => s.dueMonth).filter(Boolean).sort();
+  if (!months.length) return;
+  const from = months[0], to = v.frequency === FREQ.window && v.windowEnd ? ym(v.windowEnd) : months[months.length - 1];
+  const limit = sponsorLimit(run);
+  const { rows } = await sponsorRecords(run);
+  const hits = rows.filter(r => r.id !== selfId && !r.ended && r.franchiseId === v.franchise && r.titles.includes(v.titles[0]) &&
+    r.runFrom && r.runTo && r.runFrom <= to && from <= r.runTo);
+  if (hits.length < limit) return;
+  const C = run.cfg.collections;
+  const names = [];
+  for (const r of hits) { const c = await run.getItem(C.customers, r.customerId);
+    names.push(r.name + ', ' + (c ? String(fd(c).name || '') : 'a customer') + ', ' + monthWords(r.runFrom) + ' to ' + monthWords(r.runTo)); }
+  throw httpErr(409, '"' + (hits[0].franchise || 'This franchise') + '" already has ' + (limit === 1 ? 'a sponsor' : limit + ' sponsors') + ' on this title for those months: ' +
+    names.join('; ') + '. A franchise takes ' + (limit === 1 ? 'one sponsor' : limit + ' sponsors') + ' at a time. Start this record after ' +
+    monthWords(hits.map(r => r.runTo).sort().pop()) + ', or end the other record first.');
 }
 
 // ── obligations ──────────────────────────────────────────────
@@ -1690,6 +1835,61 @@ function mailShell(inner) {
 }
 const MAIL_P = 'margin:0 0 16px;font:16px/1.55 Helvetica,Arial,sans-serif;color:#22252B;';
 function shapesPhrase(items) { const n = items.map(i => ((ADS_TAB.shapes[i.shape] || {}).label || i.shape).toLowerCase()); return n.length <= 1 ? (n[0] || 'ad') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1]; }
+const UC_API = { base: 'https://api.uploadcare.com', accept: 'application/vnd.uploadcare-v0.7+json' };   // HC-P-AMS3-11
+const UC_FILE_ID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ig;   // HC-P-AMS3-9 · an Uploadcare file id inside a link
+async function deleteAd(run, b) {                                     // v1.3.12 · a true delete; the page asks first
+  if (!run.who || !run.who.staff) throw httpErr(403, 'Only inbxify staff delete an ad.');
+  if (!/^[0-9a-f]{24}$/.test(b.adId || '')) throw httpErr(400, 'Name the ad.');
+  const C = run.cfg.collections, A = JOIN.ad, ctx = await adContext(run, b.adId, b.publisher), f = fd(ctx.ad), adId = ctx.ad.id;
+  // 0 · the three refusals
+  const cf = fd(ctx.custRow), live = Object.keys(ADS_TAB.shapes).filter(k => refId(cf[ADS_TAB.shapes[k].pointer]) === adId);
+  if (live.length) throw httpErr(409, 'This is the customer\'s current ' + live.map(k => ADS_TAB.shapes[k].label.toLowerCase()).join(' and ') + '. Make another version current first.');
+  const obs = (await run.listAll(C.obligations)).filter(o => !o.isArchived && refId(fd(o)[JOIN.ob.ad]) === adId);
+  if (obs.length) throw httpErr(409, obs.length + ' obligation' + (obs.length === 1 ? ' points' : 's point') + ' at this ad (' + obs.slice(0, 3).map(o => String(fd(o).name || o.id)).join('; ') + '). An ad that was scheduled or ran is kept.');
+  const v = (await versionsFor(run, new Set([ctx.cust])))[ctx.cust] || {};
+  const ran = Object.keys(v.versions || {}).some(k => (v.versions[k] || []).some(x => x.id === adId && x.runLog && (x.runLog.from || x.runLog.to)));
+  if (ran) throw httpErr(409, 'The Run Log shows this ad has run. An ad that ran is kept.');
+  const pictures = [A.banner, A.sidebar, A.splash].map(k => { const x = f[k]; return String((x && x.url) || x || ''); }).filter(u => /^https?:/.test(u));
+  const kept = [];
+  // 1 · stop every link that is only about this ad
+  let links = 0;
+  if (C.reviews) {
+    const coll = C.reviews, withdrawn = await run.optId(coll, RV.status, RV_STATUS.withdrawn);
+    for (const r of (await reviewRows(run)).filter(r => r.status === RV_STATUS.open || r.status === RV_STATUS.answered)) {
+      const items = Array.isArray(r.data.items) ? r.data.items : []; if (!items.some(it => it.adId === adId)) continue;
+      if (items.every(it => it.adId === adId)) { await patchReview(run, r.id, { [RV.status]: withdrawn }); links++; }
+      else kept.push('A link that also carries other ads is still open (' + r.action + ', ' + dayOf(r.createdOn) + ').');
+    }
+  }
+  // 2 · the ADS row
+  await run.remove(C.ads, adId);
+  // 3 · MEDIA rows that hold one of its picture files
+  let media = 0;
+  const fileIds = [...new Set(pictures.flatMap(u => u.match(UC_FILE_ID) || []).map(x => x.toLowerCase()))];
+  if (!/^[0-9a-f]{24}$/.test(C.media || '')) kept.push('MEDIA rows were not looked for: IX_CONFIG.collections.media is not set on ix-sales.');
+  else if (fileIds.length) {
+    for (const m of await run.listAll(C.media)) {
+      const blob = JSON.stringify(m.fieldData || {}).toLowerCase(); if (!fileIds.some(id => blob.includes(id))) continue;
+      try { await run.remove(C.media, m.id); media++; } catch (e) { kept.push('MEDIA row ' + String(fd(m).name || m.id) + ' could not be deleted: ' + e.message); }
+    }
+  }
+  // 4 · the picture files on Uploadcare (v1.3.13)
+  let files = 0;
+  const pub = run.env.UPLOADCARE_PUB_KEY, sec = run.env.UPLOADCARE_SECRET_KEY;
+  if (fileIds.length && !(pub && sec)) kept.push('The picture file' + (fileIds.length === 1 ? ' is' : 's are') + ' still on Uploadcare: UPLOADCARE_SECRET_KEY is not set on ix-sales.');
+  else if (fileIds.length) {
+    run.memo.delete('list:' + C.ads); if (/^[0-9a-f]{24}$/.test(C.media || '')) run.memo.delete('list:' + C.media);   // read again, after the deletes
+    const others = (await run.listAll(C.ads)).filter(a => a.id !== adId).concat(/^[0-9a-f]{24}$/.test(C.media || '') ? await run.listAll(C.media) : []).map(r => JSON.stringify(r.fieldData || {}).toLowerCase());
+    for (const id of fileIds) {
+      if (others.some(blob => blob.includes(id))) { kept.push('Picture file ' + id + ' was kept on Uploadcare: another ADS or MEDIA row still uses it.'); continue; }
+      try {
+        const res = await fetch(UC_API.base + '/files/' + id + '/storage/', { method: 'DELETE', headers: { Accept: UC_API.accept, Authorization: 'Uploadcare.Simple ' + pub + ':' + sec } });
+        if (res.ok || res.status === 404) files++; else kept.push('Picture file ' + id + ' is still on Uploadcare (Uploadcare answered ' + res.status + ').');
+      } catch (e) { kept.push('Picture file ' + id + ' is still on Uploadcare (' + ((e && e.message) || e) + ').'); }
+    }
+  }
+  return { ok: true, name: String(f.name || ''), deleted: { ad: true, media, links, files }, kept, pictures };
+}
 async function sendApproval(run, b) {
   if (!run.who || !run.who.staff) throw httpErr(403, 'Only inbxify staff send an ad for approval.');
   const C = run.cfg.collections, cfg = reviewCfg(run), A = JOIN.ad, test = b.to === 'test';

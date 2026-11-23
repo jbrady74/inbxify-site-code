@@ -1,3 +1,58 @@
+// ix-issue-data-v1.0.202.js
+// v1.0.202 (23 Nov 2026, Image Links S2): EVENTS GET ONE PICTURE FIELD, img-main.
+//   EVENTS holds one picture in two fields today: event-hero-image-ulc-link-ev-1-only ("Event Hero Image
+//   (ULC)", the main one) and event-image-url ("Event Image URL", the same value). Uploadcare Raw Links
+//   scoping v0.3 ruled one new field, img-main ("Main image", Plain text, raw Uploadcare link only).
+//   1 · Every event picture read goes through evPhotoOf(): img-main first, then the hero field, then
+//       Event Image URL. Same places as before: /plan-board event thumb, the slot read (photo, thumb),
+//       and the email and web event cards (photo, photoLead, photoRow). Before img-main is filled, the
+//       pictures come out exactly as in v1.0.201. The two old slugs sit in EV_PHOTO_OLD (HC-P-IL2-1);
+//       the next version deletes them and this fallback.
+//   2 · NEW GET /event-image-backfill (one-time, goes with v1.0.203). Reads every EVENTS item, draft and
+//       published, archived included (old issues still show their events).
+//         no write=1 → the report: does img-main exist on EVENTS; per field, how many links are clean,
+//         carry a size or a file name, are not Uploadcare, or are empty; the pairs that disagree; events
+//         where only Event Image URL holds the picture; and what img-main would get. Writes nothing.
+//         Allowed origins or no key needed: it shows only links already on the public site.
+//         write=1 [&limit=N] → fills img-main with the clean link (host + photo id, ucBase) from the hero
+//         field, else from Event Image URL. A link that is not Uploadcare is not written (listed instead).
+//         Needs X-Cleanup-Key = CLEANUP_KEY and WEBFLOW_WRITE_TOKEN, as /image-fields-cleanup. Checks every
+//         value Webflow echoes back (TOAST-TRUTH). Refuses when img-main is not on EVENTS yet.
+//   Built on v1.0.201. Nothing else changes. /health says 1.0.202.
+//
+// v1.0.201 header follows.
+// v1.0.201 (23 Nov 2026, Image Links S1 · phase 1b): THE WORKER NO LONGER READS ARTICLES main-image.
+//   Legacy Sunset S2 hand-off v0.2: every reader moves off the ARTICLES field main-image ("LEGACY: newsletters
+//   only, do not use", a Webflow Image field) so Legacy Sunset S3 can delete it. Jeff said yes, 23 Nov.
+//   The three fallbacks go. Each read main-image only when the Uploadcare Main link was empty:
+//     1 · /plan-board article thumb (the IPP Picker's tiles): the Main link, card size, else none.
+//     2 · /article and /site?article= image.src: the Main link, card size, else none.
+//     3 · cardImage() (article cards on /site, /archives, franchise pages): the Main link, else none.
+//   An article with no Main link now shows no picture in these places instead of the old Webflow copy.
+//   Built on v1.0.200 (Content Home S14). Nothing else changes. /health says 1.0.201.
+//
+// v1.0.200 header follows.
+// v1.0.200 (23 Nov 2026, Content Home S14): PF BACKFILL FINDS THE OLD ISSUES' ARTICLES IN THEIR SAVED PAGES.
+//   Built on v1.0.199. Found by the S14 audit: 100 of Wyckoff Living NOW's 160 ARTICLES, all published, have no
+//   latest-newsletter and no associated-newsletter. Legacy Sunset S2 deleted ARTICLES "♦️ NEWSLETTER", the only link
+//   from a picker-era article to its issue; latest-newsletter is written only by /page-frame-backfill (daily, PF
+//   Backfill scenario), which placed an article through NL-BLOCKS rows, associated-newsletter or the article's plan.
+//   Picker-era issues have none of those, so their articles were never placed, and every daily run writes them empty.
+//   So the article page's band has no issue line, and Past Issues cards before NL-BLOCKS list no headlines.
+//   1 · A FOURTH SOURCE, LAST. Each newsletter's saved page (NEWSLETTER web HTML, else email HTML) is read for links to
+//       articles (the article path, ARCHIVE_PATHS.article or IX_CONFIG.sitePaths.article, then the ARTICLES slug). An
+//       article that NL-BLOCKS rows, associated-newsletter and its plan cannot place takes the newsletters whose saved
+//       page links to it. Then the same rule as before: the newest edition that counts (date passed; compiled or
+//       published). Articles the first three sources place are untouched, so the NL-BLOCKS path does not change.
+//   2 · REPORT. report gains fromSavedPages (articles placed this way) and fromSavedPagesList [{ article, issue }]
+//       (first 300).
+//   3 · DRY RUN. GET /page-frame-backfill?report=1 from an allowed origin (e.g. the console on www.inbxify.com) answers
+//       { ok, report } with no key and no batches. The route writes nothing either way: the PF Backfill scenario applies
+//       the batches, as before. The keyed call (X-IX-Key) is unchanged.
+//   /health says 1.0.200. Nothing else changed.
+//   HARDCODING (provisional): HC-P-CH14-8 the saved-page link rule (the article path from ARCHIVE_PATHS / sitePaths).
+//
+// ix-issue-data-v1.0.199.js header follows.
 // ix-issue-data-v1.0.199.js
 // v1.0.199 (23 Nov 2026, Image Links S1): THE PUBLISHER'S HEADSHOT IS A CIRCLE IN THE PICTURE ITSELF.
 //   Jeff, 22 Nov: the headshot "should be a circle". v1.0.192 sent a square (scale_crop 240x240) and left the
@@ -4139,7 +4194,7 @@
 const ARTICLE_FORMATS = { 'standard': 'standard', 'photo-essay': 'photo-essay', 'video': 'video' };
 // v1.0.106: the photo essay treatment when the article names none. HC-P-CB-20.
 const DEFAULT_TREATMENT = 'polaroid';
-const VERSION = '1.0.199';   // v1.0.199 (the headshot is cut as a circle);   // v1.0.198 (/assemble on the read switch); v1.0.197   // v1.0.197 (published-version rule: dates first); v1.0.196   // v1.0.196 (site compare: each side, probe);    // v1.0.195 (public pages on the read switch: "site");   // v1.0.194 (/quill-status and /article-print on the read switch);   // v1.0.193 (franchise sponsor from ix-sales /sponsors: /site-ads and /site?franchise=);   // v1.0.192 (every picture handed out is sized where it is shown);   // v1.0.191 (/plans counts a clone's items as the IPP rail does);   // v1.0.190   // v1.0.190 (/links, /greeting-context, /release-check on the read switch);   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
+const VERSION = '1.0.202';   // v1.0.202 (EVENTS img-main; /event-image-backfill);   // v1.0.201 (main-image no longer read);   // v1.0.200 (PF Backfill reads the saved pages); v1.0.199   // v1.0.199 (the headshot is cut as a circle);   // v1.0.198 (/assemble on the read switch); v1.0.197   // v1.0.197 (published-version rule: dates first); v1.0.196   // v1.0.196 (site compare: each side, probe);    // v1.0.195 (public pages on the read switch: "site");   // v1.0.194 (/quill-status and /article-print on the read switch);   // v1.0.193 (franchise sponsor from ix-sales /sponsors: /site-ads and /site?franchise=);   // v1.0.192 (every picture handed out is sized where it is shown);   // v1.0.191 (/plans counts a clone's items as the IPP rail does);   // v1.0.190   // v1.0.190 (/links, /greeting-context, /release-check on the read switch);   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
 // v1.0.170 — the X-IX-Key header against both secrets: IX_KEY (Make, 206) or IX_SERVICE_KEY (ix-content).
 function anyKey(env) { return !!(env.IX_KEY || env.IX_SERVICE_KEY); }
 function keyOk(env, request) {
@@ -4282,7 +4337,7 @@ const JOIN = {
   design: { template: 'template-file', templateWeb: 'web-template-file', titles: 'titles',
             type: 'block-type', itemCount: 'item-count', swatch: 'swatch',
             house: 'house-ad-2' },   // house v1.0.84, slug corrected v1.0.86, HC-W-ID84-1   // v1.0.21, HC-P-S7-8; type v1.0.33, HC-P-S9-2; itemCount v1.0.53; swatch v1.0.58, HC-P-DW2-2
-  event: { start: 'event-start', photo: 'event-hero-image-ulc-link-ev-1-only' },   // v1.0.33, HC-P-S9-2
+  event: { start: 'event-start', photo: 'img-main' },   // v1.0.33, HC-P-S9-2; photo is img-main from v1.0.202 (HC-P-IL2-1), read through evPhotoOf()
   publisher: { designJson: 'design-json' },   // v1.0.2: read when the field exists
   article: { section: 'section', author: 'associated-business-coc',
              photoEssay: 'photo-essay-article', video: 'video-article', paid: 'paid-article',   // v1.0.105, HC-P-CB-19
@@ -4412,6 +4467,7 @@ export default {
     if (url.pathname === '/release-check') return releaseCheckRoute(env, ctx, url, request);   // v1.0.69
     if (url.pathname === '/page-frame-backfill') return pageFrameBackfillRoute(env, ctx, url, request);   // v1.0.90
     if (url.pathname === '/image-fields-cleanup') return imageFieldsCleanupRoute(env, ctx, url, request);   // v1.0.126
+    if (url.pathname === '/event-image-backfill') return eventImageBackfillRoute(env, ctx, url, request);   // v1.0.202
     if (url.pathname !== '/issue-data' && url.pathname !== '/assemble') return fail(404, 'Unknown path. Use /site (?title=, ?issue=, ?article=), /form, /archives, /article, /issue-data, /assemble, /assemble-diff, /issue-check, /plan-board, /plans, /article-print, /block-designs, /clone-rows, /link-check, /links, /media, /sections, /catalog, /greeting-context, /release-check, /email-html or /splash.');
 
     if (!anyKey(env)) return fail(500, 'IX_KEY is not set on this Worker.');
@@ -5056,7 +5112,7 @@ async function buildBoard(run, planId) {
     let customer = null, thumb = null;
     if (kind === 'article') {
       customer = custName(f[JOIN.article.author]);
-      thumb = ucSized(f['main-image-ulc-link---1-1-ratio'], ASM.uc.card) || (f['main-image'] && f['main-image'].url) || null;   // v1.0.123 sized
+      thumb = ucSized(f['main-image-ulc-link---1-1-ratio'], ASM.uc.card) || null;   // v1.0.123 sized; v1.0.201 no main-image fallback
     } else if (kind === 'ad') {
       customer = custName(f[JOIN.ad.customer]);
       thumb = ucSized(f[JOIN.ad.bannerLink], ASM.uc.ad) || null;                                                   // v1.0.192 sized
@@ -5064,7 +5120,7 @@ async function buildBoard(run, planId) {
       customer = custName(f[JOIN.re.agent]);
       thumb = ucSized(f['property-image-link'], ASM.uc.card) || null;                                              // v1.0.192 sized
     } else if (kind === 'event') {
-      thumb = ucSized(f['event-hero-image-ulc-link-ev-1-only'] || f['event-image-url'], ASM.uc.card) || null;      // v1.0.192 sized
+      thumb = ucSized(evPhotoOf(f), ASM.uc.card) || null;                                                         // v1.0.192 sized; v1.0.202 evPhotoOf
     }
     const out = { kind, id, name: String(f.name || ''), customer, thumb };
     if (kind === 'article') out.ogSrc = String(f[JOIN.article.ogSrc] || '').trim() || null;   // v1.0.33
@@ -7633,8 +7689,8 @@ function itemsOf(CX, assetType, ids) {
     if (!it) return { id, missing: true };
     const f = it.fieldData || {};
     const o = { id, name: String(f.name || '') };
-    if (assetType === 'event') { o.start = f[JOIN.event.start] || null; o.photo = !!String(f[JOIN.event.photo] || '').trim();
-      o.thumb = ucSized(f['event-hero-image-ulc-link-ev-1-only'] || f['event-image-url'], ASM.uc.card) || null;   // thumb v1.0.45; v1.0.192 sized
+    if (assetType === 'event') { o.start = f[JOIN.event.start] || null; o.photo = !!evPhotoOf(f);   // v1.0.202 evPhotoOf
+      o.thumb = ucSized(evPhotoOf(f), ASM.uc.card) || null;   // thumb v1.0.45; v1.0.192 sized; v1.0.202 evPhotoOf
       const tz = CX.tz || ASM.tzDefault, st = f[JOIN.event.start];                                            // v1.0.46
       o.when = fmtDate(st, 'ddd, MMM D, YYYY', tz) || null;
       o.time = fmtDate(st, 'h:mm A', tz) || null;
@@ -8389,7 +8445,7 @@ async function buildArticlePage(run, slug) {
   }
   // v1.0.123: the lead photo, sized here, with its alt text from MEDIA.
   const mainLink = String(afd[JOIN.article.ogSrc] || '').trim();
-  const image = { src: ucSized(mainLink, ASM.uc.card) || String((afd['main-image'] && afd['main-image'].url) || '').trim() || null,
+  const image = { src: ucSized(mainLink, ASM.uc.card) || null,   // v1.0.201: no main-image fallback
                   alt: '', mediaId: refId(afd['main-image-media-id']) };
   if (image.mediaId && /^[0-9a-f]{24}$/.test(C.media || '')) {
     const mm = index(await staged(C.media)).get(image.mediaId);
@@ -10673,6 +10729,13 @@ function ucBase(v) {
   if (!m || !UC_HOSTS.test(m[1]) || !UC_ID.test(m[2])) return '';
   return 'https://' + m[1].toLowerCase() + '/' + m[2].toLowerCase() + '/';
 }
+// v1.0.202 — the event's picture: img-main, else the two old fields (HC-P-IL2-1). Goes back to one field in v1.0.203.
+const EV_PHOTO_OLD = ['event-hero-image-ulc-link-ev-1-only', 'event-image-url'];
+function evPhotoOf(f) {
+  f = f || {};
+  for (const k of [JOIN.event.photo, ...EV_PHOTO_OLD]) { const v = t(f[k]).trim(); if (v) return v; }
+  return '';
+}
 function ucSized(v, recipe) { const b = ucBase(v); return b ? b + (recipe || '') : t(v).trim(); }
 // v1.0.192 — the clean link (host and photo ID) with no recipe; a link that is not Uploadcare comes back as stored.
 function ucClean(v) { return ucBase(v) || t(v).trim(); }
@@ -10764,7 +10827,7 @@ function recipeFor(MR, afd) {
 function cardImage(MR, fd) {
   const b = ucBase(fd[JOIN.article.ogSrc]);
   if (b) return ucCropped(b, 'wide', recipeFor(MR, fd));
-  return String(t(fd[JOIN.article.ogSrc]) || (fd['main-image'] && fd['main-image'].url) || '').trim();
+  return String(t(fd[JOIN.article.ogSrc]) || '').trim();   // v1.0.201: no main-image fallback
 }
 // The recipe of an article's Main MEDIA row, only when that row holds the
 // same Uploadcare photo as the article's Main link.
@@ -11065,7 +11128,7 @@ function assemble(run, data, F) {
       const ef = fdOf(ev);
       // v1.0.192 — from the photo ID (ucBase), so a stored resize no longer stays in front of the recipe;
       // a link that is not Uploadcare goes out as stored, with no recipe glued on.
-      const photoRaw = t(ef[JOIN.event.photo]).trim(), photoBase = ucBase(photoRaw);
+      const photoRaw = evPhotoOf(ef), photoBase = ucBase(photoRaw);   // v1.0.202 evPhotoOf
       const evPic = r => len(photoRaw) > 0 ? (photoBase ? photoBase + r : photoRaw) : '';
       const venue = t(ef['event-location']) +
         (len(ef['venue-room']) > 0 ? ', ' + t(ef['venue-room']) : '') +
@@ -12160,6 +12223,131 @@ async function imageFieldsCleanupWrite(run, plan, limit) {
   return out;
 }
 
+// ── v1.0.202 — GET /event-image-backfill (Image Links S2) ─────────────────
+// See the v1.0.202 header. One-time run; goes with v1.0.203. Writing needs X-Cleanup-Key.
+const EIB = { img: JOIN.event.photo, hero: EV_PHOTO_OLD[0], url: EV_PHOTO_OLD[1] };   // HC-P-IL2-1
+
+async function eventImageBackfillRoute(env, ctx, url, request) {
+  if (request.method !== 'GET') return fail(405, 'Use GET.');
+  if (!env.WEBFLOW_TOKEN) return fail(500, 'WEBFLOW_TOKEN is not set on this Worker.');
+  const write = url.searchParams.get('write') === '1';
+  if (write) {
+    const k = String(env.CLEANUP_KEY || '').trim();
+    if (!k) return fail(403, 'Writing is off: add the Worker variable CLEANUP_KEY first (delete it after the run).');
+    if (request.headers.get('X-Cleanup-Key') !== k) return fail(401, 'Missing or wrong X-Cleanup-Key header.');
+    if (!String(env.WEBFLOW_WRITE_TOKEN || '').trim()) return fail(403, 'Writing is off: add the Worker secret WEBFLOW_WRITE_TOKEN (a Webflow token with CMS write) first.');
+  }
+  const cfg = await loadConfig(env, true);
+  if (!cfg) return fail(500, 'IX_CONFIG is missing or is not valid JSON.');
+  const limRaw = url.searchParams.get('limit');
+  const limit = limRaw == null || limRaw === '' ? Infinity : Number(limRaw);
+  if (!(limit === Infinity || (Number.isInteger(limit) && limit >= 1))) return fail(400, 'limit must be a whole number, 1 or more.');
+  const run = new Run(env, ctx, cfg, true);
+  try {
+    const plan = await eventImageBackfillPlan(run);
+    if (!write) return json({ ok: true, dryRun: true, report: plan.report, sample: plan.sample, meta: run.meta(null) }, 200);
+    if (!plan.report.imgMainOnEvents) return fail(409, 'EVENTS has no field with the slug ' + EIB.img + ' yet. Make it in Webflow first.');
+    const written = await eventImageBackfillWrite(run, plan, limit);
+    return json({ ok: written.unconfirmed === 0 && !written.errors.length, dryRun: false, report: plan.report,
+                  written, meta: run.meta(null) }, 200);
+  } catch (e) {
+    return json({ ok: false, error: (e && e.message) || String(e), meta: run.meta(null) }, (e && e.status) || 502);
+  }
+}
+
+async function eventImageBackfillPlan(run) {
+  const C = run.cfg.collections || {};
+  if (!/^[0-9a-f]{24}$/.test(C.events || '')) throw httpErr(500, 'IX_CONFIG.collections.events is not set.');
+  const schema = await run.wf('/collections/' + C.events, true);
+  const fields = (schema && Array.isArray(schema.fields)) ? schema.fields : [];
+  const imgField = fields.find(x => x && x.slug === EIB.img) || null;
+  const keep = run.live;
+  run.live = false; const draft = await run.listAll(C.events);
+  run.live = true; let live = [];
+  try { live = await run.listAll(C.events); } finally { run.live = keep; }
+  const liveBy = new Map(live.map(i => [i.id, i]));
+  const str = v => t(v).trim();
+  const kindOf = v => {                                   // clean · sized · fileName · notUploadcare · empty
+    if (!v) return 'empty';
+    const b = ucBase(v);
+    if (!b) return 'notUploadcare';
+    if (b === v) return 'clean';
+    return /\/-\//.test(v) ? 'sized' : 'fileName';
+  };
+  const want = fd => {
+    const hero = str(fd[EIB.hero]), url = str(fd[EIB.url]), img = str(fd[EIB.img]);
+    const hb = ucBase(hero), ub = ucBase(url);
+    let src = '', from = '';
+    if (hero) { src = hb; from = 'hero'; } else if (url) { src = ub; from = 'url'; }
+    const pair = !hero && !url ? 'bothEmpty' : !hero ? 'urlOnly' : !url ? 'heroOnly'
+               : (hb && ub ? (hb === ub ? 'same' : 'differ') : (hero === url ? 'same' : 'differ'));
+    const out = {};
+    let action;
+    if (!hero && !url) action = img ? 'img-only' : 'no-picture';
+    else if (!src) action = 'not-uploadcare';
+    else if (img === src) action = 'done';
+    else { out[EIB.img] = src; action = img ? 'replace' : 'fill'; }
+    return { hero, url, img, src, from, pair, action, out };
+  };
+  const blank = () => ({ clean: 0, sized: 0, fileName: 0, notUploadcare: 0, empty: 0 });
+  const rep = { imgMainOnEvents: !!imgField, imgMainType: imgField ? imgField.type : null,
+                imgMainName: imgField ? imgField.displayName : null, imgMainHelp: imgField ? (imgField.helpText || '') : null,
+                events: 0, archived: 0, hero: blank(), url: blank(), img: blank(),
+                pairs: { same: 0, differ: 0, heroOnly: 0, urlOnly: 0, bothEmpty: 0 },
+                actions: { fill: 0, replace: 0, done: 0, 'not-uploadcare': 0, 'no-picture': 0, 'img-only': 0 },
+                differ: [], urlOnly: [], notUploadcare: [], replace: [], draftToWrite: 0, liveToWrite: 0 };
+  const ev = { draft: [], live: [] }, sample = { events: [] };
+  draft.forEach(e => {
+    const fd = fdOf(e), slug = String(fd.slug || e.id) + (e.isArchived ? ' (archived)' : '');
+    rep.events++; if (e.isArchived) rep.archived++;
+    const d = want(fd);
+    rep.hero[kindOf(d.hero)]++; rep.url[kindOf(d.url)]++; rep.img[kindOf(d.img)]++;
+    rep.pairs[d.pair]++; rep.actions[d.action]++;
+    if (d.pair === 'differ') rep.differ.push(slug + ' · hero ' + d.hero.slice(0, 90) + ' · url ' + d.url.slice(0, 90));
+    if (d.pair === 'urlOnly') rep.urlOnly.push(slug);
+    if (d.action === 'not-uploadcare') rep.notUploadcare.push(slug + ' · ' + (d.hero || d.url).slice(0, 90));
+    if (d.action === 'replace') rep.replace.push(slug + ' · img-main ' + d.img.slice(0, 90) + ' → ' + d.src);
+    if (Object.keys(d.out).length) {
+      ev.draft.push({ id: e.id, slug, fieldData: d.out });
+      if (sample.events.length < 5) sample.events.push({ slug, hero: d.hero, url: d.url, imgBefore: d.img, imgAfter: d.src, from: d.from });
+    }
+    const lv = liveBy.get(e.id);
+    if (lv) { const l = want(fdOf(lv)); if (Object.keys(l.out).length) ev.live.push({ id: e.id, slug, fieldData: l.out }); }
+  });
+  rep.draftToWrite = ev.draft.length; rep.liveToWrite = ev.live.length;
+  return { C, ev, report: rep, sample };
+}
+
+async function eventImageBackfillWrite(run, plan, limit) {
+  const C = plan.C;
+  const order = [];
+  [...plan.ev.draft, ...plan.ev.live].forEach(x => { if (!order.includes(x.slug)) order.push(x.slug); });
+  const keep = new Set(order.slice(0, limit === Infinity ? order.length : limit));
+  const pick = list => list.filter(x => keep.has(x.slug));
+  const jobs = [['draft', pick(plan.ev.draft)], ['live', pick(plan.ev.live)]];
+  const out = { eventsIncluded: keep.size, sent: 0, confirmed: 0, unconfirmed: 0, unconfirmedItems: [], errors: [], byJob: [] };
+  for (const [version, items] of jobs) {
+    let sent = 0, ok = 0;
+    for (let i = 0; i < items.length; i += 100) {
+      const part = items.slice(i, i + 100);
+      const path = '/collections/' + C.events + '/items' + (version === 'live' ? '/live' : '');
+      sent += part.length; out.sent += part.length;
+      let res;
+      try { res = await wfPatch(run, path, { items: part.map(x => ({ id: x.id, fieldData: x.fieldData })) }); }
+      catch (e) { out.errors.push('events ' + version + ': ' + ((e && e.message) || e)); out.unconfirmed += part.length; continue; }
+      const back = new Map(((res && res.items) || []).map(it => [it.id, fdOf(it)]));
+      part.forEach(x => {     // TOAST-TRUTH: counts only when Webflow echoes the value sent
+        const f = back.get(x.id);
+        const good = f && Object.keys(x.fieldData).every(k => String(f[k] == null ? '' : f[k]) === String(x.fieldData[k]));
+        if (good) { ok++; out.confirmed++; }
+        else { out.unconfirmed++; out.unconfirmedItems.push('events ' + version + ' · ' + x.slug); }
+      });
+    }
+    out.byJob.push({ version, sent, confirmed: ok });
+  }
+  return out;
+}
+
 // ── v1.0.151 · GET /customer-ads (SS-Fork A · Mechanics S1) ─────────────────
 // For the customer form (client-manager v1.2.4). Read fresh every time (it is
 // opened to make a change), staged versions, so new creative shows before it is
@@ -12326,6 +12514,19 @@ async function wfPatch(run, path, body) {
 
 // v1.0.90 — GET /page-frame-backfill. See the v1.0.90 header.
 async function pageFrameBackfillRoute(env, ctx, url, request) {
+  if (url.searchParams.get('report') === '1') {                                 // v1.0.200: dry run from an allowed origin
+    const origin = request.headers.get('Origin') || '';
+    const cfg = await loadConfig(env, true);
+    const allowed = (cfg && Array.isArray(cfg.allowedOrigins)) ? cfg.allowedOrigins : [];
+    const okO = !!origin && allowed.includes(origin);
+    const out = (obj, status) => new Response(JSON.stringify(obj), { status, headers: Object.assign({ 'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store', 'Vary': 'Origin' }, okO ? { 'Access-Control-Allow-Origin': origin } : {}) });
+    if (!cfg) return out({ ok: false, error: 'IX_CONFIG is missing or is not valid JSON.' }, 500);
+    if (!okO) return out({ ok: false, error: 'This origin may not call /page-frame-backfill?report=1.' }, 403);
+    const run = new Run(env, ctx, cfg, true);
+    try { const r = await pageFrameBackfill(run, ''); return out({ ok: true, report: r.report, meta: run.meta(null), version: VERSION }, 200); }
+    catch (e) { return out({ ok: false, error: (e && e.message) || String(e), meta: run.meta(null) }, (e && e.status) || 502); }
+  }
   if (!anyKey(env)) return fail(500, 'IX_KEY is not set on this Worker.');
   if (!keyOk(env, request)) return fail(401, 'Missing or wrong X-IX-Key header.');
   if (!env.WEBFLOW_TOKEN) return fail(500, 'WEBFLOW_TOKEN is not set on this Worker.');
@@ -12358,7 +12559,8 @@ async function pageFrameBackfill(run, asOf) {
              t: new Date(fd[DATE] || 0).getTime() || 0, date: fd[DATE] || '',
              span: String(fd[F.span] || ''), liveSpan: lv ? String(fdOf(lv)[F.span] || '') : null,
              published: !!(n.lastPublished && !n.isDraft && lv),
-             compiled: !!(String(fd[H.web] || '').trim() || String(fd[H.email] || '').trim()) };
+             compiled: !!(String(fd[H.web] || '').trim() || String(fd[H.email] || '').trim()),
+             linked: savedPageSlugs(run, fd[H.web] || fd[H.email]) };   // v1.0.200
   });
   NL.draft.length = 0; NL.liveBy.clear();
   const nlBy = new Map(nls.map(n => [n.id, n]));
@@ -12409,6 +12611,13 @@ async function pageFrameBackfill(run, asOf) {
     if (!pid || !nlsOfPlan.has(pid)) return;
     refIds(bf[B.article]).forEach(aid => nlsOfPlan.get(pid).forEach(n => add(aid, n)));
   });
+  // v1.0.200 — the fourth source, last: newsletters whose saved page links to the article.
+  const artBySlug = new Map();
+  AR.draft.forEach(a => { const sl = String(fdOf(a).slug || '').toLowerCase(); if (sl && !a.isArchived) artBySlug.set(sl, a.id); });
+  const fromPages = new Map();
+  nls.forEach(n => (n.linked || []).forEach(sl => { const aid = artBySlug.get(sl); if (!aid) return;
+    if (!fromPages.has(aid)) fromPages.set(aid, new Set()); fromPages.get(aid).add(n.id); }));
+  const pagesList = [];
   const art = { draft: [], live: [] };
   let cleared = 0;
   AR.draft.forEach(a => {
@@ -12418,6 +12627,10 @@ async function pageFrameBackfill(run, asOf) {
     (nlsOfPlan.get(refId(fd[B.plan])) || []).forEach(n => add(a.id, n));
     let best = null;
     (nlsOfArticle.get(a.id) || new Set()).forEach(id => { const n = nlBy.get(id); if (counts(n) && (!best || later(n, best))) best = n; });
+    if (!best && fromPages.has(a.id)) {                                          // v1.0.200: only when nothing else places it
+      fromPages.get(a.id).forEach(id => { const n = nlBy.get(id); if (counts(n) && (!best || later(n, best))) best = n; });
+      if (best) pagesList.push({ article: String(fd.slug || ''), issue: best.name });
+    }
     const want = best ? best.id : null;
     const item = { id: a.id, fieldData: { [F.latest]: want } };
     let changed = false;
@@ -12441,7 +12654,19 @@ async function pageFrameBackfill(run, asOf) {
     laterEditions: nls.length - firsts.size,
     spansDraft: span.draft.length, spansLive: span.live.length,
     articlesDraft: art.draft.length, articlesLive: art.live.length, cleared,
+    fromSavedPages: pagesList.length, fromSavedPagesList: pagesList.slice(0, 300),   // v1.0.200
     hiddenFromArchives: hidden } };
+}
+// v1.0.200 — ARTICLES slugs linked from a newsletter's saved page (web, else email HTML). HC-P-CH14-8.
+function savedPageSlugs(run, html) {
+  const h = String(html || '');
+  if (!h) return [];
+  const base = String(Object.assign({}, ARCHIVE_PATHS, run.cfg.sitePaths || {}).article || '/articles-blog-posts/');
+  const esc = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(esc + '([a-z0-9][a-z0-9-]*)', 'gi');
+  const out = new Set();
+  let m; while ((m = re.exec(h))) out.add(m[1].toLowerCase());
+  return [...out];
 }
 
 // GET /assemble-diff?contextNlId=&parentId=[&fresh=1][&show=payload]
