@@ -1,8 +1,24 @@
-/* ta-asf-v1.12.11.js
+/* ta-asf-v1.12.13.js
    ============================================================
-   ta-asf-v1.12.11.js
+   ta-asf-v1.12.13.js
    INBXIFY TA Studio — ASF (Asset Submission Form)
-   Pairs ta-asf-article v1.0.13 (+ ta-asf-article-v1.0.9.css).
+   Pairs ta-asf-article v1.0.13 (+ ta-asf-article-v1.0.10.css).
+
+   v1.12.13 (23 Nov 2026, Image Links S2) — AN EVENT'S PICTURE IS img-main, SENT CLEAN.
+     EVENTS has one picture field, img-main (raw Uploadcare link), backfilled 23 Nov.
+     · Opening an event reads img-main alone (EV_HYDRATE_MAP.mainImageSrc). Event Hero Image (ULC) and
+       Event Image URL are no longer read.
+     · Create event sends eventImageSrc clean (stripUcTransforms): the MEDIA link could carry Scenario I's
+       resize, and two stored hero links had one. Save on an existing event already sent it clean (v1.11.10).
+     Make 104 v3.12 and G v9.13 write img-main. Nothing else changed.
+
+   v1.12.12 (22 Nov 2026, TA Reskin S1 · Compare with print) — THE RE-READ RESULT IS ONE BOX.
+     Only the lines that draw the Re-read result changed (renderPrintPanel). It wrote one .asf-print-rr box for
+     the fields and a second for the body, each with its own scroll. Now one box (approved S1 board): the
+     fields as a small label over each value (<dl>), a rule, then "Body" and the body with its h2, h3, lists,
+     bold and italic. The box has no inner scroll; the side panel scrolls. ta-asf-article-v1.0.10.css draws it.
+     Behaviour unchanged: "not applied yet", Use these / Use this as the body, Discard, the warnings above the
+     box, every applied field pending with its own cancel. The ⓘ provenance names ta-asf-article-v1.0.10.css.
    Needs ix-issue-data v1.0.50 (v1.0.166 for crops). Reads Scenario 104 v3's reply.
    Needs ix-print-photo v1.0.1 (JS; CSS v1.0.0) for the print panel's photo tools.
    Needs ix-transcribe v1.1.1 for Re-read from print.
@@ -341,7 +357,7 @@
          G v8 still accept the old key from older callers.
        · Opening an event reads the live EVENTS fields: event-link,
          venue-room, event-state, venue-zip, the hero
-         (event-hero-image-ulc-link-ev-1-only) and event-sponsor-credit.
+         (img-main from v1.12.13) and event-sponsor-credit.
          Dates and times are read back from event-start / event-end in
          TA_CONFIG.titleTimezone (America/New_York when unset, the same
          default 104 uses); before, a date opened blank and times never
@@ -4395,7 +4411,7 @@
   //   hydrate field each for Main and OG; small MEDIA picker cards.
   // v1.12.6 (8 Nov, Inset Photo S3) — article saves stop sending mainImageAlt
   //   (Scenario G no longer writes alt-text-for-image; the alt lives on MEDIA).
-  var VERSION = '1.12.11';
+  var VERSION = '1.12.13';
   // v1.11.14 — undo UTF-8-read-as-Windows-1252 ("Â®" → "®", "â€™" → "’").
   var CP1252_HI = { 0x20AC:0x80,0x201A:0x82,0x0192:0x83,0x201E:0x84,0x2026:0x85,0x2020:0x86,0x2021:0x87,0x02C6:0x88,
     0x2030:0x89,0x0160:0x8A,0x2039:0x8B,0x0152:0x8C,0x017D:0x8E,0x2018:0x91,0x2019:0x92,0x201C:0x93,0x201D:0x94,
@@ -5201,7 +5217,7 @@
     eventVenueRoom:          'venue-room',
     eventLink:               'event-link',      // "Event Link - GO", what 206 reads
     eventSponsorCredit:      'event-sponsor-credit',
-    mainImageSrc:            ['event-hero-image-ulc-link-ev-1-only', 'event-image-url']
+    mainImageSrc:            'img-main'   // v1.12.13
   };
   // The keys Scenario G v8's event route takes. HC-P-S11-4.
   var EVENT_G_KEYS = { eventName: 1, eventDescription: 1, eventLocation: 1, eventVenueRoom: 1,
@@ -6483,7 +6499,7 @@
       { name: 'ta-asf-v1.6.4.css',           ver: '1.6.4' },
       { name: 'ta-asf-layout-v1.8.2.css',    ver: '1.8.2' },
       { name: 'ta-asf-article.js',           ver: 'article' },  // read live from the module
-      { name: 'ta-asf-article-v1.0.9.css',   ver: '1.0.9' },   // v1.12.5
+      { name: 'ta-asf-article-v1.0.10.css',  ver: '1.0.10' },  // v1.12.12
       { name: 'ix-photo-compose.js',         ver: 'compose' }, // v1.12.5: read live from the module
       { name: 'ix-print-photo.js',           ver: 'printphoto' }, // v1.12.7: read live from the module
       { name: 'ix-form-controls-v1.2.0.css', ver: '1.2.0' },
@@ -8916,7 +8932,7 @@
         // Event image (hero) — v1.3.12 semantic keys; read from generic
         // internal state (S.article.mainImage*) where the picker writes.
         eventImageMediaId:  a.mainImageMediaId || '',
-        eventImageSrc:      a.mainImageSrc     || '',
+        eventImageSrc:      stripUcTransforms(a.mainImageSrc || ''),   // v1.12.13 clean
         eventImageAlt:      curVal('mainImageAlt') || ''
       }
     };
@@ -12271,10 +12287,13 @@
       rrHtml = (rr.truncated ? '<div class="asf-print-err">The reader ran out of room before the end of the article. The body below stops short: compare it with the print.</div>' : '') +
         (rr.partial === true ? '<div class="asf-print-err">This is only part of the article: it goes on past the pages that were read.</div>' : '') +
         '<div class="asf-print-rr-h">From print \u00B7 not applied yet</div>' +
-        (rr.fields ? '<div class="asf-print-rr">' + Object.keys(rr.fields).map(function (k) {
-          return '<p><strong>' + esc(RR_FIELD_WORDS[k] || k) + ':</strong> ' + esc(rr.fields[k]) + '</p>';
-        }).join('') + '</div>' : '') +
-        (rr.html ? '<div class="asf-print-rr">' + rr.html + '</div>' : '') +
+        '<div class="asf-print-rr">' +   // v1.12.12 — one box: fields, a rule, the body
+          (rr.fields ? '<dl class="asf-print-rr-f">' + Object.keys(rr.fields).map(function (k) {
+            return '<div><dt>' + esc(RR_FIELD_WORDS[k] || k) + '</dt><dd>' + esc(rr.fields[k]) + '</dd></div>';
+          }).join('') + '</dl>' : '') +
+          (rr.fields && rr.html ? '<hr class="asf-print-rr-hr">' : '') +
+          (rr.html ? (rr.fields ? '<div class="asf-print-rr-bl">Body</div>' : '') + '<div class="asf-print-rr-body">' + rr.html + '</div>' : '') +
+        '</div>' +
         '<div class="asf-print-rr-bar"><button type="button" class="ix-btn ix-btn--primary" data-asf-action="print-use">' + (rr.fields ? 'Use these' : 'Use this as the body') + '</button>' +
         '<button type="button" class="ix-revert" data-asf-action="print-discard">Discard</button></div>';
     } else {

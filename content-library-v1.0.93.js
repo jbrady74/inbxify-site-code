@@ -1,4 +1,8 @@
-// content-library-v1.0.92.js
+// content-library-v1.0.93.js
+// v1.0.93 (23 Nov 2026, Image Links S2): AN EVENT'S PICTURE IS img-main.
+//   Uploadcare Raw Links: EVENTS has one picture field, img-main (raw Uploadcare link), backfilled 23 Nov.
+//   The Asset Library reads it alone; Event Hero Image (ULC) and Event Image URL are no longer read, so Legacy
+//   Sunset can delete them. Nothing else changed.
 // v1.0.92 (23 Nov 2026, Image Links S1 · phase 1b): THE ARTICLE PICTURE NO LONGER FALLS BACK TO main-image.
 //   Legacy Sunset S2 hand-off v0.2: every reader moves off the ARTICLES field main-image (LEGACY) so Legacy Sunset
 //   S3 can delete it. An article's picture on the Asset Library is its Uploadcare Main link
@@ -1357,7 +1361,7 @@ document.addEventListener('DOMContentLoaded', function () {
       base.city        = (fd['event-city'] || '').trim();
       base.schedule    = optLabel(tab, 'schedule-status', fd['schedule-status']);
       base.statusLabel = optLabel(tab, 'status', fd.status);
-      base.mainImage   = fd['event-hero-image-ulc-link-ev-1-only'] || fd['event-image-url'] || null;
+      base.mainImage   = fd['img-main'] || null;   // v1.0.93
     } else if (tab === 'realestate') {
       base.titles      = refMany(fd.titles);
       base.customerId  = refOne(fd['listing-agent-customer']);   // Agent
@@ -2832,7 +2836,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // object literal would freeze the values at mount and every reader
   // would see 'articles' forever. Consumers: ta-asf v1.5.50+ (return
   // surface on close).
-  var CL_VERSION = '1.0.92';
+  var CL_VERSION = '1.0.93';
   window.InbxContentLibrary = {
     get mainTab()   { return S.mainTab || ''; },
     get subTab()    { return S.subTab || ''; },
