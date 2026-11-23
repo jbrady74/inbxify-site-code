@@ -56,8 +56,8 @@
     "ix-return-v1.0.1.js",
     "issues-tab-v1.0.62.js",
     "client-manager-v1.4.14.js",
-    "content-library-v1.0.91.js",
-    "ta-asset-workbench-v0.8.11.js",
+    "content-library-v1.0.92.js",
+    "ta-asset-workbench-v0.8.12.js",
     "newsletters-tab-v1.0.8.js",
     "ta-studio-v1_4_14.js",
     "ix-ad-layouts-v2.12.0.js",
@@ -79,7 +79,7 @@
     "ta-image-gen-v1.0.9.js",
     "ta-performance-v0.6.9.js",
     "ta-print-issues-v3.9.3.js",
-    "ta-cadence-board-v0.7.41.js",
+    "ta-cadence-board-v0.7.42.js",
     "ix-success-toast-v1.0.1.js"
   ]
 }
