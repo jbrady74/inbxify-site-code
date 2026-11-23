@@ -1,10 +1,19 @@
-// ix-sales-v1.3.12.js
+// ix-sales-v1.3.13.js
 // INBXIFY · Cloudflare Worker · ix-sales
 // SALES RECORDS and OBLIGATIONS: the one place the rules live. The portal
 // (S2) and Studio (S3) both call this; the Revenue Picker (S4) and Scenario
 // 108 (S5) call it too. Scoping: Sales-Records-Obligations-Scoping-v0_7.md.
 // Since v1.3.0 also the portal's Ads tab and the advertiser review page.
 //
+// v1.3.13 (23 Nov 2026, Ad Maker Build S3) — DELETE ALSO REMOVES THE PICTURE FILE FROM UPLOADCARE.
+//   Ruling (Jeff, 23 Nov): yes, store the Uploadcare secret key on ix-sales so Delete removes the file too.
+//   · New secret UPLOADCARE_SECRET_KEY (with the existing UPLOADCARE_PUB_KEY). Without it Delete works as in
+//     v1.3.12 and says the file is still there.
+//   · POST /ads/delete, step 4, after the rows are gone: for each of the ad's picture file ids,
+//     DELETE https://api.uploadcare.com/files/<id>/storage/ (REST v0.7, Uploadcare.Simple).
+//     A file is KEPT, and said so, when another ADS row or a remaining MEDIA row still holds its id.
+//     The answer gains deleted.files (a count). Uploadcare's CDN may go on serving a copy for a while.
+//   HARDCODING: HC-P-AMS3-11 UC_API (Uploadcare's REST address and version header).
 // v1.3.12 (23 Nov 2026, Ad Maker Build S3) — DELETE AN AD FOR GOOD. Staff only.
 //   Ruling (Jeff, 23 Nov): Delete is a true delete, behind an acknowledgement that says it cannot be undone.
 //   · POST /ads/delete { publisher, adId }
@@ -337,7 +346,7 @@
 //           month falls back to the calendar month end.
 // ============================================================
 
-const VERSION = '1.3.12';
+const VERSION = '1.3.13';
 // v1.3.7 · CUSTOMERS slugs that make up a customer's brand record (HC-P-AMB1-1)
 const CUST_BRAND = { logo: 'logo-link', logoLight: 'logo-link-light', main: 'brand-color-main', accent: 'brand-color-accent', fontHead: 'brand-font-heading', fontBody: 'brand-font-body',
   phone: ['business-phone', 'phone', 'contact-phone'], website: ['contact-website', 'website', 'business-website'], email: ['business-email', 'email', 'contact-email'],
@@ -1826,6 +1835,7 @@ function mailShell(inner) {
 }
 const MAIL_P = 'margin:0 0 16px;font:16px/1.55 Helvetica,Arial,sans-serif;color:#22252B;';
 function shapesPhrase(items) { const n = items.map(i => ((ADS_TAB.shapes[i.shape] || {}).label || i.shape).toLowerCase()); return n.length <= 1 ? (n[0] || 'ad') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1]; }
+const UC_API = { base: 'https://api.uploadcare.com', accept: 'application/vnd.uploadcare-v0.7+json' };   // HC-P-AMS3-11
 const UC_FILE_ID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ig;   // HC-P-AMS3-9 · an Uploadcare file id inside a link
 async function deleteAd(run, b) {                                     // v1.3.12 · a true delete; the page asks first
   if (!run.who || !run.who.staff) throw httpErr(403, 'Only inbxify staff delete an ad.');
@@ -1863,8 +1873,22 @@ async function deleteAd(run, b) {                                     // v1.3.12
       try { await run.remove(C.media, m.id); media++; } catch (e) { kept.push('MEDIA row ' + String(fd(m).name || m.id) + ' could not be deleted: ' + e.message); }
     }
   }
-  if (pictures.length) kept.push('The picture file' + (pictures.length === 1 ? ' is' : 's are') + ' still on Uploadcare. inbxify cannot delete files there yet.');
-  return { ok: true, name: String(f.name || ''), deleted: { ad: true, media, links }, kept, pictures };
+  // 4 · the picture files on Uploadcare (v1.3.13)
+  let files = 0;
+  const pub = run.env.UPLOADCARE_PUB_KEY, sec = run.env.UPLOADCARE_SECRET_KEY;
+  if (fileIds.length && !(pub && sec)) kept.push('The picture file' + (fileIds.length === 1 ? ' is' : 's are') + ' still on Uploadcare: UPLOADCARE_SECRET_KEY is not set on ix-sales.');
+  else if (fileIds.length) {
+    run.memo.delete('list:' + C.ads); if (/^[0-9a-f]{24}$/.test(C.media || '')) run.memo.delete('list:' + C.media);   // read again, after the deletes
+    const others = (await run.listAll(C.ads)).filter(a => a.id !== adId).concat(/^[0-9a-f]{24}$/.test(C.media || '') ? await run.listAll(C.media) : []).map(r => JSON.stringify(r.fieldData || {}).toLowerCase());
+    for (const id of fileIds) {
+      if (others.some(blob => blob.includes(id))) { kept.push('Picture file ' + id + ' was kept on Uploadcare: another ADS or MEDIA row still uses it.'); continue; }
+      try {
+        const res = await fetch(UC_API.base + '/files/' + id + '/storage/', { method: 'DELETE', headers: { Accept: UC_API.accept, Authorization: 'Uploadcare.Simple ' + pub + ':' + sec } });
+        if (res.ok || res.status === 404) files++; else kept.push('Picture file ' + id + ' is still on Uploadcare (Uploadcare answered ' + res.status + ').');
+      } catch (e) { kept.push('Picture file ' + id + ' is still on Uploadcare (' + ((e && e.message) || e) + ').'); }
+    }
+  }
+  return { ok: true, name: String(f.name || ''), deleted: { ad: true, media, links, files }, kept, pictures };
 }
 async function sendApproval(run, b) {
   if (!run.who || !run.who.staff) throw httpErr(403, 'Only inbxify staff send an ad for approval.');
