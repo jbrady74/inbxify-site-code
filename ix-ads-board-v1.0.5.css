@@ -1,4 +1,4 @@
-/* ix-ads-board-v1.0.4.css */
+/* ix-ads-board-v1.0.5.css */
 /* ============================================================
    INBXIFY · ix-ads-board · the Ads board shared by the Publisher Portal and the T-A Ads tab
    v1.0.1 (18 Nov 2026): tokens only — every colour and font size reads ix-tokens v1.0.5 (--ps-*, --ix-fs-*); no other change.
@@ -337,3 +337,11 @@ textarea.ps-ad-sendin{min-height:128px;resize:vertical}
 .ps-ad-sendin.chg{border-color:var(--ps-gold);box-shadow:0 0 0 3px var(--ps-gold-glow)}
 .ps-ad-sendbox .sba{display:flex;justify-content:flex-end}
 .ps-ad-sendbox .sba .ix-btn{width:150px;justify-content:center}
+
+/* ════ v1.0.5 (23 Nov 2026, Ad Maker Build S3) · CARDS IN A ROW ARE ONE HEIGHT, BUTTONS ON ONE LINE (inbxify side) ════ */
+.side-inbxify .ps-ad-grid{align-items:stretch}
+.side-inbxify .ps-ad-grid.sending{align-items:start}
+.side-inbxify .ps-ad-grid>.ps-ad-shp{display:flex;flex-direction:column;min-width:0}
+.side-inbxify .ps-ad-grid>.ps-ad-shp .ps-ad-meta{line-height:1.45;min-height:2.9em}
+.side-inbxify .ps-ad-grid>.ps-ad-shp>.ps-ad-acts,.side-inbxify .ps-ad-grid>.ps-ad-shp>.ps-ad-staged{margin-top:auto}
+.side-inbxify .ps-ad-grid>.ps-ad-shp>.ps-ad-meta+.ps-ad-acts,.side-inbxify .ps-ad-grid>.ps-ad-shp>.ps-ad-meta+.ps-ad-staged{padding-top:12px}

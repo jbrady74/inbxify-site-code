@@ -1,7 +1,18 @@
-// ix-ads-board-v1.0.4.js
+// ix-ads-board-v1.0.5.js
 // ============================================================
 // INBXIFY · ix-ads-board · the Ads board, shared by the Publisher Portal and the T-A Ads tab
 //
+// v1.0.5 (23 Nov 2026, Ad Maker Build S3) — CARDS IN A ROW ARE ONE HEIGHT. JS and CSS v1.0.5. Card changes are
+//   inbxify side only; the folded board rows are both sides.
+//   Rulings (Jeff, 23 Nov, Test 2 on the live page): a card must not change height because its line says more;
+//   "Send again" was not seen as a small link.
+//   · Cards in a row are the same height and their buttons sit on one line across the row (CSS). While a card's
+//     Send box is open that card alone is taller.
+//   · A pending card always has four buttons. Once an approval email is out the third reads "Send again" (it was
+//     a small link beside the line, and the card dropped to three buttons).
+//   · To make / With the publisher or advertiser: several versions of one customer waiting at the same step are
+//     one row with a count ("3 versions"), not one row each.
+//   HARDCODING: HC-P-AMB1-2 gains W.board.count (both sides).
 // v1.0.4 (22 Nov 2026, Ad Maker Build S3) — SEND FOR APPROVAL HAPPENS IN THE CARD. JS and CSS v1.0.4.
 //   Rulings (Jeff, 19 and 22 Nov): the button must not leave the page; the email is shown and can be changed before
 //   it goes; the card must say an email went; an ad already with the publisher looks different when sent again.
@@ -74,7 +85,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.4', CSS_VERSION = '1.0.4', FILE = 'ix-ads-board-v' + VERSION + '.js';
+  var VERSION = '1.0.5', CSS_VERSION = '1.0.5', FILE = 'ix-ads-board-v' + VERSION + '.js';
   var SH = ['banner', 'sidebar', 'splash', 'text'];                        // HC-P-PP8-8
   var SHN = { banner: 'Banner', sidebar: 'Sidebar', splash: 'Splash', text: 'Text ad' };
   var W = {                                                              // HC-P-PP8-7
@@ -120,7 +131,7 @@
     loadFail: 'The ads could not be read: {msg}',
     mail: { head: 'Your message to {name}', subject: 'Subject', open: 'Open in my mail program', copy: 'Copy subject and message', copied: 'Message copied.', close: 'Done', note: 'To is left blank: add the advertiser’s address. The link in the message is also under In-process versions.' },
     api: { ads: 'Reading the ads', decide: 'Saving {what}', ask: 'Making the link for {name}', request: 'Sending the request to inbxify', file: 'Uploading {name}', withdraw: 'Withdrawing the {shape} request' },
-    board: {
+    board: { count: '{n} versions',
       action: 'Needs action', waiting: 'Waiting', list: 'Client list', since: 'since {on}', more: ' · +{n} more',
       noneAction: 'Nothing needs you.', noneWaiting: 'Nothing is waiting.', ix: 'inbxify:', adv: 'Advertiser:',
       needs: 'Approve the new {shape}', answered: 'Advertiser answered on the {shape}', back: 'New {shape} · you sent it back',
@@ -213,7 +224,7 @@
       if (IX) {   // the same facts, said from inbxify's side
         var b0 = v.sentBack || {};
         var s0 = v.sent ? fill(v.sent.test ? W.ix.meta.sentTest : W.ix.meta.sent, { to: esc(v.sent.test ? v.sent.to : (v.sent.toName || v.sent.to)), on: day(v.sent.sentAt) }) + ' ' + (v.sent.openedAt ? fill(W.ix.meta.sentOpened, { on: day(v.sent.openedAt) }) : W.ix.meta.sentUnopened) + ' ' + fill(W.ix.meta.sentUntil, { until: day(v.sent.until) }) : '';   // v1.0.2
-        if (v.sent && (v.state === 'needs' || v.state === 'answered' || v.state === 'adv')) { var p0 = s0.indexOf('. ') + 1; return '<b>' + s0.slice(0, p0) + '</b>' + s0.slice(p0) + ((v.shape || '') === 'splash' ? '' : ' <button type="button" class="ps-ad-cancel ps-ad-again" data-send="' + esc(v.id) + '">' + esc(W.ix.act.sendAgain) + '</button>'); }   // v1.0.4
+        if (v.sent && (v.state === 'needs' || v.state === 'answered' || v.state === 'adv')) { var p0 = s0.indexOf('. ') + 1; return '<b>' + s0.slice(0, p0) + '</b>' + s0.slice(p0); }   // v1.0.4
         if (v.state === 'needs') return fill(W.ix.meta.needs, { on: day(v.createdOn) });
         if (v.state === 'answered') return fill(W.ix.meta.answered, { on: day(L.answeredAt) }) + (L.answer === 'change' && (L.change || L.like) ? ' <q>' + esc(L.change || L.like) + '</q>' : '');
         if (v.state === 'adv') return W.ix.meta.adv;
@@ -284,19 +295,25 @@
       if (!a) return '';
       return '<button type="button" class="ix-btn ' + (kind2 || 'ix-btn--secondary') + ' ps-ad-sm" data-ix="' + esc(a.kind + '|' + c.id + '|' + a.sh + '|' + (a.v ? a.v.id : '')) + '"' + (a.coming ? ' disabled title="' + esc(W.ix.act.coming) + '"' : '') + '>' + esc(a.label) + '</button>';
     }
-    function boardRow(c, it) {
+    function boardRow(c, it, n) {
       var a = ixActionFor(c, it);
       return '<div class="ps-ad-brow' + (a ? ' has-act' : '') + '" data-go="' + esc(c.id + '|' + it.tab) + '" role="button" tabindex="0"><span class="tx"><span class="cn">' + esc(c.name) + '</span><span class="l2">' + stepHTML(it) +
-        (it.at ? '<span class="wh">· ' + esc(fill(W.board.since, { on: day(it.at) })) + '</span>' : '') + '</span></span>' + (a ? '<span class="act">' + actBtn(a, c, 'ix-btn--primary') + '</span>' : '') + covRow(c) + '<span class="chv">' + CHEV + '</span></div>';
+        (n > 1 ? '<span class="wh">· ' + esc(fill(B().count, { n: n })) + '</span>' : '') + (it.at ? '<span class="wh">· ' + esc(fill(W.board.since, { on: day(it.at) })) + '</span>' : '') + '</span></span>' + (a ? '<span class="act">' + actBtn(a, c, 'ix-btn--primary') + '</span>' : '') + covRow(c) + '<span class="chv">' + CHEV + '</span></div>';
     }
     function renderBoard() {
       var act = [], wait = [], Bd = B();
       S.customers.forEach(function (c) { itemsOf(c).forEach(function (it) { ((IX ? it.who === 'ix' : it.who === 'you') ? act : wait).push({ c: c, it: it }); }); });
       var byAt = function (a, b) { return String(a.it.at || '9').localeCompare(String(b.it.at || '9')); };
       act.sort(byAt); wait.sort(byAt);
+      var fold = function (list) {   // v1.0.5: versions of one customer at the same step are one row
+        var seen = {}, out = [];
+        list.forEach(function (x) { var k = x.c.id + '|' + x.it.tab + '|' + stepHTML(x.it); if (seen[k]) seen[k].n++; else { seen[k] = { c: x.c, it: x.it, n: 1 }; out.push(seen[k]); } });
+        return out;
+      };
+      act = fold(act); wait = fold(wait);
       var box = function (cls, title, list, none) {
         return '<section class="ps-ad-box ' + cls + '"><div class="bh"><b>' + esc(title) + '</b><span class="n">' + list.length + '</span><span class="sp"></span>' + covHead() + '<span class="chvsp"></span></div>' +
-          '<div class="bb"' + (IX ? '' : ' style="height:' + BOARD_ROWS_PX + 'px"') + '>' + (list.length ? list.map(function (x) { return boardRow(x.c, x.it); }).join('') : '<div class="none">' + esc(none) + '</div>') + '</div></section>';
+          '<div class="bb"' + (IX ? '' : ' style="height:' + BOARD_ROWS_PX + 'px"') + '>' + (list.length ? list.map(function (x) { return boardRow(x.c, x.it, x.n); }).join('') : '<div class="none">' + esc(none) + '</div>') + '</div></section>';
       };
       return '<div class="ps-ad-two' + (IX ? ' stack' : '') + '">' + box('b-act', Bd.action, act, Bd.noneAction) + box('b-wait', Bd.waiting, wait, Bd.noneWaiting) + '</div>';
     }
@@ -338,8 +355,8 @@
         else if (v.state === 'needs' || v.state === 'answered' || v.state === 'adv') {   // v1.0.4: both approvals and Send for approval live on the card
           var sending = S.send && S.send.id === v.id;
           h += '<button type="button" class="ix-btn ix-btn--primary" data-act="current|' + esc(v.id) + '">' + esc(W.ix.act.approve) + '</button><button type="button" class="ix-btn ix-btn--primary" data-act="hold|' + esc(v.id) + '">' + esc(W.ix.act.hold) + '</button>' +
-            (v.sent || !tool ? '' : '<button type="button" class="ix-btn ix-btn--secondary' + (sending ? ' ps-ad-btnon' : '') + '" data-send="' + esc(v.id) + '">' + esc(W.ix.act.send) + '</button>') + actBtn({ kind: 'edit', label: W.ix.act.edit, sh: sh, v: v, coming: !tool }, c);
-          return '<div class="ps-ad-acts' + (v.sent || !tool ? ' three' : '') + '">' + h + '</div>' + (sending ? sendBox(c, sh, v) : '');
+            (!tool ? '' : '<button type="button" class="ix-btn ix-btn--secondary' + (sending ? ' ps-ad-btnon' : '') + '" data-send="' + esc(v.id) + '">' + esc(v.sent ? W.ix.act.sendAgain : W.ix.act.send) + '</button>') + actBtn({ kind: 'edit', label: W.ix.act.edit, sh: sh, v: v, coming: !tool }, c);
+          return '<div class="ps-ad-acts' + (!tool ? ' three' : '') + '">' + h + '</div>' + (sending ? sendBox(c, sh, v) : '');
         }
         else if (v.state === 'back') h += actBtn({ kind: 'open', label: W.ix.act.open, sh: sh, v: v, coming: !tool }, c, 'ix-btn--primary');
         else if (v.state === 'ready') h += '<button type="button" class="ix-btn ix-btn--primary" data-act="make|' + esc(v.id) + '">' + esc(W.ix.act.makeCurrent) + '</button>' + actBtn({ kind: 'edit', label: W.ix.act.edit, sh: sh, v: v, coming: !tool }, c);
@@ -454,7 +471,7 @@
         var links = {}; pend.forEach(function (x) { var L = x.v.link; if (L && x.v.state === 'adv' && !links[L.reviewId]) links[L.reviewId] = L; });
         var lh = Object.keys(links).map(function (k) { var L = links[k];
           return '<div class="ps-ad-linkbox"><b>' + esc(fill(W.linkOut, { until: day(L.until) })) + '</b>' + (L.url ? ' · <button type="button" class="ps-ad-link" data-copy="' + esc(L.url) + '">' + esc(W.copyLink) + '</button>' : '') + '<span class="s">' + esc(L.openedAt ? fill(W.linkOpened, { on: day(L.openedAt) }) : W.linkNotOpened) + '</span></div>'; }).join('');
-        body = lh + (pend.length ? '<div class="ps-ad-grid">' + pend.map(function (x) { return vCard(c, x.sh, x.v); }).join('') + '</div>' : '<div class="ps-ad-quiet">' + esc(W.colNone.process) + '</div>');
+        body = lh + (pend.length ? '<div class="ps-ad-grid' + (S.send ? ' sending' : '') + '">' + pend.map(function (x) { return vCard(c, x.sh, x.v); }).join('') + '</div>' : '<div class="ps-ad-quiet">' + esc(W.colNone.process) + '</div>');
       } else {
         body = '<div class="ps-ad-sub">' + esc(W.rail.ready) + (ready.length ? ' <span>· ' + perShape(ready) + '</span>' : '') + '</div>' + (ready.length ? '<div class="ps-ad-grid">' + ready.map(function (x) { return vCard(c, x.sh, x.v, { badge: false }); }).join('') + '</div>' : '<div class="ps-ad-quiet">' + esc(W.colNone.ready) + '</div>') +
           '<div class="ps-ad-sub">' + esc(W.rail.archived) + (old.length ? ' <span>· ' + perShape(old) + '</span>' : '') + '</div>' + (old.length ? '<div class="ps-ad-grid">' + old.map(function (x) { return vCard(c, x.sh, x.v, { badge: false }); }).join('') + '</div>' : '<div class="ps-ad-quiet">' + esc(W.colNone.archived) + '</div>');
