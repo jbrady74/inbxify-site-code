@@ -1,4 +1,4 @@
-/* ta-admaker-v4.11.5.js
+/* ta-admaker-v4.11.6.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
 
@@ -13,6 +13,13 @@
    ix-success-toast, and AFTER ta-studio (v1_4_13 dispatches
    std:panel:admaker). Companion: ta-admaker-v1.1.0.css (head).
 
+   ── v4.11.6 (23 Nov 2026, Ad Maker Build S3) ── DELETE IN CANVA, FROM THE DRAFTS LIST ──
+   Ruling (Jeff, 23 Nov): yes to a way to delete a draft's design from T-A. Canva's API cannot delete a design, so:
+   · Remove from list now asks with two answers: "Yes, remove" (as before, the design stays in Canva) and
+     "Remove and delete in Canva". The second takes the row off the list and opens that design in Canva in a new
+     tab, where File > Move to trash deletes it. The toast says so.
+   HARDCODING: HC-P-AMS3-8 CANVA_DESIGN_URL (Canva's address for a design); HC-P-AMS3-6 gains the new words.
+   Companion: ta-admaker-v4.11.6.css.
    ── v4.11.5 (22 Nov 2026, Ad Maker Build S3) ── WHAT HAPPENS BESIDE THE AD · THE EMAIL CAN BE CHANGED · BROWSER BACK ──
    Rulings (Jeff, 19 and 22 Nov): Send for approval from a card must not leave the page; nothing to pick may sit
    below the fold; the email is shown before it goes; the browser's Back steps back.
@@ -24,7 +31,7 @@
    · The browser's Back button goes back one Ad Maker step (the same as the page's own Back) instead of leaving the
      page. On Start it leaves as before.
    HARDCODING: HC-P-AMS3-4 gains SAVE_WORDS.mail.
-   Companion: ta-admaker-v4.11.5.css. Needs ix-sales v1.3.10.
+   (v4.11.5 companion: ta-admaker-v4.11.5.css.) Needs ix-sales v1.3.10.
    ── v4.11.4 (19 Nov 2026, Test 1 on the live page) ── DRAFTS IN CANVA: NOTHING CUT OFF, NOTHING SAID TWICE ──
    · The row dropped its Canva-name column: the name only repeated the customer and the shape. "Worked on … · not
      brought back yet" has the room and is no longer cut off. A copy of an approved ad says so there.
@@ -906,7 +913,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.11.5', CSS_FILE = 'ta-admaker-v4.11.5.css';   // v4.11.0: the Ads tab and the Canva screens
+  var VERSION = '4.11.6', CSS_FILE = 'ta-admaker-v4.11.6.css';   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
   var ADVICE_BIGGER = 1.25;   // HC-P-SSB8-25
@@ -5183,9 +5190,11 @@
     });
   }
   // ── v4.11.3 · DRAFTS IN CANVA: designs kept in Canva and not saved to the site, per customer (ix-canva GET /drafts) ──
+  var CANVA_DESIGN_URL = 'https://www.canva.com/design/{id}/edit';   // HC-P-AMS3-8 · Canva's own address for a design (v4.11.6)
   var DRAFT_WORDS = {   // HC-P-AMS3-6
     head: 'Drafts in Canva', sub: 'Kept in Canva, not saved to the site', none: 'No drafts in Canva.', loading: 'Reading the drafts from Canva…',
-    edit: 'Edit in Canva', check: 'Check and save', remove: 'Remove from list', removeAsk: 'Take it off this list? The design stays in Canva.', yes: 'Yes, remove', no: 'cancel',
+    edit: 'Edit in Canva', check: 'Check and save', remove: 'Remove from list', removeAsk: 'Take it off this list?', yes: 'Yes, remove', yesNote: 'the design stays in Canva', del: 'Remove and delete in Canva', delNote: 'opens the design; use File > Move to trash', no: 'cancel',
+    removed: 'Taken off the list. The design is still in Canva.', removedDel: 'Taken off the list. The design is open in Canva: use File > Move to trash to delete it.', blocked: 'The browser blocked the Canva tab. The row is still on the list.',
     noPic: 'No picture from Canva', noPicYet: 'Canva has no picture of it yet', worked: 'Worked on {on}', notBack: 'not brought back yet', back: 'brought back {on}', copy: 'A copy of an approved ad', noShape: 'Shape not recorded'
   };
   function adsCanvaVersions() {   // design id → { adId, shape, approved } for every ADS row on this page made in Canva
@@ -5223,7 +5232,7 @@
     else if (!n) h += '<div class="ta-ads-drnone">' + DW.none + '</div>';
     else h += D.list.map(function (d) {
       var id = esc(d.designId), sh = d.shape || '', busy = D.busy === d.designId;
-      var acts = D.ask === d.designId ? '<span class="q">' + DW.removeAsk + '</span><button type="button" class="ix-btn ix-btn--danger ta-ads-drbtn" data-ads="drRemoveYes" data-v="' + id + '">' + DW.yes + '</button><a href="#" class="ta-ads-drx" data-ads="drRemoveNo">' + DW.no + '</a>'
+      var acts = D.ask === d.designId ? '<span class="q">' + DW.removeAsk + '</span><button type="button" class="ix-btn ix-btn--danger ta-ads-drbtn" data-ads="drRemoveYes" data-v="' + id + '" title="' + esc(DW.yesNote) + '">' + DW.yes + '</button><button type="button" class="ix-btn ix-btn--danger ta-ads-drbtn" data-ads="drRemoveDel" data-v="' + id + '" title="' + esc(DW.delNote) + '">' + DW.del + '</button><a href="#" class="ta-ads-drx" data-ads="drRemoveNo">' + DW.no + '</a>'
         : '<button type="button" class="ix-btn ix-btn--primary ta-ads-drbtn" data-ads="drEdit" data-v="' + id + '"' + (busy ? ' disabled' : '') + '>' + DW.edit + '</button><button type="button" class="ix-btn ix-btn--secondary ta-ads-drbtn" data-ads="drCheck" data-v="' + id + '"' + (busy ? ' disabled' : '') + '>' + DW.check + '</button><a href="#" class="ta-ads-drx" data-ads="drRemove" data-v="' + id + '">' + DW.remove + '</a>';
       return '<div class="ta-ads-drrow' + (D.ask === d.designId ? ' asking' : '') + '"><span class="th">' + (d.thumb ? '<img src="' + esc(d.thumb) + '" alt="" loading="lazy">' : '') + '</span><span class="cu" title="' + esc(d.customer.name) + '">' + esc(d.customer.name) + '</span><span class="sh">' + esc(sh ? shapeLabel(sh) : DW.noShape) + '</span>' +
         '<span class="wh" title="' + esc(d.title) + '">' + (d.copiedFrom ? esc(DW.copy) + ' · ' : '') + esc(fillW(DW.worked, { on: fmtDate(d.canvaUpdated || d.updated) })) + ' · ' + esc(d.exportedAt ? fillW(DW.back, { on: fmtDate(d.exportedAt) }) : DW.notBack) + (!d.thumb ? '<small class="np">' + esc(d.thumbError ? DW.noPic + ': ' + d.thumbError : DW.noPicYet) + '</small>' : '') + '</span><span class="ac">' + acts + '</span></div>'; }).join('');
@@ -5237,11 +5246,12 @@
     var it = { kind: 'needed', id: 'draft-' + d.designId, custId: c.id, shape: sh, title: c.name, what: shapeLabel(sh), m: 'Draft in Canva', q: '', coming: false };
     openJob(it, function () { S.shape = sh; S.mode = 'canva'; S.srcs = []; canvaEditAgain(null, { designId: d.designId, shape: sh }, { noTab: mode === 'check' }); });
   }
-  function adsDraftRemove(designId) {
+  function adsDraftRemove(designId, del) {
     var D = A.drafts, d = (D.list || []).filter(function (x) { return x.designId === designId; })[0]; if (!d) return;
+    if (del) { var w = window.open(CANVA_DESIGN_URL.replace('{id}', encodeURIComponent(designId)), '_blank'); if (!w) { toast(DRAFT_WORDS.blocked, 'err'); return; } }   // opened on the click itself, so the browser allows the tab
     D.busy = designId; D.ask = ''; adsDraftsRender();
     canvaApi('/draft/remove', { method: 'POST', body: { designId: designId, customerId: d.customer.id } })
-      .then(function () { D.busy = ''; D.list = D.list.filter(function (x) { return x.designId !== designId; }); adsDraftsRender(); toast('Taken off the list. The design is still in Canva.', 'ok'); })
+      .then(function () { D.busy = ''; D.list = D.list.filter(function (x) { return x.designId !== designId; }); adsDraftsRender(); toast(del ? DRAFT_WORDS.removedDel : DRAFT_WORDS.removed, 'ok'); })
       .catch(function (e) { D.busy = ''; adsDraftsRender(); toast('The draft was not removed: ' + ((e && e.message) || e), 'err'); });
   }
   function adsOnClick(e) {
@@ -5254,6 +5264,7 @@
     if (k === 'drRemove') { A.drafts.ask = t.getAttribute('data-v'); adsDraftsRender(); return; }
     if (k === 'drRemoveNo') { A.drafts.ask = ''; adsDraftsRender(); return; }
     if (k === 'drRemoveYes') { adsDraftRemove(t.getAttribute('data-v')); return; }
+    if (k === 'drRemoveDel') { adsDraftRemove(t.getAttribute('data-v'), true); return; }   // v4.11.6
     if (k === 'form') { if (window.InbxASF && InbxASF.open) { try { InbxASF.open({ mode: 'create', assetType: 'ad' }); } catch (ex) { toast('The ad form did not open: ' + ex.message, 'err'); } } return; }
   }
   function adsMount() {

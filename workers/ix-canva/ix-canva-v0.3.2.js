@@ -1,8 +1,15 @@
-// workers/ix-canva/ix-canva-v0.3.1.js
+// workers/ix-canva/ix-canva-v0.3.2.js
 // ============================================================
 // INBXIFY · Cloudflare Worker · ix-canva
 // Host: ix-canva.jeff-2cd.workers.dev
 //
+// v0.3.2 (22 Nov 2026, Ad Maker Build S3) — THE CANVA LOGIN NO LONGER DROPS.
+//   Found on the live Drafts in Canva list (Jeff, 22 Nov): "ix-canva is not connected to a Canva account".
+//   Cause: Canva's refresh token works once. GET /drafts looks up many designs at the same moment; once the hour-long
+//   access token had run out, each lookup tried to refresh with the same token. The first won, the others were
+//   refused, and a refusal deleted the stored login. Now one refresh runs at a time, a refused refresh first checks
+//   whether another request already stored a new login, and a Canva 5xx or 429 never deletes the login.
+//   HARDCODING: HC-P-CANVA1-15 REFRESH_RECHECKS, REFRESH_RECHECK_MS.
 // v0.3.1 (18 Nov 2026, Ad Maker Build S3) — DRAFTS THAT STAY, APPROVED ADS FROZEN.
 //   Rulings (Jeff, 18 Nov): a draft stays in Canva and is listed under its customer; an approved ad is frozen, so
 //   Edit in Canva on it starts a copy; approved designs are marked in Canva. Canva's API cannot rename a design
@@ -91,10 +98,11 @@
 // v0.1.3 (18 Nov 2026) — the test Worker: /connect, /test, /return; see the git history for its notes.
 // ============================================================
 
-const VERSION = '0.3.1';
+const VERSION = '0.3.2';
 const SHEET_MAX = 65536;   // HC-P-CANVA1-10
 const APPROVED_FOLDER = 'Approved';   // HC-P-CANVA1-12 · v0.3.1: the subfolder approved designs move to
 const DRAFT_THUMBS = 24;              // HC-P-CANVA1-13 · v0.3.1: designs looked up in Canva per GET /drafts
+const REFRESH_RECHECKS = 3, REFRESH_RECHECK_MS = 700;   // v0.3.2 · HC-P-CANVA1-15: how long a refused login refresh waits for another request's new login
 const DRAFT_STATES = ['draft', 'sent', 'approved'];   // HC-P-CANVA1-14
 const SCAN_MAX = 1000;     // HC-P-CANVA1-11
 const CANVA_API = 'https://api.canva.com/rest/v1';
@@ -232,14 +240,30 @@ ul.steps{padding-left:18px}ul.steps li{margin:4px 0}
 }
 
 // ── Canva tokens and calls ────────────────────────────────────────────────
+// v0.3.2: Canva's refresh token works once. One refresh at a time in this Worker (REFRESHING), and a refresh that Canva
+// refuses is checked against KV before the login is thrown away: another request may have refreshed first.
+let REFRESHING = null;
 async function tokens(env) {
   const t = await env.CANVA_KV.get('tokens', 'json');
   if (!t) return null;
   if (Date.now() < (t.expires_at || 0) - 60000) return t;
+  if (!REFRESHING) REFRESHING = refreshTokens(env, t).finally(() => { REFRESHING = null; });
+  return REFRESHING;
+}
+async function refreshTokens(env, t) {
   const r = await fetch(CANVA_API + '/oauth/token', { method: 'POST', headers: authBasic(env, { 'Content-Type': 'application/x-www-form-urlencoded' }),
     body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: t.refresh_token }) });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok || !j.access_token) { await env.CANVA_KV.delete('tokens'); throw httpErr(502, 'Canva refused to refresh the login (' + r.status + '). Open ' + base(env) + '/connect and approve the app again.'); }
+  if (!r.ok || !j.access_token) {
+    for (let i = 0; i < REFRESH_RECHECKS; i++) {                      // another request refreshed first: use what it stored
+      await new Promise(done => setTimeout(done, REFRESH_RECHECK_MS));
+      const now = await env.CANVA_KV.get('tokens', 'json');
+      if (now && now.refresh_token !== t.refresh_token && Date.now() < (now.expires_at || 0) - 60000) return now;
+    }
+    if (r.status >= 500 || r.status === 429) throw httpErr(502, 'Canva could not refresh the login just now (' + r.status + '). Try again in a minute.');   // Canva's trouble, not ours: keep the login
+    await env.CANVA_KV.delete('tokens');
+    throw httpErr(502, 'Canva refused to refresh the login (' + r.status + '). Open ' + base(env) + '/connect and approve the app again.');
+  }
   const nt = { access_token: j.access_token, refresh_token: j.refresh_token || t.refresh_token, expires_at: Date.now() + (j.expires_in || 3600) * 1000, name: t.name };
   await env.CANVA_KV.put('tokens', JSON.stringify(nt));
   return nt;
