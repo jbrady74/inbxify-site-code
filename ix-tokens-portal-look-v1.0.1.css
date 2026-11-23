@@ -3,9 +3,10 @@
    INBXIFY · ix component series · THE PORTAL LOOK, AS TOKENS
    (TA Reskin S1, Layer 1 · 22 Nov 2026)
 
-   v1.0.1 (23 Nov 2026) — PRIMARY BUTTONS IN INK (Jeff, 23 Nov). Sets ix-buttons v1.0.8's primary hooks: ink fill,
-   paper text, no gradient, no blue glow, no lift; hover a shade deeper. Tints (ix-btn--gold, ix-btn--teal) still
-   override. Everything else is v1.0.0 unchanged.
+   v1.0.1 (23 Nov 2026) — PRIMARY BUTTONS IN INK (Jeff, 23 Nov). One rule block at the end of this file: ink fill,
+   paper text, no gradient, no blue glow, no lift; hover a shade deeper. It outranks ix-buttons v1.0.7's blue by
+   specificity (html body … vs button.ix-btn.ix-btn--primary), not by load order, and leaves the gold and teal tints
+   alone. ix-buttons is not changed, so pages without this file keep blue. Everything else is v1.0.0 unchanged.
 
    WHAT THIS FILE IS
    The second token file. ix-tokens holds the platform's tokens and loads on every page. This file RE-POINTS
@@ -59,14 +60,6 @@
   --ix-btn-size:        13px;
   --ix-btn-tracking:    0;
 
-  /* v1.0.1 — primary buttons in ink (ix-buttons v1.0.8 hooks). Paper on ink: 14.3:1. */
-  --ix-btn-primary-bg:           #22252B;
-  --ix-btn-primary-image:        none;
-  --ix-btn-primary-image-hover:  linear-gradient(#16181D, #16181D);
-  --ix-btn-primary-fg:           #FAF6EE;
-  --ix-btn-primary-shadow:       none;
-  --ix-btn-primary-shadow-hover: none;
-  --ix-btn-primary-lift:         none;
 
   /* the scale by name */
   --ix-fs-32:           32px;
@@ -178,4 +171,29 @@
   --ix-shadow-md:       0 8px 24px rgba(34, 37, 43, 0.14);
   --ix-shadow-lg:       0 12px 32px rgba(34, 37, 43, 0.16);
   --ix-shadow-blue:     0 0 0 2px #5B7FFF;
+}
+
+/* ── v1.0.1 · primary buttons in ink (Jeff, 23 Nov 2026) ──────────────────────────────────────────────────
+   ix-buttons v1.0.7 §2 draws the primary at (0,2,1) to (0,3,0) with !important. These selectors are (0,5,2) and
+   up, so they win wherever this file is loaded. Paper on ink: 14.3:1.                                          */
+html body button.ix-btn.ix-btn--primary:not(.ix-btn--gold):not(.ix-btn--teal),
+html body .ix-btn.ix-btn--primary:not(.ix-btn--gold):not(.ix-btn--teal) {
+  background-color: #22252B !important;
+  background-image: none !important;
+  color: #FAF6EE !important;
+  border-color: #22252B !important;
+  box-shadow: none !important;
+}
+html body button.ix-btn.ix-btn--primary:not(.ix-btn--gold):not(.ix-btn--teal):hover:not(:disabled),
+html body .ix-btn.ix-btn--primary:not(.ix-btn--gold):not(.ix-btn--teal):hover:not(:disabled) {
+  background-color: #16181D !important;
+  background-image: none !important;
+  border-color: #16181D !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html body button.ix-btn.ix-btn--primary:not(.ix-btn--gold):not(.ix-btn--teal):active:not(:disabled),
+html body .ix-btn.ix-btn--primary:not(.ix-btn--gold):not(.ix-btn--teal):active:not(:disabled) {
+  box-shadow: none !important;
+  transform: none !important;
 }
