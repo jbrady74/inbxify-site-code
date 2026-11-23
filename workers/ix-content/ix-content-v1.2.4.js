@@ -1,5 +1,14 @@
-// ix-content-v1.2.3.js
+// ix-content-v1.2.4.js
 // INBXIFY · Cloudflare Worker · ix-content
+//
+// v1.2.4 (23 Nov 2026, Content Home S14) — DELETE A WEBHOOK THAT IS NOT OURS.
+//   Webflow's Site settings do not list webhooks made through the API, so the old collection_item_published webhook to
+//   ix-issue-data /changed (replaced by v1.2.3's page rebuild) could not be deleted by hand.
+//   1 · /admin/register's otherWebhooksOnSite now carries each webhook's id.
+//   2 · New staff route POST /admin/webhooks/delete?id=<webhook id>. It deletes that webhook through this Worker's
+//       Webflow token, then answers as /admin/register does. It refuses an id that is not on the site, and refuses any
+//       webhook pointing at this Worker's own /webhook (those are managed by /admin/register).
+//   Nothing else changed.
 //
 // v1.2.3 (22 Nov 2026, Content Home S14) — THE PUBLIC PAGES REBUILD FROM THIS COPY, AND THE COPY KNOWS WHAT IS OFF THE SITE.
 //   Rulings (Jeff, 22 Nov): public pages read the D1 copy (ix-issue-data v1.0.195, "site" on the read switch); the page
@@ -192,6 +201,7 @@
 //   POST /admin/backfill         staff. ?fresh=1 starts a new run instead of resuming.
 //   POST /admin/nightly          staff. Runs the nightly check now. ?fresh=1 as above.
 //   POST /admin/register         staff. Lists the site's webhooks and creates the missing ones.
+//   POST /admin/webhooks/delete?id=  staff. Deletes one webhook that does not point at this Worker (v1.2.4).
 //   POST /admin/backfill-home    staff. ?table=allocations. Lists that collection from Webflow and repairs D1.
 //   GET  /allocations?taId=      staff (allocations.read). This title's rows with versions, page order.
 //                                &printIssue=<name> narrows to one print issue; &archived=1 includes removed rows.
@@ -233,7 +243,7 @@
 //   (HOME_TABLES, code: a table name is how code reaches D1); HC-P-CH3-2 batch size cap 50 ops (BATCH_MAX);
 //   HC-P-CH3-3 burst 429 wait cap 20 s (DEFAULTS.burst). Field slugs and create defaults live in KV, not code.
 
-const VERSION = '1.2.3';
+const VERSION = '1.2.4';
 const WF = 'https://api.webflow.com/v2';                         // HC-P-CH1-8
 const PAGE = 100;                                                // HC-P-CH1-8 · Webflow lists at most 100 a request
 const KV_KEYS = {                                                // HC-P-CH1-7
@@ -305,6 +315,21 @@ export default {
           const cfg = await loadConfig(env);
           const pacer = new Pacer(env, cfg.s, { maxCalls: cfg.s.runs.maxCalls });
           return json(await syncHome(env, cfg, pacer, table, by), 200, cors);
+        }
+        if (p === '/admin/webhooks/delete') {                                    // v1.2.4
+          const cfg = await loadConfig(env);
+          const pacer = new Pacer(env, cfg.s, { maxCalls: 20 });
+          const id = String(url.searchParams.get('id') || '').trim();
+          if (!/^[0-9a-f]{24}$/.test(id)) return json({ ok: false, error: 'id must be a Webflow webhook id (24 characters).' }, 400, cors);
+          if (!cfg.s.selfUrl || !cfg.s.siteId) return json({ ok: false, error: 'contentHome.settings needs selfUrl and siteId.' }, 500, cors);
+          const target = String(cfg.s.selfUrl).replace(/\/+$/, '') + '/webhook';
+          const r = await pacer.call('/sites/' + cfg.s.siteId + '/webhooks');
+          const w = ((r.data && r.data.webhooks) || []).find(x => x.id === id);
+          if (!w) return json({ ok: false, error: 'No webhook with that id on this site.' }, 404, cors);
+          if (w.url === target) return json({ ok: false, error: 'That webhook belongs to ix-content; /admin/register manages it.' }, 409, cors);
+          const d = await pacer.call('/webhooks/' + id, { method: 'DELETE' });
+          const deleted = { id, triggerType: w.triggerType, url: String(w.url || '').split('?')[0], webflowStatus: d.status || 200 };
+          return json({ ok: true, by, deleted, webhooks: await ensureWebhooks(needDb(env), pacer, cfg), meta: pacer.meta() }, 200, cors);
         }
         if (p === '/admin/register') {
           const cfg = await loadConfig(env);
@@ -850,7 +875,7 @@ async function ensureWebhooks(db, pacer, cfg) {
       events.push({ triggerType: ev, status: 'refused', error: e.message, wfStatus: e.wfStatus || null });
     }
   }
-  const others = list.filter(w => w.url !== target).map(w => ({ triggerType: w.triggerType, url: String(w.url || '').split('?')[0] }));
+  const others = list.filter(w => w.url !== target).map(w => ({ id: w.id, triggerType: w.triggerType, url: String(w.url || '').split('?')[0] }));   // id v1.2.4
   const out = { at: iso(), target, events, otherWebhooksOnSite: others };
   await db.prepare('INSERT OR REPLACE INTO site_facts (k,v_json,at) VALUES (?,?,?)').bind('webhooks', JSON.stringify(out), out.at).run();
   return out;
