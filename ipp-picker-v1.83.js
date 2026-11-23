@@ -1167,8 +1167,8 @@
   'use strict';
   if (!window.IPP) { console.error('[ipp-picker] shell not loaded'); return; }
   var IPP = window.IPP;
-  var VERSION = '1.82';
-  var FILE = 'ipp-picker-v1.82.js';
+  var VERSION = '1.83';
+  var FILE = 'ipp-picker-v1.83.js';
 
   /* ════════════════════════════════════════════════════════════
      IPP.editState — CANONICAL EDIT-STATE CONTROLLER
