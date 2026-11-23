@@ -1,7 +1,15 @@
-/* ta-create-events-v1.0.13.js
+/* ta-create-events-v1.0.14.js
    ============================================================
-   ta-create-events-v1.0.13.js
+   ta-create-events-v1.0.14.js
    INBXIFY TA Studio — CREATE EVENTS FROM PRINT (Allocator RE Events · 6)
+
+   v1.0.14 (23 Nov 2026, Image Links S2) — AN EVENT'S PICTURE IS img-main.
+     EVENTS has one picture field, img-main (raw Uploadcare link),
+     backfilled 23 Nov. The match card's "In Webflow" photo, the old
+     photo beside it, and the after-save check ("Webflow does not show
+     the photo") all read img-main. Event Hero Image (ULC) and Event
+     Image URL are no longer read. Make 104 v3.12 and G v9.13 write
+     img-main. Nothing else changed.
 
    v1.0.13 (1 Nov 2026, Allocator RE Events · 7, Test 5) — THE CARD'S
      CANCEL LINK SHOWS AS SOON AS YOU TYPE. Test 5's screenshot: Name
@@ -218,7 +226,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  var VERSION = '1.0.13';
+  var VERSION = '1.0.14';
   var FILE = 'ta-create-events-v' + VERSION + '.js';
   var TAG = '[ta-create-events v' + VERSION + ']';
   var SHOW_W = 1100, READ_W = 1400, CROP_W = 3600, MIN_BOX = 40;     // HC-P-CE-1
@@ -722,7 +730,7 @@
     var lock = !!(L.write || c.done), w = will(c), wh = when(c);
     var ed = edited(c), regChg = c.cur.reg !== c.base.reg;
     var old = c.m && c.m.kind === 'same' ? c.m.e.fd : null;
-    var oldPic = old && (old['event-hero-image-ulc-link-ev-1-only'] || old['event-image-url']);
+    var oldPic = old && old['img-main'];   // v1.0.14
     var sameM = !!(c.m && c.m.kind === 'same');   // v1.0.6
     var showCmp = !c.done && !c.pick && c.on && c.m && c.m.kind === 'check' && !(c.unsure && !c.unsureOk) && !lock;
     return '<div class="ixce-card' + (c.on ? '' : ' is-off') + (L.select === c.key ? ' is-sel' : '') + (ed && !lock ? ' is-pend' : '') + '" data-ce-card="' + c.key + '">' +
@@ -792,7 +800,7 @@
     var right = c.m.cands.map(function (e) {
       var fd = e.fd;
       var ewhen = e.date ? (trim(fd['dt-date-override']) || niceDate(e.date) + (e.endDate ? ' until ' + niceDate(e.endDate) : '')) + (e.time ? ', ' + niceTime(e.time) : '') : 'no date';
-      var pic = fd['event-hero-image-ulc-link-ev-1-only'] || fd['event-image-url'];
+      var pic = fd['img-main'];   // v1.0.14
       var hist = trim(String(fd['print-issue-source'] || '').split(/\r?\n/)[0]);
       var whenDiff = e.date !== w.first || (e.time || '') !== (w.start || '') || (e.endDate || '') !== (w.endDate || '');
       return '<div class="ixce-cmp-col"><div class="ixce-cmp-h">In Webflow' +
@@ -1081,7 +1089,7 @@
         if (s.recordStatus && fd.status !== s.recordStatus) miss.push('status');
         if (s.printIssueSource && trim(String(fd['print-issue-source'] || '').split(/\r?\n/)[0]) !== trim(x.c.issueName)) miss.push('print issue');
         if (s.titleIds && e.titles.indexOf(cfg().taItemId) === -1) miss.push('this title');
-        var pic = String(fd['event-hero-image-ulc-link-ev-1-only'] || ''), sentPic = s.mainImageSrc || s.eventImageSrc;
+        var pic = String(fd['img-main'] || ''), sentPic = s.mainImageSrc || s.eventImageSrc;
         if (sentPic && pic.indexOf(String(sentPic).replace(/\/$/, '')) !== 0) miss.push('photo');
         if (miss.length) x.c.done = { ok: false, msg: 'Sent, but Webflow does not show the ' + miss.join(', ') };
         else d.msg = d.msg + (e.isDraft ? ' \u00b7 draft in Webflow' : ' \u00b7 checked \u2713');

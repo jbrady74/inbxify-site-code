@@ -1,11 +1,17 @@
-/* ta-asset-workbench-v0.8.12.js
+/* ta-asset-workbench-v0.8.13.js
    ============================================================
-   ta-asset-workbench-v0.8.12.js
+   ta-asset-workbench-v0.8.13.js
    INBXIFY TA Studio — Asset Workbench (detail/management surface)
    Companion stylesheet: ta-asset-workbench-v0.8.6.css  (UNCHANGED —
                          keep the existing head link)
    Shared stylesheet:    ix-internal-notes-v1_0_0.css
                          (self-loaded AND belongs in the Webflow head)
+
+   v0.8.13 (23 Nov 2026, Image Links S2) — AN EVENT'S HERO IS img-main.
+   EVENTS has one picture field, img-main (raw Uploadcare link),
+   backfilled 23 Nov. renderEventStandalone() reads it alone, then the
+   first MEDIA photo as before. Event Hero Image (ULC) and Event Image
+   URL are no longer read. CSS unchanged (0.8.6). Nothing else changed.
 
    v0.8.12 (23 Nov 2026, Image Links S1 · phase 1b) — main-image IS NOT
    READ. Legacy Sunset S2 hand-off v0.2: every reader moves off the
@@ -440,7 +446,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '0.8.12';
+  var VERSION = '0.8.13';
   // The companion stylesheet's own version. It moves only when the CSS
   // file is bumped (v0.8.11: it had been read off VERSION, a dead request).
   var CSS_VERSION = '0.8.6';
@@ -948,9 +954,9 @@
   }
   function renderEventStandalone(a) {
     // Slugs PINNED from Scenario 120 event payload (2026-06-03).
-    // Title = asset.name (not in fieldData). Hero = event-image-url.
+    // Title = asset.name (not in fieldData). Hero = img-main (v0.8.13).
     var title    = a.name || fld(a, ['name', 'event-title', 'title']) || 'Untitled event';
-    var heroSrc  = fld(a, ['event-hero-image-ulc-link-ev-1-only', 'event-image-url']) || (S.media[0] && S.media[0].src) || '';   // v0.8.10
+    var heroSrc  = fld(a, ['img-main']) || (S.media[0] && S.media[0].src) || '';   // v0.8.10; v0.8.13 img-main
     var desc     = fld(a, ['event-description']);
     var descHtml = unescapeIfNeeded(desc);
     // v0.8.10: worked out from event-start / event-end (the DT: copies are retired)
