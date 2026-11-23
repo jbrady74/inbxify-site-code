@@ -11,7 +11,12 @@ The two loader tags on the Webflow page never change. **Going live is committing
 | `ipp.json` | PUBLICATION PLAN Template (the IPP) | `data-ix-page="ipp"` |
 | `review.json` | review (static page, /review) | `data-ix-page="review"` |
 
-How it works: `ix-load-v1.0.0.js` (the tag on the page) reads `loaders/ix-load-<page>-<slot>.js`, which `tools/build-loaders.mjs` generates from the manifest. The **Loaders** GitHub Action runs the build on every push to `main` and to preview branches, purges jsDelivr and checks the CDN serves the new copy. A red run means the pages are still on the last good lists.
+How it works: `ix-load-v1.0.0.js` (the tag on the page) reads `loaders/ix-load-<page>-<slot>.js`, a small stub that never changes. The stub reads the real list, `ix-load-<page>-<slot>.list.js`, which `tools/build-loaders.mjs` generates from the manifest.
+
+- **On main** the stub reads the list from **GitHub Pages** (`https://jbrady74.github.io/inbxify-site-code/`). The **Loaders** Action publishes it there on every push to main, with every file named at that exact commit (`@<sha>`). Nothing waits on a jsDelivr purge, so a merge reaches every browser about a minute after the Action's Pages job finishes. If Pages ever does not answer, the stub falls back to the jsDelivr copy of the `.list.js`.
+- **On a preview branch** (`?ixbranch=`) the stub reads the branch's `.list.js` on jsDelivr, as before.
+
+A red Loaders run means the pages are still on the last good lists. A HELD BACK warning about a `.list.js` on main is only the fallback copy and holds nothing up.
 
 Rules:
 - Name files by their exact versioned filename. Never edit a file under a live name.

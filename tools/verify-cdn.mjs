@@ -3,6 +3,12 @@
 // INBXIFY · purge the version lists on jsDelivr and prove the CDN serves the new copy
 // (Agent Groundwork G1, Part A). Run by .github/workflows/loaders.yml after the build.
 //
+// v1.2.0 (23 Nov 2026, Agent Groundwork G3) — MAIN NO LONGER WAITS ON A jsDelivr PURGE.
+//   With build-loaders v1.1.0 the live lists come from GitHub Pages, pinned to the commit (env PAGES_DIR, SHA).
+//   On main this file now: (a) checks GitHub Pages serves every pinned list (the go-live; fails if not);
+//   (b) checks jsDelivr serves every listed file at that commit (@SHA: never needs a purge); (c) checks the stubs
+//   (they never change, so normally nothing is purged); (d) purges the jsDelivr .list.js copies as a FALLBACK only:
+//   a HELD BACK there is a warning, never a failure. On a preview branch nothing changes: lists and files at the branch.
 // v1.1.0 (17 Nov 2026, Agent Groundwork G2) — PURGE ONLY WHAT CHANGED, AND SAY WHEN jsDelivr HOLDS A PURGE BACK.
 //   v1.0.0 purged all the lists on every push. On a busy day (many pushes to main and to an agent branch) jsDelivr
 //   began answering 200 to a purge while still serving the old copy, and two go-lives sat on the old lists.
@@ -25,6 +31,10 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 
 const REPO = process.env.REPO, REF = process.env.REF;
+const PAGES_DIR = process.env.PAGES_DIR || '', PIN = process.env.SHA || '';
+const PAGES_BASE = 'https://jbrady74.github.io/inbxify-site-code/';   // HC-P-AG-18 (same as tools/build-loaders.mjs)
+const LIVE = REF === 'main' && PAGES_DIR && /^[0-9a-f]{40}$/.test(PIN);
+const warnings = [];
 const CDN = 'https://cdn.jsdelivr.net/gh/', PURGE = 'https://purge.jsdelivr.net/gh/';   // HC-P-AG-6
 const WAIT_TRIES = Number(process.env.WAIT_TRIES || 24), WAIT_MS = Number(process.env.WAIT_MS || 10000);
 if (!REPO || !REF) { console.error('REPO and REF are required'); process.exit(1); }
@@ -57,6 +67,21 @@ async function purge(file) {
 const failures = [];
 const lists = fs.readdirSync('loaders').filter((f) => /^ix-load-.*\.js$/.test(f)).sort().map((f) => `loaders/${f}`);
 
+// 0 (main only): GitHub Pages serves the pinned lists. This is the go-live.
+if (LIVE) {
+  for (const name of fs.readdirSync(PAGES_DIR).filter((f) => /\.list\.js$/.test(f)).sort()) {
+    const want = sha(fs.readFileSync(path.join(PAGES_DIR, name)));
+    let r, ok = false;
+    for (let i = 0; i < WAIT_TRIES && !ok; i++) {
+      r = await get(`${PAGES_BASE}${name}?t=${Date.now()}`);
+      ok = r.status === 200 && sha(r.body) === want;
+      if (!ok) await sleep(WAIT_MS);
+    }
+    console.log(`${ok ? 'OK  ' : 'FAIL'} Pages ${name} ${want.slice(0, 12)}${ok ? '' : ' (answers ' + r.status + ', not the new copy)'}`);
+    if (!ok) failures.push(`GitHub Pages does not serve the new ${name}. Is Pages switched on (Settings, Pages, Source: GitHub Actions) and did the deploy job pass?`);
+  }
+}
+
 // 1 + 2: the version lists
 async function served(f, want) {
   const stamped = await get(`${CDN}${at(f)}?t=${Date.now()}`);
@@ -75,6 +100,10 @@ for (const f of lists) {
     if (!s.ok && i % 6 === 0 && !held.has(f)) await purge(f);
   }
   console.log(`${s.ok ? 'OK  ' : 'FAIL'} ${f} ${want.slice(0, 12)} ${s.ok ? '' : '(' + s.last + ', content is not the new copy)'}`);
+  if (!s.ok && LIVE && /\.list\.js$/.test(f)) {
+    warnings.push(`${f}: the jsDelivr fallback copy is not current yet${held.has(f) ? ' (' + held.get(f) + ')' : ''}. Pages serves the live list, so nothing waits on this.`);
+    continue;
+  }
   if (!s.ok) failures.push(held.has(f)
     ? `${f}: jsDelivr is holding the purge back (${held.get(f)}). The page keeps its last good list until then. Run this Action again after the wait (Actions, Loaders, Run workflow); do not push again just to retry.`
     : `${f}: the CDN is not serving the new copy`);
@@ -90,8 +119,10 @@ for (const m of fs.readdirSync('manifests').filter((f) => f.endsWith('.json'))) 
   }
 }
 for (const f of [...need].sort()) {
-  let r = await get(CDN + at(f));
-  for (let i = 0; i < 6 && r.status !== 200; i++) { await purge(f); await sleep(WAIT_MS); r = await get(CDN + at(f)); }
+  // on main the live lists name files at the exact commit: ask for them there (a commit address never needs a purge)
+  const addr = LIVE && !/^ix-load-v/.test(f) ? `${CDN}${REPO}@${PIN}/${f}` : CDN + at(f);
+  let r = await get(addr);
+  for (let i = 0; i < 6 && r.status !== 200; i++) { if (addr === CDN + at(f)) await purge(f); await sleep(WAIT_MS); r = await get(addr); }
   if (r.status === 200 && sha(r.body) !== sha(fs.readFileSync(f))) {
     console.log(`FAIL ${f}: the CDN copy differs from the repo (a file was edited under a live name)`);
     failures.push(`${f}: CDN copy differs from the repo; versioned files must never be edited in place`);
@@ -100,8 +131,9 @@ for (const f of [...need].sort()) {
   } else console.log(`OK   ${f}`);
 }
 
+warnings.forEach((w) => console.warn('warning: ' + w));
 if (failures.length) {
   console.error('\nCDN CHECK FAILED. Pages may still be on the old lists.\n' + failures.map((x) => '  - ' + x).join('\n'));
   process.exit(1);
 }
-console.log(`\nCDN check passed for ${REPO}@${REF}: ${lists.length} version lists, ${need.size} files.`);
+console.log(`\nCDN check passed for ${REPO}@${REF}${LIVE ? ' (live lists on GitHub Pages, files at ' + PIN.slice(0, 7) + ')' : ''}: ${lists.length} loader files, ${need.size} files.`);
