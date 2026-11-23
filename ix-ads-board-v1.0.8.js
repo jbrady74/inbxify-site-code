@@ -1,7 +1,28 @@
-// ix-ads-board-v1.0.5.js
+// ix-ads-board-v1.0.8.js
 // ============================================================
 // INBXIFY · ix-ads-board · the Ads board, shared by the Publisher Portal and the T-A Ads tab
 //
+// v1.0.8 (23 Nov 2026, Ad Maker Build S3): the deleted notice also counts the picture files ix-sales v1.3.13 removed
+//   from Uploadcare (deleted.files). CSS v1.0.8 is a version only. HARDCODING: HC-P-AMB1-2 gains W.ix.del.withFiles*.
+// v1.0.7 (23 Nov 2026, Ad Maker Build S3) — THE DELETED NOTICE SITS WHERE THE WORK IS. JS and CSS v1.0.7.
+//   Rulings (Jeff, 23 Nov, Test 5 on the live page): the notice was at the top of the page, scrolls away from the
+//   customer being worked on, and was not seen; and there was no way to tell which MEDIA row went.
+//   · The notice is drawn inside the open customer's area, above its cards. It is at the top of the page only when
+//     that customer's row is closed.
+//   · It now says what went with the ad, from ix-sales's answer: the ADS row, how many MEDIA rows, how many links
+//     were stopped. Each picture still on Uploadcare is a link.
+//   HARDCODING: HC-P-AMB1-2 gains W.ix.del.with*, .pic.
+// v1.0.6 (23 Nov 2026, Ad Maker Build S3) — DELETE AN AD FOR GOOD. JS and CSS v1.0.6. inbxify side only.
+//   Ruling (Jeff, 23 Nov): Delete is a true delete, behind an acknowledgement that says it cannot be undone, and the
+//   page then says what is left to do by hand.
+//   · Every card that is not the current ad has a small "Delete this ad" link under its buttons.
+//   · The link opens a red box in the card: what goes, "This cannot be undone.", Delete for good, cancel.
+//   · Delete for good calls ix-sales POST /ads/delete { publisher, adId } at once (it is not staged for Save).
+//     ix-sales refuses a current, scheduled or already-run ad and says why in the box.
+//   · After it, a notice at the top of the page says what was deleted and what is left: the design in Canva (a link,
+//     when the host knows the design: opts.designUrl(adId)), and each line ix-sales answers in "kept". The host is
+//     told with opts.onDeleted(adId). The notice stays until closed.
+//   HARDCODING: HC-P-AMB1-2 gains W.ix.del.
 // v1.0.5 (23 Nov 2026, Ad Maker Build S3) — CARDS IN A ROW ARE ONE HEIGHT. JS and CSS v1.0.5. Card changes are
 //   inbxify side only; the folded board rows are both sides.
 //   Rulings (Jeff, 23 Nov, Test 2 on the live page): a card must not change height because its line says more;
@@ -71,6 +92,8 @@
 //       opts.placeholder function (rows, cols) → html, optional (ps-shell's)
 //       opts.title       the h1 words, or '' for none (T-A draws its own header)
 //       opts.onAction    function ({ kind, customer, shape, version }) — 'make' | 'edit' | 'open' (inbxify side)
+//       opts.designUrl   function (adId) → the Canva address of that ad's design, or '' (inbxify side, v1.0.6)
+//       opts.onDeleted   function (adId, answer) after an ad is deleted for good (inbxify side, v1.0.6)
 //       opts.deepCustomer a customer id to open on load (the Portal's ?customer=)
 //
 //   DATA One read: ix-sales GET /ads?publisher=<id> (v1.3.7 adds brand per customer; this file passes it through
@@ -85,7 +108,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.5', CSS_VERSION = '1.0.5', FILE = 'ix-ads-board-v' + VERSION + '.js';
+  var VERSION = '1.0.8', CSS_VERSION = '1.0.8', FILE = 'ix-ads-board-v' + VERSION + '.js';
   var SH = ['banner', 'sidebar', 'splash', 'text'];                        // HC-P-PP8-8
   var SHN = { banner: 'Banner', sidebar: 'Sidebar', splash: 'Splash', text: 'Text ad' };
   var W = {                                                              // HC-P-PP8-7
@@ -161,6 +184,8 @@
                back: 'New {shape} · sent back by the publisher', req: 'New {shape} · the publisher asked for it', gap: '{Shape} · sold, nothing running',
                needs: 'Approving the new {shape}', answered: 'Advertiser answered on the {shape}', advIn: 'Reviewing the new {shape}' },
       act: { edit: 'Edit in Ad Maker', open: 'Open in Ad Maker', make: 'Make {shape}', approve: 'Approve & make current', makeCurrent: 'Make current', coming: 'Tool coming', send: 'Send for approval', sendAgain: 'Send again', hold: 'Approve & hold' },
+        del: { link: 'Delete this ad', ask: 'Delete this ad for good?', what: 'The ad comes off the site. Any approval link for it stops working.', never: 'This cannot be undone.', go: 'Delete for good', going: 'Deleting\u2026', cancel: 'cancel',
+          done: 'Deleted: {name}', withHead: 'Deleted with it:', withAd: 'the ADS row', withMedia1: '1 MEDIA row (the one holding its picture)', withMediaN: '{n} MEDIA rows (the ones holding its pictures)', withMedia0: 'no MEDIA row (none held its picture)', withFiles1: 'its picture file on Uploadcare', withFilesN: '{n} picture files on Uploadcare', withLinks1: '1 open link stopped', withLinksN: '{n} open links stopped', pic: 'picture file', left: 'Left for you to do:', canva: 'Open the design in Canva and move it to trash (File > Move to trash).', close: 'close', fail: 'Not deleted: {msg}', deleting: 'Deleting the ad' },
         send: { head: 'Send for approval', headAgain: 'Send again', again: '{name} already has a link from {on}. That link keeps working; this sends a new one.', to: 'Send to', test: '(test)', testNote: 'the same email, sent to you', noPub: 'The PUBLISHERS record has no Contact Name or Business Email, so only a test can be sent.',
           subject: 'Subject', message: 'Message', added: 'Added under your message: the {shape}, a \u201c{button}\u201d button, and \u201c{until}\u201d', go: 'Send email', going: 'Sending\u2026', loading: 'Reading the email\u2026', cancel: 'cancel',
           done: 'Approval email sent to {to}.', doneTest: 'Test approval email sent to {to}.', fail: 'The email was not sent: {msg}', need: 'The subject and the message cannot be empty.' },
@@ -374,6 +399,34 @@
       }
       return h;
     }
+    // ── v1.0.6 · Delete this ad, inside the card (inbxify side) ──
+    function delHTML(v) {
+      var X = W.ix.del, Dl = S.del && S.del.id === v.id ? S.del : null;
+      if (!Dl) return '<div class="ps-ad-delrow"><button type="button" class="ps-ad-cancel" data-del="' + esc(v.id) + '">' + esc(X.link) + '</button></div>';
+      return '<div class="ps-ad-delbox" role="alertdialog"><b>' + esc(X.ask) + '</b><div>' + esc(X.what) + '</div><div class="never">' + esc(X.never) + '</div>' + (Dl.err ? '<div class="ps-ad-need">' + esc(Dl.err) + '</div>' : '') +
+        '<div class="dba"><button type="button" class="ix-btn ix-btn--danger" data-delgo="1"' + (Dl.busy ? ' disabled' : '') + '>' + esc(Dl.busy ? X.going : X.go) + '</button><button type="button" class="ps-ad-cancel" data-delcancel="1">' + esc(X.cancel) + '</button></div></div>';
+    }
+    async function goDelete() {
+      var Dl = S.del, f = Dl && findV(Dl.id); if (!Dl || !f || Dl.busy) return;
+      Dl.busy = true; Dl.err = ''; render();
+      var url = ''; try { url = (O.designUrl && O.designUrl(Dl.id)) || ''; } catch (e) { url = ''; }
+      var r = await ctx.api('/ads/delete', { method: 'POST', body: { publisher: ctx.publisher.id, adId: Dl.id }, label: W.ix.del.deleting });
+      if (!r.ok || !r.json || !r.json.ok) { Dl.busy = false; Dl.err = fill(W.ix.del.fail, { msg: (r.json && r.json.error) || ('HTTP ' + r.status) }); render(); return; }
+      S.gone = { cust: f.c.id, name: r.json.name || f.v.name || '', kept: r.json.kept || [], url: url, d: r.json.deleted || {}, pics: r.json.pictures || [] }; S.del = null; delete S.staged[Dl.id]; if (S.send && S.send.id === Dl.id) S.send = null;
+      try { if (O.onDeleted) O.onDeleted(Dl.id, r.json); } catch (e) { console.error('[ix-ads-board] onDeleted', e); }
+      await load(); render();
+    }
+    function goneHTML() {
+      var G = S.gone, X = W.ix.del; if (!G) return '';
+      var m = Number(G.d.media) || 0, l = Number(G.d.links) || 0, w = [X.withAd, m === 1 ? X.withMedia1 : m ? fill(X.withMediaN, { n: m }) : X.withMedia0];
+      var fl = Number(G.d.files) || 0; if (fl) w.push(fl === 1 ? X.withFiles1 : fill(X.withFilesN, { n: fl }));
+      if (l) w.push(l === 1 ? X.withLinks1 : fill(X.withLinksN, { n: l }));
+      var li = (G.url ? '<li><a href="' + esc(G.url) + '" target="_blank" rel="noopener">' + esc(X.canva) + '</a></li>' : '') + G.kept.map(function (k) {
+        var pics = /Uploadcare/.test(k) ? G.pics.map(function (u, i) { return ' <a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(X.pic + (G.pics.length > 1 ? ' ' + (i + 1) : '')) + '</a>'; }).join('') : '';
+        return '<li>' + esc(k) + pics + '</li>'; }).join('');
+      return '<div class="ps-ad-gone" role="status"><div class="gh"><b>' + esc(fill(X.done, { name: G.name })) + '</b><button type="button" class="ps-ad-cancel" data-goneclose="1">' + esc(X.close) + '</button></div>' +
+        '<div>' + esc(X.withHead) + ' ' + esc(w.join(', ')) + '.</div>' + (li ? '<div class="gl">' + esc(X.left) + '</div><ul>' + li + '</ul>' : '') + '</div>';
+    }
     // ── v1.0.4 · the Send for approval box, inside the card (inbxify side) ──
     function sendBox(c, sh, v) {
       var B = S.send, X = W.ix.send, again = !!v.sent;
@@ -425,6 +478,7 @@
         if (g.act === 'ask') h += '<div class="ps-ad-quiet" style="margin-top:8px;max-width:60ch">' + esc(fill(W.askNote, { name: c.name, days: S.linkDays })) + '</div>';
         if (g.act === 'back') h += '<div style="margin-top:10px"><label class="ps-ad-quiet" for="note-' + esc(v.id) + '">' + esc(W.noteLabel) + '</label><br><textarea class="ps-ad-note' + (g.note ? ' chg' : '') + '" id="note-' + esc(v.id) + '" data-note="' + esc(v.id) + '" placeholder="' + esc(W.notePh) + '">' + esc(g.note || '') + '</textarea>' + (g.note ? '' : '<div class="ps-ad-need">' + esc(W.noteNeed) + '</div>') + '</div>';
       } else h += cardActs(c, sh, v);
+      if (IX && !opts.four && v.state !== 'current' && !g) h += delHTML(v);   // v1.0.6
       if (opts.four && !IX && anyReq(c)) h += reqBand(c, sh);
       return h + '</div>';
     }
@@ -471,12 +525,12 @@
         var links = {}; pend.forEach(function (x) { var L = x.v.link; if (L && x.v.state === 'adv' && !links[L.reviewId]) links[L.reviewId] = L; });
         var lh = Object.keys(links).map(function (k) { var L = links[k];
           return '<div class="ps-ad-linkbox"><b>' + esc(fill(W.linkOut, { until: day(L.until) })) + '</b>' + (L.url ? ' · <button type="button" class="ps-ad-link" data-copy="' + esc(L.url) + '">' + esc(W.copyLink) + '</button>' : '') + '<span class="s">' + esc(L.openedAt ? fill(W.linkOpened, { on: day(L.openedAt) }) : W.linkNotOpened) + '</span></div>'; }).join('');
-        body = lh + (pend.length ? '<div class="ps-ad-grid' + (S.send ? ' sending' : '') + '">' + pend.map(function (x) { return vCard(c, x.sh, x.v); }).join('') + '</div>' : '<div class="ps-ad-quiet">' + esc(W.colNone.process) + '</div>');
+        body = lh + (pend.length ? '<div class="ps-ad-grid' + (S.send || S.del ? ' sending' : '') + '">' + pend.map(function (x) { return vCard(c, x.sh, x.v); }).join('') + '</div>' : '<div class="ps-ad-quiet">' + esc(W.colNone.process) + '</div>');
       } else {
-        body = '<div class="ps-ad-sub">' + esc(W.rail.ready) + (ready.length ? ' <span>· ' + perShape(ready) + '</span>' : '') + '</div>' + (ready.length ? '<div class="ps-ad-grid">' + ready.map(function (x) { return vCard(c, x.sh, x.v, { badge: false }); }).join('') + '</div>' : '<div class="ps-ad-quiet">' + esc(W.colNone.ready) + '</div>') +
-          '<div class="ps-ad-sub">' + esc(W.rail.archived) + (old.length ? ' <span>· ' + perShape(old) + '</span>' : '') + '</div>' + (old.length ? '<div class="ps-ad-grid">' + old.map(function (x) { return vCard(c, x.sh, x.v, { badge: false }); }).join('') + '</div>' : '<div class="ps-ad-quiet">' + esc(W.colNone.archived) + '</div>');
+        body = '<div class="ps-ad-sub">' + esc(W.rail.ready) + (ready.length ? ' <span>· ' + perShape(ready) + '</span>' : '') + '</div>' + (ready.length ? '<div class="ps-ad-grid' + (S.del ? ' sending' : '') + '">' + ready.map(function (x) { return vCard(c, x.sh, x.v, { badge: false }); }).join('') + '</div>' : '<div class="ps-ad-quiet">' + esc(W.colNone.ready) + '</div>') +
+          '<div class="ps-ad-sub">' + esc(W.rail.archived) + (old.length ? ' <span>· ' + perShape(old) + '</span>' : '') + '</div>' + (old.length ? '<div class="ps-ad-grid' + (S.del ? ' sending' : '') + '">' + old.map(function (x) { return vCard(c, x.sh, x.v, { badge: false }); }).join('') + '</div>' : '<div class="ps-ad-quiet">' + esc(W.colNone.archived) + '</div>');
       }
-      return th + '<div class="ps-ad-tabbody" role="tabpanel">' + body + '</div>';
+      return th + '<div class="ps-ad-tabbody" role="tabpanel">' + (IX && S.gone && S.gone.cust === c.id ? goneHTML() : '') + body + '</div>';   // v1.0.7: the notice sits where the work is
     }
     function renderOpen(c) {
       var probs = (c.problems || []).length && ctx.who.staff ? '<div class="ps-ad-probs">' + c.problems.map(esc).join('<br>') + '</div>' : '';
@@ -499,7 +553,7 @@
       var h = '<div class="ps-ad ix-ab side-' + side + '">' + (O.title === '' ? '' : '<div class="ps-titlerow"><h1>' + esc(O.title || W.title) + '</h1>' + infoHTML() + '<div class="sp"></div></div>');
       if (!S.loaded) h += ctx.placeholder ? '<div class="ps-ad-tbl"><table style="width:100%"><tbody>' + ctx.placeholder(5, 6) + '</tbody></table></div>' : '<div class="ps-ad-empty">' + esc(W.api.ads) + '…</div>';
       else if (S.loadErr) h += '<div class="ps-err" role="alert">' + esc(fill(W.loadFail, { msg: S.loadErr })) + '</div>';
-      else h += renderBoard() + renderList();
+      else h += (IX && S.gone && S.open !== S.gone.cust ? goneHTML() : '') + renderBoard() + renderList();
       h += renderMail() + '<div id="ps-ad-savewrap">' + renderSave() + '</div>' + renderReq() + '</div>';
       el.innerHTML = h;
       if (keep) { var q = el.querySelector('#ps-ad-q'); if (q) { q.focus(); try { q.setSelectionRange(keep.s, keep.e); } catch (e) {} } }
@@ -668,6 +722,10 @@
         var d = t.dataset;
         if (d.send) { if (S.send && S.send.id === d.send) { S.send = null; render(); } else openSend(d.send); return; }   // v1.0.4
         if (d.sendcancel) { S.send = null; render(); return; }
+        if (d.del) { S.del = { id: d.del, busy: false, err: '' }; render(); return; }   // v1.0.6
+        if (d.delcancel) { S.del = null; render(); return; }
+        if (d.delgo) { goDelete(); return; }
+        if (d.goneclose) { S.gone = null; render(); return; }
         if (d.sendgo) { goSend(); return; }
         if (d.ix) {   // inbxify side: hand the action to the host (Ad Maker)
           var ix = d.ix.split('|'), c0 = cust(ix[1]); if (!c0 || !O.onAction) return;

@@ -1,5 +1,60 @@
-// ix-content-v1.2.4.js
+// ix-content-v1.3.1.js
 // INBXIFY · Cloudflare Worker · ix-content
+//
+// v1.3.1 (23 Nov 2026, Content Home S16) — DELETE A PLAN INSIDE THE SYSTEM, AND THE PUB PLANS PAGE MOVES OFF SCENARIO 126.
+//   Found this session: the Pub Plans page still made plans through Make Scenario 126 (a writer of NL-BLOCKS outside
+//   ix-content), so NL-BLOCKS cannot go D1 first until the page calls /nl-blocks/hydrate and /nl-blocks/clone
+//   (issues-tab v1.0.63). Ruled (Jeff, 23 Nov): a "Delete plan" item in the ⋯ menu of a Pub Plans tile, staff only,
+//   only on plans that are not released and not sent, with a window naming what goes; test plans never need the
+//   Webflow editor.
+//   1 · NEW POST /nl-blocks/delete-plan { taId, pubplanId, dryRun? } (staff, nl_blocks.hydrate). dryRun answers what
+//       would go (the plan, its NEWSLETTER(s), its blocks, the print items that list it) and whether it is refused,
+//       changing nothing. Otherwise, in this order: the blocks (on "d1" one D1 transaction with their outbox lines; on
+//       "webflow" each one in Webflow, then D1); the plan taken off every print item that lists it (ALLOCATIONS, on
+//       its own save path); the outbox sent at once, so nothing in Webflow still points at the plan; then each
+//       NEWSLETTER, then the PUBLICATION PLAN. Webflow refuses to delete an item another item still points at (for
+//       example an article's latest-newsletter, S14 finding 7): such an item is archived and taken off the site
+//       instead, and the reply says so. Refused, with nothing changed, when /release-check refuses the plan (released,
+//       sent or held). A run cut short is safe to repeat: each step finds only what is left.
+//   2 · ADD AND CLONE TAKE WHAT THE COLLECTIONS HAVE. A plan or NEWSLETTER field named in KV contentHome.home.nl_blocks
+//       .hydrate that the collection no longer has (Legacy Sunset S2 deleted t-a-three-digit-id; 126 v2.15 stopped
+//       writing it) is skipped and named in the reply (fieldsSkipped) instead of stopping the Add. planFields
+//       .taThreeDigitId and taFields.threeDigit are no longer required.
+//   No other route, permission or reply shape changed.
+//
+// v1.3.0 (23 Nov 2026, Content Home S16 · phase 4b) — D1 FIRST. THE SAVE PATH CAN WRITE D1 FIRST AND COPY TO WEBFLOW AFTER.
+//   Scoping v0.4 §4 step 4b. Rulings this session (Jeff, 23 Nov): the system is the only writer of NL-BLOCKS and
+//   ALLOCATIONS; once a table is on D1 first, D1 always wins and any change made outside ix-content is named, never taken
+//   in. No "restore" op (no page can remove an ALLOCATIONS row today; a Remove button will come with a Restore button).
+//   1 · THE SWITCH. KV contentHome.settings.savePath = { "allocations": "webflow" | "d1", "nl_blocks": "webflow" | "d1" }.
+//       Anything left out is "webflow" (HC-P-CH16-1), so deploying this version changes nothing until a table is flipped.
+//   2 · D1 FIRST ("d1"). /<table>/batch checks each op against D1 only (no Webflow re-read), then writes the whole batch
+//       in ONE D1 transaction: all ops land or none do. A row that changed after its check makes the whole transaction
+//       roll back (save_guard, HC-P-CH16-6) and the reply names it as stale. New rows get a 24-character id made here
+//       (HC-P-CH16-4); their slug and self-id field are that id (HC-P-CH16-5). The reply keeps its v1.2.x shape: results[]
+//       with ok, sent (true = in D1), id, row; published.done counts what is in D1, published.trailing says "queued".
+//       Hydrate (Add), Clone and Refresh: the PUBLICATION PLAN and NEWSLETTER are still made in Webflow (they stay there);
+//       the rows go to D1 in one transaction. Refresh writes the new rows and deletes the old ones in that same transaction.
+//   3 · THE TRAILING COPY. Every change also puts one line in wf_outbox, in the same transaction. After the reply, the
+//       Worker sends the outbox to Webflow (create, field update, archive, delete, then one publish per collection). A
+//       Cron Trigger (contentHome.settings.outboxCron, default "*/5 * * * *", HC-P-CH16-3) and the nightly check send what
+//       is left. A row's Webflow id is kept in its new wf_id column. One drain at a time (a lease in site_facts). A create
+//       that may have landed is never made twice: a retry looks the item up by its slug first. Links between the two home
+//       tables are written to Webflow as the Webflow ids.
+//   4 · OUTSIDE CHANGES. On "d1", a Webflow webhook for these collections never writes D1. Hints that follow ix-content's
+//       own copies are logged as "echo". Anything else is compared with D1: a difference is logged as "outside" (shown on
+//       /status) and the row is queued to be copied again, so D1 wins. The nightly check does the same for every row.
+//   5 · ROLLBACK. Set a table back to "webflow": the old path uses wf_id for every Webflow call, so rows made on "d1" still
+//       save. Wait until /status shows the outbox empty first. A row not yet copied to Webflow is refused on "webflow".
+//   Schema v1.4.0 first (wf_id on both home tables, wf_outbox, save_guard): this version needs it on either setting.
+//   New staff route POST /admin/outbox/drain sends the outbox now. /status gains savePath, outbox and outside.
+//   On "webflow" a row is found by its Webflow id (wf_id) as well as its D1 id, and a reply's results[].id is the D1 id.
+//   Known on "webflow" (S16 query): a long Add or Clone stores its rows after the webhooks' 20 s wait, so those rows are
+//   logged as "follow · webhook"; data and versions are right. "d1" removes the race (rows are in D1 before Webflow).
+//   HARDCODING (provisional): HC-P-CH16-1 savePath values and the "webflow" default; HC-P-CH16-2 outbox drain sizes and
+//   budgets (DEFAULTS.outbox); HC-P-CH16-3 outboxCron default; HC-P-CH16-4 new id shape (8 hex of seconds + 16 random
+//   hex); HC-P-CH16-5 slug of a D1-made row = its id; HC-P-CH16-6 save_guard and its CHECK (ok = 1); HC-P-CH16-7 the
+//   outbox lease key outbox:lock and the echo window (DEFAULTS.outbox.echoMs).
 //
 // v1.2.4 (23 Nov 2026, Content Home S14) — DELETE A WEBHOOK THAT IS NOT OURS.
 //   Webflow's Site settings do not list webhooks made through the API, so the old collection_item_published webhook to
@@ -202,6 +257,7 @@
 //   POST /admin/nightly          staff. Runs the nightly check now. ?fresh=1 as above.
 //   POST /admin/register         staff. Lists the site's webhooks and creates the missing ones.
 //   POST /admin/webhooks/delete?id=  staff. Deletes one webhook that does not point at this Worker (v1.2.4).
+//   POST /nl-blocks/delete-plan  staff. A plan, its NEWSLETTER and its blocks (v1.3.1).
 //   POST /admin/backfill-home    staff. ?table=allocations. Lists that collection from Webflow and repairs D1.
 //   GET  /allocations?taId=      staff (allocations.read). This title's rows with versions, page order.
 //                                &printIssue=<name> narrows to one print issue; &archived=1 includes removed rows.
@@ -243,7 +299,7 @@
 //   (HOME_TABLES, code: a table name is how code reaches D1); HC-P-CH3-2 batch size cap 50 ops (BATCH_MAX);
 //   HC-P-CH3-3 burst 429 wait cap 20 s (DEFAULTS.burst). Field slugs and create defaults live in KV, not code.
 
-const VERSION = '1.2.4';
+const VERSION = '1.3.1';
 const WF = 'https://api.webflow.com/v2';                         // HC-P-CH1-8
 const PAGE = 100;                                                // HC-P-CH1-8 · Webflow lists at most 100 a request
 const KV_KEYS = {                                                // HC-P-CH1-7
@@ -262,14 +318,20 @@ const DEFAULTS = {                                               // HC-P-CH1-10 
   runs: { maxCalls: 800, maxQueries: 800, adminBudgetMs: 90000, cronBudgetMs: 600000, resumeWithinHours: 24, busyIfBeatWithinMs: 120000 },
   webhooks: { autoRegister: true, dedupeMs: 5000, logDays: 30, drainPerHint: 3, maxHintsPerCall: 50, homeSettleMs: 20000, notifyPages: true },   // homeSettleMs v1.1.1, HC-P-CH3-4; notifyPages v1.2.3, HC-P-CH14-6
   burst: { retryAfterCapMs: 20000, maxRetries: 2 },              // HC-P-CH3-3 · page saves
+  savePath: { allocations: 'webflow', nl_blocks: 'webflow' },    // v1.3.0, HC-P-CH16-1
+  outbox: { perDrain: 40, saveBudgetMs: 20000, cronBudgetMs: 50000, echoMs: 120000 },   // v1.3.0, HC-P-CH16-2 / -7
+  outboxCron: '*/5 * * * *',                                     // v1.3.0, HC-P-CH16-3
 };
 const SCHEMA_TABLES = ['copy_items', 'copy_title_links', 'nl_blocks', 'allocations', 'allocation_plans', 'change_log',
-  'collections', 'sync_runs', 'pending_items', 'webhook_log', 'site_facts'];
-const SCHEMA_COLUMNS = { allocations: ['is_draft', 'is_archived', 'wf_updated'], nl_blocks: ['is_draft', 'is_archived', 'wf_updated'],
-  copy_items: ['live_off_at'] };   // schema v1.1.0, v1.2.0; copy_items v1.3.0 (HC-P-CH14-5)
+  'collections', 'sync_runs', 'pending_items', 'webhook_log', 'site_facts', 'wf_outbox', 'save_guard'];   // v1.4.0
+const SCHEMA_COLUMNS = { allocations: ['is_draft', 'is_archived', 'wf_updated', 'wf_id'], nl_blocks: ['is_draft', 'is_archived', 'wf_updated', 'wf_id'],
+  copy_items: ['live_off_at'] };   // schema v1.1.0, v1.2.0; copy_items v1.3.0 (HC-P-CH14-5); wf_id v1.4.0
 const REQUIRED_EVENTS = ['collection_item_published', 'collection_item_unpublished'];   // v1.2.3, HC-P-CH14-4
 const LIVE_TRIGGERS = { collection_item_published: 'on', collection_item_unpublished: 'off' };   // v1.2.3
 const ID24 = /^[0-9a-f]{24}$/i;
+
+// v1.3.0 · which save path a home table is on (HC-P-CH16-1). Anything but "d1" is "webflow".
+function savePathOf(cfg, table) { return cfg && cfg.s && cfg.s.savePath && cfg.s.savePath[table] === 'd1' ? 'd1' : 'webflow'; }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // ENTRY
@@ -292,12 +354,17 @@ export default {
       if (p === '/nl-blocks' && m === 'GET') return json(await homeListRoute(request, env, url, 'nl_blocks'), 200, cors);   // v1.2.0
       if ((p === '/allocations/batch' || p === '/nl-blocks/batch') && m === 'POST') {
         if (origin && !allowed.includes(origin)) return json({ ok: false, error: 'This origin may not call ix-content.' }, 403, cors);
-        const out = await homeBatchRoute(request, env, p === '/nl-blocks/batch' ? 'nl_blocks' : 'allocations');
+        const out = await homeBatchRoute(request, env, ctx, p === '/nl-blocks/batch' ? 'nl_blocks' : 'allocations');
+        return json(out.body, out.status, cors);
+      }
+      if (p === '/nl-blocks/delete-plan' && m === 'POST') {                                // v1.3.1
+        if (origin && !allowed.includes(origin)) return json({ ok: false, error: 'This origin may not call ix-content.' }, 403, cors);
+        const out = await deletePlanRoute(request, env, ctx);
         return json(out.body, out.status, cors);
       }
       if ((p === '/nl-blocks/hydrate' || p === '/nl-blocks/clone') && m === 'POST') {                          // v1.2.0
         if (origin && !allowed.includes(origin)) return json({ ok: false, error: 'This origin may not call ix-content.' }, 403, cors);
-        const out = await hydrateRoute(request, env, p === '/nl-blocks/clone' ? 'clone' : 'hydrate');
+        const out = await hydrateRoute(request, env, ctx, p === '/nl-blocks/clone' ? 'clone' : 'hydrate');
         return json(out.body, out.status, cors);
       }
       if (p.startsWith('/admin/')) {
@@ -314,7 +381,12 @@ export default {
           if (!HOME_TABLES.includes(table)) return json({ ok: false, error: 'table must be one of: ' + HOME_TABLES.join(', ') + '.' }, 400, cors);
           const cfg = await loadConfig(env);
           const pacer = new Pacer(env, cfg.s, { maxCalls: cfg.s.runs.maxCalls });
+          if (savePathOf(cfg, table) === 'd1') return json(await checkHome(env, cfg, pacer, table, by), 200, cors);   // v1.3.0: D1 wins
           return json(await syncHome(env, cfg, pacer, table, by), 200, cors);
+        }
+        if (p === '/admin/outbox/drain') {                                       // v1.3.0
+          const cfg = await loadConfig(env);
+          return json(await drainOutbox(env, cfg, { by, budgetMs: cfg.s.outbox.cronBudgetMs }), 200, cors);
         }
         if (p === '/admin/webhooks/delete') {                                    // v1.2.4
           const cfg = await loadConfig(env);
@@ -337,14 +409,22 @@ export default {
           return json({ ok: true, by, webhooks: await ensureWebhooks(needDb(env), pacer, cfg), meta: pacer.meta() }, 200, cors);
         }
       }
-      return json({ ok: false, error: 'Unknown route. See the v1.2.0 header.' }, 404, cors);
+      return json({ ok: false, error: 'Unknown route. See the v1.2.0 and v1.3.0 headers.' }, 404, cors);
     } catch (e) {
       return json({ ok: false, error: (e && e.message) || String(e), detail: (e && e.detail) || undefined }, (e && e.status) || 500, cors);
     }
   },
 
   async scheduled(event, env, ctx) {
-    try { await runCheck(env, { kind: 'nightly', by: 'cron ' + (event.cron || ''), fresh: false, budget: 'cron' }); }
+    const cron = String(event.cron || '');
+    let outboxCron = DEFAULTS.outboxCron;                                        // v1.3.0: the outbox's own trigger
+    try { const s = env.IX_KV ? await env.IX_KV.get(KV_KEYS.settings, 'json') : null; if (s && s.outboxCron) outboxCron = String(s.outboxCron); } catch (_) {}
+    if (cron && cron === outboxCron) {
+      try { const cfg = await loadConfig(env); await drainOutbox(env, cfg, { by: 'cron ' + cron, budgetMs: cfg.s.outbox.cronBudgetMs }); }
+      catch (e) { console.log('ix-content outbox drain failed: ' + ((e && e.message) || e)); }
+      return;
+    }
+    try { await runCheck(env, { kind: 'nightly', by: 'cron ' + cron, fresh: false, budget: 'cron' }); }
     catch (e) { console.log('ix-content nightly failed: ' + ((e && e.message) || e)); }
   },
 };
@@ -412,6 +492,8 @@ async function loadConfig(env) {
     runs: { ...DEFAULTS.runs, ...(settings.runs || {}) },
     webhooks: { ...DEFAULTS.webhooks, ...(settings.webhooks || {}) },
     burst: { ...DEFAULTS.burst, ...(settings.burst || {}) },
+    savePath: { ...DEFAULTS.savePath, ...(settings.savePath || {}) },          // v1.3.0
+    outbox: { ...DEFAULTS.outbox, ...(settings.outbox || {}) },                // v1.3.0
   };
   if (!ID24.test(s.siteId || '')) throw httpErr(500, KV_KEYS.settings + '.siteId is missing.');
   const t = s.tenancy || {};
@@ -706,7 +788,7 @@ async function runCheck(env, opts) {
       for (const t of HOME_TABLES) {
         if (!cfg.home[t] || report.home[t]) continue;
         if (outOfTime(20)) { await save('stopped'); return summary(run, report, state, false); }
-        try { report.home[t] = await syncHome(env, cfg, pacer, t, opts.by); }
+        try { report.home[t] = savePathOf(cfg, t) === 'd1' ? await checkHome(env, cfg, pacer, t, opts.by) : await syncHome(env, cfg, pacer, t, opts.by); }   // v1.3.0
         catch (e) { if (e && e.budget) throw e; report.home[t] = { ok: false, error: e.message }; report.errors.push(t + ': ' + e.message); }
         await save('running');
       }
@@ -714,7 +796,11 @@ async function runCheck(env, opts) {
     }
     if (state.phase === 'derive') {
       await derivePass(db, T, null);
-      if (opts.kind === 'nightly') await drainPending(db, pacer, cfg, 50, report);
+      if (opts.kind === 'nightly') await drainPending(db, pacer, cfg, 50, report, null, env);
+      if (opts.kind === 'nightly') {                                             // v1.3.0: what the trailing copy left
+        try { report.outbox = await drainOutbox(env, cfg, { by: 'nightly', budgetMs: cfg.s.outbox.cronBudgetMs }); }
+        catch (e) { report.errors.push('Outbox: ' + ((e && e.message) || e)); }
+      }
       state.phase = 'counts'; await save('running');
     }
     if (state.phase === 'counts') {
@@ -844,7 +930,7 @@ function summary(run, report, state, done) {
     ok: true, done, runId: run.run_id, kind: report.kind, by: report.by,
     next: done ? null : 'Stopped at its time or call limit at ' + (state.names[state.cols[state.i]] || state.phase) + '. Run the same call again to carry on.',
     drift, problems: report.problems, errors: report.errors, webhooks: report.webhooks, counts: report.counts, pruned: report.pruned,
-    home: report.home || null,
+    home: report.home || null, outbox: report.outbox || null,
     perCollection: Object.entries(report.perCollection).map(([id, pc]) => ({ id, ...pc })).sort((a, b) => a.name.localeCompare(b.name)),
     meta: { version: VERSION, ...(report.meta || {}), resumed: report.resumed || 0 },
   };
@@ -934,7 +1020,9 @@ async function handleHints(env, trigger, hints, signed, sigHeaders) {
     if (homeT) {
       // v1.1.1 · settle first: the save that caused this hint stores the row before the re-read looks.
       const settle = Math.max(0, Number(cfg.s.webhooks.homeSettleMs) || 0);
-      work.push(sleep(settle).then(() => coalesced(cfg, cid, h.itemId, () => refreshHomeOne(env, db, pacer, cfg, homeT, h.itemId, trigger, log, 'webhook')))
+      const d1first = savePathOf(cfg, homeT) === 'd1';                            // v1.3.0: D1 wins; the hint is only watched
+      work.push(sleep(settle).then(() => coalesced(cfg, cid, h.itemId, () => d1first ? watchHomeOne(env, db, pacer, cfg, homeT, h.itemId, trigger, log)
+        : refreshHomeOne(env, db, pacer, cfg, homeT, h.itemId, trigger, log, 'webhook')))
         .then(a => a === 'folded' ? log(cid, h.itemId, 'folded', 'a re-read for this item is already queued') : null));
       continue;
     }
@@ -1055,7 +1143,8 @@ async function drainPending(db, pacer, cfg, n, report, log, env) {   // env v1.2
   for (const p of list) {
     const homeT = homeTableOf(cfg, p.collection_id);                                 // v1.1.0
     if (homeT) {
-      const a = await refreshHomeOne(null, db, pacer, cfg, homeT, p.item_id, p.trigger_type, log, 'pending');
+      const a = savePathOf(cfg, homeT) === 'd1' ? await watchHomeOne(env || null, db, pacer, cfg, homeT, p.item_id, p.trigger_type, log, true)   // v1.3.0
+        : await refreshHomeOne(null, db, pacer, cfg, homeT, p.item_id, p.trigger_type, log, 'pending');
       if (a === 'deferred') break;
       done++; continue;
     }
@@ -1101,7 +1190,8 @@ async function homeSchema(pacer, cfg, table, fresh) {
   if (!r.data || !Array.isArray(r.data.fields)) throw httpErr(502, 'Webflow did not answer the ' + table + ' schema.');
   const fields = {};
   for (const f of r.data.fields) fields[f.slug] = { type: f.type, required: !!f.isRequired, editable: f.isEditable !== false,
-    options: f.validations && Array.isArray(f.validations.options) ? f.validations.options.map(o => ({ id: o.id, name: o.name })) : null };
+    options: f.validations && Array.isArray(f.validations.options) ? f.validations.options.map(o => ({ id: o.id, name: o.name })) : null,
+    ref: f.validations && f.validations.collectionId ? f.validations.collectionId : null };          // v1.3.0: links to a home table
   const ten = tenancyOf(h.collectionId, r.data, cfg.s.tenancy, h.tenancy || null);
   const hc = HOME_COLS[table];
   if (hc.tenancy === 'title' && !ten.titleAdmin) throw httpErr(500, table + ': no single field points at TITLES-ADMIN (' + ten.notes.join('; ') + '). Name it in ' + KV_KEYS.home + '.' + table + '.tenancy.titleAdmin.');
@@ -1126,7 +1216,7 @@ function schemaFactStmt(db, sch) {
 async function homeCidOfItem(db, cfg, itemId) {
   for (const t of HOME_TABLES) {
     if (!cfg.home[t]) continue;
-    const r = await db.prepare('SELECT 1 AS y FROM ' + t + ' WHERE id=?').bind(itemId).first();
+    const r = await db.prepare('SELECT 1 AS y FROM ' + t + ' WHERE id=? OR wf_id=?').bind(itemId, itemId).first();   // v1.3.0 wf_id
     if (r) return cfg.home[t].collectionId;
   }
   return null;
@@ -1167,7 +1257,7 @@ function contentKey(fields, draft, archived) { return canon(fields || {}) + '|' 
 function homeRowOf(item, sch, ten) {
   const fd = item.fieldData || {}, h = sch.h;
   const row = {
-    id: item.id, publisher_id: (ten && ten.publisher) || '', title_admin_id: (ten && ten.title) || '',
+    id: item.id, wf_id: item.id, publisher_id: (ten && ten.publisher) || '', title_admin_id: (ten && ten.title) || '',   // wf_id v1.3.0
     is_draft: item.isDraft ? 1 : 0, is_archived: item.isArchived ? 1 : 0, wf_updated: nn(item.lastUpdated),
     created_at: item.createdOn || iso(), fields: fd, plans: sch.plansSlug ? refValues(fd[sch.plansSlug]) : [],
   };
@@ -1210,8 +1300,10 @@ function storeHomeStmts(db, table, row, before, by, action, now) {
     before.title_admin_id === row.title_admin_id && before.publisher_id === row.publisher_id &&
     canon(extraVals(table, before)) === canon(extraVals(table, row));                   // v1.2.0: the table's own columns too
   if (same) {
-    const stmts = before.wf_updated === row.wf_updated ? [] : [db.prepare('UPDATE ' + table + ' SET wf_updated=? WHERE id=?').bind(row.wf_updated, row.id)];
-    return { stmts, row: { ...before, wf_updated: row.wf_updated }, changed: false, stamp: null };
+    const wfId = row.wf_id || before.wf_id || null;                                     // v1.3.0
+    const stmts = before.wf_updated === row.wf_updated && before.wf_id === wfId ? [] :
+      [db.prepare('UPDATE ' + table + ' SET wf_updated=?,wf_id=? WHERE id=?').bind(row.wf_updated, wfId, row.id)];
+    return { stmts, row: { ...before, wf_updated: row.wf_updated, wf_id: wfId }, changed: false, stamp: null };
   }
   const version = before ? before.version + 1 : 1;
   const stored = { ...row, version, updated_at: now, updated_by: by };
@@ -1221,14 +1313,14 @@ function storeHomeStmts(db, table, row, before, by, action, now) {
   const cols = c.cols, ex = extraVals(table, row);                                      // v1.2.0: columns from HOME_COLS
   if (before) {
     stmts.push(db.prepare('UPDATE ' + table + ' SET publisher_id=?,title_admin_id=?,' + cols.map(k => k + '=?').join(',') + ',version=?,fields=?,updated_at=?,updated_by=?,' +
-      'is_draft=?,is_archived=?,wf_updated=? WHERE id=? AND version=?')
+      'is_draft=?,is_archived=?,wf_updated=?,wf_id=COALESCE(?,wf_id) WHERE id=? AND version=?')                // wf_id v1.3.0
       .bind(row.publisher_id, row.title_admin_id, ...ex, version, JSON.stringify(row.fields), now, by,
-        row.is_draft, row.is_archived, row.wf_updated, row.id, before.version));
+        row.is_draft, row.is_archived, row.wf_updated, row.wf_id || null, row.id, before.version));
   } else {
-    stmts.push(db.prepare('INSERT INTO ' + table + ' (id,publisher_id,title_admin_id,' + cols.join(',') + ',version,fields,created_at,updated_at,updated_by,is_draft,is_archived,wf_updated) ' +
-      'VALUES (?,?,?,' + cols.map(() => '?').join(',') + ',?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING')
+    stmts.push(db.prepare('INSERT INTO ' + table + ' (id,publisher_id,title_admin_id,' + cols.join(',') + ',version,fields,created_at,updated_at,updated_by,is_draft,is_archived,wf_updated,wf_id) ' +
+      'VALUES (?,?,?,' + cols.map(() => '?').join(',') + ',?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING')
       .bind(row.id, row.publisher_id, row.title_admin_id, ...ex, version, JSON.stringify(row.fields), row.created_at, now, by,
-        row.is_draft, row.is_archived, row.wf_updated));
+        row.is_draft, row.is_archived, row.wf_updated, row.wf_id || null));
   }
   if (c.plansTable) {
     stmts.push(db.prepare('DELETE FROM ' + c.plansTable + ' WHERE ' + c.plansKey + '=? AND ' + won).bind(row.id, ...wonB));
@@ -1268,18 +1360,26 @@ function homeDeleteStmts(db, table, before, by, action, now) {
 
 // Store one Webflow item (already read) into its home table. Returns the stored row.
 // v1.1.1 · a store that lost to another store at the same moment re-reads D1 and tries again.
+// v1.3.0 · item is a Webflow item: its D1 row is found by wf_id (or by id, for rows that took Webflow's id), and the
+// D1 row keeps its own id and its own self-id value (a row made on "d1" has an id of its own).
 async function storeHomeItem(db, cfg, sch, item, by, action) {
   const ten = await tenancyOfItem(db, cfg, sch, item);                                 // v1.2.0
-  const row = homeRowOf(item, sch, ten);
+  const base = homeRowOf(item, sch, ten);
+  const asD1 = (before) => {
+    if (!before || before.id === item.id) return base;
+    return { ...base, id: before.id, fields: { ...base.fields, [sch.h.selfIdField]: before.id } };
+  };
+  const find = async () => (await readHomeRows(db, sch.table, 'WHERE t.wf_id=? OR t.id=? ORDER BY (t.wf_id=?) DESC LIMIT 1', [item.id, item.id, item.id]))[0] || null;
   for (let attempt = 0; attempt < 3; attempt++) {
     const now = iso();
-    const before = (await readHomeRows(db, sch.table, 'WHERE t.id=?', [item.id]))[0] || null;
+    const before = await find();
+    const row = asD1(before);
     const s = storeHomeStmts(db, sch.table, row, before, by, action, now);
     if (s.stmts.length) await db.batch(s.stmts);
-    if (!s.changed || await storeWon(db, sch.table, item.id, s.stamp)) return { row: s.row, changed: s.changed, before };
+    if (!s.changed || await storeWon(db, sch.table, row.id, s.stamp)) return { row: s.row, changed: s.changed, before };
   }
-  const now = (await readHomeRows(db, sch.table, 'WHERE t.id=?', [item.id]))[0] || null;
-  return { row: now || homeRowOf(item, sch, ten), changed: false, before: now, lostRace: true };
+  const now = await find();
+  return { row: now || base, changed: false, before: now, lostRace: true };
 }
 
 // One item, re-read from Webflow (webhook hint, pending drain).
@@ -1289,7 +1389,7 @@ async function refreshHomeOne(env, db, pacer, cfg, table, iid, trigger, log, by)
     const sch = await homeSchema(pacer, cfg, table, false);
     const r = await pacer.call('/collections/' + cid + '/items/' + iid);
     if (r.status === 404) {
-      const before = (await readHomeRows(db, table, 'WHERE t.id=?', [iid]))[0] || null;
+      const before = (await readHomeRows(db, table, 'WHERE t.wf_id=? OR t.id=?', [iid, iid]))[0] || null;   // v1.3.0 wf_id
       const stmts = [db.prepare('DELETE FROM pending_items WHERE collection_id=? AND item_id=?').bind(cid, iid)];
       if (before) stmts.push(...homeDeleteStmts(db, table, before, by, 'deleted-in-webflow', now));
       await db.batch(stmts);
@@ -1329,7 +1429,9 @@ async function syncHome(env, cfg, pacer, table, by) {
     items.push(...got);
     if (got.length < PAGE || (total != null && items.length >= total)) break;
   }
-  const have = new Map((await readHomeRows(db, table, '', [])).map(x => [x.id, x]));
+  const allRows = await readHomeRows(db, table, '', []);
+  const have = new Map(allRows.filter(x => x.wf_id || x.id).map(x => [x.wf_id || x.id, x]));   // v1.3.0: keyed by the Webflow id
+  const notInWebflowYet = allRows.filter(x => !x.wf_id && x.id).length;                       // v1.3.0: made on "d1", not yet copied
   const pubR = await db.prepare('SELECT item_id,publisher_id FROM copy_items WHERE collection_id=?').bind(cfg.s.tenancy.titlesAdmin).all();
   const pubOf = new Map((pubR.results || []).map(x => [x.item_id, x.publisher_id || '']));
   const planR = sch.hc.tenancy === 'plan' ? await db.prepare('SELECT item_id,title_admin_id FROM copy_items WHERE collection_id=?').bind(cfg.s.tenancy.plans).all() : { results: [] };
@@ -1341,16 +1443,18 @@ async function syncHome(env, cfg, pacer, table, by) {
     seen.add(it.id);
     const fdi = it.fieldData || {};
     const title = sch.hc.tenancy === 'title' ? (refValues(fdi[sch.titleSlug])[0] || '') : (titleOfPlanMap.get(refValues(fdi[sch.planSlug])[0] || '') || '');
-    const row = homeRowOf(it, sch, { title, publisher: pubOf.get(title) || '' });     // v1.2.0
+    let row = homeRowOf(it, sch, { title, publisher: pubOf.get(title) || '' });     // v1.2.0
     if (!row.title_admin_id) rep.rowsWithoutTitle++;
     else if (!row.publisher_id) rep.rowsWithoutPublisher++;
     const before = have.get(it.id) || null;
+    if (before && before.id !== it.id) row = { ...row, id: before.id, fields: { ...row.fields, [sch.h.selfIdField]: before.id } };   // v1.3.0
     const s = storeHomeStmts(db, table, row, before, tag, 'follow', now);
     if (!before) rep.added++; else if (s.changed) rep.changed++; else rep.unchanged++;
     stmts.push(...s.stmts);
   }
+  if (notInWebflowYet) rep.notes.push(notInWebflowYet + ' row(s) made on "d1" are not in Webflow yet; they were kept. Send the outbox (POST /admin/outbox/drain) before relying on "webflow".');
   if (total != null && seen.size >= total) {
-    for (const [id, before] of have) if (!seen.has(id)) { stmts.push(...homeDeleteStmts(db, table, before, tag, 'deleted-in-webflow', now)); rep.removed++; }
+    for (const [id, before] of have) if (!seen.has(id) && before.wf_id !== null) { stmts.push(...homeDeleteStmts(db, table, before, tag, 'deleted-in-webflow', now)); rep.removed++; }
   } else rep.notes.push('The list changed while it was read (' + seen.size + ' of ' + total + '), so nothing was removed this time.');
   for (const part of chunk(stmts, 100)) await db.batch(part);
   rep.d1Rows = (await db.prepare('SELECT COUNT(*) AS n FROM ' + table).first()).n;
@@ -1459,9 +1563,12 @@ async function checkFields(db, cfg, sch, taId, fields, planOk, lockPlan) {
   return { fd: out, errs };
 }
 
-// POST /<table>/batch. Every op is checked before anything is sent. Then ops go to Webflow in order; the first
-// Webflow refusal stops the rest (named "not sent"). Written items are published together, then stored in D1.
-async function homeBatchRoute(request, env, table) {
+// POST /<table>/batch. Every op is checked before anything is written.
+//   "webflow" (v1.1.0 to v1.2.x): ops go to Webflow in order; the first Webflow refusal stops the rest (named "not sent").
+//     Written items are published together, then stored in D1. v1.3.0: every Webflow call uses the row's wf_id.
+//   "d1" (v1.3.0): checked against D1 only, then the whole batch is one D1 transaction with its outbox lines; the trailing
+//     copy goes to Webflow after the reply (drainOutbox through ctx.waitUntil).
+async function homeBatchRoute(request, env, ctx, table) {
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== 'object') return { status: 400, body: { ok: false, error: 'The body must be JSON.' } };
   const taId = String(body.taId || '');
@@ -1477,8 +1584,9 @@ async function homeBatchRoute(request, env, table) {
   const cfg = await loadConfig(env);
   const h = homeCfg(cfg, table);
   const hc = HOME_COLS[table];
+  const d1first = savePathOf(cfg, table) === 'd1';                                     // v1.3.0
   const pacer = new Pacer(env, cfg.s, { burst: true, maxCalls: ops.length * 4 + 10 });
-  const sch = await homeSchema(pacer, cfg, table, true);
+  const sch = await homeSchema(pacer, cfg, table, !d1first);                           // v1.3.0: "d1" uses the 2-minute memo
   const cid = sch.collectionId;
 
   const pub = await publisherOfTitle(db, cfg, taId);
@@ -1492,7 +1600,7 @@ async function homeBatchRoute(request, env, table) {
     return planMemo.get(pid);
   };
 
-  // 1 · CHECK EVERY OP. Nothing is sent unless all pass.
+  // 1 · CHECK EVERY OP. Nothing is written unless all pass.
   const results = ops.map((o, i) => ({ i, op: o && o.op, ok: false, id: (o && o.id) || null, sent: false }));
   const plan = [];
   const seenIds = new Set();
@@ -1522,19 +1630,24 @@ async function homeBatchRoute(request, env, table) {
     if (!before) { res.error = 'not in ' + table + ' (reload the page)'; continue; }
     if (before.title_admin_id !== taId) { res.error = 'this row belongs to another title'; continue; }
     if (before.version !== o.version) { res.error = 'changed since this page read it (now version ' + before.version + '); reload it'; res.stale = true; res.row = shapeHome(before, await labelsOf(db, table)); continue; }
-    // Webflow is the master: re-read it, so a change made through Make or the Webflow editor is caught here.
-    const wf = await pacer.call('/collections/' + cid + '/items/' + o.id);
-    if (wf.status === 404) {
-      await db.batch(homeDeleteStmts(db, table, before, 'check · ' + by, 'deleted-in-webflow', iso()));
-      res.error = 'no longer in Webflow; it was removed from D1 too'; res.stale = true; continue;
+    if (!d1first) {
+      // "webflow": Webflow is the master, so re-read it; a change made through Make or the Webflow editor is caught here.
+      const wfId = before.wf_id || null;                                                 // v1.3.0
+      if (!wfId) { res.error = 'this row is not in Webflow yet (made while ' + table + ' was on "d1"); send the outbox, then try again'; continue; }
+      const wf = await pacer.call('/collections/' + cid + '/items/' + wfId);
+      if (wf.status === 404) {
+        await db.batch(homeDeleteStmts(db, table, before, 'check · ' + by, 'deleted-in-webflow', iso()));
+        res.error = 'no longer in Webflow; it was removed from D1 too'; res.stale = true; continue;
+      }
+      const fresh = homeRowOf(wf.data, sch, await tenancyOfItem(db, cfg, sch, wf.data));   // v1.2.0
+      const freshFields = before.id !== wfId ? { ...fresh.fields, [sch.h.selfIdField]: before.id } : fresh.fields;   // v1.3.0
+      if (contentKey(freshFields, fresh.is_draft, fresh.is_archived) !== contentKey(before.fields, before.is_draft, before.is_archived)) {
+        const s = await storeHomeItem(db, cfg, sch, wf.data, 'check · ' + by, 'follow');   // v1.1.1: conditional store
+        res.error = 'changed in Webflow since this page read it (now version ' + s.row.version + '); reload it'; res.stale = true;
+        res.row = shapeHome(s.row, await labelsOf(db, table)); continue;
+      }
     }
-    const fresh = homeRowOf(wf.data, sch, await tenancyOfItem(db, cfg, sch, wf.data));   // v1.2.0
-    if (contentKey(fresh.fields, fresh.is_draft, fresh.is_archived) !== contentKey(before.fields, before.is_draft, before.is_archived)) {
-      const s = await storeHomeItem(db, cfg, sch, wf.data, 'check · ' + by, 'follow');   // v1.1.1: conditional store
-      res.error = 'changed in Webflow since this page read it (now version ' + s.row.version + '); reload it'; res.stale = true;
-      res.row = shapeHome(s.row, await labelsOf(db, table)); continue;
-    }
-    if (before.is_archived && o.op !== 'delete') { res.error = 'this row is archived; unarchive it in the Webflow editor first'; continue; }
+    if (before.is_archived && o.op !== 'delete') { res.error = 'this row is removed (archived), so it cannot be changed'; continue; }
     if (o.op === 'remove') { plan.push({ i, op: 'remove', id: o.id, before }); continue; }
     if (o.op === 'delete') { plan.push({ i, op: 'delete', id: o.id, before, planId: before.plan_id || null }); continue; }   // v1.2.0: true delete
     const c = await checkFields(db, cfg, sch, taId, o.fields, planOk, sch.planSlug ? (before.plan_id || null) : null);
@@ -1544,7 +1657,7 @@ async function homeBatchRoute(request, env, table) {
   }
   if (results.some(r => r.error)) {
     return { status: 409, body: { ok: false, taId, error: 'Nothing was sent: ' + results.filter(r => r.error).length + ' of ' + ops.length + ' ops failed their check.',
-      results, meta: { version: VERSION, ...pacer.meta() } } };
+      results, meta: { version: VERSION, savePath: d1first ? 'd1' : 'webflow', ...pacer.meta() } } };
   }
 
   // 1b · THE RELEASE LOCK (v1.2.0, nl_blocks): each plan the batch touches is checked with ix-issue-data before anything is sent.
@@ -1559,11 +1672,14 @@ async function homeBatchRoute(request, env, table) {
     }
   }
 
-  // 2 · SEND, in order. The first Webflow refusal stops the rest.
+  if (d1first) return commitBatchD1(env, ctx, db, cfg, sch, table, taId, pub, plan, results, by, releaseMeta, pacer);   // v1.3.0
+
+  // 2 · SEND, in order. The first Webflow refusal stops the rest. (v1.3.0: Webflow calls use wf_id.)
   const written = [];
   let stopped = null;
   for (const p of plan) {
     const res = results[p.i];
+    const wfId = p.before ? (p.before.wf_id || p.id) : null;
     if (stopped) { res.error = 'not sent: an earlier op failed (' + stopped + ')'; continue; }
     try {
       if (p.op === 'create') {
@@ -1576,17 +1692,17 @@ async function homeBatchRoute(request, env, table) {
         written.push({ p, item: s.data && s.data.id ? s.data : c.data, publish: true });
       } else if (p.op === 'update') {
         res.sent = true;
-        const u = await pacer.call('/collections/' + cid + '/items/' + p.id, { method: 'PATCH', body: { fieldData: p.fd } });
+        const u = await pacer.call('/collections/' + cid + '/items/' + wfId, { method: 'PATCH', body: { fieldData: p.fd } });
         written.push({ p, item: u.data, publish: true });
       } else if (p.op === 'delete') {                                                   // v1.2.0 · true delete: live, then staged (HC-P-CH4-2)
         res.sent = true;
-        await deleteItemBoth(pacer, cid, p.id);
+        await deleteItemBoth(pacer, cid, wfId);
         written.push({ p, item: { id: p.id }, publish: false, deleted: true });
       } else {
         res.sent = true;
-        const u = await pacer.call('/collections/' + cid + '/items/' + p.id, { method: 'PATCH', body: { isArchived: true } });
+        const u = await pacer.call('/collections/' + cid + '/items/' + wfId, { method: 'PATCH', body: { isArchived: true } });
         let offLive = true;
-        try { await pacer.call('/collections/' + cid + '/items/' + p.id + '/live', { method: 'DELETE' }); }
+        try { await pacer.call('/collections/' + cid + '/items/' + wfId + '/live', { method: 'DELETE' }); }
         catch (e) { offLive = false; res.note = 'Archived, but Webflow did not take it off the live site: ' + e.message; }
         written.push({ p, item: u.data, publish: false, offLive });
       }
@@ -1613,29 +1729,376 @@ async function homeBatchRoute(request, env, table) {
     }
   }
 
-  // 4 · STORE what Webflow answered, and answer with the rows as stored.
-  const labelsFresh = {};
-  for (const [slug, f] of Object.entries(sch.fields)) if (f.options) labelsFresh[slug] = Object.fromEntries(f.options.map(o => [o.id, o.name]));
+  // 4 · STORE what Webflow answered, and answer with the rows as stored (v1.3.0: results[].id is the D1 id).
+  const labelsFresh = labelsOfSchema(sch);
   await db.batch([schemaFactStmt(db, sch)]);
   for (const w of written) {
     const res = results[w.p.i];
     if (!w.item || !w.item.id) { res.error = 'Webflow answered without the item'; continue; }
     if (w.deleted) {                                                                     // v1.2.0: the row is gone; change_log keeps it
-      const before = (await readHomeRows(db, table, 'WHERE t.id=?', [w.item.id]))[0] || w.p.before;
+      const before = (await readHomeRows(db, table, 'WHERE t.id=?', [w.p.id]))[0] || w.p.before;
       if (before) await db.batch(homeDeleteStmts(db, table, before, by, 'delete', iso()));
-      res.ok = true; res.deleted = true; res.id = w.item.id;
+      res.ok = true; res.deleted = true; res.id = w.p.id;
       continue;
     }
     const s = await storeHomeItem(db, cfg, sch, w.item, by, w.p.op);
     res.row = shapeHome(s.row, labelsFresh);
-    res.id = w.item.id;
+    res.id = s.row.id;
     if (w.unpublished) res.error = 'saved in Webflow but not published' + (published.error ? ' (' + published.error + ')' : '');
     else if (w.p.op === 'remove' && !w.offLive) res.error = res.note;
     else res.ok = true;
   }
   const allOk = results.every(r => r.ok);
   return { status: allOk ? 200 : 207, body: { ok: allOk, taId, results, published,
-    meta: { version: VERSION, by, source: 'webflow, then d1', ...(releaseMeta ? { releaseCheck: releaseMeta } : {}), ...pacer.meta() } } };
+    meta: { version: VERSION, by, source: 'webflow, then d1', savePath: 'webflow', ...(releaseMeta ? { releaseCheck: releaseMeta } : {}), ...pacer.meta() } } };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// D1 FIRST (v1.3.0) — one transaction per save, an outbox line per changed row, the trailing copy after the reply.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+function labelsOfSchema(sch) {
+  const labels = {};
+  for (const [slug, f] of Object.entries(sch.fields)) if (f.options) labels[slug] = Object.fromEntries(f.options.map(o => [o.id, o.name]));
+  return labels;
+}
+
+// A new row id: 24 hex characters, the shape Webflow's ids have (8 hex of seconds, then 16 random). HC-P-CH16-4.
+function newRowId() {
+  const t = Math.floor(Date.now() / 1000).toString(16).padStart(8, '0').slice(-8);
+  const b = new Uint8Array(8); crypto.getRandomValues(b);
+  return t + [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+// The whole transaction rolls back when this row is no longer at that version (HC-P-CH16-6).
+function guardStmt(db, table, id, version) {
+  return db.prepare('INSERT INTO save_guard (ok) SELECT 0 WHERE NOT EXISTS (SELECT 1 FROM ' + table + ' WHERE id=? AND version=?)').bind(id, version);
+}
+function outboxStmt(db, table, rowId, wfId, now) {
+  return db.prepare('INSERT INTO wf_outbox (table_name,row_id,wf_id,queued_at) VALUES (?,?,?,?)').bind(table, rowId, wfId || null, now);
+}
+function isGuardTrip(e) { return /CHECK constraint failed/i.test(String((e && e.message) || e)); }
+
+// A D1 row built from fields, the same way a Webflow item becomes a row (homeRowOf), without a Webflow id.
+function d1Row(sch, id, fields, ten, flags, createdAt) {
+  const row = homeRowOf({ id, fieldData: fields, isDraft: !!(flags && flags.draft), isArchived: !!(flags && flags.archived), createdOn: createdAt || iso(), lastUpdated: null }, sch, ten);
+  row.wf_id = null; row.wf_updated = (flags && flags.wfUpdated) || null;
+  return row;
+}
+
+// The fields of a new D1-made row: its slug and self-id are its own id (HC-P-CH16-5).
+function newRowFields(sch, id, fd) {
+  const out = { ...fd, [sch.h.selfIdField]: id };
+  out.slug = id;
+  return out;
+}
+
+async function commitBatchD1(env, ctx, db, cfg, sch, table, taId, pub, plan, results, by, releaseMeta, pacer) {
+  const now = iso();
+  const labels = labelsOfSchema(sch);
+  const guards = [], writes = [], done = [];
+  for (const p of plan) if (p.op !== 'create') guards.push(guardStmt(db, table, p.id, p.before.version));
+  for (const p of plan) {
+    if (p.op === 'create') {
+      const id = newRowId();
+      const row = d1Row(sch, id, newRowFields(sch, id, p.fd), { title: taId, publisher: pub }, null, now);
+      const s = storeHomeStmts(db, table, row, null, by, 'create', now);
+      writes.push(...s.stmts, outboxStmt(db, table, id, null, now));
+      done.push({ p, row: s.row });
+    } else if (p.op === 'delete') {
+      writes.push(...homeDeleteStmts(db, table, p.before, by, 'delete', now), outboxStmt(db, table, p.id, p.before.wf_id || null, now));
+      done.push({ p, deleted: true });
+    } else {
+      const b = p.before;
+      const fields = p.op === 'update' ? { ...b.fields, ...p.fd } : b.fields;
+      const row = d1Row(sch, b.id, fields, { title: b.title_admin_id, publisher: b.publisher_id },
+        { draft: b.is_draft, archived: p.op === 'remove' ? true : b.is_archived, wfUpdated: b.wf_updated }, b.created_at);
+      row.wf_id = b.wf_id || null;
+      const s = storeHomeStmts(db, table, row, b, by, p.op, now);
+      if (s.changed) writes.push(...s.stmts, outboxStmt(db, table, b.id, b.wf_id || null, now));
+      done.push({ p, row: s.row });
+    }
+  }
+  try {
+    await db.batch([schemaFactStmt(db, sch), ...guards, ...writes]);
+  } catch (e) {
+    if (!isGuardTrip(e)) throw e;
+    // A row moved between the check and the write. Nothing was written; name the rows that moved.
+    for (const p of plan) {
+      const res = results[p.i];
+      if (p.op === 'create') { res.error = 'not written: another row in this save changed meanwhile'; continue; }
+      const now2 = (await readHomeRows(db, table, 'WHERE t.id=?', [p.id]))[0] || null;
+      if (!now2) { res.error = 'deleted since this page read it; reload it'; res.stale = true; continue; }
+      if (now2.version !== p.before.version) { res.error = 'changed since this page read it (now version ' + now2.version + '); reload it'; res.stale = true; res.row = shapeHome(now2, labels); continue; }
+      res.error = 'not written: another row in this save changed meanwhile';
+    }
+    return { status: 409, body: { ok: false, taId, error: 'Nothing was saved: a row changed while this save was being checked. Reload and try again.', results,
+      meta: { version: VERSION, by, savePath: 'd1', ...(releaseMeta ? { releaseCheck: releaseMeta } : {}), ...pacer.meta() } } };
+  }
+  for (const d of done) {
+    const res = results[d.p.i];
+    res.sent = true; res.ok = true;
+    if (d.deleted) { res.deleted = true; res.id = d.p.id; continue; }
+    res.id = d.row.id; res.row = shapeHome(d.row, labels);
+  }
+  const n = done.filter(d => !d.deleted).length;
+  queueDrain(env, ctx, cfg, 'save · ' + by);
+  return { status: 200, body: { ok: true, taId, results, published: { asked: n, done: n, error: null, trailing: 'queued' },
+    meta: { version: VERSION, by, source: 'd1, then webflow (trailing copy)', savePath: 'd1', ...(releaseMeta ? { releaseCheck: releaseMeta } : {}), ...pacer.meta() } } };
+}
+
+// Send the outbox after the reply. Never throws into the save.
+function queueDrain(env, ctx, cfg, by) {
+  const p = drainOutbox(env, cfg, { by, budgetMs: cfg.s.outbox.saveBudgetMs }).catch(e => console.log('ix-content outbox: ' + ((e && e.message) || e)));
+  if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(p);
+}
+
+// ── What Webflow should hold for a D1 row ──
+// Only editable fields the schema knows. The self-id is the Webflow id. A link to a home table is written as that row's
+// Webflow id (wfMap: D1 id → Webflow id). Pictures are sent as url (and alt). Returns { fd, waits[] }.
+async function homeWfMap(db) {
+  const m = new Map();
+  for (const t of HOME_TABLES) {
+    const r = await db.prepare('SELECT id,wf_id FROM ' + t).all();
+    (r.results || []).forEach(x => m.set(x.id, x.wf_id || null));
+  }
+  return m;
+}
+function homeCollectionIds(cfg) { return new Set(HOME_TABLES.map(t => cfg.home[t] && cfg.home[t].collectionId).filter(Boolean)); }
+function picOut(v) {
+  if (!v || typeof v !== 'object' || !v.url) return null;
+  return v.alt ? { url: v.url, alt: v.alt } : { url: v.url };
+}
+function wfFields(cfg, sch, row, wfId, wfMap) {
+  const homeCols = homeCollectionIds(cfg);
+  const fd = {}, waits = [];
+  const tr = (x) => { if (!wfMap.has(x)) return x; const w = wfMap.get(x); if (!w) waits.push(x); return w || null; };
+  for (const [slug, v] of Object.entries(row.fields || {})) {
+    const f = sch.fields[slug];
+    if (!f || !f.editable) continue;
+    if (slug === sch.h.selfIdField) { if (wfId) fd[slug] = wfId; continue; }
+    if (f.type === 'Image' || f.type === 'File') { fd[slug] = picOut(v); continue; }
+    if (f.type === 'MultiImage') { fd[slug] = Array.isArray(v) ? v.map(picOut).filter(Boolean) : []; continue; }
+    if (f.ref && homeCols.has(f.ref)) {
+      if (f.type === 'Reference') fd[slug] = v ? tr(v) : null;
+      else if (f.type === 'MultiReference') fd[slug] = (Array.isArray(v) ? v : []).map(tr).filter(Boolean);
+      continue;
+    }
+    fd[slug] = v === undefined ? null : v;
+  }
+  return { fd, waits };
+}
+
+// Which fields differ between what Webflow should hold and what it holds. Empty, null, false and [] count as the same;
+// pictures compare by url. The slug is left out (Webflow may own it on old rows).
+function isBlank(v) { return v == null || v === '' || v === false || (Array.isArray(v) && !v.length); }
+function sameVal(a, b) {
+  if (isBlank(a) && isBlank(b)) return true;
+  if (a && typeof a === 'object' && !Array.isArray(a) && a.url !== undefined) return !!b && typeof b === 'object' && b.url === a.url;
+  if (Array.isArray(a) && a.length && a[0] && typeof a[0] === 'object' && a[0].url !== undefined)
+    return Array.isArray(b) && b.length === a.length && a.every((x, i) => b[i] && b[i].url === x.url);
+  if (typeof a === 'number' || typeof b === 'number') return Number(a) === Number(b);
+  const DAY = /^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/;                                 // a date sent as a day comes back as a timestamp
+  if (typeof a === 'string' && typeof b === 'string' && DAY.test(a) && DAY.test(b)) return Date.parse(a) === Date.parse(b);
+  return canon(a) === canon(b);
+}
+function wfDiff(expected, archived, item) {
+  const fd = (item && item.fieldData) || {}, keys = [];
+  for (const [k, v] of Object.entries(expected)) { if (k === 'slug') continue; if (!sameVal(v, fd[k])) keys.push(k); }
+  if (!!archived !== !!(item && item.isArchived)) keys.push('(archived)');
+  return keys;
+}
+
+// ── The drain ──
+// One at a time: a lease in site_facts (HC-P-CH16-7). Returns false when another drain holds it.
+async function takeLease(db, ms) {
+  const now = iso(), until = new Date(Date.now() + ms).toISOString(), tag = Math.random().toString(36).slice(2, 10);
+  const r = await db.prepare("INSERT INTO site_facts (k,v_json,at) VALUES ('outbox:lock',?,?) ON CONFLICT(k) DO UPDATE SET v_json=excluded.v_json,at=excluded.at WHERE site_facts.at<?")
+    .bind(JSON.stringify({ tag }), until, now).run();
+  return (r.meta && r.meta.changes) ? tag : null;
+}
+async function dropLease(db, tag) {
+  await db.prepare("UPDATE site_facts SET at=? WHERE k='outbox:lock' AND v_json=?").bind('1970-01-01T00:00:00.000Z', JSON.stringify({ tag })).run();
+}
+
+// Send waiting outbox lines to Webflow, oldest first; several lines for one row are one send (the row as D1 holds it now).
+async function drainOutbox(env, cfg, opts) {
+  const db = needDb(env);
+  const o = cfg.s.outbox;
+  const budgetMs = (opts && opts.budgetMs) || o.saveBudgetMs;
+  const deadline = Date.now() + budgetMs;
+  const rep = { ok: true, by: (opts && opts.by) || null, at: iso(), rows: 0, created: 0, updated: 0, removed: 0, deleted: 0, adopted: 0, failed: 0,
+    waiting: null, published: {}, errors: [], busy: false };
+  const tag = await takeLease(db, budgetMs + 15000);
+  if (!tag) { rep.busy = true; rep.note = 'Another drain is running.'; return rep; }
+  try {
+    const lines = (await db.prepare('SELECT * FROM wf_outbox WHERE done_at IS NULL ORDER BY seq LIMIT ?').bind(o.perDrain * 4).all()).results || [];
+    const groups = new Map();
+    for (const l of lines) { const k = l.table_name + ':' + l.row_id; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(l); }
+    if (groups.size) {
+      const pacer = new Pacer(env, cfg.s, { burst: true, maxCalls: Math.min(groups.size, o.perDrain) * 4 + 12 });
+      const schemas = {};
+      const wfMap = await homeWfMap(db);
+      const pub = {};
+      let n = 0;
+      for (const [, ls] of groups) {
+        if (n >= o.perDrain || Date.now() > deadline - 3000 || pacer.budgetLeft() < 6) break;
+        n++;
+        const table = ls[0].table_name, rowId = ls[0].row_id, seqs = ls.map(l => l.seq);
+        const mark = async (err) => {
+          if (err) await db.prepare('UPDATE wf_outbox SET tries=tries+1,last_try_at=?,last_error=? WHERE seq IN (' + seqs.map(() => '?').join(',') + ')').bind(iso(), String(err).slice(0, 300), ...seqs).run();
+          else await db.prepare('UPDATE wf_outbox SET done_at=?,last_try_at=? WHERE seq IN (' + seqs.map(() => '?').join(',') + ')').bind(iso(), iso(), ...seqs).run();
+        };
+        try {
+          if (!HOME_TABLES.includes(table) || !cfg.home[table]) { await mark(null); continue; }
+          const sch = schemas[table] || (schemas[table] = await homeSchema(pacer, cfg, table, false));
+          const cid = sch.collectionId;
+          const row = (await readHomeRows(db, table, 'WHERE t.id=?', [rowId]))[0] || null;
+          rep.rows++;
+          if (!row) {                                                                    // deleted in D1: delete the Webflow copy
+            const wfId = (ls.map(l => l.wf_id).filter(Boolean).pop()) || wfMap.get(rowId) || null;
+            if (wfId) await deleteItemBoth(pacer, cid, wfId);
+            rep.deleted++; await mark(null); continue;
+          }
+          let wfId = row.wf_id || null;
+          const tried = ls.some(l => l.tries > 0);
+          if (!wfId && tried) {                                                          // a create that may have landed: find it by slug
+            const f = await pacer.call('/collections/' + cid + '/items?slug=' + encodeURIComponent(String((row.fields || {}).slug || row.id)));
+            const hit = ((f.data && f.data.items) || []).find(it => String((it.fieldData || {}).slug || '') === String((row.fields || {}).slug || row.id));
+            if (hit) { wfId = hit.id; rep.adopted++; }
+          }
+          let item = null;
+          if (wfId) {
+            const { fd, waits } = wfFields(cfg, sch, row, wfId, wfMap);
+            if (waits.length) throw new Error('waits for ' + waits.join(', ') + ' to reach Webflow first');
+            const u = await pacer.call('/collections/' + cid + '/items/' + wfId, { method: 'PATCH', body: { isArchived: !!row.is_archived, isDraft: false, fieldData: fd } });
+            if (u.status === 404) wfId = null; else { item = u.data; rep.updated++; }
+          }
+          if (!wfId) {
+            const { fd, waits } = wfFields(cfg, sch, row, null, wfMap);
+            if (waits.length) throw new Error('waits for ' + waits.join(', ') + ' to reach Webflow first');
+            if (!fd.slug) fd.slug = String((row.fields || {}).slug || row.id);
+            const c = await pacer.call('/collections/' + cid + '/items', { method: 'POST', body: { isArchived: !!row.is_archived, isDraft: false, fieldData: fd } });
+            wfId = c.data && c.data.id;
+            if (!wfId) throw new Error('Webflow created nothing (no id came back)');
+            await db.prepare('UPDATE ' + table + ' SET wf_id=? WHERE id=?').bind(wfId, row.id).run();   // at once: a retry never makes it twice
+            wfMap.set(row.id, wfId);
+            const s = await pacer.call('/collections/' + cid + '/items/' + wfId, { method: 'PATCH', body: { fieldData: { [sch.h.selfIdField]: wfId } } });
+            item = s.data && s.data.id ? s.data : c.data;
+            rep.created++;
+          }
+          await db.prepare('UPDATE ' + table + ' SET wf_id=?,wf_updated=? WHERE id=?').bind(wfId, nn(item && item.lastUpdated), row.id).run();
+          if (row.is_archived) {
+            try { await pacer.call('/collections/' + cid + '/items/' + wfId + '/live', { method: 'DELETE' }); } catch (e) { if (e && (e.unsure || e.busy)) throw e; }
+            rep.removed++;
+          } else (pub[cid] || (pub[cid] = [])).push(wfId);
+          await mark(null);
+        } catch (e) {
+          rep.failed++;
+          rep.errors.push(table + ' ' + rowId + ': ' + ((e && e.message) || e));
+          await mark((e && e.message) || String(e));
+          if (e && e.budget) break;
+        }
+      }
+      for (const [cid, ids] of Object.entries(pub)) {
+        for (const part of chunk(ids, 100)) {
+          try {
+            const r = await publishItems(pacer, cid, part);
+            rep.published[cid] = (rep.published[cid] || 0) + (((r.data && r.data.publishedItemIds) || []).length);
+          } catch (e) { rep.errors.push('publish ' + cid + ': ' + e.message); }
+        }
+      }
+      rep.meta = pacer.meta();
+    }
+    const w = await db.prepare('SELECT COUNT(*) AS n, MIN(queued_at) AS oldest FROM wf_outbox WHERE done_at IS NULL').first();
+    rep.waiting = w ? w.n : null; rep.oldest = w ? w.oldest : null;
+    rep.ok = !rep.failed && !rep.errors.length;
+    await db.prepare('INSERT OR REPLACE INTO site_facts (k,v_json,at) VALUES (?,?,?)').bind('outbox:last', JSON.stringify(rep), rep.at).run();
+    await db.prepare('DELETE FROM wf_outbox WHERE done_at IS NOT NULL AND done_at<?').bind(new Date(Date.now() - cfg.s.webhooks.logDays * 86400e3).toISOString()).run();
+    return rep;
+  } finally {
+    await dropLease(db, tag).catch(() => {});
+  }
+}
+
+// ── "d1": a Webflow hint for a home item is watched, never stored ──
+// Our own copies (an outbox line for the row still waiting or done within echoMs) are "echo". Otherwise Webflow is
+// compared with D1: a difference is "outside" and the row is queued to be copied again (D1 wins).
+async function watchHomeOne(env, db, pacer, cfg, table, iid, trigger, log, fromPending) {
+  const h = cfg.home[table], cid = h.collectionId, now = iso();
+  const L = log || (async () => {});
+  const recent = new Date(Date.now() - cfg.s.outbox.echoMs).toISOString();
+  try {
+    const row = (await readHomeRows(db, table, 'WHERE t.wf_id=? OR t.id=? ORDER BY (t.wf_id=?) DESC LIMIT 1', [iid, iid, iid]))[0] || null;
+    const echo = await db.prepare('SELECT 1 AS y FROM wf_outbox WHERE table_name=? AND (row_id=? OR wf_id=?) AND (done_at IS NULL OR done_at>?) LIMIT 1')
+      .bind(table, row ? row.id : iid, iid, recent).first();
+    if (echo) { await db.prepare('DELETE FROM pending_items WHERE collection_id=? AND item_id=?').bind(cid, iid).run(); await L(cid, iid, 'echo', table + ': ix-content\'s own copy'); return 'echo'; }
+    const sch = await homeSchema(pacer, cfg, table, false);
+    const r = await pacer.call('/collections/' + cid + '/items/' + iid);
+    await db.prepare('DELETE FROM pending_items WHERE collection_id=? AND item_id=?').bind(cid, iid).run();
+    if (r.status === 404) {
+      if (row) { await db.batch([outboxStmt(db, table, row.id, row.wf_id, now)]); await L(cid, iid, 'outside', table + ': deleted in Webflow outside ix-content; queued to be copied again (D1 wins)'); return 'outside'; }
+      await L(cid, iid, 'gone', table + ': not in Webflow and not in D1'); return 'gone';
+    }
+    const item = r.data && r.data.id ? r.data : null;
+    if (!item) { await L(cid, iid, 'error', 'Webflow answered without an item'); return 'error'; }
+    if (!row) { await L(cid, iid, 'outside', table + ': Webflow holds an item ix-content does not (made outside ix-content); D1 does not take it in'); return 'outside'; }
+    const { fd } = wfFields(cfg, sch, row, row.wf_id || iid, await homeWfMap(db));
+    const diff = wfDiff(fd, row.is_archived, item);
+    if (!diff.length) { await L(cid, iid, 'same', table + ': Webflow matches D1'); return 'same'; }
+    await db.batch([outboxStmt(db, table, row.id, row.wf_id, now)]);
+    await L(cid, iid, 'outside', table + ': changed outside ix-content (' + diff.slice(0, 12).join(', ') + '); queued to be copied again (D1 wins)');
+    if (env && !fromPending) queueDrain(env, null, cfg, 'outside');
+    return 'outside';
+  } catch (e) {
+    if (e && (e.busy || e.budget)) {
+      await db.prepare('INSERT INTO pending_items (collection_id,item_id,trigger_type,queued_at,tries) VALUES (?,?,?,?,1) ' +
+        'ON CONFLICT(collection_id,item_id) DO UPDATE SET tries=pending_items.tries+1').bind(cid, iid, trigger, now).run();
+      await L(cid, iid, 'deferred', e.message);
+      return 'deferred';
+    }
+    await L(cid, iid, 'error', (e && e.message) || String(e));
+    return 'error';
+  }
+}
+
+// ── "d1": the nightly check and /admin/backfill-home compare every row with Webflow and queue what differs ──
+async function checkHome(env, cfg, pacer, table, by) {
+  const db = needDb(env);
+  const sch = await homeSchema(pacer, cfg, table, true);
+  const cid = sch.collectionId, now = iso();
+  const items = [];
+  let total = null;
+  for (let offset = 0; ; offset += PAGE) {
+    const r = await pacer.call('/collections/' + cid + '/items?limit=' + PAGE + '&offset=' + offset);
+    const got = (r.data && r.data.items) || [];
+    total = r.data && r.data.pagination ? r.data.pagination.total : null;
+    items.push(...got);
+    if (got.length < PAGE || (total != null && items.length >= total)) break;
+  }
+  const byWf = new Map(items.map(it => [it.id, it]));
+  const rows = await readHomeRows(db, table, '', []);
+  const waiting = new Set(((await db.prepare('SELECT row_id FROM wf_outbox WHERE table_name=? AND done_at IS NULL').bind(table).all()).results || []).map(x => x.row_id));
+  const wfMap = await homeWfMap(db);
+  const rep = { ok: true, table, savePath: 'd1', by, webflowTotal: total, d1Rows: rows.length, same: 0, alreadyWaiting: 0, notInWebflow: 0, differ: 0,
+    differing: [], onlyInWebflow: [], queued: 0, notes: [] };
+  const stmts = [schemaFactStmt(db, sch)], mine = new Set();
+  for (const row of rows) {
+    if (row.wf_id) mine.add(row.wf_id);
+    if (waiting.has(row.id)) { rep.alreadyWaiting++; continue; }
+    const item = row.wf_id ? byWf.get(row.wf_id) : null;
+    if (!item) { rep.notInWebflow++; stmts.push(outboxStmt(db, table, row.id, row.wf_id, now)); rep.queued++; continue; }
+    const { fd } = wfFields(cfg, sch, row, row.wf_id, wfMap);
+    const diff = wfDiff(fd, row.is_archived, item);
+    if (!diff.length) { rep.same++; continue; }
+    rep.differ++; if (rep.differing.length < 20) rep.differing.push({ id: row.id, fields: diff.slice(0, 8) });
+    stmts.push(outboxStmt(db, table, row.id, row.wf_id, now)); rep.queued++;
+  }
+  for (const it of items) if (!mine.has(it.id)) rep.onlyInWebflow.push({ id: it.id, name: String((it.fieldData || {}).name || '') });
+  if (rep.onlyInWebflow.length) rep.notes.push(rep.onlyInWebflow.length + ' Webflow item(s) are not in D1 (made outside ix-content, or a delete that did not reach Webflow). Nothing was changed for them.');
+  rep.onlyInWebflow = rep.onlyInWebflow.slice(0, 20);
+  for (const part of chunk(stmts, 100)) await db.batch(part);
+  rep.meta = pacer.meta();
+  return rep;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -1733,11 +2196,12 @@ async function collectionSchema(pacer, cid) {
 }
 
 // Values for a collection, from { slug: raw }, each checked against the schema (options by name). Throws on the first fault.
-function fieldsFor(sch, raw, where) {
+function fieldsFor(sch, raw, where, skipped) {                                  // skipped v1.3.1: a list → unknown fields are named, not fatal
   const fd = {};
   for (const [slug, v] of Object.entries(raw)) {
-    if (v === undefined) continue;
+    if (v === undefined || slug === 'undefined' || !slug) continue;
     const f = sch.fields[slug];
+    if (!f && Array.isArray(skipped)) { skipped.push(where + '.' + slug); continue; }
     if (!f) throw httpErr(500, where + ': ' + sch.name + ' has no field "' + slug + '". Fix the slug in ' + KV_KEYS.home + '.nl_blocks.hydrate.');
     const r = fieldValue(slug, f, v);
     if (r.err) throw httpErr(400, where + ': ' + r.err);
@@ -1755,9 +2219,9 @@ function hydrateCfg(h) {
   if (!y || typeof y !== 'object') throw httpErr(500, KV_KEYS.home + '.nl_blocks.hydrate is missing.');
   if (!ID24.test(y.newsletterCollectionId || '')) throw httpErr(500, KV_KEYS.home + '.nl_blocks.hydrate.newsletterCollectionId is missing.');
   const need = (o, keys, name) => { for (const k of keys) if (!o || !o[k]) throw httpErr(500, KV_KEYS.home + '.nl_blocks.hydrate.' + name + '.' + k + ' is missing.'); };
-  need(y.planFields, ['name', 'slug', 'titleAdmin', 'issueNumber', 'issueNumberDisplay', 'publicationDate', 'planningStatus', 'editionLetter', 'taThreeDigitId', 'selfId', 'newsletterItemId', 'newsletterLink', 'designJson'], 'planFields');
+  need(y.planFields, ['name', 'slug', 'titleAdmin', 'issueNumber', 'issueNumberDisplay', 'publicationDate', 'planningStatus', 'editionLetter', 'selfId', 'newsletterItemId', 'newsletterLink', 'designJson'], 'planFields');
   need(y.nlFields, ['name', 'slug', 'title', 'sector', 'issueNo', 'publishDate', 'plan', 'sendZipCodes', 'status', 'selfId'], 'nlFields');
-  need(y.taFields, ['title', 'threeDigit'], 'taFields');
+  need(y.taFields, ['title'], 'taFields');                                         // v1.3.1: threeDigit optional
   need(y.rowFields, ['name', 'slotKey', 'planningNote', 'assetType', 'endGroup', 'design', 'designId'], 'rowFields');
   if (!y.planStatusOnCreate || !y.nlStatusOnCreate) throw httpErr(500, KV_KEYS.home + '.nl_blocks.hydrate.planStatusOnCreate and nlStatusOnCreate are required (option names).');
   if (!y.nlBaseUrl) throw httpErr(500, KV_KEYS.home + '.nl_blocks.hydrate.nlBaseUrl is missing.');
@@ -1777,7 +2241,7 @@ function hydrateCfg(h) {
 //   What a call made is deleted again if a later step fails: the reply says what was undone. Webflow is the master,
 //   so the undo is a best effort named in the reply, never assumed.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-async function hydrateRoute(request, env, mode) {
+async function hydrateRoute(request, env, ctx, mode) {
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== 'object') return { status: 400, body: { ok: false, error: 'The body must be JSON.' } };
   const taId = String(body.taId || '');
@@ -1797,11 +2261,15 @@ async function hydrateRoute(request, env, mode) {
   const T = cfg.s.tenancy;
   const tag = mode;
   const op = String(body.op || '').trim();
+  const hx = { ctx, d1first: savePathOf(cfg, 'nl_blocks') === 'd1', taId, pub };          // v1.3.0
   try {
-    if (op === 'refresh') return await refreshPlan(db, env, cfg, pacer, sch, y, taId, body, by);
-    if (mode === 'clone' && !ID24.test(String(body.sourcePubplanId || ''))) return { status: 400, body: { ok: false, error: 'sourcePubplanId (the plan to copy) is required.' } };
-    if (mode === 'hydrate' && body.sourcePubplanId) return { status: 400, body: { ok: false, error: 'A clone goes to /nl-blocks/clone.' } };
-    return await addOrClone(db, env, cfg, pacer, sch, y, taId, body, by, mode === 'clone' ? 'clone' : 'add');
+    let out;
+    if (op === 'refresh') out = await refreshPlan(db, env, cfg, pacer, sch, y, taId, body, by, hx);
+    else if (mode === 'clone' && !ID24.test(String(body.sourcePubplanId || ''))) return { status: 400, body: { ok: false, error: 'sourcePubplanId (the plan to copy) is required.' } };
+    else if (mode === 'hydrate' && body.sourcePubplanId) return { status: 400, body: { ok: false, error: 'A clone goes to /nl-blocks/clone.' } };
+    else out = await addOrClone(db, env, cfg, pacer, sch, y, taId, body, by, mode === 'clone' ? 'clone' : 'add', hx);
+    if (hx.d1first) { queueDrain(env, ctx, cfg, tag + ' · ' + by); if (out && out.body && out.body.meta) out.body.meta.savePath = 'd1'; }
+    return out;
   } catch (e) {
     return { status: (e && e.status) || 500, body: { ok: false, error: (e && e.message) || String(e), detail: (e && e.detail) || undefined, meta: { version: VERSION, by, tag, ...pacer.meta() } } };
   }
@@ -1828,7 +2296,9 @@ function rowFromLayout(sch, y, planId, planName, lr) {
 
 // Create rows in Webflow (create, self-id), publish them together, store them in D1. Returns { items, results }.
 // Throws after undoing every row it made when a create fails.
-async function createRows(db, cfg, pacer, sch, rawRows, by, action, undo) {
+// v1.3.0 · on "d1" (hx.d1first): every row in ONE D1 transaction with its outbox lines, plus extraStmts (Refresh's deletes).
+async function createRows(db, cfg, pacer, sch, rawRows, by, action, undo, hx, extraStmts) {
+  if (hx && hx.d1first) return createRowsD1(db, cfg, sch, rawRows, by, action, undo, hx, extraStmts || []);
   const cid = sch.collectionId, items = [], results = [];
   for (let i = 0; i < rawRows.length; i++) {
     const fd = fieldsFor(sch, rawRows[i], 'row ' + (i + 1));
@@ -1854,18 +2324,42 @@ async function createRows(db, cfg, pacer, sch, rawRows, by, action, undo) {
   await db.batch([schemaFactStmt(db, sch)]);
   for (const it of items) {
     const s = await storeHomeItem(db, cfg, sch, it, by, action);
-    results.push({ ok: true, id: it.id, row: shapeHome(s.row, labels) });
+    results.push({ ok: true, id: s.row.id, row: shapeHome(s.row, labels) });
   }
   return { items, results, published };
+}
+
+async function createRowsD1(db, cfg, sch, rawRows, by, action, undo, hx, extraStmts) {
+  const now = iso(), stmts = [schemaFactStmt(db, sch)], rows = [], ids = [];
+  for (let i = 0; i < rawRows.length; i++) {
+    const fd = fieldsFor(sch, rawRows[i], 'row ' + (i + 1));
+    for (const [slug, f] of Object.entries(sch.fields))
+      if (f.required && f.editable && slug !== 'slug' && slug !== sch.h.selfIdField && (fd[slug] == null || fd[slug] === '')) throw httpErr(400, 'row ' + (i + 1) + ': ' + slug + ' is required');
+    const id = newRowId();
+    const row = d1Row(sch, id, newRowFields(sch, id, fd), { title: hx.taId, publisher: hx.pub }, null, now);
+    const s = storeHomeStmts(db, 'nl_blocks', row, null, by, action, now);
+    stmts.push(...s.stmts, outboxStmt(db, 'nl_blocks', id, null, now));
+    rows.push(s.row); ids.push(id);
+  }
+  stmts.push(...extraStmts);
+  await db.batch(stmts);                                                     // all rows, or none
+  undo.rows.push(...ids);
+  const labels = labelsOfSchema(sch);
+  return { items: rows, results: rows.map(r => ({ ok: true, id: r.id, row: shapeHome(r, labels) })),
+    published: { asked: rows.length, done: rows.length, error: null, trailing: 'queued' } };
 }
 
 // Undo what a hydrate or clone made, in reverse order: rows, NEWSLETTER, plan. Best effort; every miss is named.
 async function undoCreated(db, cfg, pacer, sch, y, undo) {
   const out = { rows: 0, newsletter: false, plan: false, errors: [] };
   const un = new Pacer({ WEBFLOW_TOKEN: pacer.token }, cfg.s, { burst: true, maxCalls: undo.rows.length * 2 + 8 });
-  for (const id of undo.rows) {
-    try { await deleteItemBoth(un, sch.collectionId, id); out.rows++; } catch (e) { out.errors.push('row ' + id + ': ' + e.message); }
-    try { const before = (await readHomeRows(db, 'nl_blocks', 'WHERE t.id=?', [id]))[0]; if (before) await db.batch(homeDeleteStmts(db, 'nl_blocks', before, 'undo', 'undo', iso())); } catch (_) {}
+  for (const id of undo.rows) {                                               // v1.3.0: a Webflow id ("webflow") or a D1 id ("d1")
+    let before = null;
+    try { before = (await readHomeRows(db, 'nl_blocks', 'WHERE t.id=? OR t.wf_id=?', [id, id]))[0] || null; } catch (_) {}
+    const wfId = before ? (before.wf_id || null) : id;
+    try { if (wfId) await deleteItemBoth(un, sch.collectionId, wfId); out.rows++; } catch (e) { out.errors.push('row ' + id + ': ' + e.message); }
+    try { if (before) await db.batch([...homeDeleteStmts(db, 'nl_blocks', before, 'undo', 'undo', iso()),
+      db.prepare('UPDATE wf_outbox SET done_at=? WHERE table_name=? AND row_id=? AND done_at IS NULL').bind(iso(), 'nl_blocks', before.id)]); } catch (_) {}
   }
   if (undo.nlId) {
     try { await deleteItemBoth(un, y.newsletterCollectionId, undo.nlId); out.newsletter = true; } catch (e) { out.errors.push('NEWSLETTER ' + undo.nlId + ': ' + e.message); }
@@ -1888,7 +2382,7 @@ async function catalogRows(env, cfg, taId) {
 }
 
 // Add (Default Layout rows) or Clone (the source issue's rows): plan, NEWSLETTER, rows.
-async function addOrClone(db, env, cfg, pacer, sch, y, taId, body, by, mode) {
+async function addOrClone(db, env, cfg, pacer, sch, y, taId, body, by, mode, hx) {
   const T = cfg.s.tenancy, planCid = T.plans, nlCid = y.newsletterCollectionId;
   const issueName = String(body.issueName || '').trim();
   const day = dayOf(body.publicationDate);
@@ -1923,12 +2417,14 @@ async function addOrClone(db, env, cfg, pacer, sch, y, taId, body, by, mode) {
   const planSch = await collectionSchema(pacer, planCid), nlSch = await collectionSchema(pacer, nlCid);
   const pf = y.planFields, nf = y.nlFields;
   const undo = { rows: [], nlId: null, planId: null };
+  const skipped = [];                                                             // v1.3.1
   try {
     // 1 · PUBLICATION PLAN
     const planFd = fieldsFor(planSch, {
       [pf.name]: issueName, [pf.slug]: slugify(issueName), [pf.titleAdmin]: taId, [pf.issueNumber]: issueNumber, [pf.issueNumberDisplay]: issueLabel,
-      [pf.publicationDate]: day, [pf.planningStatus]: y.planStatusOnCreate, [pf.editionLetter]: editionLetter, [pf.taThreeDigitId]: taThree,
-    }, 'plan');
+      [pf.publicationDate]: day, [pf.planningStatus]: y.planStatusOnCreate, [pf.editionLetter]: editionLetter,
+      ...(pf.taThreeDigitId ? { [pf.taThreeDigitId]: taThree || undefined } : {}),
+    }, 'plan', skipped);
     const pc = await pacer.call('/collections/' + planCid + '/items', { method: 'POST', body: { isArchived: false, isDraft: false, fieldData: planFd } });
     const planId = pc.data && pc.data.id;
     if (!planId) throw httpErr(502, 'Plan not created: Webflow answered without an id.');
@@ -1940,7 +2436,7 @@ async function addOrClone(db, env, cfg, pacer, sch, y, taId, body, by, mode) {
     const nlFd = fieldsFor(nlSch, {
       [nf.name]: planName, [nf.slug]: slugify(nlSlug), [nf.title]: taTitle, [nf.sector]: taId, [nf.issueNo]: nlSch.fields[nf.issueNo] && nlSch.fields[nf.issueNo].type === 'Number' ? issueNumber : String(issueNumber),
       [nf.publishDate]: day, [nf.plan]: planId, [nf.sendZipCodes]: body.sendZipCodes == null ? undefined : String(body.sendZipCodes), [nf.status]: y.nlStatusOnCreate,
-    }, 'newsletter');
+    }, 'newsletter', skipped);
     const nc = await pacer.call('/collections/' + nlCid + '/items', { method: 'POST', body: { isArchived: false, isDraft: false, fieldData: nlFd } });
     const nlId = nc.data && nc.data.id;
     if (!nlId) throw httpErr(502, 'NEWSLETTER not created: Webflow answered without an id.');
@@ -1959,7 +2455,7 @@ async function addOrClone(db, env, cfg, pacer, sch, y, taId, body, by, mode) {
     let made, extra = {};
     if (mode === 'add') {
       const layout = await catalogRows(env, cfg, taId);
-      made = await createRows(db, cfg, pacer, sch, layout.map(lr => rowFromLayout(sch, y, planId, planName, lr)), by, 'hydrate', undo);
+      made = await createRows(db, cfg, pacer, sch, layout.map(lr => rowFromLayout(sch, y, planId, planName, lr)), by, 'hydrate', undo, hx);
       extra = { blockCount: layout.length, designLookup: true };
     } else {
       const r = await issueData(env, cfg, '/clone-rows?sourcePlanId=' + body.sourcePubplanId + '&newName=' + encodeURIComponent(issueName) + '&newDate=' + day +
@@ -1970,7 +2466,7 @@ async function addOrClone(db, env, cfg, pacer, sch, y, taId, body, by, mode) {
       try { batch = JSON.parse(JSON.parse('"' + cl.batchLiteral + '"')); } catch (e) { throw httpErr(502, 'The clone batch from ix-issue-data could not be read.'); }
       const rawRows = (batch.ops || []).map(o => { const b = typeof o.body === 'string' ? JSON.parse(o.body) : (o.body || {}); return b.fieldData || {}; });
       if (!rawRows.length) throw httpErr(422, 'The source issue has no rows to copy.');
-      made = await createRows(db, cfg, pacer, sch, rawRows, by, 'clone', undo);
+      made = await createRows(db, cfg, pacer, sch, rawRows, by, 'clone', undo, hx);
       if (cl.planDesignJson) await pacer.call('/collections/' + planCid + '/items/' + planId, { method: 'PATCH', body: { fieldData: { [pf.designJson]: String(cl.planDesignJson) } } });
       let nlCarried = [];
       try {
@@ -1989,7 +2485,8 @@ async function addOrClone(db, env, cfg, pacer, sch, y, taId, body, by, mode) {
     return { status: 200, body: { ok: true, mode, pubplanId: planId, pubplanSlug: planSlug, name: planName,
       fieldData: { name: planName, 'issue-number': issueNumber, 'issue-number-display': issueLabel },
       newsletterId: nlId, newsletterSlug: nlSlugFinal, rows: made.results, published: made.published, ...extra,
-      meta: { version: VERSION, by, source: 'webflow, then d1', ...pacer.meta() } } };
+      ...(skipped.length ? { fieldsSkipped: skipped } : {}),                         // v1.3.1
+      meta: { version: VERSION, by, source: hx && hx.d1first ? 'plan and NEWSLETTER in webflow; rows in d1, then webflow (trailing copy)' : 'webflow, then d1', ...pacer.meta() } } };
   } catch (e) {
     const undone = await undoCreated(db, cfg, pacer, sch, y, undo);
     return { status: (e && e.status) || 502, body: { ok: false, mode, error: (e && e.message) || String(e), detail: (e && e.detail) || undefined,
@@ -1998,7 +2495,7 @@ async function addOrClone(db, env, cfg, pacer, sch, y, taId, body, by, mode) {
 }
 
 // Refresh: the plan's rows replaced by the Default Layout. New rows first, old rows deleted after; a failed create undoes the new rows.
-async function refreshPlan(db, env, cfg, pacer, sch, y, taId, body, by) {
+async function refreshPlan(db, env, cfg, pacer, sch, y, taId, body, by, hx) {
   const planId = String(body.pubplanId || '');
   if (!ID24.test(planId)) throw httpErr(400, 'pubplanId is required for a refresh.');
   if ((await titleOfPlan(db, cfg, planId)) !== taId) throw httpErr(403, 'This plan is not on this title.');
@@ -2015,6 +2512,18 @@ async function refreshPlan(db, env, cfg, pacer, sch, y, taId, body, by) {
   const layout = await catalogRows(env, cfg, taId);
   const undo = { rows: [], nlId: null, planId: null };
   let made;
+  if (hx && hx.d1first) {                                                    // v1.3.0: new rows in, old rows out, one transaction
+    const now = iso(), dels = [];
+    for (const r of have) dels.push(guardStmt(db, 'nl_blocks', r.id, r.version), ...homeDeleteStmts(db, 'nl_blocks', r, by, 'refresh-delete', now), outboxStmt(db, 'nl_blocks', r.id, r.wf_id, now));
+    try { made = await createRows(db, cfg, pacer, sch, layout.map(lr => rowFromLayout(sch, y, planId, planName, lr)), by, 'refresh', undo, hx, dels); }
+    catch (e) {
+      return { status: isGuardTrip(e) ? 409 : ((e && e.status) || 502), body: { ok: false, op: 'refresh', pubplanId: planId,
+        error: isGuardTrip(e) ? 'A block on this plan changed while the Default Layout was going down; nothing was changed. Reload the tab and try again.'
+          : 'The Default Layout did not go down; nothing was changed. ' + ((e && e.message) || e), meta: { version: VERSION, by, savePath: 'd1', ...pacer.meta() } } };
+    }
+    return { status: 200, body: { ok: true, op: 'refresh', pubplanId: planId, created: made.results.length, deleted: have.length, rows: made.results, published: made.published,
+      meta: { version: VERSION, by, source: 'd1, then webflow (trailing copy)', releaseCheck: gate.meta, ...pacer.meta() } } };
+  }
   try { made = await createRows(db, cfg, pacer, sch, layout.map(lr => rowFromLayout(sch, y, planId, planName, lr)), by, 'refresh', undo); }
   catch (e) {
     const undone = await undoCreated(db, cfg, pacer, sch, y, undo);
@@ -2024,13 +2533,123 @@ async function refreshPlan(db, env, cfg, pacer, sch, y, taId, body, by) {
   // The old rows, now that every new row stands.
   const deleted = [], kept = [];
   for (const r of have) {
-    try { await deleteItemBoth(pacer, sch.collectionId, r.id); await db.batch(homeDeleteStmts(db, 'nl_blocks', r, by, 'refresh-delete', iso())); deleted.push(r.id); }
+    try { await deleteItemBoth(pacer, sch.collectionId, r.wf_id || r.id); await db.batch(homeDeleteStmts(db, 'nl_blocks', r, by, 'refresh-delete', iso())); deleted.push(r.id); }
     catch (e) { kept.push({ id: r.id, error: e.message }); }
   }
   const ok = !kept.length;
   return { status: ok ? 200 : 207, body: { ok, op: 'refresh', pubplanId: planId, created: made.results.length, deleted: deleted.length, rows: made.results, published: made.published,
     ...(kept.length ? { error: 'The new blocks are in place, but ' + kept.length + ' old block(s) could not be deleted. Open the plan and check its slots.', kept } : {}),
     meta: { version: VERSION, by, source: 'webflow, then d1', releaseCheck: gate.meta, ...pacer.meta() } } };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// DELETE A PLAN (v1.3.1) — POST /nl-blocks/delete-plan { taId, pubplanId, dryRun? }. See the v1.3.1 header.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+async function deletePlanRoute(request, env, ctx) {
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== 'object') return { status: 400, body: { ok: false, error: 'The body must be JSON.' } };
+  const taId = String(body.taId || ''), planId = String(body.pubplanId || '');
+  if (!ID24.test(taId)) return { status: 400, body: { ok: false, error: 'taId (a TITLES-ADMIN id) is required.' } };
+  if (!ID24.test(planId)) return { status: 400, body: { ok: false, error: 'pubplanId (a PUBLICATION PLANS id) is required.' } };
+  const gate = await permit(env, request, 'nl_blocks.hydrate', null);
+  if (!gate.ok) return { status: gate.status, body: { ok: false, error: gate.why } };
+  const by = gate.who.email || gate.who.memberId;
+  const db = needDb(env);
+  const cfg = await loadConfig(env);
+  const y = hydrateCfg(homeCfg(cfg, 'nl_blocks'));
+  const T = cfg.s.tenancy, planCid = T.plans, nlCid = y.newsletterCollectionId;
+  const pacer = new Pacer(env, cfg.s, { burst: true, maxCalls: 300 });
+  const sch = await homeSchema(pacer, cfg, 'nl_blocks', false);
+  const meta = () => ({ version: VERSION, by, ...pacer.meta() });
+
+  // What is there
+  const planRow = await db.prepare('SELECT field_data,title_admin_id FROM copy_items WHERE collection_id=? AND item_id=?').bind(planCid, planId).first();
+  if (!planRow) return { status: 404, body: { ok: false, error: 'This plan is not in the copy of PUBLICATION PLANS (already deleted, or not made yet).', meta: meta() } };
+  if (planRow.title_admin_id !== taId) return { status: 403, body: { ok: false, error: 'This plan is not on this title.', meta: meta() } };
+  const pfd = JSON.parse(planRow.field_data || '{}');
+  const planName = String(pfd.name || planId);
+  const nlIds = new Set();
+  const nlR = await db.prepare('SELECT item_id,name FROM copy_items WHERE collection_id=? AND plan_id=?').bind(nlCid, planId).all();
+  const nlNames = {};
+  (nlR.results || []).forEach(x => { nlIds.add(x.item_id); nlNames[x.item_id] = x.name || x.item_id; });
+  const linked = String(pfd[y.planFields.newsletterItemId] || '').trim();
+  if (ID24.test(linked)) { nlIds.add(linked); if (!nlNames[linked]) nlNames[linked] = linked; }
+  const rows = await readHomeRows(db, 'nl_blocks', 'WHERE t.plan_id=?', [planId]);
+  const allocIds = ((await db.prepare('SELECT allocation_id FROM allocation_plans WHERE plan_id=?').bind(planId).all()).results || []).map(x => x.allocation_id);
+
+  // Refused when released, sent or held (the same rule set every save goes through)
+  const rg = await releaseGateForPlan(env, cfg, sch, [{ op: 'delete', id: planId, planId }]);
+  const what = { plan: { id: planId, name: planName }, newsletters: [...nlIds].map(id => ({ id, name: nlNames[id] })), blocks: rows.length, printItems: allocIds.length };
+  if (body.dryRun) return { status: 200, body: { ok: true, dryRun: true, ...what, refused: rg.ok ? null : rg.error, meta: meta() } };
+  if (!rg.ok) return { status: rg.status || 409, body: { ok: false, error: rg.error, released: !!rg.released, hold: !!rg.hold, issueSent: !!rg.issueSent, ...what, meta: meta() } };
+
+  const now = iso();
+  const report = { blocks: 0, printItemsUnticked: 0, newsletters: [], plan: null, notes: [] };
+  // 1 · The blocks
+  if (rows.length) {
+    if (savePathOf(cfg, 'nl_blocks') === 'd1') {
+      const stmts = [];
+      for (const r of rows) stmts.push(...homeDeleteStmts(db, 'nl_blocks', r, by, 'delete-plan', now), outboxStmt(db, 'nl_blocks', r.id, r.wf_id, now));
+      for (const part of chunk(stmts, 200)) await db.batch(part);   // one plan is at most a few dozen rows: one batch
+      report.blocks = rows.length;
+    } else {
+      for (const r of rows) {
+        await deleteItemBoth(pacer, sch.collectionId, r.wf_id || r.id);
+        await db.batch(homeDeleteStmts(db, 'nl_blocks', r, by, 'delete-plan', iso()));
+        report.blocks++;
+      }
+    }
+  }
+  // 2 · The plan off every print item that lists it
+  if (allocIds.length) {
+    const asch = await homeSchema(pacer, cfg, 'allocations', false);
+    const d1a = savePathOf(cfg, 'allocations') === 'd1';
+    for (const aid of allocIds) {
+      const b = (await readHomeRows(db, 'allocations', 'WHERE t.id=?', [aid]))[0];
+      if (!b || !asch.plansSlug) continue;
+      const plans = refValues(b.fields[asch.plansSlug]).filter(x => x !== planId);
+      if (d1a) {
+        const row = d1Row(asch, b.id, { ...b.fields, [asch.plansSlug]: plans }, { title: b.title_admin_id, publisher: b.publisher_id },
+          { draft: b.is_draft, archived: b.is_archived, wfUpdated: b.wf_updated }, b.created_at);
+        row.wf_id = b.wf_id || null;
+        const s = storeHomeStmts(db, 'allocations', row, b, by, 'delete-plan', iso());
+        if (s.changed) await db.batch([...s.stmts, outboxStmt(db, 'allocations', b.id, b.wf_id, iso())]);
+      } else {
+        const u = await pacer.call('/collections/' + asch.collectionId + '/items/' + (b.wf_id || b.id), { method: 'PATCH', body: { fieldData: { [asch.plansSlug]: plans } } });
+        if (u.data && u.data.id) { await storeHomeItem(db, cfg, asch, u.data, by, 'delete-plan'); try { await publishItems(pacer, asch.collectionId, [u.data.id]); } catch (_) {} }
+      }
+      report.printItemsUnticked++;
+    }
+  }
+  // 3 · Send the outbox now, so nothing in Webflow still points at the plan
+  const waitingFor = async () => (await db.prepare("SELECT COUNT(*) AS n FROM wf_outbox WHERE done_at IS NULL AND ((table_name='nl_blocks' AND row_id IN (SELECT value FROM json_each(?))) OR (table_name='allocations' AND row_id IN (SELECT value FROM json_each(?))))")
+    .bind(JSON.stringify(rows.map(r => r.id)), JSON.stringify(allocIds)).first()).n;
+  if (await waitingFor()) {
+    let left = 1;
+    for (let i = 0; i < 3 && left; i++) { const d = await drainOutbox(env, cfg, { by: 'delete-plan · ' + by, budgetMs: cfg.s.outbox.cronBudgetMs }); left = await waitingFor(); if (left && d.busy) await sleep(4000); }
+    if (left) return { status: 207, body: { ok: false, error: 'The blocks are gone from D1, but ' + left + ' of their Webflow copies are still waiting to be removed, so the plan and its NEWSLETTER were kept. Press Delete plan again in a few minutes.', ...what, done: report, meta: meta() } };
+  }
+  // 4 · Each NEWSLETTER, then the PUBLICATION PLAN: deleted, or archived when something still points at it
+  const goOrArchive = async (cid, id) => {
+    try { await deleteItemBoth(pacer, cid, id); await copyDropItem(db, cid, id); return 'deleted'; }
+    catch (e) {
+      if (e && (e.busy || e.unsure || e.budget)) throw e;
+      if (e && e.wfStatus === 404) { await copyDropItem(db, cid, id); return 'already gone'; }
+      await pacer.call('/collections/' + cid + '/items/' + id, { method: 'PATCH', body: { isArchived: true } });
+      try { await pacer.call('/collections/' + cid + '/items/' + id + '/live', { method: 'DELETE' }); } catch (_) {}
+      await db.prepare('UPDATE copy_items SET is_archived=1 WHERE collection_id=? AND item_id=?').bind(cid, id).run();
+      return 'archived (another item still points at it: ' + String(e.message || '').slice(0, 140) + ')';
+    }
+  };
+  try {
+    for (const id of nlIds) report.newsletters.push({ id, name: nlNames[id], how: await goOrArchive(nlCid, id) });
+    report.plan = { id: planId, name: planName, how: await goOrArchive(planCid, planId) };
+  } catch (e) {
+    return { status: 502, body: { ok: false, error: 'Webflow did not answer while deleting the NEWSLETTER or the plan (' + e.message + '). The blocks are already gone. Press Delete plan again to finish.', ...what, done: report, meta: meta() } };
+  }
+  const archived = [...report.newsletters, report.plan].filter(x => x && /^archived/.test(x.how));
+  if (archived.length) report.notes.push(archived.map(x => x.name).join(', ') + ' could not be deleted because another item still points at it, so it was archived and taken off the site.');
+  return { status: 200, body: { ok: true, ...what, done: report, meta: { ...meta(), savePath: savePathOf(cfg, 'nl_blocks') } } };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -2074,8 +2693,28 @@ async function status(env) {
         lastChange: r.lastChange, changeLog: { entries: c.n, last: c.last } };
     } catch (e) { home[t] = { error: e.message }; }
   }
+  // v1.3.0 · the save path, the trailing copy and changes made outside ix-content
+  let settingsKv = null;
+  try { settingsKv = env.IX_KV ? await env.IX_KV.get(KV_KEYS.settings, 'json') : null; } catch (_) {}
+  const savePath = {};
+  for (const t of HOME_TABLES) savePath[t] = settingsKv && settingsKv.savePath && settingsKv.savePath[t] === 'd1' ? 'd1' : 'webflow';
+  let outbox = null, outside = null;
+  try {
+    const w = await db.prepare('SELECT COUNT(*) AS n, MIN(queued_at) AS oldest FROM wf_outbox WHERE done_at IS NULL').first();
+    const f = await db.prepare('SELECT table_name,row_id,tries,last_error,last_try_at FROM wf_outbox WHERE done_at IS NULL AND tries>0 ORDER BY tries DESC, seq LIMIT 10').all();
+    outbox = { waiting: w ? w.n : 0, oldestWaiting: w ? w.oldest : null, failing: f.results || [],
+      lastDrain: fact['outbox:last'] ? { at: fact['outbox:last'].at, by: fact['outbox:last'].by, ok: fact['outbox:last'].ok, rows: fact['outbox:last'].rows,
+        created: fact['outbox:last'].created, updated: fact['outbox:last'].updated, deleted: fact['outbox:last'].deleted, failed: fact['outbox:last'].failed,
+        errors: (fact['outbox:last'].errors || []).slice(0, 5) } : null };
+    const since = new Date(now - 7 * 86400e3).toISOString();
+    const c = await db.prepare("SELECT COUNT(*) AS n FROM webhook_log WHERE action='outside' AND received_at>=?").bind(since).first();
+    const r = await db.prepare("SELECT received_at,collection_id,item_id,detail FROM webhook_log WHERE action='outside' ORDER BY id DESC LIMIT 10").all();
+    outside = { last7Days: c ? c.n : 0, recent: (r.results || []).map(x => ({ ...x, collection: names.get(x.collection_id) || x.collection_id })) };
+  } catch (e) { outbox = { error: 'schema v1.4.0 not applied? ' + e.message }; }
+  delete fact['outbox:lock'];
   const out = {
     ok: true, version: VERSION, at: iso(),
+    savePath, outbox, outside,
     home,
     site: {
       items: fact.items ? { inUse: fact.items.inUse, cap: fact.items.cap, left: fact.items.left, countedAt: fact.items.at } : 'not counted yet (first nightly or backfill run)',
@@ -2144,6 +2783,11 @@ async function health(env) {
       catch (e) { out.kv[key] = 'not valid JSON'; }
     }
   }
+  try {                                                                              // v1.3.0
+    const s = env.IX_KV ? await env.IX_KV.get(KV_KEYS.settings, 'json') : null;
+    out.savePath = {}; for (const t of HOME_TABLES) out.savePath[t] = s && s.savePath && s.savePath[t] === 'd1' ? 'd1' : 'webflow';
+    out.outboxCron = (s && s.outboxCron) || DEFAULTS.outboxCron;
+  } catch (_) {}
   const need = ['IX_DB', 'IX_KV', 'MEMBERS', 'WEBFLOW_TOKEN', 'ISSUE_DATA_KEY'];
   out.ok = need.every(k => out.bindings[k]) && !out.issueData.startsWith('missing') && !!(out.schema && out.schema.ok) && !!out.kv && !Object.values(out.kv).some(v => v === 'missing' || v === 'not valid JSON');
   return out;
