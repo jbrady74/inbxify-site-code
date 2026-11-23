@@ -1,7 +1,12 @@
--- ix-content-schema-v1.2.0.sql
--- INBXIFY · D1 database "ix-content" (Worker binding IX_DB, HC-P-CH1-1) · Content Home phase 1 and phase 2.
+-- ix-content-schema-v1.3.0.sql
+-- INBXIFY · D1 database "ix-content" (Worker binding IX_DB, HC-P-CH1-1) · Content Home phase 1, 2 and 3.
 -- A NEW, EMPTY database: paste the whole file into the D1 Console and run it once. Every CREATE is IF NOT EXISTS.
 -- The D1 Console flattens a paste to one line, so for a live database use the comment-free single lines below.
+--
+-- v1.3.0 (22 Nov 2026, Content Home S14): copy_items gains live_off_at, the time ix-content heard that Webflow took the
+-- item off the live site (collection_item_unpublished); a later publish clears it (ix-content v1.2.3). The live
+-- database (at v1.2.0) takes it as one line:
+--   ALTER TABLE copy_items ADD COLUMN live_off_at TEXT;
 --
 -- v1.2.0 (9 Nov 2026, Content Home S4): nl_blocks gains is_draft, is_archived, wf_updated, the same three allocations
 -- got in v1.1.0, plus an index on (plan_id, is_archived). The live database (at v1.1.0) takes them as one line:
@@ -42,6 +47,7 @@ CREATE TABLE IF NOT EXISTS copy_items (
   field_data         TEXT NOT NULL,
   copied_at          TEXT NOT NULL,
   seen_run           TEXT,
+  live_off_at        TEXT,
   PRIMARY KEY (collection_id, item_id)
 );
 CREATE INDEX IF NOT EXISTS copy_items_title     ON copy_items (collection_id, title_admin_id);

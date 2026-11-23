@@ -1,5 +1,26 @@
-// ix-content-v1.2.2.js
+// ix-content-v1.2.3.js
 // INBXIFY · Cloudflare Worker · ix-content
+//
+// v1.2.3 (22 Nov 2026, Content Home S14) — THE PUBLIC PAGES REBUILD FROM THIS COPY, AND THE COPY KNOWS WHAT IS OFF THE SITE.
+//   Rulings (Jeff, 22 Nov): public pages read the D1 copy (ix-issue-data v1.0.195, "site" on the read switch); the page
+//   rebuild after a publish is started here, once the copy holds the new version, instead of by Webflow's own webhook to
+//   ix-issue-data /changed (that webhook is deleted in Webflow).
+//   1 · TWO TRIGGERS ARE ALWAYS REGISTERED: collection_item_published and collection_item_unpublished are added to the
+//       list in KV contentHome.events if it leaves them out (REQUIRED_EVENTS). /admin/register and the nightly check's
+//       auto-register create them.
+//   2 · OFF THE SITE. New column copy_items.live_off_at (schema v1.3.0, one line in the D1 Console). An unpublished hint
+//       sets it to the time the hint arrived; a published hint clears it. Webflow's item does not say it was taken off
+//       the site, so without this a page reading the copy could not tell. ix-issue-data treats an item as off the site
+//       when live_off_at is newer than its last publish, so a later publish brings it back even if a hint was missed.
+//       Until the column exists, nothing is written to it and /health names it as missing.
+//   3 · PAGES. After a published or unpublished hint has been stored (or drained from pending), this Worker calls
+//       POST ix-issue-data /changed through the ISSUE_DATA binding with X-IX-Key, naming the item, its collection, its
+//       slug and its TITLES-ADMIN id. ix-issue-data decides which pages that is (ARTICLES and NEWSLETTERS today) and
+//       rebuilds them in the background. A queued rebuild is logged in webhook_log with action "pages".
+//       contentHome.settings.webhooks.notifyPages false turns this off without a deploy (default true).
+//   No route, permission or reply shape changed.
+//   HARDCODING (provisional): HC-P-CH14-4 REQUIRED_EVENTS (code: the rebuild and the off-the-site rule depend on them);
+//   HC-P-CH14-5 the column name live_off_at; HC-P-CH14-6 the default notifyPages true (DEFAULTS.webhooks).
 //
 // v1.2.2 (13 Nov 2026, Content Home S8, Test 2) — A PUBLISH WEBFLOW DID NOT ANSWER IS TRIED AGAIN.
 //   Found live on WLN-910A (Revenue Picker v1.9.0): a Lead banner change was written to Webflow and stored in D1, but
@@ -212,7 +233,7 @@
 //   (HOME_TABLES, code: a table name is how code reaches D1); HC-P-CH3-2 batch size cap 50 ops (BATCH_MAX);
 //   HC-P-CH3-3 burst 429 wait cap 20 s (DEFAULTS.burst). Field slugs and create defaults live in KV, not code.
 
-const VERSION = '1.2.2';
+const VERSION = '1.2.3';
 const WF = 'https://api.webflow.com/v2';                         // HC-P-CH1-8
 const PAGE = 100;                                                // HC-P-CH1-8 · Webflow lists at most 100 a request
 const KV_KEYS = {                                                // HC-P-CH1-7
@@ -229,12 +250,15 @@ const DEFAULTS = {                                               // HC-P-CH1-10 
   caps: { items: 20000, collections: 40 },
   pace: { perMinute: 100, maxRetries: 4, retryAfterCapMs: 65000, lowWater: 5, lowWaterPauseMs: 3000 },
   runs: { maxCalls: 800, maxQueries: 800, adminBudgetMs: 90000, cronBudgetMs: 600000, resumeWithinHours: 24, busyIfBeatWithinMs: 120000 },
-  webhooks: { autoRegister: true, dedupeMs: 5000, logDays: 30, drainPerHint: 3, maxHintsPerCall: 50, homeSettleMs: 20000 },   // homeSettleMs v1.1.1, HC-P-CH3-4
+  webhooks: { autoRegister: true, dedupeMs: 5000, logDays: 30, drainPerHint: 3, maxHintsPerCall: 50, homeSettleMs: 20000, notifyPages: true },   // homeSettleMs v1.1.1, HC-P-CH3-4; notifyPages v1.2.3, HC-P-CH14-6
   burst: { retryAfterCapMs: 20000, maxRetries: 2 },              // HC-P-CH3-3 · page saves
 };
 const SCHEMA_TABLES = ['copy_items', 'copy_title_links', 'nl_blocks', 'allocations', 'allocation_plans', 'change_log',
   'collections', 'sync_runs', 'pending_items', 'webhook_log', 'site_facts'];
-const SCHEMA_COLUMNS = { allocations: ['is_draft', 'is_archived', 'wf_updated'], nl_blocks: ['is_draft', 'is_archived', 'wf_updated'] };   // schema v1.1.0, v1.2.0
+const SCHEMA_COLUMNS = { allocations: ['is_draft', 'is_archived', 'wf_updated'], nl_blocks: ['is_draft', 'is_archived', 'wf_updated'],
+  copy_items: ['live_off_at'] };   // schema v1.1.0, v1.2.0; copy_items v1.3.0 (HC-P-CH14-5)
+const REQUIRED_EVENTS = ['collection_item_published', 'collection_item_unpublished'];   // v1.2.3, HC-P-CH14-4
+const LIVE_TRIGGERS = { collection_item_published: 'on', collection_item_unpublished: 'off' };   // v1.2.3
 const ID24 = /^[0-9a-f]{24}$/i;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -367,7 +391,8 @@ async function loadConfig(env) {
   if (!ID24.test(s.siteId || '')) throw httpErr(500, KV_KEYS.settings + '.siteId is missing.');
   const t = s.tenancy || {};
   for (const k of ['titlesAdmin', 'publishers', 'plans']) if (!ID24.test(t[k] || '')) throw httpErr(500, KV_KEYS.settings + '.tenancy.' + k + ' is missing.');
-  return { copy, events, reads: reads || {}, s, home: home && typeof home === 'object' ? home : {} };
+  const allEvents = [...new Set([...events, ...REQUIRED_EVENTS])];                // v1.2.3
+  return { copy, events: allEvents, reads: reads || {}, s, home: home && typeof home === 'object' ? home : {} };
 }
 
 // The home config for one table, checked. Throws a plain message when KV is incomplete.
@@ -889,10 +914,43 @@ async function handleHints(env, trigger, hints, signed, sigHeaders) {
       continue;
     }
     if (!cid || !copied.has(cid)) { await log(cid, h.itemId, 'ignored', 'not a copied collection'); continue; }
-    work.push(coalesced(cfg, cid, h.itemId, () => refreshOne(db, pacer, cfg, copied.get(cid), cid, h.itemId, trigger, log)).then(a => a === 'folded' ? log(cid, h.itemId, 'folded', 'a re-read for this item is already queued') : null));
+    work.push(coalesced(cfg, cid, h.itemId, () => refreshOne(db, pacer, cfg, copied.get(cid), cid, h.itemId, trigger, log)
+      .then(a => afterRefresh(env, db, cfg, trigger, cid, h.itemId, a, log).then(() => a)))                 // v1.2.3
+      .then(a => a === 'folded' ? log(cid, h.itemId, 'folded', 'a re-read for this item is already queued') : null));
   }
   await Promise.all(work);
-  await drainPending(db, pacer, cfg, cfg.s.webhooks.drainPerHint, null, log);
+  await drainPending(db, pacer, cfg, cfg.s.webhooks.drainPerHint, null, log, env);   // env v1.2.3
+}
+
+// v1.2.3 — after a copied item's re-read: mark it on or off the site (published / unpublished hints), then ask
+// ix-issue-data to rebuild the pages it is on. Never throws: a failure is logged and the copy stands.
+let LIVE_COL = null;                                                             // per instance: does live_off_at exist?
+async function liveColumn(db) {
+  if (LIVE_COL === true) return true;
+  try {
+    const c = await db.prepare("SELECT name FROM pragma_table_info('copy_items')").all();
+    LIVE_COL = (c.results || []).some(x => x.name === 'live_off_at');
+  } catch (_) { LIVE_COL = false; }
+  return LIVE_COL;
+}
+async function afterRefresh(env, db, cfg, trigger, cid, iid, result, log) {
+  const live = LIVE_TRIGGERS[trigger];
+  if (!live || result === 'folded') return;
+  try {
+    if (await liveColumn(db)) {
+      await db.prepare('UPDATE copy_items SET live_off_at=? WHERE collection_id=? AND item_id=?')
+        .bind(live === 'off' ? iso() : null, cid, iid).run();
+    }
+  } catch (e) { await log(cid, iid, 'error', 'live_off_at not written: ' + ((e && e.message) || e)).catch(() => {}); }
+  if (!env || result !== 'stored' || cfg.s.webhooks.notifyPages === false) return;
+  try {
+    const row = await db.prepare('SELECT slug,title_admin_id FROM copy_items WHERE collection_id=? AND item_id=?').bind(cid, iid).first();
+    const item = { id: iid, collectionId: cid, fieldData: { slug: (row && row.slug) || '' }, titleAdminId: (row && row.title_admin_id) || '' };
+    const r = await issueData(env, cfg, '/changed', { method: 'POST', body: { from: 'ix-content', trigger, payload: { items: [item] } }, timeoutMs: 10000 });
+    const queued = (r.data && Array.isArray(r.data.queued)) ? r.data.queued : [];
+    if (r.status >= 300) await log(cid, iid, 'pages-error', 'ix-issue-data /changed answered ' + r.status + ': ' + String(r.text || '').slice(0, 200));
+    else if (queued.length) await log(cid, iid, 'pages', 'rebuild queued: ' + queued.join(', '));
+  } catch (e) { await log(cid, iid, 'pages-error', (e && e.message) || String(e)).catch(() => {}); }
 }
 
 // One re-read per item per dedupe window, plus one trailing re-read for hints that arrive inside it.
@@ -962,7 +1020,7 @@ async function refreshOne(db, pacer, cfg, ten, cid, iid, trigger, log) {
   }
 }
 
-async function drainPending(db, pacer, cfg, n, report, log) {
+async function drainPending(db, pacer, cfg, n, report, log, env) {   // env v1.2.3 (from a webhook only)
   if (!n) return;
   const rows = await db.prepare('SELECT collection_id,item_id,trigger_type FROM pending_items ORDER BY queued_at LIMIT ?').bind(n).all();
   const list = rows.results || [];
@@ -978,6 +1036,7 @@ async function drainPending(db, pacer, cfg, n, report, log) {
     }
     if (!copied.has(p.collection_id)) { await db.prepare('DELETE FROM pending_items WHERE collection_id=? AND item_id=?').bind(p.collection_id, p.item_id).run(); continue; }
     const a = await refreshOne(db, pacer, cfg, copied.get(p.collection_id), p.collection_id, p.item_id, p.trigger_type, log);
+    await afterRefresh(env || null, db, cfg, p.trigger_type, p.collection_id, p.item_id, a, log || (async () => {}));   // v1.2.3
     if (a === 'deferred') break;
     done++;
   }
