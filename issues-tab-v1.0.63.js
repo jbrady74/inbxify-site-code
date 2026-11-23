@@ -1,4 +1,18 @@
-// issues-tab-v1.0.62.js
+// issues-tab-v1.0.63.js
+// v1.0.63 (23 Nov 2026, Content Home S16): PLANS ARE MADE AND DELETED THROUGH ix-content, NOT SCENARIO 126.
+//   Content Home S4 ruled (9 Nov) that ix-content's /nl-blocks/hydrate and /nl-blocks/clone take over the whole of
+//   Scenario 126; this page never moved, so 126 was still writing NL-BLOCKS outside ix-content (found S16). Now:
+//   1 · "+ Add PubPlan" posts to ix-content POST /nl-blocks/hydrate; "Clone" and "Add edition (clone)" / "+ Edition" post
+//       to POST /nl-blocks/clone. Same body names as 126 had, JSON, signed with the Memberstack login (staff only).
+//       TA_CONFIG.contentUrl (the ix-content address the Allocator already uses) replaces TA_CONFIG.makeAddIssue and
+//       makeCloneIssue, which are no longer read. TOAST-TRUTH is unchanged: the echoed name, issue-number and
+//       issue-number-display are checked field by field. The clone report reads ix-content's rows list.
+//   2 · NEW "Delete plan" in the ⋯ menu of an In Planning or Future tile (Jeff, 23 Nov), when the plan is not
+//       released and not set to go live. It opens a window that first asks ix-content what would go (dry run): the
+//       PUBLICATION PLAN, its NEWSLETTER, its blocks, and the print items that list it. Delete there calls
+//       POST /nl-blocks/delete-plan (ix-content v1.3.1). A refusal (released, sent or held) is shown in the window and
+//       stays until closed. The ⓘ badge names ix-content instead of 126.
+//   No other behaviour changes. CSS stays issues-tab-v1.0.26.css; the Delete button is ix-buttons' ix-btn--danger.
 // v1.0.62 (15 Nov 2026, Legacy Sunset S2): NO MORE OLD-STYLE PLANS. Jeff ruled (15 Nov) that no old-style (picker) plan can be
 //   made or edited, so the picker collections can be deleted. The header has one button, "+ Add PubPlan", which runs
 //   Scenario 126 (TA_CONFIG.makeAddIssue), as "+ Add PubPlan \u00b7 New" did. "+ Add PubPlan \u00b7 Legacy" (Scenario 103,
@@ -1371,6 +1385,48 @@
     return String(cfg()[key] || '').trim();
   }
 
+  // v1.0.63 — ix-content (TA_CONFIG.contentUrl), signed with the Memberstack login.
+  function contentUrl() { return String(cfg().contentUrl || '').replace(/\/+$/, ''); }
+  function memberToken() {
+    var ms = window.$memberstackDom;
+    if (!ms || typeof ms.getMemberCookie !== 'function') return Promise.reject(new Error('Memberstack is not on this page, so the request cannot be signed'));
+    return Promise.resolve(ms.getMemberCookie()).then(function (t) {
+      if (!t) throw new Error('you are not signed in to Memberstack. Sign in and try again');
+      return t;
+    });
+  }
+  // POST JSON to ix-content. Resolves with the parsed reply (its HTTP status in _status); rejects only when there is no
+  // JSON answer at all. quiet: no ix-progress card (a read).
+  function contentPost(path, body, label, quiet) {
+    var u = contentUrl();
+    if (!u) return Promise.reject(new Error('TA_CONFIG.contentUrl (ix-content) is not set on this page'));
+    return memberToken().then(function (t) {
+      var init = { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }, body: JSON.stringify(body), credentials: 'omit' };
+      if (quiet) init.ixQuiet = true; else init.ixLabel = label;
+      return fetch(u + path, init);
+    }).then(function (res) {
+      return res.text().then(function (t) {
+        var p = null; try { p = JSON.parse(t); } catch (e) {}
+        if (!p || typeof p !== 'object') throw new Error('ix-content answered HTTP ' + res.status);
+        p._status = res.status;
+        return p;
+      });
+    });
+  }
+  function requireContent(actionLabel) {
+    if (contentUrl()) return true;
+    console.error('[Issues] TA_CONFIG.contentUrl is missing. Add it to the T-A page head config.');
+    window.alert('Cannot ' + actionLabel + ': the ix-content address is not configured. Tell Jeff TA_CONFIG.contentUrl is missing.');
+    return false;
+  }
+  // The refusal sentence from an ix-content reply (and the Worker's detail, when it gave one).
+  function contentWhy(p, fallback) {
+    var why = String((p && p.error) || fallback || 'ix-content refused').replace(/\.+\s*$/, '');
+    var we = String((p && (p.workerError || (p.detail && p.detail.workerError))) || '').trim();
+    if (we) why += '. Worker said: ' + we.replace(/\.+\s*$/, '');
+    return why + '.';
+  }
+
   // Returns '' when absent. Every call site checks and refuses.
   function requireMakeUrl(key, actionLabel) {
     var u = makeUrl(key);
@@ -1786,7 +1842,7 @@
   // v1.0.49 — the test alone, for the \u22EF menu
   function editionOk(iss) { return !!editionBtn(iss); }
   function editionBtn(iss, extraClass) {
-    if (!iss.itemId || !makeUrl('makeCloneIssue')) return '';
+    if (!iss.itemId || !contentUrl()) return '';                       // v1.0.63: ix-content, not 126
     // v1.0.54 — only the first edition of its issue, and only when the Worker says it may be cloned
     // (compiled, nothing changed since: ix-issue-data v1.0.135 cloneFrom).
     var me = parseIssueTitle(iss.title);
@@ -1938,17 +1994,26 @@
   }
 
   // v1.0.46: a small \u22EF menu at the top right. v1.0.50: it holds only Add edition (clone).
-  function tileMenu(iss) {
+  // v1.0.63: and Delete plan, on In Planning and Future tiles (zone 'active') that are not released and not set to go live.
+  function deleteOk(iss) {
+    if (!iss || !iss.itemId || !contentUrl()) return false;
+    if (releasedOf(iss) === true) return false;
+    var p = S.pub && S.pub[iss.itemId];
+    if (p && p.status === 'publishNextAsCurrent') return false;
+    return true;
+  }
+  function tileMenu(iss, zone) {
     var k = keyOf(iss), ui = S.ui[k] || '';
     if (!iss.itemId || ui === 'busy' || ui === 'confirm') return '';
-    if (!editionOk(iss)) return '';                                     // v1.0.50
+    var items = [];
+    if (editionOk(iss)) items.push('<button type="button" role="menuitem" class="it-menu-item" data-it-edition="1" data-ed-key="' + esc(k) + '">Add edition (clone)</button>');   // v1.0.50
+    if (zone === 'active' && deleteOk(iss)) items.push('<button type="button" role="menuitem" class="it-menu-item" data-it-delplan="' + esc(k) + '">Delete plan\u2026</button>');   // v1.0.63
+    if (!items.length) return '';
     var open = S.menu === k;
     return '<span class="it-menu">' +
       '<button type="button" class="it-menu-btn" data-it-menu="' + esc(k) + '" aria-haspopup="true" aria-expanded="' + (open ? 'true' : 'false') +
         '" aria-label="More actions for ' + esc(iss.title) + '" title="More actions">\u22EF</button>' +
-      (open ? '<span class="it-menu-pop" role="menu">' +
-        '<button type="button" role="menuitem" class="it-menu-item" data-it-edition="1" data-ed-key="' + esc(k) + '">Add edition (clone)</button>' +
-        '</span>' : '') +
+      (open ? '<span class="it-menu-pop" role="menu">' + items.join('') + '</span>' : '') +
     '</span>';
   }
 
@@ -1963,7 +2028,7 @@
             (warn ? ' it-tile--confirm-warn' : '') +
             '" data-it-key="' + esc(k) + '">';
     h += cloneStrip(iss);                                    // v1.0.56
-    h += codeRow(iss, 'active', 'it-code', tileMenu(iss));   // v1.0.46
+    h += codeRow(iss, 'active', 'it-code', tileMenu(iss, 'active'));   // v1.0.46; zone v1.0.63
     h += '<div class="it-when">' + esc(formatWhen(iss) || 'No publication date') + '</div>';
     var sendTxt = formatSend(iss);                                                   // v1.0.43
     h += sendTxt ? '<div class="it-send">Sends ' + esc(sendTxt) + '</div>'
@@ -2087,7 +2152,7 @@
 
   function archiveTile(iss) {
     return '<article class="it-tile it-tile--archive" data-it-key="' + esc(keyOf(iss)) + '">' +
-      codeRow(iss, 'archive', 'it-code it-code--sm', tileMenu(iss)) +   // v1.0.61: Add edition on a sent first edition
+      codeRow(iss, 'archive', 'it-code it-code--sm', tileMenu(iss, 'archive')) +   // v1.0.61: Add edition on a sent first edition
       '<div class="it-when it-when--sm">' + esc(formatWhen(iss) || 'No publication date') + '</div>' +
       '<div class="it-foot it-foot--sm">' +
         '<span class="it-status"><span class="it-dot it-dot--sent"></span>Sent</span>' +
@@ -2108,18 +2173,20 @@
   function renderHeader() {
     var nameEl = document.querySelector('.pubplan-slot-wrapper[data-titleadmin-name]');
     var titleName = nameEl ? nameEl.dataset.titleadminName || '' : '';
-    // v1.0.62 — one Add, Scenario 126 (the legacy 103 Add is gone).
+    // v1.0.62 — one Add. v1.0.63: through ix-content /nl-blocks/hydrate.
     var _ppAdd = '<button type="button" class="pp-add-btn" data-pp-add-btn data-pp-add-mode="slots">+ Add PubPlan</button>';
     var _info = (window.IxInfo && typeof IxInfo.badge === 'function') ? IxInfo.badge({   // v1.0.44: the \u24D8 badge (standing rule)
-      file: 'issues-tab-v1.0.62.js', version: '1.0.62', title: 'Pub Plans',
+      file: 'issues-tab-v1.0.63.js', version: '1.0.63', title: 'Pub Plans',
       blurb: 'Every PubPlan for this title. Next Newsletter on top, with On Deck beside it: the Next issue\u2019s other editions. Then In Planning, soonest first. Plans more than ' + FUTURE_DAYS +
              ' days out sit under Future plans, closed until you open it.\n\n' +
              'Editions are added from the first edition of an issue (+ Edition, or the \u22EF menu), once it is compiled and unchanged since. When Next goes out, the first On Deck edition becomes Next. ' +
              'A new plan takes the title\u2019s Default Layout when it is made; plans that already exist keep their slots.\n\n' +
              'Each tile shows its newsletter\u2019s Publishing status. Set as Next moves a plan into Next. Set to go live, on the Next card once the issue is released, sets its newsletter to Publish Next as Current; the day before the issue date, Scenario 108 makes that issue the title\u2019s current issue and locks its plan, if it is still released. A salmon banner shows when no issue is set to go live, and a salmon tag marks a plan whose clone is not finished.',
-      scenarios: [{ name: '126 \u00b7 K-4 Hydrate Issue', note: 'Add, Clone, Add edition' },
+      scenarios: [{ name: 'ix-content \u00b7 POST /nl-blocks/hydrate', note: 'Add: the plan, its NEWSLETTER and the Default Layout blocks (v1.0.63; was Scenario 126)' },
+                  { name: 'ix-content \u00b7 POST /nl-blocks/clone', note: 'Clone, Add edition (v1.0.63; was Scenario 126)' },
+                  { name: 'ix-content \u00b7 POST /nl-blocks/delete-plan', note: 'Delete plan in the \u22EF menu: the plan, its NEWSLETTER and its blocks, after a window that names them (v1.0.63)' },
                   { name: '107 \u00b7 Promote Next', note: 'Set as Next, Set to go live' }],
-      companions: 'issues-tab-v1.0.26.css \u00b7 pathways: ix-issue-data /plans (TA_CONFIG.planList), Scenario 126 webhook (TA_CONFIG.makeAddIssue), Scenario 107 webhook (TA_CONFIG.makePromoteNext)'
+      companions: 'issues-tab-v1.0.26.css \u00b7 ix-buttons (ix-btn--danger) \u00b7 pathways: ix-issue-data /plans (TA_CONFIG.planList), ix-content (TA_CONFIG.contentUrl), Scenario 107 webhook (TA_CONFIG.makePromoteNext)'
     }) : '';
     return (window.IxHeader && IxHeader.render)
       ? IxHeader.render({ icon: '\uD83D\uDCCB', title: 'Pub Plans', actions: [_info, _ppAdd].filter(Boolean) })
@@ -2707,27 +2774,17 @@
 
     var issueName = abbreviation ? (abbreviation + '-' + issueLabel) : issueLabel;
 
-    // Build query string. Make's Custom Webhook will parse each
-    // param into a separate bundle item — no data structure setup
-    // needed on the Make side.
-    var params = new URLSearchParams({
+    var addScen  = 'ix-content';                                         // v1.0.63: was Scenario 126
+    if (!requireContent('create a PubPlan')) return;
+    var body = {                                                          // v1.0.63: 126's names, as JSON
       taId:            context.taId,
-      publisherId:     context.publisherId,
-      titleSlug:       context.titleSlug,
       issueName:       issueName,
-      issueNumber:     issueNumber,   // stem  → issue-number (Number)
-      issueLabel:      issueLabel,    // full  → issue-number-display (Text)
+      issueNumber:     issueNumber === '' ? null : Number(issueNumber),
+      issueLabel:      issueLabel,
       edition:         edition,
-      name:            name,
-      abbreviation:    abbreviation,
       publicationDate: publicationDate,
-      editionLetter:   (issueLabel.match(/[A-Z]+$/) || ['A'])[0]   // v1.0.34
-    });
-    var addMode  = _addMode;
-    var addUrl   = requireMakeUrl('makeAddIssue', 'create a PubPlan');   // v1.0.62: 126 only
-    var addScen  = 'Scenario 126';
-    if (!addUrl) return;
-    var url = addUrl + '?' + params.toString();
+      editionLetter:   (issueLabel.match(/[A-Z]+$/) || ['A'])[0]
+    };
 
     // Lock UI during the request
     if (submitBtn) {
@@ -2735,6 +2792,10 @@
       submitBtn.textContent = 'Creating…';
     }
     if (cancelLnk) cancelLnk.style.pointerEvents = 'none';
+    function unlock() {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Create →'; }
+      if (cancelLnk) cancelLnk.style.pointerEvents = '';
+    }
 
     // v1.0.10 TOAST-TRUTH. A 2xx is necessary but not sufficient —
     // we diff the echoed fieldData against what we sent, field by
@@ -2745,33 +2806,19 @@
       'issue-number-display': issueLabel
     };
 
-    fetch(url, { method: 'GET', ixLabel: 'Add PubPlan' })   // v1.0.49
-      .then(function (res) {
-        // v1.0.29 — 126 refuses with 409/422 and a JSON reason; read it.
-        return res.text().then(function (t) {
-          if (res.ok) return t;
-          try { var p = JSON.parse(t); if (p && p.ok === false) return t; } catch (e) {}
-          throw new Error('HTTP ' + res.status);
-        });
-      })
-      .then(function (raw) {
-        var payload = null;
-        try { payload = JSON.parse(raw); } catch (e) { payload = null; }
-
+    contentPost('/nl-blocks/hydrate', body, 'Add PubPlan')
+      .then(function (payload) {
         var echoed = payload && payload.fieldData;
 
-        // v1.0.29 — 126 says no in its body (name taken, Webflow refused).
-        if (payload && payload.ok === false) {
-          showError('Nothing was created: ' + (payload.error || 'the scenario refused') + '.');
-          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Create →'; }
-          if (cancelLnk) cancelLnk.style.pointerEvents = '';
+        // ix-content says no in its body (name taken, no Default Layout, Webflow refused). Nothing is kept.
+        if (payload.ok === false) {
+          showError('Nothing was created: ' + contentWhy(payload, 'ix-content refused'));
+          unlock();
           return;
         }
 
-        // No echo → Scenario 103 blueprint v1.1 not imported yet, or an
-        // older response shape. We will NOT claim a verified success.
         if (!echoed) {
-          console.warn('[PubPlan Add] no fieldData echo in webhook response — cannot verify the write.', raw);
+          console.warn('[PubPlan Add] no fieldData echo in the ix-content reply — cannot verify the write.', payload);
           showUnverifiedAndReload(issueName);
           return;
         }
@@ -2788,25 +2835,18 @@
         if (mismatches.length) {
           console.error('[PubPlan Add] write verification FAILED', mismatches);
           showError('PubPlan was created but stored the wrong values — ' +
-                    mismatches.join(' · ') + '. Check ' + addScen + ' mappings before retrying.');
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Create →';
-          }
-          if (cancelLnk) cancelLnk.style.pointerEvents = '';
+                    mismatches.join(' · ') + '. Check ' + addScen + ' before retrying.');
+          unlock();
           return;
         }
+        if (payload.fieldsSkipped && payload.fieldsSkipped.length) console.warn('[PubPlan Add] ix-content skipped fields the collections no longer have:', payload.fieldsSkipped);
 
         showSuccessAndReload(echoed.name || issueName);
       })
       .catch(function (err) {
-        console.error('[PubPlan Add] webhook failed:', err);
+        console.error('[PubPlan Add] ix-content failed:', err);
         showError('Failed to create PubPlan: ' + (err.message || 'unknown error') + '. Please try again.');
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Create →';
-        }
-        if (cancelLnk) cancelLnk.style.pointerEvents = '';
+        unlock();
       });
   }
 
@@ -2857,8 +2897,8 @@
     var pend    = Number(p && p.pendingCount) || 0;                          // v1.0.51
     var carried = (p && Array.isArray(p.nlCarried)) ? p.nlCarried : [];       // v1.0.51
     var dropped = (p && Array.isArray(p.dropped)) ? p.dropped : [];
-    var bad     = (p && p.rows && Array.isArray(p.rows.results))
-                    ? p.rows.results.filter(function (r) { return !r || r.ok !== true; }).length : 0;
+    var rowList = (p && Array.isArray(p.rows)) ? p.rows : (p && p.rows && Array.isArray(p.rows.results)) ? p.rows.results : [];   // v1.0.63: ix-content's rows
+    var bad     = rowList.filter(function (r) { return !r || r.ok !== true; }).length;
     var made    = Number(p && p.blockCount) || 0;
     if (!acks && !pend && !carried.length && !dropped.length && !bad) { showSuccessAndReload(issueName); return; }
     var parts = [];
@@ -3150,28 +3190,32 @@
       return;
     }
 
-    // v1.0.62 — Scenario 126 only (103-CLONE is gone).
-    var cloneUrl = requireMakeUrl('makeCloneIssue', 'clone');
-    if (!cloneUrl) return;
-    var scenario = 'Scenario 126';
+    // v1.0.63 — ix-content /nl-blocks/clone (was Scenario 126).
+    if (!requireContent('clone')) return;
+    var scenario = 'ix-content';
 
     var abbreviation = context.taShort || '';
     var issueName    = abbreviation ? (abbreviation + '-' + issueLabel) : issueLabel;
 
-    var params = new URLSearchParams({
+    var body = {
       sourcePubplanId: sourceId,
       taId:            context.taId,
       issueName:       issueName,
-      issueNumber:     issueNumber,   // stem → issue-number (Number)
-      issueLabel:      issueLabel,    // full → issue-number-display (Text)
-      publicationDate: publicationDate
-    });
+      issueNumber:     Number(issueNumber),   // stem → issue-number (Number)
+      issueLabel:      issueLabel,            // full → issue-number-display (Text)
+      publicationDate: publicationDate,
+      editionLetter:   (issueLabel.match(/[A-Z]+$/) || ['A'])[0]
+    };
 
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.textContent = 'Cloning…';
     }
     if (cancelLnk) cancelLnk.style.pointerEvents = 'none';
+    function unlock() {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Clone →'; }
+      if (cancelLnk) cancelLnk.style.pointerEvents = '';
+    }
 
     // Toast-truth: 2xx is not enough. Diff the echo.
     var expected = {
@@ -3180,28 +3224,17 @@
       'issue-number-display': issueLabel
     };
 
-    fetch(cloneUrl + '?' + params.toString(), { method: 'GET', ixLabel: 'Clone' })   // v1.0.49
-      .then(function (res) {
-        // v1.0.29 — 126 refuses with 409/422 and a JSON reason; read it.
-        return res.text().then(function (t) {
-          if (res.ok) return t;
-          try { var p = JSON.parse(t); if (p && p.ok === false) return t; } catch (e) {}
-          throw new Error('HTTP ' + res.status);
-        });
-      })
-      .then(function (raw) {
-        var payload = null;
-        try { payload = JSON.parse(raw); } catch (e) { payload = null; }
+    contentPost('/nl-blocks/clone', body, 'Clone')
+      .then(function (payload) {
         var echoed = payload && payload.fieldData;
 
-        if (payload && payload.ok === false) {
-          showError('Nothing was cloned: ' + (payload.error || 'the scenario refused') + '.');
-          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Clone →'; }
-          if (cancelLnk) cancelLnk.style.pointerEvents = '';
+        if (payload.ok === false) {
+          showError('Nothing was cloned: ' + contentWhy(payload, 'ix-content refused'));
+          unlock();
           return;
         }
         if (!echoed) {
-          console.warn('[PubPlan Clone] no fieldData echo — cannot verify the write.', raw);
+          console.warn('[PubPlan Clone] no fieldData echo — cannot verify the write.', payload);
           showUnverifiedAndReload(issueName);
           return;
         }
@@ -3216,26 +3249,18 @@
         if (mismatches.length) {
           console.error('[PubPlan Clone] write verification FAILED', mismatches);
           showError('Clone was created but stored the wrong values — ' +
-                    mismatches.join(' · ') + '. Check ' + scenario + ' mappings.');
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Clone →';
-          }
-          if (cancelLnk) cancelLnk.style.pointerEvents = '';
+                    mismatches.join(' · ') + '. Check ' + scenario + '.');
+          unlock();
           return;
         }
 
         closeCloneModal();
-        showCloneReport(echoed.name || issueName, payload);   // v1.0.62: 126 only
+        showCloneReport(echoed.name || issueName, payload);
       })
       .catch(function (err) {
-        console.error('[PubPlan Clone] webhook failed:', err);
+        console.error('[PubPlan Clone] ix-content failed:', err);
         showError('Failed to clone: ' + (err.message || 'unknown error') + '. Please try again.');
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Clone →';
-        }
-        if (cancelLnk) cancelLnk.style.pointerEvents = '';
+        unlock();
       });
   }
 
@@ -3410,44 +3435,32 @@
     if (clash.length) return err('Already sent on ' + date + ': ' + clash.join(', ') +
       '. A zip can repeat on another day, never twice on the same day.', f.zips);
 
-    var url = requireMakeUrl('makeCloneIssue', 'add an edition');
-    if (!url) return;
+    if (!requireContent('add an edition')) return;                     // v1.0.63: ix-content, not 126
     var stemNum = p.stem.match(/(\d+)$/)[1];
     var issueLabel = stemNum + letter;
     var issueName = p.stem + letter;
-    var params = new URLSearchParams({
+    var body = {
       sourcePubplanId: src.itemId,
       taId:            context.taId,
       issueName:       issueName,
-      issueNumber:     stemNum,
+      issueNumber:     Number(stemNum),
       issueLabel:      issueLabel,
       publicationDate: date,
       edition:         '1',
       editionLetter:   letter,
       sendZipCodes:    zips.join(';')
-    });
+    };
     var expected = { 'name': issueName, 'issue-number': stemNum, 'issue-number-display': issueLabel };
 
-    btn.disabled = true; btn.textContent = 'Adding\u2026';
+    btn.disabled = true; btn.textContent = 'Adding…';
     if (cancel) cancel.style.pointerEvents = 'none';
-    function reset() { btn.disabled = false; btn.textContent = 'Add edition \u2192'; if (cancel) cancel.style.pointerEvents = ''; }
+    function reset() { btn.disabled = false; btn.textContent = 'Add edition →'; if (cancel) cancel.style.pointerEvents = ''; }
 
-    fetch(url + '?' + params.toString(), { method: 'GET', ixLabel: 'Add edition' })   // v1.0.49
-      .then(function (res) {
-        return res.text().then(function (t) {
-          if (res.ok) return t;
-          try { var q = JSON.parse(t); if (q && q.ok === false) return t; } catch (e) {}
-          throw new Error('HTTP ' + res.status);
-        });
-      })
-      .then(function (raw) {
-        var payload = null;
-        try { payload = JSON.parse(raw); } catch (e) {}
-        if (payload && payload.ok === false) {   // v1.0.38
-          var why = String(payload.error || 'Nothing was created: the scenario refused.').replace(/\.+\s*$/, '.');
+    contentPost('/nl-blocks/clone', body, 'Add edition')
+      .then(function (payload) {
+        if (payload.ok === false) {   // v1.0.38
+          var why = contentWhy(payload, 'Nothing was created: ix-content refused.');
           if (!/^nothing was/i.test(why)) why = 'Nothing was created: ' + why;
-          var we = String(payload.workerError || '').trim();
-          if (we) why += ' Worker said: ' + we.replace(/\.+\s*$/, '') + '.';
           err(why); reset(); return;
         }
         var echoed = payload && payload.fieldData;
@@ -3457,7 +3470,7 @@
           var want = String(expected[k]).trim(), got = String(echoed[k] == null ? '' : echoed[k]).trim();
           if (want !== got) bad.push(k + ': sent "' + want + '", stored "' + got + '"');
         });
-        if (bad.length) { err('Created but stored the wrong values \u2014 ' + bad.join(' \u00b7 ') + '. Check Scenario 126.'); reset(); return; }
+        if (bad.length) { err('Created but stored the wrong values — ' + bad.join(' · ') + '. Check ix-content.'); reset(); return; }
         closeEditionModal();
         showCloneReport(echoed.name || issueName, payload);
       })
@@ -3699,13 +3712,117 @@
   // Escape cancels an open question.
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    if (document.querySelector('[data-pp-add-backdrop],[data-pp-clone-backdrop]')) return; // modals own Escape
+    if (document.querySelector('[data-pp-add-backdrop],[data-pp-clone-backdrop],[data-dp-backdrop],[data-ed-backdrop]')) return; // modals own Escape (v1.0.63: delete, edition)
     if (S.menu) { S.menu = ''; renderZones(); return; }                 // v1.0.46
     var had = Object.keys(S.ui).some(function (k) { return S.ui[k] === 'confirm'; });   // v1.0.50
     if (!had) return;
     closeAllConfirms();
     renderZones();
   });
+
+  // ════════════════════════════════════════════════════════════
+  // DELETE PLAN (v1.0.63) — ix-content POST /nl-blocks/delete-plan. The window first asks what would go (dry run).
+  // ════════════════════════════════════════════════════════════
+  var _dpEsc = null;
+  function closeDeleteModal() {
+    var b = document.querySelector('[data-dp-backdrop]');
+    if (b && b.parentNode) b.parentNode.removeChild(b);
+    if (_dpEsc) { document.removeEventListener('keydown', _dpEsc); _dpEsc = null; }
+  }
+  function openDeleteModal(iss) {
+    var context = readTaContext();
+    if (!context) { window.alert('Cannot delete: missing T-A context. Please reload the page.'); return; }
+    if (!iss || !iss.itemId) { window.alert('Cannot delete: this tile has no PubPlan ID.'); return; }
+    if (!requireContent('delete a plan')) return;
+    if (document.querySelector('[data-dp-backdrop]')) return;
+    document.body.insertAdjacentHTML('beforeend',
+      '<div class="ppm-backdrop" data-dp-backdrop>' +
+        '<div class="ppm-modal" role="dialog" aria-modal="true" aria-labelledby="pdp-title">' +
+          '<div class="ppm-hdr"><h3 id="pdp-title">Delete ' + esc(iss.title) + '</h3>' +
+            '<button type="button" class="ppm-close" data-dp-cancel aria-label="Close">&times;</button></div>' +
+          '<div class="ppm-body">' +
+            '<div class="ppm-error" data-dp-error hidden></div>' +
+            '<div class="ppm-clone-note" data-dp-what>Checking what this would delete…</div>' +
+          '</div>' +
+          '<div class="ppm-actions">' +
+            '<a href="javascript:void(0)" class="ppm-cancel-link" data-dp-cancel>Cancel</a>' +
+            '<button type="button" class="ix-btn ix-btn--danger" data-dp-go disabled>Delete plan</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>');
+    var bd = document.querySelector('[data-dp-backdrop]');
+    var errEl = bd.querySelector('[data-dp-error]'), whatEl = bd.querySelector('[data-dp-what]'), go = bd.querySelector('[data-dp-go]');
+    var busy = false;
+    function err(msg) { errEl.textContent = msg; errEl.hidden = false; }
+    function close() { if (!busy) closeDeleteModal(); }
+    _dpEsc = function (e) { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', _dpEsc);
+    bd.addEventListener('click', function (e) { if (e.target === bd) close(); });
+    Array.prototype.forEach.call(bd.querySelectorAll('[data-dp-cancel]'), function (el) {
+      el.addEventListener('click', function (e) { e.preventDefault(); close(); });
+    });
+    var ask = { taId: context.taId, pubplanId: iss.itemId };
+    contentPost('/nl-blocks/delete-plan', { taId: ask.taId, pubplanId: ask.pubplanId, dryRun: true }, '', true)
+      .then(function (p) {
+        if (p.ok === false) { whatEl.hidden = true; err('This plan cannot be deleted: ' + contentWhy(p)); return; }
+        var nls = (p.newsletters || []).map(function (n) { return '<strong>' + esc(n.name || n.id) + '</strong>'; });
+        var n = Number(p.blocks) || 0, pi = Number(p.printItems) || 0;
+        whatEl.innerHTML = 'This deletes:' +
+          '<ul style="margin:6px 0 8px 18px;padding:0;">' +
+            '<li>the PUBLICATION PLAN <strong>' + esc((p.plan && p.plan.name) || iss.title) + '</strong></li>' +
+            '<li>' + (nls.length ? 'its NEWSLETTER ' + nls.join(', ') : 'no NEWSLETTER (none is linked to this plan)') + '</li>' +
+            '<li>its ' + n + ' block' + (n === 1 ? '' : 's') + '</li>' +
+            (pi ? '<li>and takes the plan off ' + pi + ' print item' + (pi === 1 ? '' : 's') + ' in the Allocator (the print items stay)</li>' : '') +
+          '</ul>' +
+          'It cannot be undone here. The change log keeps every block as it was.';
+        if (p.refused) { err('This plan cannot be deleted: ' + String(p.refused)); return; }
+        go.disabled = false;
+        go.focus();
+      })
+      .catch(function (e) { whatEl.hidden = true; err('Could not check this plan: ' + (e.message || 'unknown error') + '.'); });
+    go.addEventListener('click', function () {
+      if (go.disabled) return;
+      busy = true; go.disabled = true; go.textContent = 'Deleting…';
+      errEl.hidden = true;
+      contentPost('/nl-blocks/delete-plan', ask, 'Delete plan')
+        .then(function (p) {
+          if (p.ok === false) {
+            busy = false; go.textContent = 'Delete plan'; go.disabled = false;
+            err((p._status === 207 ? '' : 'Nothing more was deleted: ') + contentWhy(p));
+            return;
+          }
+          closeDeleteModal();
+          var notes = (p.done && p.done.notes) || [];
+          var name = (p.plan && p.plan.name) || iss.title;
+          var toast = document.createElement('div');
+          if (!notes.length) {
+            toast.className = 'ppm-success-banner';
+            toast.innerHTML = '<span class="ppm-success-icon">✓</span> ' + esc(name) + ' deleted — refreshing…';
+            document.body.appendChild(toast);
+            ixReload(1000);
+            return;
+          }
+          toast.className = 'ppm-success-banner ppm-success-banner--attn';
+          toast.innerHTML = '<span class="ppm-success-icon">!</span><span class="ppm-report"><span>' + esc(name) + ' deleted.</span>' +
+            notes.map(function (t) { return '<span class="ppm-report-sub">' + esc(t) + '</span>'; }).join('') +
+            '</span><button type="button" class="ppm-report-ok">Got it</button>';
+          document.body.appendChild(toast);
+          toast.querySelector('.ppm-report-ok').addEventListener('click', function () { ixReload(0); });
+        })
+        .catch(function (e) {
+          busy = false; go.textContent = 'Delete plan'; go.disabled = false;
+          err('Delete plan failed: ' + (e.message || 'unknown error') + '. Reload the page to see what is left, then try again.');
+        });
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-it-delplan]');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();   // the tile opens the plan; this item must not
+    if (S.menu) { S.menu = ''; renderZones(); }
+    openDeleteModal(findByKey(btn.getAttribute('data-it-delplan') || ''));
+  }, true);
 
   // ── Whole-tile click (v1.0.26) ──
   // Anywhere on a tile or Next band opens it, except its own
