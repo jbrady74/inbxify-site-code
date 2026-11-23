@@ -1,8 +1,13 @@
-// workers/ix-canva/ix-canva-v0.3.2.js
+// workers/ix-canva/ix-canva-v0.3.3.js
 // ============================================================
 // INBXIFY · Cloudflare Worker · ix-canva
 // Host: ix-canva.jeff-2cd.workers.dev
 //
+// v0.3.3 (23 Nov 2026, Ad Maker Build S3) — A DELETED AD'S RECORD GOES; THE CONNECT LANDING SAYS SO.
+//   · POST /draft/remove takes adDeleted:true: the record is removed whatever its state (sent, approved). Ad Maker
+//     sends it after ix-sales has deleted the ad. Without it only a draft comes off, as before.
+//   · With the test page off, the front page no longer answers "The test page is off" (Canva lands there after
+//     /connect, and it read as a failure). It says whether the Worker is connected to Canva.
 // v0.3.2 (22 Nov 2026, Ad Maker Build S3) — THE CANVA LOGIN NO LONGER DROPS.
 //   Found on the live Drafts in Canva list (Jeff, 22 Nov): "ix-canva is not connected to a Canva account".
 //   Cause: Canva's refresh token works once. GET /drafts looks up many designs at the same moment; once the hour-long
@@ -98,7 +103,7 @@
 // v0.1.3 (18 Nov 2026) — the test Worker: /connect, /test, /return; see the git history for its notes.
 // ============================================================
 
-const VERSION = '0.3.2';
+const VERSION = '0.3.3';
 const SHEET_MAX = 65536;   // HC-P-CANVA1-10
 const APPROVED_FOLDER = 'Approved';   // HC-P-CANVA1-12 · v0.3.1: the subfolder approved designs move to
 const DRAFT_THUMBS = 24;              // HC-P-CANVA1-13 · v0.3.1: designs looked up in Canva per GET /drafts
@@ -128,6 +133,7 @@ export default {
     if (req.method === 'OPTIONS') return preflight(env, origin);
     try {
       if (p === '/health') return json(env, origin, { ok: true, version: VERSION, connected: !!(await env.CANVA_KV.get('tokens')) });
+      if (p === '/' && String(env.TEST_PAGE || '') !== 'on') { const tk = await env.CANVA_KV.get('tokens', 'json'); return json(env, origin, { ok: true, version: VERSION, connected: !!tk, message: tk ? 'Connected to Canva. You can close this tab.' : 'Not connected to Canva. Open ' + base(env) + '/connect' }); }   // v0.3.3
       if (p === '/' || p === '/test' || p === '/test/edit') { if (String(env.TEST_PAGE || '') !== 'on') return json(env, origin, { ok: false, error: 'The test page is off (set TEST_PAGE=on on the Worker to use it).' }, 404); if (p === '/test/edit') return testEdit(env, url); return html(await testPage(env, url)); }
       if (p === '/connect') return connect(env, url);
       if (p === '/oauth/callback') return callback(env, url);
@@ -531,7 +537,7 @@ async function draftRemove(env, b) {
   const designId = String(b.designId || '').trim(), custId = String(b.customerId || '').trim();
   if (!designId || !custId) throw httpErr(400, 'designId and customerId are required.');
   const d = await draftGet(env, custId, designId); if (!d) return { ok: true, removed: false };
-  if (d.state !== 'draft') throw httpErr(409, 'Only a draft comes off the list. This design is ' + d.state + '.');
+  if (d.state !== 'draft' && b.adDeleted !== true) throw httpErr(409, 'Only a draft comes off the list. This design is ' + d.state + '.');
   await env.CANVA_KV.delete(draftKey(custId, designId));
   return { ok: true, removed: true };
 }
