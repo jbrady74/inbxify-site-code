@@ -1,4 +1,7 @@
-// content-library-v1.0.93.js
+// content-library-v1.0.94.js
+// v1.0.94 (23 Nov 2026, Image Links S3): A LISTING'S PICTURE IS img-main.
+//   Uploadcare Raw Links: REAL ESTATE has one picture field, img-main (raw Uploadcare link), backfilled 23 Nov.
+//   The Asset Library reads it alone; property-image-link (Photo URL) is no longer read. Nothing else changed.
 // v1.0.93 (23 Nov 2026, Image Links S2): AN EVENT'S PICTURE IS img-main.
 //   Uploadcare Raw Links: EVENTS has one picture field, img-main (raw Uploadcare link), backfilled 23 Nov.
 //   The Asset Library reads it alone; Event Hero Image (ULC) and Event Image URL are no longer read, so Legacy
@@ -1370,7 +1373,7 @@ document.addEventListener('DOMContentLoaded', function () {
       base.phaseNote   = (fd['phase-note'] || '').trim();
       base.mls         = (fd['mls-number'] || '').trim();
       base.statusLabel = optLabel(tab, 'listing-status', fd['listing-status']);
-      base.mainImage   = fd['property-image-link'] || null;
+      base.mainImage   = fd['img-main'] || null;   // v1.0.94
       // v1.0.84 — HC-P-AL-1 narrowed: "Sold" colours the phase red,
       // nothing more. The price follows the hide-price switch.
       base.isSold      = /^sold$/i.test(base.phase || '');
@@ -2836,7 +2839,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // object literal would freeze the values at mount and every reader
   // would see 'articles' forever. Consumers: ta-asf v1.5.50+ (return
   // surface on close).
-  var CL_VERSION = '1.0.93';
+  var CL_VERSION = '1.0.94';
   window.InbxContentLibrary = {
     get mainTab()   { return S.mainTab || ''; },
     get subTab()    { return S.subTab || ''; },
