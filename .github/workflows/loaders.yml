@@ -1,6 +1,11 @@
 # .github/workflows/loaders.yml
-# INBXIFY · Agent Groundwork G1 · builds the page version lists, purges them on jsDelivr, proves the CDN has them.
+# INBXIFY · Agent Groundwork · builds the page version lists and proves the pages can read them.
 # Runs on main (live) and on preview branches (HC-P-AG-1: reskin-, agent-, jeff-).
+#
+# G3 (23 Nov 2026): ON MAIN, GOING LIVE NO LONGER WAITS ON A jsDelivr PURGE.
+#   The live lists are published to GitHub Pages, pinned to this commit (every file named at @<sha>), by the
+#   "pages" job. The loader's stubs read them there. jsDelivr copies of the lists are kept as a fallback only.
+#   Needs, once: Settings, Pages, Build and deployment, Source: GitHub Actions.
 # A red run means: the pages are still on the last good lists. Read the last step's output for the file named.
 name: Loaders
 
@@ -15,13 +20,74 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: loaders-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  loaders:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build the version lists from manifests/ (and, on main, the lists pinned to this commit)
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            node tools/build-loaders.mjs --pages _site --sha "${{ github.sha }}" --repo "${{ github.repository }}"
+          else
+            node tools/build-loaders.mjs
+          fi
+      - name: Commit the lists if the manifests changed them
+        run: |
+          if [ -z "$(git status --porcelain loaders)" ]; then echo "loaders/ already matches the manifests"; exit 0; fi
+          git config user.name "inbxify-loaders"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add loaders
+          git commit -m "loaders: rebuilt from manifests"
+          # main moves every few minutes: rebase onto the newest copy and try again
+          for TRY in 1 2 3 4 5; do
+            if git push; then exit 0; fi
+            git pull --rebase --quiet || { git rebase --abort; git pull --rebase -X theirs --quiet; }
+            node tools/build-loaders.mjs > /dev/null
+            if [ -n "$(git status --porcelain loaders)" ]; then git add loaders; git commit --quiet -m "loaders: rebuilt from manifests"; fi
+            sleep $((TRY * 3))
+          done
+          echo "::warning::loaders/ could not be pushed (main kept moving). The next run rebuilds it; the live lists on Pages are not affected."
+      - name: Hand the pinned lists to the Pages job
+        if: github.ref_name == 'main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Keep the pinned lists for the CDN check
+        if: github.ref_name == 'main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinned-lists
+          path: _site
+          retention-days: 3
+
+  pages:
+    if: github.ref_name == 'main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Publish the live lists to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
+
+  verify:
+    needs: [build, pages]
+    if: always() && needs.build.result == 'success' && (needs.pages.result == 'success' || needs.pages.result == 'skipped' || needs.pages.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -29,21 +95,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Build the version lists from manifests/
+      - name: Build the lists again (the check compares them byte for byte)
         run: node tools/build-loaders.mjs
-      - name: Commit the lists if the manifests changed them
-        run: |
-          if [ -n "$(git status --porcelain loaders)" ]; then
-            git config user.name "inbxify-loaders"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add loaders
-            git commit -m "loaders: rebuilt from manifests"
-            git push
-          else
-            echo "loaders/ already matches the manifests"
-          fi
-      - name: Purge jsDelivr and check the CDN serves the new copy
+      - name: Fetch the pinned lists
+        if: github.ref_name == 'main'
+        uses: actions/download-artifact@v4
+        with:
+          name: pinned-lists
+          path: _site
+      - name: Check Pages (main), jsDelivr and every listed file
         env:
           REPO: ${{ github.repository }}
           REF: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          PAGES_DIR: ${{ github.ref_name == 'main' && '_site' || '' }}
         run: node tools/verify-cdn.mjs

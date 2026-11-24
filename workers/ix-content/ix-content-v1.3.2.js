@@ -1,4 +1,11 @@
-// ix-content-v1.3.1.js
+// ix-content-v1.3.2.js
+//
+// v1.3.2 (24 Nov 2026, Content Home S16) — A COPY THAT LANDS FOR A ROW DELETED MEANWHILE IS TAKEN BACK.
+//   Found in Test 7: a plan deleted while some of its new blocks were still waiting to be copied. If the trailing copy
+//   creates a block in Webflow at the moment the row is deleted in D1, the Webflow item had no D1 row (and its plan
+//   could then only be archived, not deleted). Now the drain checks that the row is still in D1 right after Webflow
+//   makes the item; if it is gone, the item is deleted from Webflow at once (live, then staged). Reported as
+//   "takenBack". Nothing else changed.
 // INBXIFY · Cloudflare Worker · ix-content
 //
 // v1.3.1 (23 Nov 2026, Content Home S16) — DELETE A PLAN INSIDE THE SYSTEM, AND THE PUB PLANS PAGE MOVES OFF SCENARIO 126.
@@ -299,7 +306,7 @@
 //   (HOME_TABLES, code: a table name is how code reaches D1); HC-P-CH3-2 batch size cap 50 ops (BATCH_MAX);
 //   HC-P-CH3-3 burst 429 wait cap 20 s (DEFAULTS.burst). Field slugs and create defaults live in KV, not code.
 
-const VERSION = '1.3.1';
+const VERSION = '1.3.2';
 const WF = 'https://api.webflow.com/v2';                         // HC-P-CH1-8
 const PAGE = 100;                                                // HC-P-CH1-8 · Webflow lists at most 100 a request
 const KV_KEYS = {                                                // HC-P-CH1-7
@@ -1980,7 +1987,12 @@ async function drainOutbox(env, cfg, opts) {
             const c = await pacer.call('/collections/' + cid + '/items', { method: 'POST', body: { isArchived: !!row.is_archived, isDraft: false, fieldData: fd } });
             wfId = c.data && c.data.id;
             if (!wfId) throw new Error('Webflow created nothing (no id came back)');
-            await db.prepare('UPDATE ' + table + ' SET wf_id=? WHERE id=?').bind(wfId, row.id).run();   // at once: a retry never makes it twice
+            const kept = await db.prepare('UPDATE ' + table + ' SET wf_id=? WHERE id=?').bind(wfId, row.id).run();   // at once: a retry never makes it twice
+            if (!(kept.meta && kept.meta.changes)) {                                   // v1.3.2: the row was deleted meanwhile
+              await deleteItemBoth(pacer, cid, wfId);
+              rep.takenBack = (rep.takenBack || 0) + 1;
+              await mark(null); continue;
+            }
             wfMap.set(row.id, wfId);
             const s = await pacer.call('/collections/' + cid + '/items/' + wfId, { method: 'PATCH', body: { fieldData: { [sch.h.selfIdField]: wfId } } });
             item = s.data && s.data.id ? s.data : c.data;

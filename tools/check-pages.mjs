@@ -3,6 +3,8 @@
 // INBXIFY · the Checks Action, part 2: open the changed pages on the test title, on main and on the branch
 // (Agent Groundwork G2, scoping §3 points 1 to 4). Runs in GitHub's cloud with Playwright.
 //
+// v1.0.4 (23 Nov 2026, Agent Groundwork G3) — compares main (files at @<sha>, from GitHub Pages lists) and branch (files at @branch) by file
+//   name, not address, so an error or failed request is not blamed on the branch because the address differs.
 // v1.0.3 (22 Nov 2026, TA Reskin S1) — three fixes from the reskin's first runs:
 //   (1) ELEMENTS THAT ARE FADING ARE NOT MEASURED. axe measured the progress card's text mid-fade (.ixp-msg,
 //       .ixp-time) and blamed the branch (design closure finding 6). Before each measurement the check waits up to
@@ -110,7 +112,8 @@ async function waitForCdn() {
 }
 
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'view';
-const keyOf = (text) => String(text).split(BRANCH).join('main').replace(/[?&]t=\d+/g, '').replace(/\s+/g, ' ').trim();
+// main's files are named at a commit (@<sha>) since build-loaders v1.1.0, a branch's at the branch: compare both as @ref
+const keyOf = (text) => String(text).split(BRANCH).join('main').replace(/inbxify-site-code@[^/\s]+\//g, 'inbxify-site-code@ref/').replace(/[?&]t=\d+/g, '').replace(/\s+/g, ' ').trim();
 
 async function quiet(page) {
   await page.waitForLoadState('networkidle', { timeout: LIMIT }).catch(() => {});

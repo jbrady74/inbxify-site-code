@@ -1,6 +1,16 @@
-/* ta-admaker-v4.11.7.js
+/* ta-admaker-v4.11.9.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.11.9 (24 Nov 2026, Ad Maker Build S3): the ⓘ card named Workers this page no longer matches ("ix-canva
+     v0.3.1 · ix-sales v1.3.9"). It now names the least version each Worker must be (NEEDS, HC-P-AMS3-12), and
+     lists POST /ads/delete. JS only; the CSS is still ta-admaker-v4.11.7.css. Nothing else changed.
+
+   v4.11.8 (23 Nov 2026, TA Reskin S1 · Jeff: "the new Ads tab needs the same chrome as the other tabs") — THE ADS
+     TAB OPENS WITH THE SHARED TITLE ROW (ix-header v1.1.0): "Ads", the ⓘ, "+ New ad", then Refresh last (reloads the
+     board and the Canva drafts; ix-progress shows a card if it runs long). On the New ad page the way back
+     ("‹ All ads") sits in the title row's small slot above the title, which reads "New ad". The ⓘ payload is the
+     same as before. If IxHeader.titleRow is not on the page the old head is drawn, as v4.11.7. Nothing else changed.
 
    Turns an advertiser's print ad, a dropped file, an earlier version or
    nothing at all into a newsletter banner and sidebar, and lists every ad
@@ -920,7 +930,8 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.11.7', CSS_FILE = 'ta-admaker-v4.11.7.css';   // v4.11.0: the Ads tab and the Canva screens
+  var VERSION = '4.11.9', CSS_FILE = 'ta-admaker-v4.11.7.css';   // v4.11.8, v4.11.9: JS only; the CSS is unchanged
+  var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.14 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
   var ADVICE_BIGGER = 1.25;   // HC-P-SSB8-25
@@ -5102,10 +5113,13 @@
   function adsEl() { return document.getElementById(ADS_MOUNT_ID); }
   function adsBadge() {
     if (!(window.IxInfo && IxInfo.badge)) return '';
-    return IxInfo.badge({ file: FILE, version: VERSION, title: ADS_W.title,
+    return IxInfo.badge(adsInfo());
+  }
+  function adsInfo() {   // v4.11.8: the ⓘ payload, shared by the old head and the title row
+    return ({ file: FILE, version: VERSION, title: ADS_W.title,
       blurb: 'The Ads rail tab: every customer of the publisher on the Portal’s board from inbxify’s side (To make, With the publisher or advertiser, then the client list), Ad Maker (Design in Canva or concepts), the ad form, and four idea tabs. Make sidebar / Make banner on a customer opens an Ad Maker job on that customer’s own ads.',
       scenarios: [
-        { name: 'Worker — ix-sales', note: 'GET /ads?publisher= (every customer, versions, states, brand, contact); POST /ads/<id>/decide as inbxify (Approve and make current / hold: Scenario G, then 114, logged); POST /ads/send-approval (the review link by email, through ix-members and Resend)' },
+        { name: 'Worker — ix-sales', note: 'GET /ads?publisher= (every customer, versions, states, brand, contact); POST /ads/<id>/decide as inbxify (Approve and make current / hold: Scenario G, then 114, logged); POST /ads/send-approval (the review link by email, through ix-members and Resend); POST /ads/delete (a true delete: the ADS row, its MEDIA row, its Uploadcare file, its open links)' },
         { name: 'Worker — ix-canva', note: 'TA_CONFIG.canvaUrl: POST /job, GET /job/<id>, GET /job/<id>/png, POST /job/<id>/export, POST /job/from-design (copies an approved design), GET /drafts, POST /design/state, POST /draft/remove' },
         { name: 'Worker — ix-adreformat', note: 'TA_CONFIG.adReformatWorker: reads the ad' },
         { name: 'Worker — ix-asset-list', note: '/list?type=ad: sent back, versions, recipes' },
@@ -5114,7 +5128,7 @@
         { name: 'Scenario 114', note: 'customer writes; current-<shape>-ad pointer' },
         { name: 'Scenario G', note: 'approveAd / updateAd' }
       ],
-      companions: CSS_FILE + ' · ix-ads-board v' + (window.IxAdsBoard ? IxAdsBoard.VERSION : '?') + ' · ix-ad-layouts v' + (window.IxAdLayouts ? IxAdLayouts.VERSION : '?') + ' · ix-canva v0.3.1 · ix-sales v1.3.9 · ix-members v1.1.1' });
+      companions: CSS_FILE + ' · ix-ads-board v' + (window.IxAdsBoard ? IxAdsBoard.VERSION : '?') + ' · ix-ad-layouts v' + (window.IxAdLayouts ? IxAdLayouts.VERSION : '?') + ' · ' + NEEDS });
   }
   function adsPublisher() {
     var id = pagePublisher(), nm = '';
@@ -5135,9 +5149,18 @@
   }
   function adsRender() {
     var el = adsEl(); if (!el) return;
-    var h = '<div class="ta-ads"><div class="ta-ads-head"><h2>' + ADS_W.title + '</h2>' + adsBadge() + '<span class="sp"></span>' + (A.page === 'new' ? '' : '<button type="button" class="ix-btn ix-btn--primary ta-ads-new" data-ads="new">' + ADS_W.newAd + '</button>') + '</div>';
+    var row = window.IxHeader && IxHeader.titleRow;   // v4.11.8: the shared title row when it is on the page
+    var h = '<div class="ta-ads">';
+    if (row) {
+      adsRefreshWire();
+      h += IxHeader.titleRow(A.page === 'new'
+        ? { title: 'New ad', back: { label: ADS_W.allAds, attr: 'data-ads="tabs"' }, info: adsInfo(), refresh: false }
+        : { title: ADS_W.title, info: adsInfo(), actions: ['<button type="button" class="ix-btn ix-btn--primary ta-ads-new" data-ads="new">' + ADS_W.newAd + '</button>'], refresh: 'ta-ads' });
+    } else {
+      h += '<div class="ta-ads-head"><h2>' + ADS_W.title + '</h2>' + adsBadge() + '<span class="sp"></span>' + (A.page === 'new' ? '' : '<button type="button" class="ix-btn ix-btn--primary ta-ads-new" data-ads="new">' + ADS_W.newAd + '</button>') + '</div>';
+    }
     if (A.page === 'new') {
-      h += '<a href="#" class="ta-ads-back" data-ads="tabs">‹ ' + ADS_W.allAds + '</a><h3 class="ta-ads-h3">New ad</h3><div class="ta-ads-sub">Pick how to start. Two work today; four are ideas.</div><div class="ta-ads-tiles">' + ADS_TILES.map(function (t) {
+      h += (row ? '' : '<a href="#" class="ta-ads-back" data-ads="tabs">‹ ' + ADS_W.allAds + '</a><h3 class="ta-ads-h3">New ad</h3>') + '<div class="ta-ads-sub">Pick how to start. Two work today; four are ideas.</div><div class="ta-ads-tiles">' + ADS_TILES.map(function (t) {
         return '<button type="button" class="ta-ads-tile' + (t.works ? '' : ' idea') + '" data-ads="tab" data-v="' + t.k + '"><span class="ic">' + ADS_ICONS[t.icon] + '</span><b>' + esc(t.t) + '</b><small>' + esc(t.s) + '</small><em>' + (t.works ? ADS_W.works : ADS_W.idea) + '</em></button>';
       }).join('') + '</div></div>';
       el.innerHTML = h; return;
@@ -5154,6 +5177,16 @@
     el.innerHTML = h;
     if (keepMaker && keepMaker.childNodes.length) { var slot = document.getElementById(MOUNT_ID); if (slot) slot.replaceWith(keepMaker); }
     adsShowTab();
+  }
+  // v4.11.8 — Refresh in the title row: the board reloads (its onLoad reloads the Canva drafts)
+  var adsRefreshOn = false;
+  function adsRefreshWire() {
+    if (adsRefreshOn || !(window.IxHeader && IxHeader.onRefresh)) return;
+    adsRefreshOn = true;
+    IxHeader.onRefresh('ta-ads', function () {
+      if (A.tab === 'all' && A.board && A.board.refresh) return A.board.refresh();
+      adsRender(); return Promise.resolve();
+    });
   }
   function adsShowTab() {
     var el = adsEl(); if (!el) return;

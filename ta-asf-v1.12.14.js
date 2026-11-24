@@ -1,8 +1,16 @@
-/* ta-asf-v1.12.13.js
+/* ta-asf-v1.12.14.js
    ============================================================
-   ta-asf-v1.12.13.js
+   ta-asf-v1.12.14.js
    INBXIFY TA Studio — ASF (Asset Submission Form)
    Pairs ta-asf-article v1.0.13 (+ ta-asf-article-v1.0.10.css).
+
+   v1.12.14 (23 Nov 2026, Image Links S3) — A LISTING'S PICTURE IS img-main, SENT CLEAN.
+     REAL ESTATE has one picture field, img-main (raw Uploadcare link), backfilled 23 Nov.
+     · Opening a listing reads img-main alone (RE_HYDRATE_MAP.mainImageSrc). property-image-link (Photo URL)
+       is no longer read.
+     · Create listing sends listingImageSrc clean (stripUcTransforms), as create event does since v1.12.13.
+       Save on an existing listing already sent it clean (v1.11.5).
+     Make 104 and G write img-main. Nothing else changed.
 
    v1.12.13 (23 Nov 2026, Image Links S2) — AN EVENT'S PICTURE IS img-main, SENT CLEAN.
      EVENTS has one picture field, img-main (raw Uploadcare link), backfilled 23 Nov.
@@ -4411,7 +4419,7 @@
   //   hydrate field each for Main and OG; small MEDIA picker cards.
   // v1.12.6 (8 Nov, Inset Photo S3) — article saves stop sending mainImageAlt
   //   (Scenario G no longer writes alt-text-for-image; the alt lives on MEDIA).
-  var VERSION = '1.12.13';
+  var VERSION = '1.12.14';
   // v1.11.14 — undo UTF-8-read-as-Windows-1252 ("Â®" → "®", "â€™" → "’").
   var CP1252_HI = { 0x20AC:0x80,0x201A:0x82,0x0192:0x83,0x201E:0x84,0x2026:0x85,0x2020:0x86,0x2021:0x87,0x02C6:0x88,
     0x2030:0x89,0x0160:0x8A,0x2039:0x8B,0x0152:0x8C,0x017D:0x8E,0x2018:0x91,0x2019:0x92,0x201C:0x93,0x201D:0x94,
@@ -5270,7 +5278,7 @@
     propertyFeatures: 'property-description',  // Description (state key kept for 104)
     propertyLink:     'listing-link',
     listingStatus:    'listing-status',        // Record Status option id
-    mainImageSrc:     'property-image-link',   // Photo URL
+    mainImageSrc:     'img-main',              // v1.12.14 (was property-image-link, Photo URL)
     mainImageMediaId: 'hero-image-media-item', // Photo (MEDIA)
     customerId:       'listing-agent-customer' // Agent
   };
@@ -8061,7 +8069,7 @@
         // Property image — v1.3.12 semantic keys; read from generic
         // internal state (S.article.mainImage*) where the picker writes.
         listingImageMediaId: a.mainImageMediaId || '',
-        listingImageSrc:     a.mainImageSrc     || '',
+        listingImageSrc:     stripUcTransforms(a.mainImageSrc || ''),   // v1.12.14 clean
         listingImageAlt:     curVal('mainImageAlt') || '',
         // Refs
         customerId:         a.customerId   || '',
