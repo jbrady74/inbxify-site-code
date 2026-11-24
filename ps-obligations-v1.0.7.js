@@ -24,7 +24,7 @@
 //     back the saved sale when editing, or empties a new one, and keeps the form open; greyed while 0 fields changed.
 //     Cancel closes. Each changed field keeps its small "cancel" at the right end of its label.
 //   Needs ix-sales v1.3.16, ix-table v1.1.0 (+ CSS), ix-forms v1.0.0 (+ CSS) and ix-tokens-portal-look v1.0.1 on the page.
-//   CSS ps-obligations-v1.0.4.css (the old table, filter pills and form grid rules removed).
+//   CSS ps-obligations-v1.0.5.css (the old table, filter pills and form grid rules removed).
 //   HARDCODING: HC-P-PP14-4 the query names title and sale; HC-P-PP14-5 the table's column weights.
 //
 // v1.0.6 (23 Nov 2026, Publisher Portal S11 · Build 2) — ON THE WEBSITE, FOR A FRANCHISE SPONSOR.
@@ -657,7 +657,7 @@
   function info() {
     return ctx.info({ file: FILE, version: VERSION, title: W.title,
       blurb: 'Sales records and the obligations they make, for this publisher, in four sections: Needs you, Running now, Starting later, Ended (ix-sales decides the section). Filters: Customer, and Magazines when there are two or more. Links: ?title=<TITLES-ADMIN id> filters a magazine, ?sale=<id> opens a sale. A send is one newsletter edition. Saving a record makes its sends; editing a live one replaces its open sends; cancelling ends it. Board, Qty, Remaining, Behind pace and each send\'s state come from ix-sales. Pathways: ix-sales /sales, /obligations, /titles, /products, /customers, /franchises, /options, POST /sales, PATCH /sales/<id>, /sales/<id>/cancel, /obligations/<id>/make-good; ix-members /whoami (shell).',
-      scenarios: [], companions: 'ps-obligations-v1.0.4.css · ps-shell v' + window.PsShell.version + ' · ix-sales v1.3.16 (sections) · ix-table v1.1.0 · ix-forms v1.0.0 · ix-form-controls v1.2.0' });
+      scenarios: [], companions: 'ps-obligations-v1.0.5.css · ps-shell v' + window.PsShell.version + ' · ix-sales v1.3.16 (sections) · ix-table v1.1.0 · ix-forms v1.0.0 · ix-form-controls v1.2.0' });
   }
   function render() {
     var y = window.scrollY, act = document.activeElement, focusKey = act && act.getAttribute ? (act.getAttribute('data-k') || act.id || '') : '';

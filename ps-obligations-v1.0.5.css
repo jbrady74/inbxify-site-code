@@ -1,6 +1,9 @@
-/* ps-obligations-v1.0.4.css */
+/* ps-obligations-v1.0.5.css */
 /* ============================================================
    INBXIFY · Publisher Portal · Obligations tab
+   v1.0.5 (24 Nov 2026, Publisher Portal S14) — v1.0.4 plus one rule: the table and the form read the Portal's muted ink for
+   --ix-text-light (the PR #58 Checks report measured ps-shell's #8A857B at 3.1 to 3.7:1 on the table's grounds). v1.0.4 was
+   never live. Companion JS: ps-obligations-v1.0.7.js.
    v1.0.4 (24 Nov 2026, Publisher Portal S14) — the table is ix-table v1.1.0 and the form is ix-forms v1.0.0, so their
    rules go from here: the filter pills (.ps-ob-filters), the hand-built table (.ps-ob-box rows, cells, status pills, the
    v1.0.2 table armor), the form grid (.grid, .f, .lab, .span*, .req, .val) and the save bar (.savebar). The opened sale's
