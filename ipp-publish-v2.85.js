@@ -1,4 +1,14 @@
-/* ipp-publish-v2.84.js */
+/* ipp-publish-v2.85.js */
+/* v2.85 (24 Nov 2026, Publisher Portal S14): MARK DONE ON COMPILE. Ruling 6 of 24 Nov (S13).
+   1 · A SOUND PILL (ipp-revenue v1.10.4 gate().pills[].canMark: ready, nothing unsaved, not yet done) has a job row whose
+       second line is the pill's one-line summary (e.g. "2 of 2 sold: Top Level Soccer and Kitchen Wise"), with two buttons:
+       "Mark done" and "Go to <pill>". Mark done calls IPPRevenue.markDone(key), which writes the same saved tick as the
+       pill's own Done box and checks it with a fresh read. While it runs the button reads "Marking…"; if it fails, the row's
+       second line says why. On success the row goes (the pill is done).
+   2 · A PILL WITH SOMETHING TO FIX (a red mark, unsaved changes, a failed save) keeps only "Go to <pill>", as v2.84.
+   3 · A PILL WITH NO SLOTS IN THIS ISSUE (0/0) has no job: ipp-revenue v1.10.4 answers it done.
+   CSS ipp-publish-v2.30.css (the two-button row). Needs ipp-revenue v1.10.4 (older Revenue: v2.84's rows, no Mark done).
+   HARDCODING: HC-P-PUB85-1 the words ("Mark done", "Marking…", "Check <pill> and mark it done."). */
 /* v2.84 (23 Nov 2026, Publisher Portal S12 · Build 2): COMPILE CHECKS THE REVENUE DONE TICKS AND THE MONTH'S SENDS. Rulings 6 and 10
    of 23 Nov (S11) and the accepted canvas "Obligations in the Revenue tab · Build 2 mockup v0.1" (Compile frames), in the jobs list.
    1 · REVENUE PILLS (ruling 6). Each Revenue pill without its saved Done tick (ipp-revenue v1.10.0 gate().pills) is a red job in
@@ -992,7 +1002,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '2.84';   // v2.42: FILE is derived from this
+  var VERSION = '2.85';   // v2.42: FILE is derived from this
   var DEFAULT_SEND_TIME = '08:00'; // HC-P-S7-17
   var FILE = 'ipp-publish-v' + VERSION + '.js';
   var MOUNTED = 'data-publish-mounted';
@@ -1837,7 +1847,7 @@
     support: 'If it happens again, tell INBXIFY support.',
     showAll: 'Show every job'
   };
-  function J_(g, k, a, b, btn, act) { act = act || {}; return { g: g, k: k, a: a, b: b || '', btn: btn || '', go: act.go || '', slot: act.slot || '', pill: act.pill || '', fix: act.fix || null, run: act.run || '', free: !!act.free }; }   // v2.84 pill
+  function J_(g, k, a, b, btn, act) { act = act || {}; return { g: g, k: k, a: a, b: b || '', btn: btn || '', go: act.go || '', slot: act.slot || '', pill: act.pill || '', fix: act.fix || null, run: act.run || '', free: !!act.free, mark: act.mark || '' }; }   // v2.84 pill; v2.85 mark
   function qt(x) { return '\u201c' + String(x || 'Untitled') + '\u201d'; }
   function qList(xs) { return andList(xs.map(qt)); }
   function slotOf(id) { var b = boardData(), out = null; ((b && b.slots) || []).forEach(function (s) { if (s.id === id) out = s; }); return out; }
@@ -2125,6 +2135,11 @@
       if (!rg.doneField) J.push(J_('ours', 'ours', 'The newsletter has no Revenue Done field yet, so the Revenue pills can\u2019t be ticked done.', 'Add the field Revenue Done (revenue-done) to NEWSLETTERS. ' + JW.support, 'Check again', { run: 'recheck' }));
       else rg.pills.forEach(function (p) {
         if (p.done) return;
+        if (p.canMark && window.IPPRevenue && typeof IPPRevenue.markDone === 'function') {     // v2.85 a sound pill: summary, Mark done, Go to
+          var why = MARK.err[p.key];
+          J.push(J_('revenue', 'red', 'Check ' + p.label + ' and mark it done.', why ? 'Not marked: ' + why : (p.summary || 'Nothing to fix on ' + p.label + '.'), 'Go to ' + p.label, { go: 'revenue', pill: p.key, mark: p.key }));
+          return;
+        }
         J.push(J_('revenue', 'red', 'Tick Done with ' + p.label + ' on Revenue.', p.state === 'needs' ? 'Fix what the pill marks first, then tick Done.' : p.state === 'unsaved' ? 'Save its changes, then tick Done.' : 'Each Revenue pill needs its Done tick before Compile runs.', 'Go to ' + p.label, { go: 'revenue', pill: p.key }));
       });
     }
@@ -2183,7 +2198,25 @@
     if (j.go) return '<button type="button" class="ipp-wl-btn" data-pub-go="' + esc(j.go) + '"' + (j.slot ? ' data-pub-slot="' + esc(j.slot) + '"' : '') + (j.pill ? ' data-pub-pill="' + esc(j.pill) + '"' : '') + '>' + esc(j.btn) + '</button>';   // v2.84 pill
     return '<span class="ipp-wl-btn is-none"></span>';
   }
+  // v2.85 Mark done (HC-P-PUB85-1)
+  var MARK = { busy: {}, err: {} };
+  function markBtn(j) {
+    var busy = !!MARK.busy[j.mark];
+    return '<button type="button" class="ipp-wl-btn ipp-wl-mark" data-pub-mark="' + esc(j.mark) + '"' + (busy ? ' disabled' : '') + '>' + (busy ? 'Marking\u2026' : 'Mark done') + '</button>';
+  }
+  function markDone(key, btn) {
+    if (MARK.busy[key] || !(window.IPPRevenue && typeof IPPRevenue.markDone === 'function')) return;
+    MARK.busy[key] = true; delete MARK.err[key];
+    if (btn) { btn.disabled = true; btn.textContent = 'Marking\u2026'; }
+    Promise.resolve(IPPRevenue.markDone(key)).then(function (r) {
+      delete MARK.busy[key];
+      if (!r || !r.ok) MARK.err[key] = (r && r.error) || 'the tick was not saved';
+      refreshAll();
+    }, function (e) { delete MARK.busy[key]; MARK.err[key] = (e && e.message) || 'the tick was not saved'; refreshAll(); });
+  }
   function jobHtml(j, names) {
+    if (j.mark) return '<div class="ipp-wl-row ipp-wl-row--two is-' + j.k + '"><span class="ipp-wl-g">' + esc((names && names[j.g]) || JW.groups[j.g]) + '</span><div class="ipp-wl-t"><b>' + esc(j.a) + '</b>' +
+      (j.b ? '<span title="' + esc(j.b) + '">' + esc(j.b) + '</span>' : '') + '</div>' + markBtn(j) + jobBtn(j) + '</div>';   // v2.85
     return '<div class="ipp-wl-row is-' + j.k + '"><span class="ipp-wl-g">' + esc((names && names[j.g]) || JW.groups[j.g]) + '</span><div class="ipp-wl-t"><b>' + esc(j.a) + '</b>' +
       (j.b ? '<span title="' + esc(j.b) + '">' + esc(j.b) + '</span>' : '') + '</div>' + jobBtn(j) + '</div>';
   }
@@ -3612,7 +3645,7 @@
                   { name: 'ix-content \u00b7 POST /allocations/batch', note: 'v2.77: Take it off this issue, for a print item in no tile (publication-plans and disposition, with its version)' },
                   { name: '124 \u00b7 PubPlan Block Writer', note: 'the NEWSLETTER only: nlmeta for the step stamps, Send Setup and Delivery' },
                   { name: 'B \u00b7 Conditioner', note: 'picture uploads' }],
-      companions: 'ipp-publish-v2.29.css \u00b7 ipp-shell v1.27 \u00b7 ix-modals \u00b7 ix-success-toast \u00b7 pathways: ix-issue-data v1.0.180+ /plan-board (publish block, holds, row versions, allocations with versions, allocFields; Setup counts four); ix-content v1.2.2 /nl-blocks/batch and /allocations/batch, /links, /media, /link-check, /email-html (v1.0.188+: s names the sender for our open picture, v2.82), /issue-check (wouldStop), Scenario 124 webhook (op nlmeta), Scenario 206 webhook (Compile) \u00b7 ipp-revenue v1.6.5 (IPPRevenue.gate, goTo) \u00b7 ipp-picker v1.55+ (data-slot-key tiles), v1.82 (the waiting card that Place it opens)'
+      companions: 'ipp-publish-v2.30.css \u00b7 ipp-shell v1.27 \u00b7 ix-modals \u00b7 ix-success-toast \u00b7 pathways: ix-issue-data v1.0.180+ /plan-board (publish block, holds, row versions, allocations with versions, allocFields; Setup counts four); ix-content v1.2.2 /nl-blocks/batch and /allocations/batch, /links, /media, /link-check, /email-html (v1.0.188+: s names the sender for our open picture, v2.82), /issue-check (wouldStop), Scenario 124 webhook (op nlmeta), Scenario 206 webhook (Compile) \u00b7 ipp-revenue v1.6.5 (IPPRevenue.gate, goTo) \u00b7 ipp-picker v1.55+ (data-slot-key tiles), v1.82 (the waiting card that Place it opens)'
     });
   }
 
@@ -3901,6 +3934,7 @@
       if ((el = t.closest('[data-publish-missed]'))) { e.preventDefault(); openMissed(function () { compile(goBtn()); }); return; }   // v2.84: Compile anyway compiles
       if ((el = t.closest('[data-publish-recheck]'))) { e.preventDefault(); state.links = null; runCheck(); runLinks(true); return; }
       if ((el = t.closest('[data-cor]'))) { e.preventDefault(); openCor(FIXES[Number(el.getAttribute('data-cor'))]); return; }   // v2.33: the greeting is on its own tab
+      if ((el = t.closest('[data-pub-mark]'))) { e.preventDefault(); if (!el.disabled) markDone(el.getAttribute('data-pub-mark'), el); return; }   // v2.85
       if ((el = t.closest('[data-pub-go]'))) {
         e.preventDefault(); var g = el.getAttribute('data-pub-go'), slot = el.getAttribute('data-pub-slot') || '';
         if (STEPS.some(function (x) { return x.key === g; })) { openStep(g); return; }   // v2.20: confirm from Distribution's locked card; v2.22: any step

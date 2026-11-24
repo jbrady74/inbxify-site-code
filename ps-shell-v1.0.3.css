@@ -1,5 +1,9 @@
-/* ps-shell-v1.0.2.css */
+/* ps-shell-v1.0.3.css */
 /* ============================================================
+   v1.0.3 (24 Nov 2026, Publisher Portal S14) — the small "← Back to TA Studio" link above every tab's title (.ps-back),
+   for pages opened from TA Studio. It sits on the page's left edge, above the title row, never in the title's place.
+   Companion JS: ps-shell-v1.0.6.js. Nothing else changes.
+
    INBXIFY · Publisher Portal · the shell on the PUBLISHERS template
    (www.inbxify.com/publisher/<slug>)
 
@@ -157,3 +161,8 @@
 @keyframes ps-sh{from{background-position:200% 0}to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.ps-ph td i{animation:none}}
 @media (max-width:760px){.ps-portal .ps-nav{justify-content:flex-start;gap:22px;overflow-x:auto}}
+
+/* ── v1.0.3: the way back to TA Studio, small, above the title ── */
+.ps-portal .ps-back{max-width:1440px;margin:0 auto;padding:16px 24px 0;box-sizing:border-box}
+.ps-portal .ps-back a{font-family:var(--ps-sans)!important;font-size:var(--ix-fs-small,12px)!important;font-weight:600!important;color:var(--ps-blue-text)!important;text-decoration:none!important;letter-spacing:0!important}
+.ps-portal .ps-back a:hover{text-decoration:underline!important}

@@ -1,0 +1,144 @@
+/* ix-forms-v1.0.0.css */
+/* ============================================================
+   INBXIFY · ix series · ONE FORM (Publisher Portal S14, 24 Nov 2026)
+   Companion to ix-forms-v1.0.0.js. Builds on ix-form-controls v1.2.0: the controls inside a field keep their own
+   look (ix-picker-input, its gold --changed state, ix-revert). This file only places them: the rows, the field box,
+   the label, the hint, and the save bar.
+
+   ARMOR. The S13 fault: the site's own rules for generic names (.grid, .f) shrank the sale form's fields and centred
+   them in their cells, so rows did not line up. Every name here is ix-form-*, the root carries ix-own, and the box
+   properties that site rules reach carry !important (the ix-table pattern).
+
+   Tokens only (ix-tokens, re-pointed by ix-tokens-portal-look or by .ps-portal on the Portal).
+   ============================================================ */
+
+.ix-form.ix-form {
+  font-family: var(--ix-font-body) !important;
+  font-size: var(--ix-fs-body);
+  line-height: var(--ix-lh-body);
+  color: var(--ix-text-dark);
+  text-align: left !important;
+}
+.ix-form *,
+.ix-form *::before,
+.ix-form *::after { box-sizing: border-box; }
+
+/* ── rows: fixed, equal columns; every row starts at the left edge ── */
+.ix-form .ix-form-row {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: var(--ix-sp-16);
+  row-gap: var(--ix-sp-12);
+  align-items: start !important;
+  justify-items: stretch !important;
+  width: 100% !important;
+  margin: 0 0 var(--ix-sp-16) !important;
+  padding: 0 !important;
+}
+.ix-form .ix-form-f {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: var(--ix-sp-4);
+  min-width: 0;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  grid-column: span 1;
+  text-align: left !important;
+}
+.ix-form .ix-form-s2 { grid-column: span 2; }
+.ix-form .ix-form-s3 { grid-column: span 3; }
+.ix-form .ix-form-sfull { grid-column: 1 / -1; }
+
+/* ── the label: sentence case, bold, the body face (Portal style) ── */
+.ix-form .ix-form-lab {
+  display: flex !important;
+  align-items: baseline;
+  gap: var(--ix-sp-4);
+  min-height: 18px;
+  margin: 0 !important;
+  font-family: var(--ix-font-body) !important;
+  font-size: var(--ix-fs-cell) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  line-height: 18px !important;
+  color: var(--ix-text-dark) !important;
+  white-space: nowrap;
+}
+.ix-form .ix-form-req { color: var(--ix-danger); font-weight: 700; margin-left: 2px; }
+.ix-form .ix-form-lab .ix-form-rv { margin-left: auto !important; padding: 0 2px !important; line-height: 18px !important; }
+
+/* ── the control: fills its cell ── */
+.ix-form .ix-form-ctl { display: block !important; width: 100% !important; min-width: 0; margin: 0 !important; }
+.ix-form .ix-form-ctl > select,
+.ix-form .ix-form-ctl > input,
+.ix-form .ix-form-sel select,
+.ix-form .ix-form-ctl > .ix-picker-input {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  float: none !important;
+}
+.ix-form .ix-form-sel { position: relative; display: block !important; width: 100% !important; min-width: 0; }
+.ix-form .ix-form-sel select { cursor: pointer; padding-right: 28px !important; }
+.ix-form .ix-form-sel select:disabled { cursor: not-allowed; }
+.ix-form .ix-form-sel::after {
+  content: "";
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -6px;
+  border-right: 1.6px solid var(--ix-text-mid);
+  border-bottom: 1.6px solid var(--ix-text-mid);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.ix-form .ix-form-val {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1.5px solid var(--ix-border-soft);
+  border-radius: var(--ix-radius-sm);
+  background: var(--ix-cream);
+  color: var(--ix-text-dark);
+  font-size: var(--ix-fs-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ix-form .ix-form-hint { font-size: var(--ix-fs-small); color: var(--ix-text-mid); line-height: 1.35; }
+.ix-form .ix-form-warn { font-size: var(--ix-fs-small); color: var(--ix-danger); line-height: 1.35; }
+
+/* ── the save bar: words left, Reset · Cancel · Save right, fixed sizes ── */
+.ix-form .ix-form-bar {
+  display: flex !important;
+  align-items: center;
+  gap: var(--ix-sp-16);
+  margin: var(--ix-sp-16) 0 0 !important;
+  padding: var(--ix-sp-12) 0 var(--ix-sp-12) !important;
+  border-top: 1px solid var(--ix-border);
+}
+.ix-form .ix-form-what { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: var(--ix-fs-cell); color: var(--ix-text-mid); }
+.ix-form .ix-form-what b { font-size: var(--ix-fs-body); font-weight: 700; color: var(--ix-text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ix-form .ix-form-need { color: var(--ix-danger); font-size: var(--ix-fs-small); }
+.ix-form .ix-form-err { color: var(--ix-danger); font-size: var(--ix-fs-small); font-weight: 600; }
+.ix-form .ix-form-bar .ix-form-reset,
+.ix-form .ix-form-bar .ix-form-cancel {
+  flex: 0 0 64px !important;
+  width: 64px !important;
+  text-align: center !important;
+  font-size: var(--ix-fs-cell) !important;
+}
+.ix-form .ix-form-bar .ix-form-save {
+  flex: 0 0 220px !important;
+  width: 220px !important;
+  justify-content: center;
+  white-space: nowrap;
+}

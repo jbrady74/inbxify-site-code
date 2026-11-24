@@ -1,9 +1,25 @@
-/* ix-table-v1.0.0.js
+/* ix-table-v1.1.0.js
    ════════════════════════════════════════════════════════════════
    INBXIFY ix series — ONE TABLE for TA Studio, Quill and the Publisher Portal
    (TA Reskin S1, 22 Nov 2026 · scoping v1.1 §4a · the four approved table boards)
 
-   Basis: the Portal Obligations table (ps-obligations v1.0.5 table()). Companion: ix-table-v1.0.0.css.
+   v1.1.0 (24 Nov 2026, Publisher Portal S14) — SECTIONS, AND A FILTER ON A LIST OF VALUES.
+     Ruling (Jeff, 24 Nov, S13 ruling 4): obligations tables are not one flat list. A table can now be drawn in fixed,
+     ordered sections, each a header row across the table with its name, its count and a chevron at the far right
+     (the universal table rule). A click on the header collapses or opens the section; a section can start collapsed.
+     Empty sections are not drawn. Rows keep their columns, so every section lines up with the one header.
+       sections:  [{ key: 'needs', label: 'Needs you' }, …, { key: 'ended', label: 'Ended', collapsed: true }]
+       section:   function (r) { return 'needs' | … }   (a row with a key not in the list goes in the last section)
+     With sections there is no pager: every row of every open section shows.
+     A column may give values(r), a list: its filter offers every value any row holds, and a row passes when its list
+     holds the one picked (a sale on three magazines passes each magazine's filter). filter: true as before.
+     NEW state: { filters: {key: value}, open: [ids], collapsed: [section keys] }: start the table where a page left it
+     (the same shape state() answers), so a page that draws its table again keeps the filters, the open row and the sections.
+     NEW t.reveal(id): opens the row, opens its section if collapsed, and scrolls it into view (deep links).
+     NEW t.section(key, open): open or collapse a section from outside. state() gains collapsed: [keys].
+     CSS: ix-table-v1.1.0.css (the section header row). Nothing else changes; v1.0.0 tables draw exactly as before.
+
+   Basis: the Portal Obligations table (ps-obligations v1.0.5 table()). Companion: ix-table-v1.1.0.css.
    Reads the ix tokens only (ix-tokens + ix-tokens-portal-look); no --ps-* and no typed colour.
 
    WHAT A TABLE IS (Jeff, 17 and 18 Nov)
@@ -64,7 +80,7 @@
 (function () {
   'use strict';
   if (window.IxTable) return;
-  var VERSION = '1.0.0';
+  var VERSION = '1.1.0';
   var DEFAULTS = { minWidth: 1080, pageSize: 25 };   // HC-P-RESKIN-4
   var PILLS = { live: 1, active: 1, ended: 1, draft: 1, ready: 1, sent: 1, comp: 1, warn: 1, fail: 1 };
 
@@ -112,10 +128,18 @@
     if (o.expand) cols.push({ key: '__chev', label: '', w: 36, fixed: true, type: 'chev' });
     var S = {
       rows: o.rows || [], filters: {}, sort: o.sort ? { key: o.sort.key, dir: o.sort.dir || 'asc' } : null,
-      page: 0, open: {}, loading: false, t0: 0, dd: null, ddQuery: ''
+      page: 0, open: {}, loading: false, t0: 0, dd: null, ddQuery: '', shut: {}
     };
+    // v1.1.0 sections
+    var sections = Array.isArray(o.sections) && o.sections.length && typeof o.section === 'function' ? o.sections.slice() : null;
+    if (sections) sections.forEach(function (sec) { if (sec.collapsed) S.shut[sec.key] = 1; });
+    if (o.state) {                                                             // v1.1.0 start where the page left it
+      if (o.state.filters) Object.keys(o.state.filters).forEach(function (k) { if (o.state.filters[k] != null) S.filters[k] = String(o.state.filters[k]); });
+      (o.state.open || []).forEach(function (k) { S.open[String(k)] = 1; });
+      if (Array.isArray(o.state.collapsed)) { S.shut = {}; o.state.collapsed.forEach(function (k) { S.shut[k] = 1; }); }
+    }
     var zebra = o.zebra == null ? !o.expand : !!o.zebra;
-    var pageSize = o.pageSize == null ? DEFAULTS.pageSize : o.pageSize;
+    var pageSize = sections ? 0 : (o.pageSize == null ? DEFAULTS.pageSize : o.pageSize);   // v1.1.0 no pager with sections
     var noun = o.noun || ['row', 'rows'];
     var words = o.words || {};
     // a row's id keeps it open across filters and pages: r.id, else the first column's value, else its position
@@ -124,6 +148,15 @@
     var timer = null;
 
     function colByKey(k) { for (var i = 0; i < cols.length; i++) if (cols[i].key === k) return cols[i]; return null; }
+    function listOf(c, r) {                                                    // v1.1.0 a column's filter values for a row
+      if (c.values) { var v = c.values(r); return (Array.isArray(v) ? v : [v]).filter(function (x) { return x != null && x !== ''; }).map(String); }
+      var one = String(valueOf(c, r)); return one === '' ? [] : [one];
+    }
+    function secOf(r) {
+      var k = o.section(r);
+      for (var i = 0; i < sections.length; i++) if (sections[i].key === k) return k;
+      return sections[sections.length - 1].key;
+    }
     function textOf(c, r) {
       if (c.text) return c.text(r);
       var v = r[c.key];
@@ -148,7 +181,7 @@
       var out = S.rows.filter(function (r) {
         for (var i = 0; i < keys.length; i++) {
           var c = colByKey(keys[i]);
-          if (c && String(valueOf(c, r)) !== S.filters[keys[i]]) return false;
+          if (c && listOf(c, r).indexOf(S.filters[keys[i]]) < 0) return false;
         }
         return true;
       });
@@ -212,11 +245,13 @@
         return '<th class="' + cls + '" scope="col"' + aria + (c.tip ? ' title="' + esc(c.tip) + '"' : '') + '>' + inner + '</th>';
       }).join('') + '</tr>';
       if (cols.some(function (c) { return c.filter; })) {
-        h += '<tr class="ixtb-frow">' + cols.map(function (c) {
-          if (!c.filter) return '<td></td>';
+        var fbtn = function (c) {
           var v = S.filters[c.key];
-          return '<td><button type="button" class="ixtb-fb' + (v != null ? ' ixtb-set' : '') + '" data-ixtb-f="' + esc(c.key) + '" aria-haspopup="listbox" aria-label="Filter ' + esc(c.label) + '">' +
-            '<span>' + esc(v != null ? v : 'All') + '</span>' + CARET + '</button></td>';
+          return '<button type="button" class="ixtb-fb' + (v != null ? ' ixtb-set' : '') + '" data-ixtb-f="' + esc(c.key) + '" aria-haspopup="listbox" aria-label="Filter ' + esc(c.label) + '">' +
+            '<span>' + esc(v != null ? v : (c.allLabel || 'All')) + '</span>' + CARET + '</button>';
+        };
+        h += '<tr class="ixtb-frow">' + cols.map(function (c) {
+          return c.filter ? '<td>' + fbtn(c) + '</td>' : '<td></td>';
         }).join('') + '</tr>';
       }
       return h + '</thead>';
@@ -238,7 +273,26 @@
       if (!list.length) return '<tbody><tr class="ixtb-empty"><td colspan="' + n + '">' + esc(words.noMatch || ('No ' + noun[1] + ' match these filters.')) + '</td></tr></tbody>';
       var start = pageSize ? S.page * pageSize : 0;
       var page = pageSize ? list.slice(start, start + pageSize) : list;
-      var h = '<tbody>', z = 0, lastGroup = {};
+      if (sections) return sectionBodies(page);                               // v1.1.0
+      return rowsHtml(page, start);
+    }
+    // v1.1.0 one tbody per section that has rows, in the fixed order; the header row carries name, count, chevron
+    function sectionBodies(list) {
+      var n = cols.length, h = '';
+      sections.forEach(function (sec) {
+        var mine = list.filter(function (r) { return secOf(r) === sec.key; });
+        if (!mine.length) return;
+        var shut = !!S.shut[sec.key];
+        h += '<tbody class="ixtb-sec' + (shut ? ' ixtb-shut' : '') + '" data-ixtb-sec="' + esc(sec.key) + '">' +
+          '<tr class="ixtb-sech" data-ixtb-sech="' + esc(sec.key) + '" tabindex="0" role="button" aria-expanded="' + !shut + '"><td colspan="' + n + '">' +
+            '<span class="ixtb-sech-l">' + esc(sec.label) + '</span><span class="ixtb-sech-n">' + mine.length + '</span><span class="ixtb-sp"></span>' + CHEV +
+          '</td></tr>' + (shut ? '' : rowsHtml(mine, 0, true)) + '</tbody>';
+      });
+      return h;
+    }
+    function rowsHtml(page, start, bare) {
+      var n = cols.length;
+      var h = bare ? '' : '<tbody>', z = 0, lastGroup = {};
       page.forEach(function (r, i) {
         var rid = String(rowId(r, start + i));
         if (o.group) {
@@ -252,7 +306,7 @@
           cols.map(function (c) { return cell(c, r); }).join('') + '</tr>';
         if (open && o.expand) h += '<tr class="ixtb-sub"><td colspan="' + n + '">' + o.expand(r) + '</td></tr>';
       });
-      return h + '</tbody>';
+      return bare ? h : h + '</tbody>';
     }
 
     function bar(list) {
@@ -278,7 +332,7 @@
       var c = colByKey(S.dd);
       if (!c) return '';
       var seen = {}, vals = [];
-      S.rows.forEach(function (r) { var v = String(valueOf(c, r)); if (v !== '' && !seen[v]) { seen[v] = 1; vals.push(v); } });
+      S.rows.forEach(function (r) { listOf(c, r).forEach(function (v) { if (!seen[v]) { seen[v] = 1; vals.push(v); } }); });   // v1.1.0 lists
       vals.sort(function (a, b) { return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }); });
       var q = S.ddQuery.toLowerCase(), cur = S.filters[c.key];
       var items = [{ v: null, t: 'All' }].concat(vals.map(function (v) { return { v: v, t: v }; }))
@@ -345,6 +399,8 @@
         S.sort = S.sort && S.sort.key === key ? { key: key, dir: S.sort.dir === 'asc' ? 'desc' : 'asc' } : { key: key, dir: 'asc' };
         S.page = 0; draw(); return;
       }
+      var sh = t.closest('[data-ixtb-sech]');                                  // v1.1.0 a section header
+      if (sh) { e.preventDefault(); secToggle(sh.getAttribute('data-ixtb-sech')); return; }
       var pg = t.closest('[data-ixtb-page]');
       if (pg) { e.preventDefault(); if (!pg.disabled) { S.page += +pg.getAttribute('data-ixtb-page'); draw(); } return; }
       if (!o.expand) return;
@@ -372,6 +428,8 @@
           if (first) { e.preventDefault(); first.click(); }
           return;
         }
+        var shk = e.target.closest && e.target.closest('[data-ixtb-sech]');
+        if (shk && e.target === shk) { e.preventDefault(); secToggle(shk.getAttribute('data-ixtb-sech')); return; }
         var row = e.target.closest && e.target.closest('[data-ixtb-row]');
         if (row && e.target === row && o.expand) { e.preventDefault(); toggle(row.getAttribute('data-ixtb-row')); }
       }
@@ -387,6 +445,28 @@
       var row = root.querySelector('[data-ixtb-row="' + (window.CSS && CSS.escape ? CSS.escape(rid) : rid) + '"]');
       if (row) row.focus({ preventScroll: true });
       if (typeof o.onOpen === 'function') o.onOpen(rid, now);
+    }
+
+    function secToggle(key, want) {                                            // v1.1.0; keeps the window where it was
+      var y = window.pageYOffset;
+      var open = want == null ? !!S.shut[key] : !!want;
+      if (open) delete S.shut[key]; else S.shut[key] = 1;
+      draw();
+      window.scrollTo(window.pageXOffset, y);
+      var hd = root.querySelector('[data-ixtb-sech="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]');
+      if (hd) hd.focus({ preventScroll: true });
+    }
+    function reveal(rid) {                                                      // v1.1.0 deep links
+      rid = String(rid);
+      var r = null; S.rows.forEach(function (x, i) { if (String(rowId(x, i)) === rid) r = x; });
+      if (!r) return false;
+      if (sections) delete S.shut[secOf(r)];
+      if (!S.open[rid]) { if (o.single !== false) S.open = {}; S.open[rid] = 1; }
+      draw();
+      var row = root.querySelector('[data-ixtb-row="' + (window.CSS && CSS.escape ? CSS.escape(rid) : rid) + '"]');
+      if (row) { if (row.scrollIntoView) row.scrollIntoView({ block: 'start', behavior: 'auto' }); row.focus({ preventScroll: true }); }
+      if (typeof o.onOpen === 'function') o.onOpen(rid, true);
+      return true;
     }
 
     root.addEventListener('click', onClick);
@@ -409,8 +489,10 @@
       clearFilters: function () { S.filters = {}; S.page = 0; draw(); return api; },
       setFilter: function (key, v) { if (v == null) delete S.filters[key]; else S.filters[key] = String(v); S.page = 0; draw(); return api; },
       open: function (rid) { if (!S.open[String(rid)]) toggle(rid); return api; },
+      reveal: function (rid) { return reveal(rid); },
+      section: function (key, open) { secToggle(key, open); return api; },
       redraw: function () { draw(); return api; },
-      state: function () { return { filters: JSON.parse(JSON.stringify(S.filters)), sort: S.sort, page: S.page, open: Object.keys(S.open), loading: S.loading }; },
+      state: function () { return { filters: JSON.parse(JSON.stringify(S.filters)), sort: S.sort, page: S.page, open: Object.keys(S.open), loading: S.loading, collapsed: Object.keys(S.shut) }; },
       destroy: function () {
         clearInterval(timer);
         root.removeEventListener('click', onClick); root.removeEventListener('input', onInput); root.removeEventListener('keydown', onKey);

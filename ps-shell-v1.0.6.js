@@ -1,4 +1,10 @@
-// ps-shell-v1.0.5.js
+// ps-shell-v1.0.6.js
+// v1.0.6 (24 Nov 2026, Publisher Portal S14) — THE WAY BACK TO TA STUDIO. Ruling (Jeff, 24 Nov, S14 answer 2a): TA Studio's
+//   Obligations tab and the client page's sale link open the Portal in the same browser tab, with a small
+//   "← Back to TA Studio" link above the title on every Portal tab. Clicking it returns to the TA Studio page they came from.
+//   The opener passes that page as ?back=<path> (its path, query and hash, URL-encoded). Only a path on this site is taken
+//   (it starts with one "/"); anything else draws no link. The link stays while tabs change, because the tabs only change
+//   the part after "#". CSS ps-shell-v1.0.3.css (.ps-back). HARDCODING: HC-P-PP14-6 the query name back and the words.
 // v1.0.5 (10 Nov 2026, Publisher Portal S8) — ctx.publisher.contact (PUBLISHERS Contact Name) so tabs can name the
 //   publisher's contact as the one who approved. Read from cfg.contact (the page's data-contact attribute, see below).
 // v1.0.4 (10 Nov 2026, Publisher Portal S8) — ctx.who.name (the member's first and last name, else the address) so tabs can show
@@ -98,7 +104,7 @@
 (function () {
   'use strict';
   if (window.PsShell) return;
-  var VERSION = '1.0.5';
+  var VERSION = '1.0.6';
   var LOGIN_PATH = '/portal-login';                                    // HC-P-PP4-3
   var CALL_TIMEOUT_MS = 30000, BAR_DELAY_MS = 200;                     // HC-P-PP4-10
   var TABS = [                                                         // HC-P-PP4-1
@@ -125,8 +131,15 @@
     unbuiltH: 'Not built yet',
     unbuilt: 'This tab is planned and not built yet. Obligations is ready now.',
     menu: [['profile', 'Profile'], ['billing', 'Billing'], ['team', 'Team'], ['contact', 'Contact inbxify']],
-    soon: 'Not built yet', signOut: 'Sign out'
+    soon: 'Not built yet', signOut: 'Sign out',
+    back: '\u2190 Back to TA Studio'                                    // v1.0.6 HC-P-PP14-6
   };
+  // v1.0.6 the page TA Studio sent us from: a path on this site only
+  function backPath() {
+    var v = ''; try { v = new URLSearchParams(location.search).get('back') || ''; } catch (e) { return ''; }
+    return /^\/(?!\/)/.test(v) && !/[\s<>"]/.test(v) ? v : '';
+  }
+  function backHtml() { var b = backPath(); return b ? '<div class="ps-back"><a href="' + esc(b) + '">' + esc(W.back) + '</a></div>' : ''; }
 
   var root, cfg, who = null, member = null, tabs = {}, cur = null, mounted = null, booted = false;
 
@@ -253,6 +266,8 @@
       '<div class="ps-rule-soft ps-load" id="ps-load" aria-hidden="true"><div class="ps-load-line" id="ps-load-line"></div>' +
         '<div class="ps-load-label" id="ps-load-label"></div></div></header>' +
       '<main class="ps-main" id="ps-main"></main>';
+    var mainEl = root.querySelector('#ps-main');                        // v1.0.6 the way back, above every tab's title
+    if (backPath()) { var bk = document.createElement('div'); bk.innerHTML = backHtml(); mainEl.parentNode.insertBefore(bk.firstChild, mainEl); }
 
     var btn = root.querySelector('#ps-acctbtn'), m = root.querySelector('#ps-menu');
     btn.addEventListener('click', function (e) { e.stopPropagation(); m.hidden = !m.hidden; btn.setAttribute('aria-expanded', String(!m.hidden)); });
@@ -309,7 +324,7 @@
     if (!t) {
       var name = (TABS.find(function (x) { return x.key === key; }) || {}).name || key;
       main.innerHTML = '<div class="ps-titlerow"><h1>' + esc(name) + '</h1>' +
-        ctx().info({ file: 'not built', version: '', title: name, blurb: 'Planned portal tab. No file is deployed for it yet.', scenarios: [], companions: 'ps-shell-v' + VERSION + '.js, ps-shell-v1.0.2.css' }) +
+        ctx().info({ file: 'not built', version: '', title: name, blurb: 'Planned portal tab. No file is deployed for it yet.', scenarios: [], companions: 'ps-shell-v' + VERSION + '.js, ps-shell-v1.0.3.css' }) +
         '</div><div class="ps-unbuilt"><b>' + esc(W.unbuiltH) + '.</b> ' + esc(W.unbuilt) + '</div>';
       mounted = key;
       return;

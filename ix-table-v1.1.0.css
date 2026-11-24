@@ -1,7 +1,9 @@
-/* ix-table-v1.0.0.css */
+/* ix-table-v1.1.0.css */
 /* ============================================================
    INBXIFY · ix series · ONE TABLE (TA Reskin S1, 22 Nov 2026)
-   Companion to ix-table-v1.0.0.js. The values are the four approved table boards' (Obligations, Newsletters,
+   v1.1.0 (24 Nov 2026, Publisher Portal S14): the section header row (.ixtb-sech): the name, the count, and the
+   chevron at the far right, centred on the rows' chevron column. A collapsed section shows only its header.
+   Companion to ix-table-v1.1.0.js. The values are the four approved table boards' (Obligations, Newsletters,
    Clients, Quill Performance). Tokens only: ix-tokens + ix-tokens-portal-look. The gold edge on a set filter is
    the platform's editing colour (--ix-changed-border), not re-pointed.
 
@@ -230,6 +232,45 @@
   color: var(--ix-text-light) !important;
   border-top: 1px solid var(--ix-border) !important;
 }
+
+/* v1.1.0 sections: one header row per section, across the table */
+.ix-table-wrap .ix-table tr.ixtb-sech td {
+  height: 38px;
+  padding: 0 11px 0 12px !important;
+  background: var(--ix-cream) !important;
+  border-top: 1px solid var(--ix-border) !important;
+  border-bottom: 1px solid var(--ix-border) !important;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ix-table-wrap .ix-table tbody.ixtb-sec:first-of-type tr.ixtb-sech td { border-top: 0 !important; }
+.ix-table-wrap .ixtb-sech-l {
+  font-family: var(--ix-font-body);
+  font-size: var(--ix-fs-13);
+  font-weight: 700;
+  color: var(--ix-text-dark);
+}
+.ix-table-wrap .ixtb-sech-n {
+  display: inline-block;
+  min-width: 22px;
+  margin-left: 8px;
+  padding: 0 6px;
+  height: 18px;
+  line-height: 18px;
+  border-radius: 9px;
+  background: var(--ix-white);
+  box-shadow: inset 0 0 0 1px var(--ix-border);
+  font-size: var(--ix-fs-table-head);
+  font-weight: 600;
+  text-align: center;
+  color: var(--ix-text-light);
+  font-variant-numeric: tabular-nums;
+}
+.ix-table-wrap .ix-table tr.ixtb-sech .ixtb-chev { float: right; margin-top: 2px; color: var(--ix-text-light); transform: rotate(180deg); }
+.ix-table-wrap .ix-table tbody.ixtb-shut tr.ixtb-sech .ixtb-chev { transform: none; }
+.ix-table-wrap .ix-table tr.ixtb-sech:hover td { background: var(--ix-cream-deep) !important; }
+.ix-table-wrap .ix-table tr.ixtb-sech:focus-visible { outline: 2px solid var(--ix-blue); outline-offset: -2px; }
+.ix-table-wrap .ix-table tbody.ixtb-sec tr.ixtb-sech + tr td { border-top: 0 !important; }
 
 /* empty and no-match */
 .ix-table-wrap .ix-table tr.ixtb-empty td {
