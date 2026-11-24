@@ -166,5 +166,8 @@
 
 /* ── v1.0.4: the opened sale sits in ix-table's opened row (inside .ps-ob, so the rules above reach it); the form in ix-forms ── */
 .ps-tab-obligations .ix-table-wrap .ps-ob{padding-top:12px}
+/* the Portal's own --ix-text-light (#8A857B, ps-shell) measures 3.1 to 3.7:1 on the table's grounds; the table and form read the
+   Portal's muted ink instead (#5A5E66, 5.5:1 or better), as the old table did (--ps-muted) */
+.ps-tab-obligations .ix-table-wrap,.ps-tab-obligations .ix-form{--ix-text-light:var(--ps-muted)}
 .ps-ob-form .ix-form{padding-bottom:2px}
 .ps-ob-form .tlist,.ps-ob-form .splitbox,.ps-ob-form .pcards,.ps-ob-form .mgrid{width:100%}
