@@ -1,7 +1,10 @@
-// ps-review-v1.0.4.js
+// ps-review-v1.0.5.js
 // ============================================================
 // INBXIFY · the advertiser review page (www.inbxify.com/review?t=<token>)
 //
+// v1.0.5 (24 Nov 2026, Ad Maker Build S3): a stopped approval link (ix-sales v1.3.14 answers closed:true: the ad
+//   was deleted or the link withdrawn) shows one centred card, "This link is closed", with no choices. It showed the
+//   open page before. HARDCODING: HC-P-PP8-9 gains W.ap.closedH, .closed. CSS v1.0.5 is a version only.
 // v1.0.4 (22 Nov 2026, Ad Maker Build S3): version only. CSS v1.0.4 centres every end message (Thank you, link
 //   used, link expired, not found, could not load) on the page. They sat in the left column of the two-column page.
 // v1.0.3 (18 Nov 2026, Ad Maker Build S3) — THE PUBLISHER'S APPROVAL, BY EMAIL LINK.
@@ -57,7 +60,7 @@
 // THE PAGE (Webflow static page /review, no Memberstack)
 //   <div id="ps-review" data-sales-url="https://ix-sales…workers.dev"
 //        data-inbxify-logo="<inbxify wordmark url>"></div>
-//   plus this file and ps-review-v1.0.4.css. Fonts: Newsreader, Sen,
+//   plus this file and ps-review-v1.0.5.css. Fonts: Newsreader, Sen,
 //   Josefin Sans (the portal's).
 //
 // HARDCODING (provisional ids, for the tracker)
@@ -67,7 +70,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.4', FILE = 'ps-review-v' + VERSION + '.js';
+  var VERSION = '1.0.5', FILE = 'ps-review-v' + VERSION + '.js';
   var REC_MAX_MS = 4 * 60 * 1000;
   var BOX = null;                                                        // v1.0.2: which ad's message box is open                                        // HC-P-PP8-10
   var W = {                                                              // HC-P-PP8-9
@@ -139,6 +142,7 @@
       doneH: 'Thank you{name}.', doneNote: 'inbxify has your decision. You can close this page.',
       doneLine: { 'approve-current': '{shape}: approved, and it is the one that runs now', 'approve-hold': '{shape}: approved and held', 'send-back': '{shape}: sent back with your note' },
       failLine: '{shape}: not saved. {msg}', sendFail: 'Your decision did not send: {msg}',
+      closedH: 'This link is closed', closed: 'This ad is no longer waiting for your decision. You do not need to do anything.', closedMore: 'Questions? Write to {to}.',
       usedH: 'This link has been used', used: 'Here is what was decided{on}.', usedMore: 'If something changed, reply to the email this link came in.',
       expiredH: 'This link has expired', expired: 'Approval links work for {days} days. Ask inbxify for a new one.',
       emailBtn: 'Email inbxify for a new link', emailSubj: 'New approval link for {customer}', emailBody: 'Hi,\n\nThe approval link for the {customer} ad has expired. Could you send me a new one?\n\nThanks'
@@ -214,7 +218,7 @@
   function endCard(h, body, cls) { return '<div class="ps-rv-end' + (cls ? ' ' + cls : '') + '"><h2>' + esc(h) + '</h2>' + body + '</div>'; }
   function render() {
     var h = header() + '<main class="ps-rv-main" id="ps-rv-main">', f = first(), p = (D && D.publisher) || {};
-    if (page === 'ap-open' || page === 'ap-done' || page === 'ap-used' || page === 'ap-expired') h += apMain();   // v1.0.3
+    if (page === 'ap-open' || page === 'ap-done' || page === 'ap-used' || page === 'ap-expired' || page === 'ap-closed') h += apMain();   // v1.0.3
     else if (page === 'loading') h += '<p class="ps-rv-loading">' + esc(W.loading) + '</p>';
     else if (page === 'bad') h += endCard(W.badH, '<p>' + esc(W.bad) + '</p>', 'gone');
     else if (page === 'fail') h += endCard(W.failH, '<p>' + esc(fill(W.fail, { msg: sendErr })) + '</p>', 'gone');
@@ -287,6 +291,7 @@
       var to = D.sentBy || '', mail = to ? 'mailto:' + encodeURIComponent(to) + '?subject=' + encodeURIComponent(fill(P.emailSubj, { customer: D.customer || p.company || '' })) + '&body=' + encodeURIComponent(fill(P.emailBody, { customer: D.customer || 'our' })) : '';
       return endCard(P.expiredH, '<p>' + esc(fill(P.expired, { days: D.linkDays || 14 })) + '</p>' + (mail ? '<p style="margin-top:16px"><a class="ps-rv-btn" href="' + mail + '">' + esc(P.emailBtn) + '</a></p>' : ''), 'gone');
     }
+    if (page === 'ap-closed') return endCard(P.closedH, '<p>' + esc(P.closed) + '</p>' + (D.sentBy ? '<p class="ps-rv-quiet" style="margin-top:12px!important">' + esc(fill(P.closedMore, { to: D.sentBy })) + '</p>' : ''), 'gone');   // v1.0.5
     if (page === 'ap-used') return endCard(P.usedH, '<p>' + esc(fill(P.used, { on: D.decidedAt ? ' on ' + day(D.decidedAt) : '' })) + '</p>' + apList(D.items.filter(function (it) { return it.decision; }), P.doneLine) + '<p class="ps-rv-quiet" style="margin-top:12px!important">' + esc(P.usedMore) + '</p>');
     if (page === 'ap-done') {
       var okItems = (apResult.decided || []).map(function (z) { var it = item(z.adId + '|' + z.shape) || {}; return { label: it.label || z.shape, decision: z.action }; });
@@ -408,7 +413,7 @@
     if (r.status === 404) { page = 'bad'; render(); return; }
     if (!r.ok) { page = 'fail'; sendErr = (r.json && r.json.error) || ('HTTP ' + r.status); render(); return; }
     D = r.json; D.items = (D.items || []).map(function (it) { it.key = it.adId + '|' + it.shape; return it; });
-    if (D.kind === 'approval') { page = D.expired ? 'ap-expired' : D.decided ? 'ap-used' : 'ap-open'; document.title = D.expired ? W.ap.expiredH : fill(W.ap.h1, { customer: D.customer || '' }); render(); return; }   // v1.0.3
+    if (D.kind === 'approval') { page = D.closed ? 'ap-closed' : D.expired ? 'ap-expired' : D.decided ? 'ap-used' : 'ap-open'; document.title = D.closed ? W.ap.closedH : D.expired ? W.ap.expiredH : fill(W.ap.h1, { customer: D.customer || '' }); render(); return; }   // v1.0.3
     page = D.expired ? 'expired' : D.answered ? 'already' : 'open';
     document.title = D.expired ? W.expiredH : fill(W.h1, { title: D.title || (D.publisher && D.publisher.company) || '' });
     render();

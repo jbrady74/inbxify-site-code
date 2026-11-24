@@ -1,10 +1,16 @@
-// ix-sales-v1.3.13.js
+// ix-sales-v1.3.14.js
 // INBXIFY · Cloudflare Worker · ix-sales
 // SALES RECORDS and OBLIGATIONS: the one place the rules live. The portal
 // (S2) and Studio (S3) both call this; the Revenue Picker (S4) and Scenario
 // 108 (S5) call it too. Scoping: Sales-Records-Obligations-Scoping-v0_7.md.
 // Since v1.3.0 also the portal's Ads tab and the advertiser review page.
 //
+// v1.3.14 (24 Nov 2026, Ad Maker Build S3) — A STOPPED APPROVAL LINK SAYS SO.
+//   Found by Jeff (24 Nov, Test 6): after an ad was deleted, the old approval email's link still opened the page
+//   with its three choices, as if it could be answered. (The answer itself was already refused.)
+//   · GET /review/<token> for an approval link answers { kind:'approval', closed:true, publisher, sentBy } and no
+//     items when the row is Withdrawn, or when none of its ads exists any more. ps-review v1.0.5 shows one card.
+//   · An approval link whose ads are partly gone lists only the ads that still exist.
 // v1.3.13 (23 Nov 2026, Ad Maker Build S3) — DELETE ALSO REMOVES THE PICTURE FILE FROM UPLOADCARE.
 //   Ruling (Jeff, 23 Nov): yes, store the Uploadcare secret key on ix-sales so Delete removes the file too.
 //   · New secret UPLOADCARE_SECRET_KEY (with the existing UPLOADCARE_PUB_KEY). Without it Delete works as in
@@ -346,7 +352,7 @@
 //           month falls back to the calendar month end.
 // ============================================================
 
-const VERSION = '1.3.13';
+const VERSION = '1.3.14';
 // v1.3.7 · CUSTOMERS slugs that make up a customer's brand record (HC-P-AMB1-1)
 const CUST_BRAND = { logo: 'logo-link', logoLight: 'logo-link-light', main: 'brand-color-main', accent: 'brand-color-accent', fontHead: 'brand-font-heading', fontBody: 'brand-font-body',
   phone: ['business-phone', 'phone', 'contact-phone'], website: ['contact-website', 'website', 'business-website'], email: ['business-email', 'email', 'contact-email'],
@@ -1962,9 +1968,12 @@ async function approvalDraft(run, b) {                                // v1.3.10
 async function approvalGet(run, r, expired) {
   const pub = await publisherCard(run, r.publisher);
   if (expired) return { ok: true, kind: 'approval', expired: true, publisher: pub, linkDays: reviewCfg(run).linkDays, sentBy: /@/.test(r.sentBy) ? r.sentBy : '' };
+  const closedAnswer = { ok: true, kind: 'approval', closed: true, expired: false, publisher: pub, sentBy: /@/.test(r.sentBy) ? r.sentBy : '' };   // v1.3.14
+  if (r.status === RV_STATUS.withdrawn) return closedAnswer;
   const C = run.cfg.collections, cust = await run.getItem(C.customers, r.customer);
   const v = await issueData(run, '/customer-ads?archived=1&customer=' + r.customer);
   const rows = await Promise.all((r.data.items || []).map(it => run.getItem(C.ads, it.adId).catch(() => null)));   // the ADS rows themselves: a version saved a moment ago has its picture here
+  if (r.status !== RV_STATUS.done && rows.length && rows.every(x => !x || x.isArchived)) return closedAnswer;   // v1.3.14: every ad on the link was deleted
   const items = (r.data.items || []).map((it, i) => { const list = ((v.versions || {})[it.shape]) || [], row = list.find(x => x.id === it.adId), curId = refId(fd(cust || {})[(ADS_TAB.shapes[it.shape] || {}).pointer]) || (v.current || {})[it.shape] || null, cur = curId && curId !== it.adId ? list.find(x => x.id === curId) : null;
     return { adId: it.adId, shape: it.shape, label: (ADS_TAB.shapes[it.shape] || {}).label || it.shape, name: it.name || (row && row.name) || '', picture: adPicture(rows[i], it.shape) || (row ? row.picture : null),
       current: cur ? { name: cur.name || '', picture: cur.picture || null } : null, decision: it.decision || null, note: it.note || '', decidedAt: it.decidedAt || null }; });
