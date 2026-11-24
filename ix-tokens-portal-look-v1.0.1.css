@@ -1,0 +1,199 @@
+/* ix-tokens-portal-look-v1.0.1.css */
+/* ============================================================
+   INBXIFY · ix component series · THE PORTAL LOOK, AS TOKENS
+   (TA Reskin S1, Layer 1 · 22 Nov 2026)
+
+   v1.0.1 (23 Nov 2026) — PRIMARY BUTTONS IN INK (Jeff, 23 Nov). One rule block at the end of this file: ink fill,
+   paper text, no gradient, no blue glow, no lift; hover a shade deeper. It outranks ix-buttons v1.0.7's blue by
+   specificity (html body … vs button.ix-btn.ix-btn--primary), not by load order, and leaves the gold and teal tints
+   alone. ix-buttons is not changed, so pages without this file keep blue. Everything else is v1.0.0 unchanged.
+
+   WHAT THIS FILE IS
+   The second token file. ix-tokens holds the platform's tokens and loads on every page. This file RE-POINTS
+   those tokens to the Publisher Portal look (ps-shell v1.0.2) and is loaded ONLY by the pages that wear that
+   look: TA Studio now (manifests/ta.json), the IPP and Quill in their own sessions. ps-shell does the same
+   thing inside .ps-portal; this file does it for a whole page.
+
+   LOAD ORDER: straight after ix-tokens-v….css and before every other stylesheet. Everything downstream reads
+   the re-pointed values: a module that already uses var(--ix-…) changes its look with no edit of its own. A
+   module with typed colours keeps them until its own reskin session (Layer 4).
+
+   WHAT IS NOT RE-POINTED
+   · The gold editing state (--ix-changed-border, --ix-changed-shadow, --ix-gold*). A control holding an unsaved
+     choice keeps the gold border on every surface (platform rule; scoping v1.1 §3).
+   · Salmon. Its meaning on the IPP is a ruling for S2 (scoping v1.1 §4.4).
+   · The z-index ladder and the motion token.
+
+   CONTRAST (worked out, not guessed; the Checks Action measures the page)
+     ink #22252B on paper          15.4:1     text-mid #3A3E46 on ground-2      9.11:1
+     muted #5A5E66 on paper         6.51:1     muted on ground-2 #F1ECE2          5.53:1
+     muted on row-open #F4EEE2      5.63:1     muted on rule-soft #ECE6DA          5.24:1
+     link #3550C8 on paper          6.70:1     red-deep #C2271A on paper           5.83:1
+   --ix-text-light is muted #5A5E66 here, not ps-shell's #8A857B, which measures 3.6:1 on paper.
+   Coral #F48164 is a FILL and a MARKER only (2.57:1 on paper): never text.
+
+   ADDED HERE (the type and spacing scales of scoping v1.1 Layer 1)
+     type   40 page title · 32 header title · 22 section · 18 card title · 14 row name · 13 body · 12 small ·
+            11 rail and table-head labels. The px tokens --ix-fs-* already in ix-tokens v1.0.5 stay; two are
+            added (32, 40) and the scale gets names.
+     space  4 · 8 · 12 · 16 · 24 · 32
+     shell  rail width 208, rail row 40, title row 40, the 20px way-back slot, the 1280 minimum width.
+
+   HARDCODING (provisional, for the doc-maintenance chat)
+     HC-P-RESKIN-1  type and spacing scales as platform constants (this file).
+     HC-P-RESKIN-6  operator surfaces' minimum width 1280 (--ix-page-min).
+   The scan (tools/scan-css.mjs, HC-P-AG-10) accepts typed values in this file because it is a token file.
+   ============================================================ */
+
+:root {
+  /* ── Type ─────────────────────────────────────────────────
+     Newsreader is the heading face, Sen the body face, Josefin Sans the capitals. DM Mono is dropped: numbers
+     are Sen with even-width digits (font-variant-numeric: tabular-nums), ruling 4.                           */
+  --ix-font-display:    Newsreader, Georgia, serif;
+  --ix-font-body:       Sen, system-ui, sans-serif;
+  --ix-font-mono:       Sen, system-ui, sans-serif;
+  --ix-font-caps:       'Josefin Sans', system-ui, sans-serif;
+
+  /* ix-buttons v1.0.7 type hooks: the same buttons, in the Portal's type (as ps-shell sets them) */
+  --ix-btn-font:        Sen, system-ui, sans-serif;
+  --ix-btn-font-alt:    Sen, system-ui, sans-serif;
+  --ix-btn-size:        13px;
+  --ix-btn-tracking:    0;
+
+
+  /* the scale by name */
+  --ix-fs-32:           32px;
+  --ix-fs-40:           40px;
+  --ix-fs-page-title:   40px;
+  --ix-fs-head-title:   32px;
+  --ix-fs-section:      22px;
+  --ix-fs-card-title:   18px;
+  --ix-fs-row:          14px;
+  --ix-fs-body:         13px;
+  --ix-fs-cell:         12.5px;
+  --ix-fs-small:        12px;
+  --ix-fs-label:        11px;
+  --ix-fs-table-head:   11.5px;
+  --ix-fs-tiny:         10.5px;
+  --ix-text-tiny:       11px;
+  --ix-lh-body:         1.45;
+
+  /* ── Space ─────────────────────────────────────────────── */
+  --ix-sp-4:            4px;
+  --ix-sp-8:            8px;
+  --ix-sp-12:           12px;
+  --ix-sp-16:           16px;
+  --ix-sp-24:           24px;
+  --ix-sp-32:           32px;
+
+  /* ── Shell measures ────────────────────────────────────── */
+  --ix-page-min:        1280px;
+  --ix-rail-w:          208px;
+  --ix-rail-row:        40px;
+  --ix-ctl-h:           34px;
+  --ix-back-slot:       20px;
+  --ix-avatar:          40px;
+
+  /* ── Structure (was teal) ──────────────────────────────────
+     Headings and dark bars were teal; in the Portal look they are ink. Text on a dark bar keeps
+     --ix-text-invert, so nothing on a bar loses contrast (ink is darker than the teal it replaces).           */
+  --ix-teal:            #22252B;
+  --ix-teal-deep:       #16181D;
+  --ix-teal-mid:        #3A3E46;
+  --ix-teal-soft:       rgba(34, 37, 43, 0.10);
+  --ix-teal-ghost:      rgba(34, 37, 43, 0.05);
+
+  /* ── Links and focus ───────────────────────────────────── */
+  --ix-blue:            #5B7FFF;
+  --ix-blue-deep:       #3550C8;
+  --ix-blue-light:      #C9D3FA;
+  --ix-blue-ghost:      rgba(91, 127, 255, 0.08);
+  --ix-blue-glow:       #E6EBFF;
+
+  /* ── Surfaces ──────────────────────────────────────────────
+     ground is the page, paper the card, ground-2 the second ground (table heads, the rail), row-open the
+     tint of an opened row.                                                                                    */
+  --ix-white:           #FFFFFF;
+  --ix-surface:         #FFFFFF;
+  --ix-cream:           #FAF6EE;
+  --ix-cream-warm:      #FBF8F2;
+  --ix-cream-deep:      #F1ECE2;
+  --ix-canvas:          #FAF6EE;
+  --ix-row-hover:       #FBF8F2;
+  --ix-row-open:        #F4EEE2;
+  --ix-row-zebra:       #F8F4EB;
+  --ix-scrim:           rgba(22, 24, 29, 0.45);
+
+  /* ── The rail (light, Portal look) ──────────────────────────
+     The dark teal rail of v1.4.24 ends with the shell build. Light ground, the open tab white with a coral bar
+     on its left edge. Coral is the "you are here" marker and nothing else. NEW NAMES, on purpose: the old
+     --ix-rail tokens are read by title-admin-page-design v1.4.41's dark rail and are left alone, so this file
+     on its own changes no rail; title-admin-page-design v1.4.42 §38 reads these.                              */
+  --ix-rail-ground:     #F1ECE2;
+  --ix-rail-open:       #FFFFFF;
+  --ix-rail-label:      #3A3E46;
+  --ix-rail-label-on:   #22252B;
+  --ix-here:            #F48164;
+
+  /* ── Text ──────────────────────────────────────────────── */
+  --ix-text-dark:       #22252B;
+  --ix-text-mid:        #3A3E46;
+  --ix-text-light:      #5A5E66;
+  --ix-text-invert:     #FFFFFF;
+
+  /* ── Rules ─────────────────────────────────────────────── */
+  --ix-border:          #D9D2C3;
+  --ix-border-soft:     #ECE6DA;
+  --ix-border-input:    #D9D2C3;
+  --ix-hair:            #B9B1A0;
+  --ix-rule-ink:        #22252B;
+
+  /* ── Status (Portal values, light surfaces) ────────────── */
+  --ix-danger:          #C2271A;
+  --ix-danger-pale:     #FBE3DD;
+  --ix-warn:            #7A4E12;
+  --ix-warn-pale:       #FBEBCB;
+  --ix-ok:              #0F5C3F;
+  --ix-ok-pale:         #E2F1E9;
+  --ix-info:            #2F45B0;
+  --ix-info-pale:       #E6EBFF;
+  --ix-quiet:           #3A3E46;
+  --ix-quiet-pale:      #ECE6DA;
+
+  /* ── Radius: the Portal is nearly square ───────────────── */
+  --ix-radius-sharp:    2px;
+  --ix-radius-sm:       3px;
+  --ix-radius:          4px;
+  --ix-radius-pill:     20px;
+
+  /* ── Shadow: ink, not teal or blue ─────────────────────── */
+  --ix-shadow-sm:       0 1px 2px rgba(34, 37, 43, 0.07);
+  --ix-shadow-md:       0 8px 24px rgba(34, 37, 43, 0.14);
+  --ix-shadow-lg:       0 12px 32px rgba(34, 37, 43, 0.16);
+  --ix-shadow-blue:     0 0 0 2px #5B7FFF;
+}
+
+/* ── v1.0.1 · primary buttons in ink (Jeff, 23 Nov 2026) ──────────────────────────────────────────────────
+   ix-buttons v1.0.7 §2 draws the primary at (0,2,1) to (0,3,0) with !important. These selectors are (0,5,2) and
+   up, so they win wherever this file is loaded. Paper on ink: 14.3:1.                                          */
+html body button.ix-btn.ix-btn--primary:not(.ix-btn--gold):not(.ix-btn--teal),
+html body .ix-btn.ix-btn--primary:not(.ix-btn--gold):not(.ix-btn--teal) {
+  background-color: #22252B !important;
+  background-image: none !important;
+  color: #FAF6EE !important;
+  border-color: #22252B !important;
+  box-shadow: none !important;
+}
+html body button.ix-btn.ix-btn--primary:not(.ix-btn--gold):not(.ix-btn--teal):hover:not(:disabled),
+html body .ix-btn.ix-btn--primary:not(.ix-btn--gold):not(.ix-btn--teal):hover:not(:disabled) {
+  background-color: #16181D !important;
+  background-image: none !important;
+  border-color: #16181D !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html body button.ix-btn.ix-btn--primary:not(.ix-btn--gold):not(.ix-btn--teal):active:not(:disabled),
+html body .ix-btn.ix-btn--primary:not(.ix-btn--gold):not(.ix-btn--teal):active:not(:disabled) {
+  box-shadow: none !important;
+  transform: none !important;
+}
