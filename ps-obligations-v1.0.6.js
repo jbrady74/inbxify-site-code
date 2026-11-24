@@ -1,6 +1,16 @@
-// ps-obligations-v1.0.5.js
+// ps-obligations-v1.0.6.js
 // ============================================================
 // INBXIFY · Publisher Portal · the Obligations tab
+//
+// v1.0.6 (23 Nov 2026, Publisher Portal S11 · Build 2) — ON THE WEBSITE, FOR A FRANCHISE SPONSOR.
+//   Jeff ruled 23 Nov: a sponsor sale is counted in sends like any other sale, and how long the sponsor shows on
+//   the website is a separate choice on the sale. The form shows "On the website" under Franchise when the
+//   product is a franchise sponsor: Whole run (the default, the sponsor shows on the franchise's pages for the
+//   whole run) or Weeks in an issue (only while an issue carries the sponsor). It is sent as onWebsite on
+//   POST /sales and PATCH /sales/<id>. Needs ix-sales v1.3.14 and the SALES RECORDS Option field on-the-website.
+//   An edited pick gets the gold border and is named in the edit window like every other field.
+//   CSS unchanged: ps-obligations-v1.0.3.css.
+//   HARDCODING: HC-P-PP11-4 the two choice words (they must match the SALES RECORDS option labels).
 //
 // v1.0.5 (4 Nov 2026, Publisher Portal S4) — A MISSED SEND STAYS OWED
 //   AFTER A SALE ENDS (Jeff ruled 4 Nov: 1b). Live test 6: cancelling
@@ -101,7 +111,8 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.5';
+  var VERSION = '1.0.6';
+  var WEBS = ['Whole run', 'Weeks in an issue'];                      // v1.0.6 · HC-P-PP11-4
   var FILE = 'ps-obligations-v' + VERSION + '.js';
   var GRID_MONTHS = 24, MG_MONTHS = 12;                                // HC-P-PP4-5
   var COLLAPSE_AT = 5;                                                 // HC-P-PP4-7
@@ -123,6 +134,8 @@
     lockCust: 'A send is placed in an edition, so the customer and product cannot change. Unplace it in the Revenue Picker, or cancel this record and start a new one.',
     sponsorOne: 'A franchise sponsor runs on one magazine.',
     noFranchise: 'No franchise runs on this magazine yet.',
+    webRun: 'Shown on the franchise\u2019s pages for the whole run.',
+    webIssue: 'Shown on the site only in weeks an issue carries the sponsor.',
     whereQ: 'How should the sends be shared across these {k} towns?',
     where: [['Mirrored', 'Every ticked town gets every send'], ['Split', 'You say how many go to each town'], ['Pool', 'Any of the ticked towns']],
     fillFrom: 'Fill from', gridHint: 'Tick a month for a send. Pick a week if it matters; + adds another send in that month.',
@@ -318,13 +331,13 @@
   function blank() {
     return { customer: '', product: '', franchise: '', type: (S.lists.types[0] || 'Paid'), titles: multiPub() ? [] : S.titles.map(function (t) { return t.id; }),
       placement: '', split: {}, frequency: S.lists.frequencies.indexOf('Monthly') >= 0 ? 'Monthly' : (S.lists.frequencies[0] || ''),
-      startMonth: '', windowEnd: '', sends: '12', week: L.any, months: [] };
+      startMonth: '', windowEnd: '', sends: '12', week: L.any, months: [], web: WEBS[0] };
   }
   function fromRow(r) {
     return { customer: r.customerId || '', product: r.productId || '', franchise: r.franchiseId || '', type: r.type || 'Paid',
       titles: (r.titles || []).map(function (t) { return t.id; }), placement: r.placement === L.single ? '' : (r.placement || ''),
       split: Object.assign({}, r.splitCounts || {}), frequency: r.frequency || '', startMonth: r.startMonth || '',
-      windowEnd: r.windowEnd ? String(r.windowEnd).slice(0, 10) : '', sends: String(r.sendsBought || ''), week: r.week || L.any, months: sortEnt(r.months || []) };
+      windowEnd: r.windowEnd ? String(r.windowEnd).slice(0, 10) : '', sends: String(r.sendsBought || ''), week: r.week || L.any, months: sortEnt(r.months || []), web: r.onWebsite || WEBS[0] };
   }
   function F() { return S.form; }
   function shapeOf(pid) { var p = (S.lists.products || []).find(function (x) { return x.id === pid; }); return p ? p.shape : null; }
@@ -340,7 +353,7 @@
   }
   function visible() {
     var c = F().cur, k = ['customer', 'product', 'type', 'frequency'];
-    if (isSponsor()) k.push('franchise');
+    if (isSponsor()) k.push('franchise', 'web');
     if (multiPub()) k.push('titles');
     if (multiPub() && c.titles.length > 1) k.push('placement');
     if (placementOut() === L.split) k.push('split');
@@ -394,6 +407,8 @@
       var fr = Lz.franchises.filter(function (x) { return !t0 || x.titleIds.indexOf(t0) >= 0; }).map(function (x) { return [x.id, x.name]; });
       g += '<div class="f span2">' + lab('franchise', 'Franchise', true) + sel('data-k="franchise" aria-label="Franchise"', fr, c.franchise, 'Select', dirty('franchise')) +
         (fr.length ? '' : '<span class="warn">' + esc(W.noFranchise) + '</span>') + '</div>';
+      g += '<div class="f span2">' + lab('web', 'On the website', false) + sel('data-k="web" aria-label="On the website"', WEBS, c.web, null, dirty('web')) +   // v1.0.6
+        '<span class="hint">' + esc(c.web === WEBS[1] ? W.webIssue : W.webRun) + '</span></div>';
     }
     if (m) {
       var tl = S.titles.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
@@ -479,6 +494,7 @@
     var c = F().cur, p = placementOut(), b = {
       publisher: ctx.publisher.id, customer: c.customer, product: c.product, franchise: isSponsor() ? c.franchise : '',
       titles: c.titles.slice(), placement: p, type: c.type, frequency: c.frequency, week: isSpecific() ? L.any : c.week };
+    if (isSponsor()) b.onWebsite = c.web || WEBS[0];                  // v1.0.6
     if (isSpecific()) b.months = c.months.slice(); else b.startMonth = c.startMonth;
     if (c.frequency === L.window) b.windowEnd = c.windowEnd;
     if (p === L.split) { b.splitCounts = {}; c.titles.forEach(function (t) { b.splitCounts[t] = +c.split[t] || 0; }); b.sends = splitSum(); }
@@ -503,7 +519,7 @@
     var kept = obs.filter(function (o) { return !o.makeGoodOf && ['Assigned', 'Fulfilled', 'Missed'].indexOf(o.status) >= 0; }).length;
     var mgs = obs.filter(function (o) { return o.makeGoodOf && o.status !== 'Cancelled'; }).length;
     var names = { customer: 'customer', product: 'product', franchise: 'franchise', type: 'type', titles: 'magazines', placement: 'how sends are shared',
-      split: 'sends per town', frequency: 'when', startMonth: 'start month', windowEnd: 'window end', sends: 'edition sends', week: 'week', months: 'months' };
+      split: 'sends per town', frequency: 'when', startMonth: 'start month', windowEnd: 'window end', sends: 'edition sends', week: 'week', months: 'months', web: 'on the website' };
     S.modal = { kind: 'edit', title: fill(W.ackEditH, { name: f.name }), ok: W.saveChanges, ready: false,
       body: '<p>This sale is live. Saving does the following:</p><ul><li>' + openN + ' open send' + plural(openN) + ' become' + (openN === 1 ? 's' : '') + ' Cancelled, and a fresh set is made from the new terms.</li>' +
         (kept ? '<li>' + kept + ' send' + plural(kept) + ' that ' + (kept === 1 ? 'is' : 'are') + ' placed, ran or missed keep' + (kept === 1 ? 's' : '') + ' ' + (kept === 1 ? 'its' : 'their') + ' place.</li>' : '') +

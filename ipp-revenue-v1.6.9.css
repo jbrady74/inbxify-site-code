@@ -1,4 +1,16 @@
-/* ipp-revenue-v1.6.8.css */
+/* ipp-revenue-v1.6.9.css */
+/* v1.6.9 (23 Nov 2026, Publisher Portal S12 · Build 2): OBLIGATIONS IN THE REVENUE TAB. Pairs ipp-revenue-v1.10.0.js. Built to the
+   accepted canvas "Obligations in the Revenue tab · Build 2 mockup v0.1", in today's IPP look (ruling 1).
+   · The foot bar is always there: "Done with <pill>" on the left (the Find's Done button style), its note, then the waiting
+     changes and Save. With nothing waiting it is quiet (.is-idle: thin border, no shadow, no Save).
+   · A pill that is done carries a small green tick after its count (.ipp-rv-pdone).
+   · Sponsors: franchise rows reuse the v1.6.5 row frame. A row not in this issue sits on cream (.is-out); a free row's picture
+     box is dashed (.is-free); the end month is red and bold when the sale ends soon (.ipp-rv-frends.is-soon); "Not in this
+     issue · information only" is a small divider (.ipp-rv-frdiv). "Run this issue" is the Done button (.ipp-rv-run).
+   · Shelf: the "Banner sends owed in <month>" box (.ipp-rv-owed) with three fixed counts; group heads "Owed this month" and
+     "Other customers" (.ipp-rv-group); each owed card's line (.ipp-rv-obline) red when not placed, gold on Save, green placed.
+   · A tile's "Counts toward …" line (.ipp-rv-obl) is teal; a sales note line (.ipp-rv-obnote) above the rows.
+   Includes v1.6.8. HARDCODING: none new (every colour and size is a token). */
 /* v1.6.8 (6 Nov 2026, SS-Fork A · Mechanics S3): THE FIND ON THE TEXT ADS PILL. Pairs ipp-revenue-v1.8.0.js. Built to the
    accepted canvas frame "Text ads pill · The Find on Revenue".
    · The Find panel (.ipp-rv-find): white card, a cool grey head band (name in small caps, "Text ads in this issue" under it, the
@@ -554,3 +566,39 @@
 [data-ipp-root] .ipp-rv-done.is-on .ipp-rv-done-box{background:var(--ix-teal);border-color:var(--ix-teal)}
 [data-ipp-root] .ipp-rv-done.is-on .ipp-rv-done-box::after{content:"";width:8px;height:4px;border:2px solid var(--ix-white);border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
 @media (max-width: 900px){[data-ipp-root] .ipp-rv-fgrid{grid-template-columns:minmax(0,1fr)}}
+
+/* ── v1.6.9 · obligations, Done ticks, franchise rows ─────────── */
+[data-ipp-root] .ipp-rv-savebar{gap:16px}
+[data-ipp-root] .ipp-rv-savebar.is-idle{border:1px solid var(--ix-border);box-shadow:none}
+[data-ipp-root] .ipp-rv-savebar.is-idle .ipp-rv-save-text b{font-weight:400;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-rv-donebar{display:flex;align-items:center;gap:10px;flex:0 1 auto;min-width:0;max-width:56%;padding-right:16px;border-right:1px solid var(--ix-border)}
+[data-ipp-root] .ipp-rv-donebar .ipp-rv-done{flex:none;white-space:nowrap}
+[data-ipp-root] .ipp-rv-donebar-note{min-width:0;font:400 var(--ix-fs-12)/1.35 var(--ix-font-body);color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-rv-donebar-note .gold{color:var(--ix-gold-ink)}
+[data-ipp-root] .ipp-rv-donebar-note .bad{color:var(--ix-danger)}
+[data-ipp-root] .ipp-rv-pdone{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-left:8px;flex:none;border-radius:50%;
+  background:var(--ix-ok);color:var(--ix-white);font:700 var(--ix-fs-10-5)/1 var(--ix-font-body)}
+[data-ipp-root] .ipp-rv-tab.is-active .ipp-rv-pdone{background:var(--ix-white);color:var(--ix-ok)}
+[data-ipp-root] .ipp-rv-obnote{margin:6px 0 10px;font:400 var(--ix-fs-13) var(--ix-font-body);color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-rv-obnote.is-bad{color:var(--ix-danger)}
+[data-ipp-root] .ipp-rv-frdiv{margin:8px 0 0;padding:0 2px;font:600 var(--ix-fs-11) var(--ix-font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-rv-grid.is-sponsors .ipp-rv-tile.is-out{background:var(--ix-cream)}
+[data-ipp-root] .ipp-rv-grid.is-sponsors .ipp-rv-tile.is-out .ipp-rv-thumb{opacity:.75}
+[data-ipp-root] .ipp-rv-grid.is-sponsors .ipp-rv-tile.is-free .ipp-rv-thumb{background:transparent;border:1px dashed var(--ix-border-input)}
+[data-ipp-root] .ipp-rv-grid.is-sponsors .ipp-rv-tile.is-free .ipp-rv-who{color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-rv-frends{display:block;font:400 var(--ix-fs-12) var(--ix-font-body);color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-rv-frends.is-soon{font-weight:700;color:var(--ix-danger)}
+[data-ipp-root] .ipp-rv-run{white-space:nowrap}
+[data-ipp-root] .ipp-rv-what.ipp-rv-obl{color:var(--ix-teal-mid)}
+[data-ipp-root] .ipp-rv-owed{margin:0 8px 8px;padding:12px 14px;border:1px solid var(--ix-border);border-radius:var(--ix-radius-sm);background:var(--ix-surface)}
+[data-ipp-root] .ipp-rv-owed-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font:600 var(--ix-fs-13) var(--ix-font-body);color:var(--ix-text-dark)}
+[data-ipp-root] .ipp-rv-owed-head em{font:400 var(--ix-fs-12) var(--ix-font-body);font-style:normal;color:var(--ix-text-mid);white-space:nowrap}
+[data-ipp-root] .ipp-rv-owed-n{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+[data-ipp-root] .ipp-rv-owed-n span{display:flex;flex-direction:column;gap:2px;font:400 var(--ix-fs-11) var(--ix-font-body);color:var(--ix-text-mid)}
+[data-ipp-root] .ipp-rv-owed-n b{font:600 var(--ix-fs-18) var(--ix-font-mono);color:var(--ix-text-dark)}
+[data-ipp-root] .ipp-rv-owed-n .is-bad b{color:var(--ix-danger)}
+[data-ipp-root] .ipp-rv-group{padding:12px 8px 6px;font:600 var(--ix-fs-11) var(--ix-font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-rv-ad-text em.ipp-rv-obline{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-ipp-root] .ipp-rv-ad-text em.ipp-rv-obline.is-bad{color:var(--ix-danger)}
+[data-ipp-root] .ipp-rv-ad-text em.ipp-rv-obline.is-gold{color:var(--ix-gold-ink)}
+[data-ipp-root] .ipp-rv-ad-text em.ipp-rv-obline.is-ok{color:var(--ix-ok)}
