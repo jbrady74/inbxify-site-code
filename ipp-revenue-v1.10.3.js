@@ -1,4 +1,53 @@
-/* ipp-revenue-v1.9.0.js */
+/* ipp-revenue-v1.10.3.js */
+/* v1.10.3 (24 Nov 2026, Publisher Portal S12 · Build 2): v1.10.2 with the Workers named right again. Main took ix-sales v1.3.14
+   (Ad Maker S3) and ix-issue-data v1.0.208 (Content Home S16) for other changes, so this set ships ix-sales v1.3.15 and
+   ix-issue-data v1.0.210. Only the version names change (the header, the ⓘ and the "cannot save the Done ticks" sentence).
+   v1.10.2 was never live. Everything below is v1.10.2 as written, with those names. */
+/* v1.10.2 (23 Nov 2026, Publisher Portal S12 · Build 2): v1.10.0 with the Data Worker named right. (The name v1.10.1 went to the
+   branch once holding v1.10.0 unchanged, by a slip in the commit; it is retired, never live.) While this set was built, main's
+   ix-issue-data v1.0.207 became the Image Links S3 cut, so the Done ticks and each section's franchise ship in ix-issue-data
+   v1.0.209. Only the version names in the words change (the header, the ⓘ and the "cannot save the Done ticks" sentence).
+   v1.10.0 was never live. Everything below is v1.10.0 as written. */
+/* v1.10.0 (23 Nov 2026, Publisher Portal S12 · Build 2): OBLIGATIONS DRIVE THE REVENUE TAB. Rulings of 23 Nov (S11) and the
+   accepted canvas "Obligations in the Revenue tab · Build 2 mockup v0.1". Built in today's IPP look (ruling 1).
+   ONE ENGINE FOR EVERY SALE (ruling 2): a sale is a number of sends; each issue that carries the customer uses one send owed
+   that month; once the month's sends are used, a further run is an extra and counts nothing. A franchise sponsor counts the same.
+   1 · WHAT WAS SOLD. The tab reads ix-sales GET /revenue?title=&edition= (the month, the month's later issues, the sends owed,
+       the live sponsor sales) and GET /franchises?publisher= (every franchise of the title), with the page's staff login, as
+       client-manager does. Read when the plan is first read, each time Revenue opens, and after each Save. The address is
+       PP_WEBHOOKS.sales; without it the tab says so and works as v1.9.0 did.
+   2 · SPONSORS PILL REBUILT (rulings 4 and 9). One row per franchise the title sells: franchises in this issue first (issue order),
+       then "Not in this issue · information only". A franchise is matched to the issue through each section's franchise
+       (ix-issue-data v1.0.210 slots[].section.franchiseId). A sponsor with a send still owed this month comes ticked "Run this
+       issue" (a waiting change Save writes, gold); untick to skip. A sponsor whose month's send is used comes unticked; tick to
+       run as an extra. A franchise with no sale is free choice ("Pick a sponsor", then a customer on the shelf), as is a section
+       with no franchise. A sale's end month is red when its remaining sends are at or under ix-sales renewSends (endsSoon).
+       A skip is kept on the NEWSLETTER (skip:<franchise id> in revenue-done) so an unticked owed sponsor stays unticked.
+       The sponsor is still written on each block of the franchise's sections (adFields.sponsor), through the same batch.
+   3 · THE SHELF SAYS WHAT IS OWED (rulings 7 and 8). Banners: a "Banner sends owed in <month>" box (Owed / Placed / Not placed,
+       and how many issues the month has left), then "Owed this month" (one card per send: its sale and its state), then "Other
+       customers". Splash and Text ads list their owed customers first the same way. Nothing is pre-placed. A placed ad's tile
+       says "Counts toward SR-xxxx · Nov" or "Runs as an extra (no sale)".
+   4 · ONE DONE TICK PER PILL (ruling 5): "Done with <pill>" in the foot bar, always shown. Any change on a pill clears that
+       pill's tick (a saved tick, or one ticked before the change). On Sponsors, Done accepts the ticked rows. Written to the
+       NEWSLETTER field revenue-done (publish.fields.revenueDone, ix-issue-data v1.0.210) through Scenario 124 nlmeta after the
+       rest of the Save lands, and judged by the fresh read. A pill whose changes failed is written not done. The pill shows a
+       green tick when done; the head says "N pills not done".
+   5 · SAVE COUNTS THE SENDS (ruling 11). After the Save and the fresh read, the tab works out which send each placement uses
+       (the one already assigned here, else the customer's oldest open send of the shape, scoping §7) and calls ix-sales
+       POST /obligations/place: placed content's sends go Assigned to this issue, content taken out goes back to Open. Only
+       content the fresh read shows is counted. One send per customer per shape per issue; a banner also carries the customer's
+       sidebar send. The answer is shown per send (TOAST-TRUTH).
+   6 · gate() gains pills [{key,label,done,state}], notDone [labels], doneField, and owed { state, month, monthWord, lastInMonth,
+       later, items[{customer,what,why,sales,pool}], stop } for Compile (ipp-publish v2.84, rulings 6 and 10). readiness() gains
+       done {pill: bool}. Done changes count as unsaved changes. IPPRevenue gains loadSales and owed.
+   Needs ix-sales v1.3.15 (/revenue, /obligations/place), ix-issue-data v1.0.210, the NEWSLETTERS field revenue-done, PP_WEBHOOKS.sales
+   on the PUBLICATION PLAN Template head, ipp-revenue-v1.6.9.css, ipp-publish v2.84.
+   HARDCODING (provisional): HC-P-RV110-1 the PP_WEBHOOKS key 'sales'; HC-P-RV110-2 the ix-sales slot-shape labels (banner, sidebar,
+   splash, sponsor band, list block); HC-P-RV110-3 the words (Done with <pill>, Run this issue, Counts toward, Runs as an extra,
+   the row notes); HC-P-RV110-4 the revenue-done form (pill keys and skip:<franchise id>, comma list); HC-P-RV110-5 the pill keys
+   banners, splash, text, sponsors, house; HC-P-RV110-6 a banner placement carries the customer's sidebar send; a pool send is
+   listed at Compile but never stops it (another title may carry it). */
 /* v1.9.0 (13 Nov 2026, Content Home S8, Jeff): THE REVENUE PICKER SAVES THROUGH ix-content, AS IT BEHAVES TODAY. Jeff ruled the port
    as-is (S8 question 1: yes); the House Ads Picker and the Revenue Done ticks are deferred together. Scenario 127 is no longer called
    from here, and Scenario 124 only writes the NEWSLETTER. Needs ix-issue-data v1.0.180 (row versions, blockFields, adFields),
@@ -628,8 +677,8 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.9.0';
-  var FILE = 'ipp-revenue-v1.9.0.js';
+  var VERSION = '1.10.3';
+  var FILE = 'ipp-revenue-v1.10.3.js';
   var BATCH_URL_CEILING = 1800, BATCH_CHUNK = 15;   // HC-P-RV1-2
   var HOUSE = '__house', NONE = '__none';
 
@@ -654,7 +703,10 @@
     moves: {},        // v1.6.5 slotId -> { planIds, names, saved }  a saved note copied to those plans and taken off here
     root: null,
     side: 'cust',     // v1.7.5 the shelf switch: 'cust' | 'house'
-    freshDone: false  // v1.7.5 the one fresh read when Revenue first opens
+    freshDone: false, // v1.7.5 the one fresh read when Revenue first opens
+    done: {},         // v1.10.0 pill -> { on, sig } a Done tick changed, waiting
+    skip: {},         // v1.10.0 franchise id -> true (skip an owed sponsor) | false (run it again), waiting
+    doneFail: ''      // v1.10.0 why the Done ticks did not save
   };
   var MV = { key: '', sel: {}, plans: null, loading: false, error: '' };   // v1.6.5 the Move to… panel
 
@@ -911,7 +963,7 @@
       .forEach(function (s) {
         if (s.assetType === 'ad' || !s.section || !s.section.id) return;
         var id = s.section.id;
-        if (!by[id]) { by[id] = { id: id, name: s.section.name || 'Section', slots: [] }; order.push(id); }
+        if (!by[id]) { by[id] = { id: id, name: s.section.name || 'Section', slots: [], frId: s.section.franchiseId || null }; order.push(id); }   // v1.10.0 frId
         by[id].slots.push(s);
       });
     return order.map(function (id) {
@@ -959,13 +1011,22 @@
   }
   function sponWaiting() { return Object.keys(R.spon).filter(function (k) { return !R.spon[k].saved; }); }
   function sponsorsState() {
-    var l = sections(); if (!l.length) return 'ready';
+    var l = sections();
     var needs = l.some(function (x) { var a = sponAfter(x); return a.ack || a.mixed || R.sponFails[x.id]; });
     if (needs) return 'needs';
-    return sponWaiting().length ? 'unsaved' : 'ready';
+    return (sponWaiting().length || skipChanges().length) ? 'unsaved' : 'ready';   // v1.10.0 skips
   }
   function placeSponsor(custId) {
-    if (locked() || R.saving || !isSec(R.armed)) return;
+    if (locked() || R.saving) return;
+    if (isFr(R.armed)) {                                                      // v1.10.0 a franchise row with no sale, or a plain section
+      var fr = frRow(R.armed.slice(FR.length)); if (!fr || fr.sale || !fr.secs.length) return;
+      if (fr.inAt) { toast(AT_WHY + '.', 'err'); return; }
+      var cap0 = sponsorsMax();
+      if (cap0 && !fr.cust && sponsoredCount(null) + fr.secs.length > cap0) { toast('This issue takes at most ' + cap0 + ' section sponsor' + (cap0 === 1 ? '' : 's') + '. Remove one first.', 'err'); return; }
+      fr.secs.forEach(function (x) { delete R.sponFails[x.id]; if (x.current === custId && !x.mixed && !x.ack) delete R.spon[x.id]; else R.spon[x.id] = { kind: 'set', custId: custId }; });
+      R.customer = null; render(); return;
+    }
+    if (!isSec(R.armed)) return;
     var x = secById(R.armed.slice(SEC.length)); if (!x) return;
     if (inAroundTown(x)) { toast(AT_WHY + '.', 'err'); return; }          // v1.6.3: refused at the action (ruling 7)
     var cap = sponsorsMax();
@@ -1028,24 +1089,30 @@
     var q = R.query.trim().toLowerCase();
     if (q) cs = cs.filter(function (c) { return c.name.toLowerCase().indexOf(q) >= 0; });
     if (!cs.length) return '<div class="ipp-rv-empty">Nothing matches \u201c' + esc(R.query) + '\u201d.</div>';
-    var armedId = isSec(R.armed) ? R.armed.slice(SEC.length) : null;
+    var ar = isFr(R.armed) ? frRow(R.armed.slice(FR.length)) : null, can = !!(ar && !ar.sale && ar.secs.length) && !locked() && !R.saving;   // v1.10.0
     return cs.map(function (c) {
-      var pic = custPic(c.id), w = sponWhere(c.id, armedId);
-      return '<button type="button" class="ipp-rv-ad ipp-rv-spcust" data-rv-spon="' + esc(c.id) + '"' + (armedId ? '' : ' disabled') + '>' +
+      var pic = custPic(c.id), w = frRows().filter(function (r) { return (!ar || r.key !== ar.key) && r.secs.length && r.cust === c.id; }).map(function (r) { return r.name; });
+      return '<button type="button" class="ipp-rv-ad ipp-rv-spcust" data-rv-spon="' + esc(c.id) + '"' + (can ? '' : ' disabled') + '>' +
         '<span class="ipp-rv-ad-pic">' + (pic ? '<img src="' + esc(pic) + '" alt="" loading="lazy">' : '<span>No current banner</span>') + '</span>' +
         '<span class="ipp-rv-ad-text"><span class="n">' + esc(c.name) + '</span><span class="m">Customer</span>' +
         (w.length ? '<em>Sponsoring ' + esc(w.join(', ')) + '</em>' : '') + '</span></button>';
     }).join('');
   }
+  // v1.10.0 — one row per franchise the title sells (rulings 4 and 9); the old section tiles (sponTile) are no longer drawn
   function sponBody() {
-    var l = sections();
     if (!sponField()) return '<div class="ipp-rv-msg is-err">The plan data does not name the sponsor field (adFields.sponsor). The Data Worker must be v1.0.28 or later.</div>';
-    if (!l.length) return '<div class="ipp-rv-soon"><p class="ipp-rv-soon-title">No block in this issue has a section yet.</p>' +
-      '<p>A block\u2019s section comes from its article, or from the title\u2019s design settings. Sponsors attach to sections.</p></div>';
-    var cap = sponsorsMax(), live = sections().filter(function (x) { return sponAfter(x).cust; }).length;
-    return '<div class="ipp-rv-body"><section class="ipp-rv-slots"><div class="ipp-rv-band"><span>Section sponsors</span><b>' + live + (cap ? ' of ' + cap : '') + '</b>' +
-      '<span class="ipp-rv-band-note">This issue only</span></div>' +
-      '<div class="ipp-rv-grid is-sponsors">' + l.map(sponTile).join('') + '</div></section>' + shelf() + '</div>';
+    var rows = frRows(), inI = rows.filter(function (r) { return r.secs.length; }), out = rows.filter(function (r) { return !r.secs.length; });
+    var cap = sponsorsMax(), live = inI.filter(function (r) { return r.cust; }).length;
+    var none = inI.length ? '' : '<div class="ipp-rv-obnote">No block in this issue has a section yet, so no sponsor runs in it. A block\u2019s section comes from its article, or from the title\u2019s design settings.</div>';
+    return '<div class="ipp-rv-body"><section class="ipp-rv-slots"><div class="ipp-rv-band"><span>Sponsors</span><b>' + live + (cap ? ' of ' + cap : '') + '</b>' +
+      '<span class="ipp-rv-band-note">Every franchise the title sells. A sponsor with a send still owed this month comes ticked. Untick to skip this issue.</span></div>' +
+      obNote() + none + '<div class="ipp-rv-grid is-sponsors">' + inI.map(frTile).join('') +
+      (out.length ? '<div class="ipp-rv-frdiv">Not in this issue \u00b7 information only</div>' + out.map(frTile).join('') : '') + '</div></section>' + shelf() + '</div>';
+  }
+  function obNote() {
+    if (OB.state === 'idle' || OB.state === 'loading') return '<div class="ipp-rv-obnote">Reading what was sold\u2026</div>';
+    if (OB.state === 'off' || OB.state === 'err') return '<div class="ipp-rv-obnote is-bad">' + esc(OB.error) + '</div>';
+    return OB.frsErr ? '<div class="ipp-rv-obnote is-bad">' + esc(OB.frsErr) + '</div>' : '';
   }
 
   function dropAdd(k) {
@@ -1318,11 +1385,17 @@
              'Taking one out is a normal choice and never blocks Publish. House ads do not count as banner spots.\n\n' +
              'Text ads holds The Find: the theme, the businesses (one current text ad per customer, from the shelf), their order (drag), and Done picking. ' +
              'A faded customer opens their client page to set a current text ad.\n\n' +
-             'The order of the slots is set on Layout. Sold space (OBLIGATIONS) comes later.',
+             'Sponsors lists every franchise the title sells. A sponsor with a send owed this month comes ticked (Run this issue); untick to skip. ' +
+             'A franchise with no sale is free choice. A sale\u2019s end month is red when few sends are left.\n\n' +
+             'What was sold comes from ix-sales: the shelf lists the sends owed this month first, and a placed ad says which sale it counts toward, ' +
+             'or that it runs as an extra. Save marks each placed send to this issue and returns a send taken out to Open.\n\n' +
+             'Each pill has a Done tick in the foot bar. Any change on a pill clears it. Compile waits until every pill is done.\n\n' +
+             'The order of the slots is set on Layout.',
       heading: 'Writes through',   // v1.9.0 (ix-info v1.0.2)
       scenarios: [{ name: 'ix-content \u00b7 POST /nl-blocks/batch', note: 'one Save, one batch (v1.9.0): create (Add, house Add back, Add The Find, a slot Move to\u2026 makes on another plan), update (ad, sponsor, note, clone answer, The Find\u2019s list and theme in design-json, its design, Done picking and print item), delete (Delete slot, removing The Find); every row with its version; refused whole when a row changed since it was read, or when the issue is sent, released or held (PP_WEBHOOKS.content)' },
-                  { name: '124 \u00b7 PubPlan Block Writer', note: 'the NEWSLETTER only, after the batch: splash (v2.18) for the Splash; nlmeta for the clone answers on Splash and Sponsors (PP_WEBHOOKS.blockWriter)' }],
-      companions: 'ipp-revenue-v1.6.8.css \u00b7 ix-form-controls v1.2.0 (ix-confirm) \u00b7 ipp-shell v1.48 (header Keep all) \u00b7 ix-info v1.0.2 \u00b7 pathways: ix-issue-data v1.0.180 /plan-board (row versions, blockFields, adFields, customers[].current, slots with pending tokens, adPool, splash, house, publish.fields.clonePending) and /plans (Move to\u2026); ix-content v1.2.1 /nl-blocks/batch (writes, Webflow first, then D1); Scenario 124 (NEWSLETTER) \u00b7 ipp-publish (hold links open this view)'
+                  { name: '124 \u00b7 PubPlan Block Writer', note: 'the NEWSLETTER only, after the batch: splash (v2.18) for the Splash; nlmeta for the clone answers on Splash and Sponsors, and for the Done ticks (revenue-done, v1.10.0) (PP_WEBHOOKS.blockWriter)' },
+                  { name: 'ix-sales \u00b7 POST /obligations/place', note: 'after Save and the fresh read (v1.10.0): each placed send Assigned to this issue, each send taken out back to Open; read: GET /revenue, GET /franchises (PP_WEBHOOKS.sales, staff login)' }],
+      companions: 'ipp-revenue-v1.6.9.css \u00b7 ix-sales v1.3.15 \u00b7 ix-issue-data v1.0.210 (section.franchiseId, publish.fields.revenueDone) \u00b7 ix-form-controls v1.2.0 (ix-confirm) \u00b7 ipp-shell v1.48 (header Keep all) \u00b7 ix-info v1.0.2 \u00b7 pathways: ix-issue-data v1.0.180 /plan-board (row versions, blockFields, adFields, customers[].current, slots with pending tokens, adPool, splash, house, publish.fields.clonePending) and /plans (Move to\u2026); ix-content v1.2.1 /nl-blocks/batch (writes, Webflow first, then D1); Scenario 124 (NEWSLETTER) \u00b7 ipp-publish (hold links open this view)'
     });
   }
 
@@ -1355,7 +1428,9 @@
     fPrune();                                                // v1.8.0
     if (R.tab === 'text' && !findOn()) R.tab = 'banners';
     if (!R.armedOnce && !locked()) { R.armedOnce = true; R.armed = nextEmpty(null); }
-    if (R.armed && !(isSp(R.armed) ? spOfKey(R.armed) : isSec(R.armed) ? secById(R.armed.slice(SEC.length)) : slotById(R.armed))) R.armed = null;
+    OBP = null;                                                // v1.10.0 the placement plan, once per draw
+    applyDefaults();                                           // v1.10.0 owed sponsors come ticked
+    if (R.armed && !(isSp(R.armed) ? spOfKey(R.armed) : isSec(R.armed) ? secById(R.armed.slice(SEC.length)) : isFr(R.armed) ? frRow(R.armed.slice(FR.length)) : slotById(R.armed))) R.armed = null;
     Object.keys(R.spon).forEach(function (k) { if (!secById(k)) { delete R.spon[k]; delete R.sponFails[k]; } });   // v1.5
     var sps = spList();
     var rd = readiness();
@@ -1429,7 +1504,12 @@
       total++;
       if (after(s).adId) filled++; else empty.push(slotName(s));
     });
-    return { loaded: loaded, total: total, filled: filled, empty: empty, unsaved: loaded ? waiting().length + fChanges() : 0 };   // v1.8.0 Find changes
+    // v1.10.0 the Done ticks (saved, as Compile judges the saved plan) and what is owed this month
+    var pills = loaded ? pillsShown().map(function (k) { return { key: k, label: pillLabel(k), done: savedDone(k) }; }) : [];
+    if (loaded) { var rd0 = readiness(); pills.forEach(function (p) { p.state = rd0[p.key]; }); }
+    return { loaded: loaded, total: total, filled: filled, empty: empty, unsaved: loaded ? waiting().length + fChanges() + doneWaiting() : 0,   // v1.8.0 Find changes; v1.10.0 Done
+             pills: pills, notDone: pills.filter(function (p) { return !p.done; }).map(function (p) { return p.label; }), doneField: loaded && doneFieldOk(),
+             owed: loaded ? owedInfo() : { state: 'idle' } };
   }
   // v1.6.7 — the tab header's badge and status
   function headStatus() {
@@ -1439,10 +1519,12 @@
       IPP.head('revenue', { badge: info(), tone: 'bad', status: pink + ' to confirm', action: { label: 'Keep all ' + pink, key: 'keepall' } });
       return;
     }
+    var nd = g.loaded ? g.notDone.length : 0;                                  // v1.10.0
     IPP.head('revenue', { badge: info(), action: null,
-      tone: !g.loaded ? '' : (g.unsaved || unsold ? 'bad' : 'ok'),
+      tone: !g.loaded ? '' : (g.unsaved || unsold || nd ? 'bad' : 'ok'),
       status: !g.loaded ? '' : (g.unsaved ? g.unsaved + ' unsaved change' + (g.unsaved === 1 ? '' : 's')
-            : unsold ? unsold + ' banner spot' + (unsold === 1 ? '' : 's') + ' unsold' : (g.total ? 'Every banner spot is filled' : '')) });
+            : unsold ? unsold + ' banner spot' + (unsold === 1 ? '' : 's') + ' unsold'
+            : nd ? nd + ' pill' + (nd === 1 ? '' : 's') + ' not done' : 'Every pill is done') });
   }
   function announceGate() {
     headStatus();
@@ -1453,7 +1535,10 @@
   }
   function readiness() {
     var bs = bannersState(), ss = splashState(), ps = sponsorsState(), hs = houseState(), ts = textState();   // v1.5 sponsors count; v1.6.11 house; v1.8.0 text
-    return { ready: bs === 'ready' && ss === 'ready' && ps === 'ready' && hs === 'ready' && ts === 'ready', banners: bs, splash: ss, sponsors: ps, house: hs, text: ts };
+    return { ready: bs === 'ready' && ss === 'ready' && ps === 'ready' && hs === 'ready' && ts === 'ready', banners: bs, splash: ss, sponsors: ps, house: hs, text: ts,
+             done: doneMap() };                                                // v1.10.0
+  }
+  function doneMap() { var o = {}; try { pillsShown().forEach(function (k) { o[k] = doneNow(k); }); } catch (e) {} return o;
   }
   var MARK = { needs: 'Not ready', unsaved: 'Unsaved', ready: 'Ready' };
   function mark(st) {
@@ -1477,7 +1562,8 @@
         (needs && cp ? 'Needs attention \u00b7 ' : needs ? 'Needs attention' : '') + (cp ? cp + ' copied by Clone to keep or delete' : '') + '" aria-label="' +
         (needs ? 'Needs attention' : '') + (needs && cp ? ', ' : '') + (cp ? cp + ' copied by Clone to keep or delete' : '') + '"></span>';
       return '<button type="button" class="ix-tab-pill ipp-rv-tab' + (on ? ' is-active' : '') + '" role="tab" aria-selected="' + on + '"' +
-        ' data-rv-tab="' + t.key + '"><span class="ipp-rv-tab-name">' + t.label + '</span><span class="ipp-rv-tab-end">' + tabCount(t.key) + dt + '</span></button>';
+        ' data-rv-tab="' + t.key + '"><span class="ipp-rv-tab-name">' + t.label + '</span><span class="ipp-rv-tab-end">' + tabCount(t.key) + dt +
+        (!needs && rd.done && rd.done[t.key] ? '<span class="ipp-rv-pdone" title="Done" aria-label="Done">\u2713</span>' : '') + '</span></button>';   // v1.10.0
     }).join('') + '</div>';
   }
   // v1.5.4 filled / total for a tab, following what Save will produce.
@@ -1486,7 +1572,7 @@
     if (key === 'banners') adSlots().forEach(function (s) { if (isDel(s.id) || isHouseSlot(s)) return; n++; if (after(s).adId) f++; });   // v1.6.11 house slots out
     else if (key === 'house') houseKinds().forEach(function (k) { n++; if (houseIn(k.kind)) f++; });   // v1.6.11
     else if (key === 'splash') spList().forEach(function (x) { n++; if (spAfter(x).mode === 'paid') f++; });
-    else if (key === 'sponsors') sections().forEach(function (x) { n++; if (sponAfter(x).cust) f++; });
+    else if (key === 'sponsors') frRows().forEach(function (r) { if (!r.secs.length) return; n++; if (r.cust) f++; });   // v1.10.0 rows in this issue
     else if (key === 'text') return textCounts();             // v1.8.0 businesses over the limit
     return { filled: f, total: n };
   }
@@ -1511,8 +1597,8 @@
       if (key === 'splash') { var l = spList(); R.armed = (isSp(R.armed) && spOfKey(R.armed)) ? R.armed : (l.length ? SP + l[0].id : null); }
       else if (key === 'banners') { if (!R.armed || isSp(R.armed) || isSec(R.armed)) R.armed = nextEmpty(null); }   // v1.5.4 fix
       else if (key === 'sponsors') {                            // v1.5
-        var ls = sections().filter(function (x) { return !inAroundTown(x); }), f = ls.filter(function (x) { return !sponAfter(x).cust; })[0] || ls[0];   // v1.6.3: never auto-arm a section whose story is in Around Town
-        R.armed = f ? SEC + f.id : null;
+        var ls = frRows().filter(function (r) { return r.secs.length && !r.sale && !r.inAt; }), f = ls.filter(function (r) { return !r.cust; })[0] || ls[0];   // v1.10.0 rows; never auto-arm Around Town (v1.6.3) or a sold row
+        R.armed = f ? FR + f.key : null;
       }
       else R.armed = null;                                      // house (v1.6.11) and text (v1.8.0) arm nothing
     }
@@ -1573,6 +1659,7 @@
     var pic = shownAd ? (shownAd.banner || shownAd.thumb || '') : '';
     var who = shownAd ? (shownAd.customer || (shownAd.house ? 'House ad' : '')) : '';
     var what = shownAd ? (shownAd.name || '') : '';
+    var obl = a.adId && !a.del ? obLine(s.id) : '';                        // v1.10.0 the send this ad uses
     var cls = ['ipp-rv-tile'];
     if (hero) cls.push('is-hero', 'is-lead');            // v1.2
     if (R.armed === s.id) cls.push('is-armed');
@@ -1632,7 +1719,7 @@
       '<div class="ipp-rv-thumb">' + (pic ? '<img src="' + esc(pic) + '" alt="" loading="lazy">'
         : '<span>' + (a.adId ? 'No banner picture' : 'Empty slot') + '</span>') + '</div>' +
       '<div class="ipp-rv-who">' + esc(who || '\u00a0') + '</div>' +
-      '<div class="ipp-rv-what">' + esc(what || '\u00a0') + '</div>' +
+      '<div class="ipp-rv-what' + (obl ? ' ipp-rv-obl' : '') + '"' + (obl ? ' title="' + esc(what) + '"' : '') + '>' + esc(obl || what || '\u00a0') + '</div>' +   // v1.10.0
       '<div class="ipp-rv-note">' + note + '</div>' +
       '<div class="ipp-rv-acts">' + acts + '</div></div>';
   }
@@ -1669,6 +1756,7 @@
     var who = x.mode === 'paid' ? (x.ad ? (x.ad.customer || x.name) : (x.name || 'Paid splash'))
       : x.mode === 'house' ? 'House splash' : '';
     var what = x.mode === 'paid' ? (x.ad ? x.ad.name : 'Not an ad in ADS') : x.mode === 'house' ? x.name : '';
+    var spObl = x.mode === 'paid' ? obLine(key) : '';                        // v1.10.0
     var note;
     if (R.spFails[n.id]) note = '<span class="bad">Not saved: ' + esc(R.spFails[n.id]) + '</span>';
     else if (p && p.saved) note = '<span class="ok">Saved</span>';
@@ -1693,7 +1781,7 @@
       tileHead(spName(n), 'The issue\u2019s opening ad', R.armed === key) +
       '<div class="ipp-rv-thumb">' + (x.image ? '<img src="' + esc(x.image) + '" alt="" loading="lazy">' : '<span>No splash picture</span>') + '</div>' +
       '<div class="ipp-rv-who">' + esc(who || '\u00a0') + '</div>' +
-      '<div class="ipp-rv-what">' + esc(what || '\u00a0') + '</div>' +
+      '<div class="ipp-rv-what' + (spObl ? ' ipp-rv-obl' : '') + '"' + (spObl ? ' title="' + esc(what) + '"' : '') + '>' + esc(spObl || what || '\u00a0') + '</div>' +   // v1.10.0
       '<div class="ipp-rv-note">' + note + '</div>' +
       '<div class="ipp-rv-acts">' + acts + '</div></div>';
   }
@@ -1704,7 +1792,7 @@
     var txt = R.tab === 'text', fs = txt ? findSlot() : null;                         // v1.8.0
     var note = lk ? 'Locked: nothing can be placed.'
       : txt ? (!fs ? (FD.add ? 'Save first, then pick businesses.' : 'Add ' + findName() + ' first.') : (fs.allocation || FD.clears[fs.id]) ? 'Take the print item out first.' : fNow(fs).length >= fMax(fs) ? findName() + ' is full. Remove one to add another.' : '')
-      : !R.armed ? (R.tab === 'splash' ? 'Click the Splash card, then an ad.' : R.tab === 'sponsors' ? 'Click a section, then a sponsor.' : 'Click a banner slot, then an ad.')
+      : !R.armed ? (R.tab === 'splash' ? 'Click the Splash card, then an ad.' : R.tab === 'sponsors' ? 'For a franchise with no sale this month: click a row, then a customer.' : 'Click a banner slot, then an ad.')
       : '';
     var spon = R.tab === 'sponsors';
     var ph = spon ? 'Find a customer' : txt ? 'Find a customer or a text ad' : R.side === 'house' ? 'Find a house ad' : 'Find a customer or an ad';   // v1.7.5; v1.8.0
@@ -1739,9 +1827,51 @@
     });
     if (q) cs = cs.filter(function (c) { var cur = curOf(c, shape);
       return String(c.name || '').toLowerCase().indexOf(q) >= 0 || (cur && String(cur.name || '').toLowerCase().indexOf(q) >= 0); });
-    if (!cs.length) return q ? '<div class="ipp-rv-empty">Nothing matches \u201c' + esc(R.query) + '\u201d.</div>'
-                             : '<div class="ipp-rv-empty">No customer is tied to this title yet.</div>';
-    return cs.map(function (c) { return custCard(c, shape); }).join('');
+    var box = shape === 'banner' && obOk() ? owedBox() : '';                 // v1.10.0 rulings 7 and 8
+    if (obOk()) {
+      var g = owedGroups(shape === 'splash' ? SHAPE.splash : SHAPE.banner, cl, q), oth = {};
+      g.owed.forEach(function (x) { oth[x.c.id] = 1; });
+      var rest = cs.filter(function (c) { return !oth[c.id]; });
+      if (!g.owed.length && !rest.length) return box + (q ? '<div class="ipp-rv-empty">Nothing matches \u201c' + esc(R.query) + '\u201d.</div>' : '<div class="ipp-rv-empty">No customer is tied to this title yet.</div>');
+      return box + (g.owed.length ? '<div class="ipp-rv-group">Owed this month</div>' + g.owed.map(function (x) { return custCard(x.c, shape, x); }).join('') : '') +
+        (rest.length ? '<div class="ipp-rv-group">' + (g.owed.length ? 'Other customers' : 'Customers') + '</div>' + rest.map(function (c) { return custCard(c, shape); }).join('') : '');
+    }
+    if (!cs.length) return obNote() + (q ? '<div class="ipp-rv-empty">Nothing matches \u201c' + esc(R.query) + '\u201d.</div>'
+                             : '<div class="ipp-rv-empty">No customer is tied to this title yet.</div>');
+    return obNote() + cs.map(function (c) { return custCard(c, shape); }).join('');
+  }
+  // v1.10.0 — the sends of a shape owed to this issue (open and due this month, or assigned here), one card each, with
+  // where the send lands after Save. Customers not on customers[] still show, by the name ix-sales gives.
+  function owedGroups(shape, cl, q) {
+    var byId = {}; (cl || []).forEach(function (c) { byId[c.id] = c; });
+    var used = {}; obp().forEach(function (p) { if (p.ob) used[p.ob.id] = p; });
+    var l = obList().filter(function (o) { return shapeKey(o.shape) === shape && ((carriable(o) && dueThisMonth(o)) || isHere(o)); })
+      .sort(function (a, c) { return String(a.customer || '').localeCompare(String(c.customer || '')) || String(a.dueMonth).localeCompare(String(c.dueMonth)); });
+    var out = [];
+    l.forEach(function (o) {
+      var c = byId[o.customerId] || { id: o.customerId, name: o.customer || 'Customer', current: {} };
+      if (q && String(c.name || '').toLowerCase().indexOf(q) < 0) return;
+      var p = used[o.id], where = p ? obWhere(p.key) : '', line, tone;
+      if (p) { line = 'Placed' + (where ? ' \u00b7 ' + where : '') + (isHere(o) ? '' : ' \u00b7 on Save'); tone = isHere(o) ? 'ok' : 'gold'; }
+      else if (isHere(o)) { line = 'Comes out on Save'; tone = 'gold'; }
+      else { line = (o.makeGoodOf ? 'Make good due ' : 'Due ') + monS(o.dueMonth) + ' \u00b7 not placed'; tone = 'bad'; }
+      out.push({ c: c, o: o, line: (o.sales || o.name) + ' \u00b7 ' + line, tone: tone });
+    });
+    return { owed: out };
+  }
+  function obWhere(key) {
+    if (!key) return '';
+    if (key.indexOf(SP) === 0) { var n = spById(key.slice(SP.length)); return n ? spName(n) : 'Splash'; }
+    if (key.indexOf('find:') === 0) return findName();
+    if (key.indexOf(FR) === 0) { var r = frRow(key.slice(FR.length)); return r ? r.name : ''; }
+    var s = slotById(key); return s ? slotName(s) : '';
+  }
+  function owedBox() {
+    var l = obList().filter(function (o) { return shapeKey(o.shape) === SHAPE.banner && ((carriable(o) && dueThisMonth(o)) || isHere(o)); });
+    var used = {}; obp().forEach(function (p) { if (p.ob) used[p.ob.id] = 1; });
+    var placed = l.filter(function (o) { return used[o.id]; }).length, left = (OB.data.laterIssues || []).length + 1, M = monL(obMonth());
+    return '<div class="ipp-rv-owed"><div class="ipp-rv-owed-head"><span>Banner sends owed in ' + esc(M) + '</span><em>' + (left > 1 ? left + ' issues left' : 'Last ' + esc(M) + ' issue') + '</em></div>' +
+      '<div class="ipp-rv-owed-n"><span><b>' + l.length + '</b>Owed</span><span><b>' + placed + '</b>Placed</span><span' + (l.length - placed ? ' class="is-bad"' : '') + '><b>' + (l.length - placed) + '</b>Not placed</span></div></div>';
   }
   // v1.7.5 — the Customers / House ads switch (fixed equal halves, HC-P-RV75-2). Only when house ads exist.
   function shelfSwitch() {
@@ -1771,7 +1901,7 @@
     });
     return out;
   }
-  function custCard(c, shape) {
+  function custCard(c, shape, ob) {                                          // v1.10.0 ob: { line, tone } for an owed send
     var cur = curOf(c, shape), lk = locked(), can = !lk && !!R.armed && !R.saving;
     var where = custWhere(c, shape), noSide = shape === 'banner' && !!cur && !!c.noSidebar;
     var missW = shape === 'splash' ? 'No current splash' : 'No current banner';          // HC-P-RV74-2
@@ -1783,7 +1913,8 @@
       '<span class="ipp-rv-ad-pic">' + (cur && cur.picture ? '<img src="' + esc(cur.picture) + '" alt="" loading="lazy">' : '<span>' + missW + '</span>') + '</span>' +
       '<span class="ipp-rv-ad-text"><span class="n">' + esc(c.name || 'Customer') + '</span>' +
         '<span class="m">' + esc(cur ? (cur.name || '') : missW) + '</span>' +
-        (em ? '<em>' + esc(em) + (quiet ? '<span class="ipp-rv-quiet"> \u00b7 ' + esc(quiet.toLowerCase()) + '</span>' : '') + '</em>'
+        (ob ? '<em class="ipp-rv-obline is-' + esc(ob.tone) + '">' + esc(ob.line) + '</em>'
+            : em ? '<em>' + esc(em) + (quiet ? '<span class="ipp-rv-quiet"> \u00b7 ' + esc(quiet.toLowerCase()) + '</span>' : '') + '</em>'
             : (quiet ? '<em class="off">' + esc(quiet) + '</em>' : '')) +
       '</span></button>';
   }
@@ -1871,14 +2002,42 @@
       '</span></button>';
   }
 
+  // v1.10.0 — every waiting change, by the pill it belongs to (the save bar, and each pill's Done)
+  function splashPart(id) {
+    var n = spById(id), p = R.sp[id], a = p.kind === 'pick' ? adById(p.adId) : null;
+    return spName(n) + ': ' + (p.kind === 'pick' ? (a ? a.name : 'new ad') : p.kind === 'keep' ? 'keep' : p.clone ? 'delete, house splash' : 'house splash');
+  }
+  function frPart(r) {
+    if (!r.pending) return '';
+    var ws = r.secs.map(function (x) { return R.spon[x.id]; }).filter(function (p) { return p && !p.saved; });
+    var skip = r.frId && hasOwn(R.skip, r.frId) ? (R.skip[r.frId] ? 'skip this issue' : 'run again') : '';
+    if (!ws.length) return skip ? r.name + ': ' + skip : '';
+    var k0 = ws[0].kind;
+    var w = k0 === 'keep' ? 'keep sponsor' : k0 === 'clear' ? (ws[0].clone ? 'delete sponsor' : (skip || 'no sponsor')) : custName(r.cust || ws[0].custId) + (r.auto ? ' (owed)' : '');
+    return r.name + ': ' + w;
+  }
+  function partsByPill() {
+    var out = { banners: [], splash: [], text: [], sponsors: [], house: [] };
+    waiting().forEach(function (k) { var t = bannerPart(k); if (t) (out[pillOfKey(k)] || out.banners).push(t); });
+    spWaiting().forEach(function (id) { out.splash.push(splashPart(id)); });
+    fParts().forEach(function (t) { out.text.push(t); });
+    frRows().forEach(function (r) { var t = frPart(r); if (t) out.sponsors.push(t); });
+    return out;
+  }
   function savebar() {
-    var keys = waiting(), spk = spWaiting(), sok = sponWaiting(), fps = fParts();   // v1.8.0 The Find
-    if (!keys.length && !spk.length && !sok.length && !fps.length && !R.saving) return '';
-    var spParts = spk.map(function (id) {                      // v1.1
-      var n = spById(id), p = R.sp[id], a = p.kind === 'pick' ? adById(p.adId) : null;
-      return spName(n) + ': ' + (p.kind === 'pick' ? (a ? a.name : 'new ad') : p.kind === 'keep' ? 'keep' : p.clone ? 'delete, house splash' : 'house splash');
-    });
-    var parts = keys.map(function (k) {
+    var b0 = board(); if (!b0 || !fields()) return '';
+    var P = partsByPill(), parts = P.splash.concat(P.banners, P.house, P.text, P.sponsors);
+    doneChanges().forEach(function (k) { parts.push(pillLabel(k) + ': ' + (doneNow(k) ? 'done' : 'not done')); });   // v1.10.0
+    var idle = !parts.length && !R.saving;
+    var label = R.saving ? 'Saving ' + parts.length + ' change' + (parts.length === 1 ? '' : 's') + '\u2026'
+      : parts.length ? parts.length + ' change' + (parts.length === 1 ? '' : 's') + ' waiting' : 'Nothing waiting';
+    return '<div class="ipp-rv-savebar' + (R.saving ? ' is-saving' : '') + (idle ? ' is-idle' : '') + '">' + doneBar() + '<div class="ipp-rv-save-text">' +
+      '<b>' + esc(label) + '</b>' + (parts.length ? '<span>' + esc(parts.join(' \u00b7 ')) + '</span>' : '') + '</div>' +
+      (idle ? '' : (R.saving ? '' : '<button type="button" class="ix-revert" data-rv-cancel-all="1">Cancel all</button>') +
+      '<button type="button" class="ix-btn ix-btn--primary" data-rv-save="1"' + (R.saving ? ' disabled' : '') + '>' +
+      (R.saving ? 'Saving\u2026' : 'Save') + '</button>') + '</div>';
+  }
+  function bannerPart(k) {
       var s = slotById(k), p = R.pending[k]; if (!s) return '';
       var a = p && p.kind === 'pick' ? adById(p.adId) : null;
       if (s.isNew && (addOf(k) || {}).house) return (addOf(k).house) + ': added back';            // v1.6.11
@@ -1892,19 +2051,6 @@
       if (hk && p.kind === 'delete') return (adById(s.asset.id) || {}).houseKind + ': out of this issue';
       if (hk && p.kind === 'pick' && a && a.house) return a.houseKind + ': ' + a.name;
       return slotName(s) + ': ' + (p.kind === 'pick' ? (a ? a.name : 'new ad') : p.kind === 'remove' ? 'empty' : p.kind === 'delete' ? 'delete slot' : p.kind === 'keep' ? (p.adId ? 'keep, current banner' : 'keep') : p.kind === 'cdel' ? 'delete ad' : p.kind);
-    }).filter(Boolean);
-    var soParts = sok.map(function (id) {                     // v1.5
-      var x = secById(id), p = R.spon[id]; if (!x) return '';
-      return x.name + ': ' + (p.kind === 'set' ? custName(p.custId) : p.kind === 'clear' ? (p.clone ? 'delete sponsor' : 'no sponsor') : 'keep sponsor');
-    }).filter(Boolean);
-    parts = spParts.concat(parts, fps, soParts);
-    var label = R.saving ? 'Saving ' + parts.length + ' change' + (parts.length === 1 ? '' : 's') + '\u2026'
-      : parts.length + ' change' + (parts.length === 1 ? '' : 's') + ' waiting';
-    return '<div class="ipp-rv-savebar' + (R.saving ? ' is-saving' : '') + '"><div class="ipp-rv-save-text">' +
-      '<b>' + esc(label) + '</b><span>' + esc(parts.join(' \u00b7 ')) + '</span></div>' +
-      (R.saving ? '' : '<button type="button" class="ix-revert" data-rv-cancel-all="1">Cancel all</button>') +
-      '<button type="button" class="ix-btn ix-btn--primary" data-rv-save="1"' + (R.saving ? ' disabled' : '') + '>' +
-      (R.saving ? 'Saving\u2026' : 'Save') + '</button></div>';
   }
 
   // ── state changes ────────────────────────────────────────────
@@ -1947,6 +2093,7 @@
     Object.keys(R.spon).forEach(function (id) {                                               // v1.7.0
       var x = secById(id), p = R.spon[id]; if (!x || p.saved) return;
       if (p.kind === 'keep' && !x.ack) delete R.spon[id];
+      if (p.kind === 'set' && x.current === p.custId && !x.ack && !x.mixed) delete R.spon[id];   // v1.10.0 the plan already holds it
     });
     Object.keys(R.spFails).forEach(function (id) { if (!nls[id]) delete R.spFails[id]; });
   }
@@ -2202,20 +2349,22 @@
     var fs0 = findSlot(); if (fs0 && fToks(fs0).length && (FD.lists[fs0.id] || FD.cki[fs0.id])) any = true;   // v1.8.0
     return any;
   }
+  function anyWaiting() { return !!(waiting().length || spWaiting().length || sponWaiting().length || fChanges() || doneWaiting()); }   // v1.10.0
   function save() {
     if (R.saving) return;
-    if (!waiting().length && !spWaiting().length && !sponWaiting().length && !fChanges()) return;   // v1.8.0
+    if (!anyWaiting()) return;                                              // v1.8.0; v1.10.0 Done
     if (!cloneAnswersWaiting() || !(window.IPP && IPP.board && IPP.board.load)) { doSave(); return; }
     R.saving = true; render();
     freshRead().then(function () {                                          // v1.8.2: gives up after 25 s
         R.saving = false;
-        if (!waiting().length && !spWaiting().length && !sponWaiting().length && !fChanges()) { render(); toast('Nothing left to save: those items were already answered on another tab.', 'info'); return; }
+        if (!anyWaiting()) { render(); toast('Nothing left to save: those items were already answered on another tab.', 'info'); return; }
         try { doSave(); } catch (x) { R.saving = true; saveStopped(x); } },
       function (e) { R.saving = false; render(); toast('Can\u2019t save: the plan could not be read fresh first (' + ((e && e.message) || e) + '). Nothing was sent.', 'err'); });
   }
   function doSave() {
     if (R.saving) return;
-    var keys = waiting(), spk = spWaiting(), sok = sponWaiting(); if (!keys.length && !spk.length && !sok.length && !fChanges()) return;   // v1.8.0
+    var keys = waiting(), spk = spWaiting(), sok = sponWaiting(); if (!keys.length && !spk.length && !sok.length && !fChanges() && !doneWaiting()) return;   // v1.8.0; v1.10.0 Done
+    var dN = doneWaiting(), pnl0 = planNlId();                               // v1.10.0 the Done ticks, written after the rest lands
     if (locked()) { toast('Can\u2019t save: this plan is locked. Nothing was sent.', 'err'); return; }
     var b0 = board();
     if (!b0 || !b0.plan) { toast('Can\u2019t save: the plan has not been read yet.', 'err'); return; }
@@ -2323,7 +2472,10 @@
     });
     if (nlOps.length && !CPF) { toast('Can\u2019t save: the plan data does not name the clone-pending field (publish.fields.clonePending, Data Worker v1.0.133). Nothing was sent.', 'err'); return; }
     if (spItems.length && (!SF || !SF.image || !SF.go || !SF.name)) { toast('Can\u2019t save: the plan data does not name the splash fields (Data Worker v1.0.27). Nothing was sent.', 'err'); return; }
-    if ((spItems.length || nlOps.length) && !blockWriter()) { toast('Can\u2019t save: this page has no PP_WEBHOOKS.blockWriter address (Scenario 124), which writes the newsletter. Nothing was sent.', 'err'); return; }
+    if (dN && !pnl0) { toast('Can\u2019t save the Done ticks: this plan has no newsletter yet. Nothing was sent.', 'err'); return; }   // v1.10.0
+    if (dN && !doneFieldOk()) { toast('Can\u2019t save the Done ticks: NEWSLETTERS has no Revenue Done field (revenue-done), or the plan data does not name it (ix-issue-data v1.0.210 or later). Nothing was sent.', 'err'); return; }
+    if (dN) names['done:' + pnl0] = 'Done ticks';
+    if ((spItems.length || nlOps.length || dN) && !blockWriter()) { toast('Can\u2019t save: this page has no PP_WEBHOOKS.blockWriter address (Scenario 124), which writes the newsletter. Nothing was sent.', 'err'); return; }
     // v1.8.0 — The Find's writes, worked out before anything is sent (v1.9.0: fields of its row's update)
     var fp = fChanges() ? fPlan() : { creates: [], rows: [], dels: [], lists: [], flags: [] };
     if (fp.err) { toast('Can\u2019t save: ' + fp.err + '. Nothing was sent.', 'err'); return; }
@@ -2489,6 +2641,7 @@
         // anything the batch did not land stops its NEWSLETTER answer
         return stage(blockWriter(), 'splash', spItems).then(function (r3) {           // v1.1
           r3.forEach(function (x) { fail(x.slotId, x.why); });
+          if (dN) { var dop = doneOp(failed, pnl0); if (dop) nlOps.push(dop); }      // v1.10.0 the Done ticks, after the rest has landed
           return nlStage(blockWriter(), nlOps.filter(function (o) { return !o.slotIds.some(function (k) { return failed[k]; }); }));   // v1.7.0; v1.7.2 every answer on the op landed
         }).then(function (rn) {
           rn.forEach(function (x) { if (!x.why) return; nlOps.forEach(function (o) { if (o.slotId === x.slotId) o.slotIds.forEach(function (k) { fail(k, x.why); }); }); });
@@ -2497,7 +2650,9 @@
           if (!sent.length || !(window.IPP && IPP.board && IPP.board.load)) return;
           function failAll(o, why) { o.slotIds.forEach(function (k) { failed[k] = why; }); }
           return readBack(3).then(function () {                                   // v1.8.2: gives up after 25 s; v1.8.3 three tries
-            sent.forEach(function (o) { var now = nlPending(o.nlId); if (o.gone.some(function (g) { return now.indexOf(g) >= 0; })) failAll(o, 'the newsletter did not keep the answer'); });   // v1.7.2
+            sent.forEach(function (o) {
+              if (o.done) { if (savedTokens().slice().sort().join(',') !== o.done.slice().sort().join(',')) failAll(o, 'the newsletter did not keep the Done ticks'); return; }   // v1.10.0
+              var now = nlPending(o.nlId); if (o.gone.some(function (g) { return now.indexOf(g) >= 0; })) failAll(o, 'the newsletter did not keep the answer'); });   // v1.7.2
           }, function (e) { var why = 'could not read the plan back: ' + ((e && e.message) || e); try { console.error('[ipp-revenue] read-back gave up', e); } catch (x) {}   // v1.8.3 the real reason
             sent.forEach(function (o) { failAll(o, why); }); });
         });
@@ -2522,6 +2677,7 @@
           else { R.sp[id].saved = true; okN++; if (R.sp[id].kind !== 'keep') refreshSplash(id); }
         });
         okN += fFinish(fp, failed);                                // v1.8.0
+        if (dN) { if (failed['done:' + pnl0]) R.doneFail = failed['done:' + pnl0]; else { R.done = {}; R.skip = {}; R.doneFail = ''; okN += dN; } }   // v1.10.0
         clearTimeout(SAVE_GUARD); SAVE_GUARD = null;               // v1.8.2
         R.saving = false;
         var badN = Object.keys(failed).length;
@@ -2530,13 +2686,15 @@
           Object.keys(failed).map(function (k) { return (names[k] || 'A change') + ' (' + failed[k] + ')'; }).join('; ') +
           (okN ? '. ' + okN + ' saved.' : '.') + (notes.length ? ' Note: ' + notes.join('; ') + '.' : ''), 'err');
         render();
-        if (window.IPP && IPP.board) IPP.board.load({ fresh: true }).catch(function () { render(); });
+        // v1.10.0 then the sends follow what the plan holds (ruling 11), from the fresh read
+        if (window.IPP && IPP.board) IPP.board.load({ fresh: true }).then(function () { return obSync(); }, function () { render(); }).catch(function (e) { try { console.error('[ipp-revenue] counting sends failed', e); } catch (x) {} });
       });
     }).catch(saveStopped);                                         // v1.8.2: never stuck
   }
   // v1.9.0 — a failure line on the right tile, by its key
   function markFail(k, why) {
     if (!k) return;
+    if (k.indexOf('done:') === 0) { R.doneFail = why; return; }              // v1.10.0
     if (k.indexOf(SEC) === 0) { R.sponFails[k.slice(SEC.length)] = why; return; }
     if (k.indexOf(SP) === 0) { R.spFails[k.slice(SP.length)] = why; return; }
     if (k === 'find:add') { FD.fails.add = why; return; }
@@ -2733,10 +2891,11 @@
         : isNew ? '<button type="button" class="ix-revert ipp-rv-cancel" data-rv-frm="' + esc(id) + '">Cancel this</button>'
         : '<button type="button" class="ix-revert" data-rv-frm="' + esc(id) + '">Remove</button>';
       var drag = open && !isRm && now.length > 1;
+      var fp0 = !isRm ? obAt('find:' + id) : null, fob = fp0 ? (fp0.ob ? (fp0.ob.sales || fp0.ob.name) : 'extra') : '';   // v1.10.0
       return '<div class="' + cls + '" data-rv-fitem="' + esc(id) + '"' + (drag ? ' draggable="true" title="Drag to reorder"' : '') + '>' +
         '<div class="ipp-rv-ftile-head"><span class="ipp-rv-ftile-pos">' + esc(head) + '</span>' + (!isNew && !isRm && !isMoved && !isTok ? '<span class="ipp-rv-ftile-ok" aria-label="Saved">\u2713</span>' : '') + '</div>' +
         '<span class="ipp-rv-txa"><span class="ipp-rv-txa-t">' + esc(r.missing ? 'This text ad is no longer in ADS' : r.title) + '</span>' + (r.text ? '<span class="ipp-rv-txa-c">' + esc(r.text) + '</span>' : '') + '</span>' +
-        '<div class="ipp-rv-ftile-foot"><span class="ipp-rv-ftile-who">' + esc(r.who || '\u00a0') + '</span><span class="ipp-rv-ftile-acts">' + acts + '</span></div></div>';
+        '<div class="ipp-rv-ftile-foot"><span class="ipp-rv-ftile-who"' + (fob ? ' title="' + esc(fob) + '"' : '') + '>' + esc((r.who || '\u00a0') + (fob ? ' \u00b7 ' + fob : '')) + '</span><span class="ipp-rv-ftile-acts">' + acts + '</span></div></div>';
     }).join('');
     if (open && !full) tiles += '<button type="button" class="ipp-rv-ftile ipp-rv-fadd is-armed" data-rv-faddone="1"><span class="ipp-rv-chosen">Chosen</span>' +
       '<span class="ipp-rv-add-circle">+</span><span class="ipp-rv-add-lbl">' + esc(FIND_W.add) + '</span></button>';
@@ -2766,14 +2925,20 @@
     var cs = cl.slice().sort(function (x, y) { var hx = curOf(x, 'text') ? 0 : 1, hy = curOf(y, 'text') ? 0 : 1; return hx - hy || String(x.name || '').localeCompare(String(y.name || '')); });
     if (q) cs = cs.filter(function (c) { var cur = curOf(c, 'text');
       return String(c.name || '').toLowerCase().indexOf(q) >= 0 || (cur && ((cur.title || '') + ' ' + (cur.text || '') + ' ' + (cur.name || '')).toLowerCase().indexOf(q) >= 0); });
+    if (obOk()) {                                                             // v1.10.0 owed text ads first (ruling 7)
+      var g = owedGroups(SHAPE.text, cl, q), oth = {}; g.owed.forEach(function (x) { oth[x.c.id] = 1; });
+      var rest = cs.filter(function (c) { return !oth[c.id]; });
+      if (g.owed.length) return '<div class="ipp-rv-group">Owed this month</div>' + g.owed.map(function (x) { return textCard(x.c, s, x); }).join('') +
+        (rest.length ? '<div class="ipp-rv-group">Other customers</div>' + rest.map(function (c) { return textCard(c, s); }).join('') : '');
+    }
     if (!cs.length) return q ? '<div class="ipp-rv-empty">Nothing matches \u201c' + esc(R.query) + '\u201d.</div>' : '<div class="ipp-rv-empty">No customer is tied to this title yet.</div>';
     return cs.map(function (c) { return textCard(c, s); }).join('');
   }
   function fCustIn(s, c) { if (!s) return null; var now = fNow(s); for (var i = 0; i < now.length; i++) { var r = fItem(s, now[i]); if (r.custId === c.id) return now[i]; } return null; }
-  function textCard(c, s) {
+  function textCard(c, s, ob) {                                            // v1.10.0 ob: an owed send
     var cur = curOf(c, 'text'), lk = locked(), open = !!s && !lk && !R.saving && !fBlocked(s) && !s.allocation && !FD.clears[s.id];
     var inId = fCustIn(s, c), isNew = !!inId && fSaved(s).indexOf(inId) < 0;
-    var em = inId ? (isNew ? '<em class="gold">Goes in on Save</em>' : '<em>In ' + esc(findName()) + '</em>') : '';
+    var em = ob ? '<em class="ipp-rv-obline is-' + esc(ob.tone) + '">' + esc(ob.line) + '</em>' : inId ? (isNew ? '<em class="gold">Goes in on Save</em>' : '<em>In ' + esc(findName()) + '</em>') : '';
     var tip = cur ? c.name + ': ' + (cur.title || cur.name || '') : c.name + ': ' + FIND_W.noCur + '. Opens their client page to set one.';
     return '<button type="button" class="ipp-rv-ad ipp-rv-curcard ipp-rv-textcard' + (cur ? '' : ' is-nocur') + (open ? '' : ' is-off') + '" data-rv-tpick="' + esc(c.id) + '"' +
       (open ? '' : ' aria-disabled="true"') + ' title="' + esc(tip) + '">' +
@@ -2949,6 +3114,397 @@
     return okN;
   }
 
+
+  // ════════════════════════════════════════════════════════════
+  // v1.10.0 — OBLIGATIONS DRIVE THE REVENUE TAB (Publisher Portal S12 · Build 2)
+  // One engine for every sale (Jeff, 23 Nov): a sale is a number of sends; each issue that carries the customer
+  // uses one send owed that month; once the month's sends are used, a further run is an extra and counts nothing.
+  // ix-sales answers what is owed (GET /revenue, GET /franchises); this page computes no rule of its own beyond
+  // which placement uses which send. Save marks the sends (POST /obligations/place) from what the plan holds
+  // after the fresh read, so a send is Assigned only for content that landed.
+  // ════════════════════════════════════════════════════════════
+  var SHAPE = { banner: 'banner', sidebar: 'sidebar', splash: 'splash', sponsor: 'sponsor band', text: 'list block' };   // HC-P-RV110-2 ix-sales slot-shape labels
+  var OB_SHAPES = [SHAPE.banner, SHAPE.sidebar, SHAPE.splash, SHAPE.sponsor, SHAPE.text];                               // the shapes this tab places
+  var MON_S = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var MON_L = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var OB = { state: 'idle', key: '', data: null, frs: null, frsPub: '', frsErr: '', error: '', seq: 0, busy: null };
+  var OBP = null;                                                    // the placement plan, worked out once per draw
+  function salesUrl() { return String((window.PP_WEBHOOKS || {}).sales || '').replace(/\/+$/, ''); }   // HC-P-RV110-1
+  function shapeKey(v) { return String(v || '').trim().toLowerCase(); }
+  function obOk() { return OB.state === 'ok' && !!OB.data; }
+  function obMonth() { return obOk() ? String(OB.data.month || '') : ''; }
+  function monS(ym) { var m = /^(\d{4})-(\d{2})/.exec(String(ym || '')); return m ? MON_S[+m[2] - 1] : ''; }
+  function monL(ym) { var m = /^(\d{4})-(\d{2})/.exec(String(ym || '')); return m ? MON_L[+m[2] - 1] : ''; }
+  function monYY(ym) { var m = /^(\d{4})-(\d{2})/.exec(String(ym || '')); return m ? MON_S[+m[2] - 1] + ' ’' + m[1].slice(2) : ''; }
+  function obList() { return obOk() && Array.isArray(OB.data.obligations) ? OB.data.obligations : []; }
+  function dueThisMonth(o) { var m = obMonth(); return !!m && (o.dueBy ? String(o.dueBy).slice(0, 7) === m : o.dueMonth === m); }
+  function carriable(o) { return o.status === 'Open' && !o.here; }  // /revenue lists only the sends this title may carry
+  function isHere(o) { return !!o.here && o.status === 'Assigned'; }
+  function readJson(r) { return r.text().then(function (t) { var j = null; try { j = JSON.parse(t); } catch (e) { j = null; } return j || { ok: false, error: 'ix-sales answered HTTP ' + r.status + '.' }; }); }
+  // Read what this issue owes: GET /revenue (and the title's franchises once). Never throws; redraws when done.
+  function loadSales() {
+    var b = board(); if (!b || !b.plan) return Promise.resolve();
+    var url = salesUrl();
+    if (!url) { OB.state = 'off'; OB.data = null; OB.error = 'This page has no PP_WEBHOOKS.sales address, so what was sold cannot be read.'; announceGate(); return Promise.resolve(); }
+    var ta = titleAdminId(), ed = planNlId();
+    if (!ta) { OB.state = 'err'; OB.data = null; OB.error = 'The plan data has no title id.'; announceGate(); return Promise.resolve(); }
+    var key = ta + '|' + ed;
+    if (OB.busy && OB.key === key) return OB.busy;
+    if (OB.key !== key) OB.data = null;
+    OB.key = key; if (!OB.data) { OB.state = 'loading'; OB.error = ''; }
+    var seq = ++OB.seq;
+    var p = memberToken().then(function (tok) {
+      var h = { headers: { Authorization: 'Bearer ' + tok }, cache: 'no-store', credentials: 'omit', ixLabel: 'Reading sales' };
+      return fetch(url + '/revenue?title=' + encodeURIComponent(ta) + (ed ? '&edition=' + encodeURIComponent(ed) : ''), h).then(readJson).then(function (j) {
+        if (!j || j.ok !== true) throw new Error((j && j.error) || 'ix-sales did not answer.');
+        if (OB.frs && OB.frsPub === j.publisher) return [j, null];
+        return fetch(url + '/franchises?publisher=' + encodeURIComponent(j.publisher), h).then(readJson).then(function (f) { return [j, f]; }, function (e) { return [j, { ok: false, error: (e && e.message) || 'no answer' }]; });
+      });
+    }).then(function (r) {
+      if (seq !== OB.seq) return;
+      var j = r[0], f = r[1];
+      if (f) {
+        if (f.ok === true) { OB.frs = (f.franchises || []).filter(function (x) { return (x.titleIds || []).indexOf(ta) >= 0; }); OB.frsPub = j.publisher; OB.frsErr = ''; }
+        else { OB.frs = OB.frs || []; OB.frsErr = 'The franchise list could not be read: ' + (f.error || 'no answer') + '. Only franchises in this issue or with a sale are listed.'; }
+      }
+      OB.data = j; OB.state = 'ok'; OB.error = '';
+    }).catch(function (e) {
+      if (seq !== OB.seq) return;
+      OB.state = 'err'; OB.data = null; OB.error = 'What was sold could not be read: ' + ((e && e.message) || e) + '.';
+    }).then(function () {
+      if (seq !== OB.seq) return;
+      OB.busy = null;
+      if (canvas() && canvas().getAttribute('data-revenue-mounted') === '1') render(); else announceGate();
+    });
+    OB.busy = p;
+    return p;
+  }
+  // The send a placement uses: the one already assigned to this issue first, else the oldest open one of the
+  // customer (and franchise) for the shape (scoping §7: the customer path attaches the oldest open matching send).
+  function obPick(shape, custId, frId, used) {
+    if (!custId) return null;
+    var l = obList().filter(function (o) { return shapeKey(o.shape) === shape && o.customerId === custId && (!frId || o.franchiseId === frId) && !used[o.id]; });
+    var h = l.filter(isHere)[0]; if (h) return h;
+    return l.filter(carriable).sort(function (a, c) { return String(a.dueMonth).localeCompare(String(c.dueMonth)) || String(a.name).localeCompare(String(c.name)); })[0] || null;
+  }
+  // What this issue carries, by shape and customer: after Save (saved false), or as saved (saved true).
+  // A customer's sidebar runs with their banner (Model C), so a banner placement also carries a sidebar send (HC-P-RV110-6).
+  function placements(saved) {
+    var out = [], banners = {};
+    adSlots().forEach(function (s) {
+      if (saved && s.isNew) return;
+      if (!saved && isDel(s.id)) return;
+      var id = saved ? (s.asset && s.asset.id && !s.asset.missing ? s.asset.id : '') : after(s).adId; if (!id) return;
+      var a = adById(id); if (isHouseBanner(a)) return;
+      var cu = custOfAd(id, a ? a.customer : (s.asset && s.asset.id === id ? s.asset.customer : '')); if (!cu) return;
+      out.push({ shape: SHAPE.banner, custId: cu.id, adId: id, key: s.id });
+      if (!banners[cu.id]) { banners[cu.id] = 1; out.push({ shape: SHAPE.sidebar, custId: cu.id, key: 'side:' + cu.id }); }
+    });
+    spList().forEach(function (n) {
+      var a = null;
+      if (saved) { if (n.source === 'paid') a = adBySplash((n.current || {}).image); }
+      else { var x = spAfter(n); if (x.mode === 'paid') a = x.ad; }
+      var cu = a ? custOfAd(a.id, a.customer) : null; if (!cu) return;
+      out.push({ shape: SHAPE.splash, custId: cu.id, adId: a.id, key: SP + n.id });
+    });
+    frRows().forEach(function (r) {
+      if (!r.frId || !r.secs.length) return;
+      var c = saved ? r.savedCust : r.cust; if (!c) return;
+      out.push({ shape: SHAPE.sponsor, custId: c, frId: r.frId, key: FR + r.key });
+    });
+    var fs = findSlot();
+    if (fs) (saved ? fSaved(fs) : fNow(fs)).forEach(function (id) { var it = fItem(fs, id); if (it.custId) out.push({ shape: SHAPE.text, custId: it.custId, adId: id, key: 'find:' + id }); });
+    return out;
+  }
+  function obPlan(saved) {
+    var seen = {}, used = {}, list = placements(saved);
+    list.forEach(function (p) {
+      var k = p.shape + '|' + p.custId + '|' + (p.frId || '');
+      if (seen[k]) { p.ob = null; p.dup = true; return; }               // one send per customer per issue
+      seen[k] = 1;
+      p.ob = obOk() ? obPick(p.shape, p.custId, p.frId, used) : null;
+      if (p.ob) used[p.ob.id] = 1;
+    });
+    return list;
+  }
+  function obp() { return OBP || (OBP = obPlan(false)); }
+  function obAt(key) { var l = obp(); for (var i = 0; i < l.length; i++) if (l[i].key === key) return l[i]; return null; }
+  // the line under a placed ad: "Counts toward SR-0005 · Nov" or "Runs as an extra (no sale)"   HC-P-RV110-3
+  function obLine(key) {
+    if (!obOk()) return '';
+    var p = obAt(key); if (!p) return '';
+    return p.ob ? 'Counts toward ' + (p.ob.sales || p.ob.name) + ' · ' + monS(p.ob.dueMonth) : 'Runs as an extra (no sale)';
+  }
+  // The sends owed this month that this issue does not carry (saved state), for Compile (rulings 6 and 10).
+  function owedInfo() {
+    if (!salesUrl()) return { state: 'off', error: OB.error || 'This page has no PP_WEBHOOKS.sales address.' };
+    if (!obOk()) return { state: OB.state, error: OB.error };
+    var d = OB.data, inIssue = {};
+    frRows().forEach(function (r) { if (r.frId && r.secs.length) inIssue[r.frId] = 1; });
+    var items = obList().filter(function (o) { return o.status === 'Open' && !o.here && dueThisMonth(o) && OB_SHAPES.indexOf(shapeKey(o.shape)) >= 0; }).map(function (o) {
+      var sh = shapeKey(o.shape), what = sh === SHAPE.sponsor ? (o.franchise || 'Franchise') + ' sponsor' : sh === SHAPE.text ? 'Text ad' : sh === SHAPE.splash ? 'Splash' : sh === SHAPE.sidebar ? 'Sidebar' : 'Banner';
+      if (o.makeGoodOf) what += ' make good';
+      var why = o.pool ? 'Any of the sale’s titles can still carry it'
+        : sh === SHAPE.sponsor && o.franchiseId && !inIssue[o.franchiseId] ? 'No ' + (o.franchise || 'franchise') + ' story here'
+        : 'Due ' + monS(o.dueMonth) + ' · not placed';
+      return { id: o.id, name: o.name, sales: o.sales || '', customer: o.customer || 'Customer', what: what, why: why, pool: !!o.pool };
+    });
+    var later = (d.laterIssues || []).map(function (x) { return x.name; });
+    return { state: 'ok', month: d.month, monthWord: monL(d.month), lastInMonth: !!d.lastInMonth, later: later, items: items,
+             stop: d.lastInMonth ? items.filter(function (x) { return !x.pool; }).length : 0 };
+  }
+  // After a Save: the sends follow what the plan holds now (ruling 11). Assigned for content that is in the issue,
+  // back to Open for content taken out. Only the shapes this tab places are touched.
+  function obDiff() {
+    var plan = obPlan(true), keep = {}, assign = [];
+    plan.forEach(function (p) { if (!p.ob) return; keep[p.ob.id] = 1; if (!isHere(p.ob)) assign.push({ id: p.ob.id, ad: p.adId || '', name: p.ob.name }); });
+    var unassign = obList().filter(function (o) { return isHere(o) && OB_SHAPES.indexOf(shapeKey(o.shape)) >= 0 && !keep[o.id]; });
+    return { assign: assign, unassign: unassign };
+  }
+  function obSay(head, detail, kind) {
+    if (window.IxToast && typeof IxToast.show === 'function') IxToast.show(head, kind, { detail: detail, key: 'ipp-revenue-ob' });
+    else toast(head + (detail ? '. ' + detail : ''), kind);
+  }
+  function obSync() {
+    if (!salesUrl()) return Promise.resolve();
+    var ed = planNlId(), ta = titleAdminId();
+    if (!ed || !ta) return Promise.resolve();
+    return loadSales().then(function () {
+      if (!obOk()) { obSay('Sends not counted', OB.error || 'What was sold could not be read, so no send was marked to this issue.', 'err'); return; }
+      var d = obDiff(); if (!d.assign.length && !d.unassign.length) return;
+      var names = {}; d.assign.forEach(function (a) { names[a.id] = a.name; }); d.unassign.forEach(function (o) { names[o.id] = o.name; });
+      return memberToken().then(function (tok) {
+        return fetch(salesUrl() + '/obligations/place', { method: 'POST', credentials: 'omit', ixLabel: 'Counting sends',
+          headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ edition: ed, title: ta, assign: d.assign.map(function (a) { var o = { id: a.id }; if (a.ad) o.ad = a.ad; return o; }), unassign: d.unassign.map(function (o) { return o.id; }) }) }).then(readJson);
+      }).then(function (j) {
+        var rs = (j && Array.isArray(j.results)) ? j.results : [];
+        var bad = rs.filter(function (r) { return !r.ok; }), okA = rs.filter(function (r) { return r.ok && r.op === 'assign'; }).length, okU = rs.filter(function (r) { return r.ok && r.op === 'unassign'; }).length;
+        if (!rs.length) { obSay('Sends not counted', (j && j.error) || 'ix-sales gave no answer for the sends.', 'err'); return; }
+        if (bad.length) obSay(bad.length + ' send' + (bad.length === 1 ? '' : 's') + ' not updated', bad.map(function (r) { return (names[r.id] || r.id) + ': ' + (r.error || 'refused'); }).join('; ') + '.', 'err');
+        else obSay((okA ? okA + ' send' + (okA === 1 ? '' : 's') + ' counted toward this issue' : '') + (okA && okU ? ', ' : '') + (okU ? okU + ' back to Open' : ''), '', 'ok');
+      }, function (e) { obSay('Sends not counted', ((e && e.message) || 'ix-sales did not answer') + '. The issue saved; Save again to count its sends.', 'err'); });
+    }).then(function () { return loadSales(); });
+  }
+
+  // ── v1.10.0 · the Sponsors pill: every franchise the title sells (rulings 4 and 9) ──
+  var FR = 'fr:';
+  function isFr(k) { return typeof k === 'string' && k.indexOf(FR) === 0; }
+  function saleOf(frId) { if (!obOk() || !frId) return null; var l = OB.data.sponsors || []; for (var i = 0; i < l.length; i++) if (l[i].franchiseId === frId) return l[i]; return null; }
+  function frName(id, fb) { var l = OB.frs || []; for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i].name; var sp = saleOf(id); return (sp && sp.franchise) || fb || 'Franchise'; }
+  function storiesIn(r) { var n = 0, a = 0; r.secs.forEach(function (x) { x.slots.forEach(function (s) { n++; if (s.assetType === 'article') a++; }); }); return a ? a + ' stor' + (a === 1 ? 'y' : 'ies') + ' in this issue' : n + ' block' + (n === 1 ? '' : 's') + ' in this issue'; }
+  function frState(r) {
+    var sale = saleOf(r.frId); r.sale = sale;
+    var l = sale ? obList().filter(function (o) { return o.salesId === sale.salesId && shapeKey(o.shape) === SHAPE.sponsor; }) : [];
+    r.hereOb = l.filter(isHere)[0] || null;
+    r.owedOb = l.filter(function (o) { return carriable(o) && dueThisMonth(o); })[0] || l.filter(carriable)[0] || null;
+    r.usedOb = l.filter(function (o) { return !o.here && (o.status === 'Assigned' || o.status === 'Fulfilled') && dueThisMonth(o); })[0] || null;
+    r.missedOb = l.filter(function (o) { return o.status === 'Missed' && dueThisMonth(o); })[0] || null;
+    r.owed = !!(r.hereOb || r.owedOb);
+    var cs = r.secs.map(sponAfter), ids = {}, sv = {};
+    cs.forEach(function (a) { ids[a.cust || ''] = 1; });
+    r.secs.forEach(function (x) { sv[x.current || ''] = 1; if (x.mixed) sv.__m = 1; });
+    var ks = Object.keys(ids), sk = Object.keys(sv);
+    r.cust = ks.length === 1 ? (ks[0] || null) : null;
+    r.savedCust = sk.length === 1 ? (sk[0] || null) : null;
+    r.mixed = ks.length > 1 || cs.some(function (a) { return a.mixed; });
+    r.ack = cs.some(function (a) { return a.ack; });
+    r.pending = r.secs.some(function (x) { return R.spon[x.id] && !R.spon[x.id].saved; }) || (!!r.frId && hasOwn(R.skip, r.frId));
+    r.saved = !r.pending && r.secs.some(function (x) { return R.spon[x.id] && R.spon[x.id].saved; });
+    r.auto = r.secs.some(function (x) { return R.spon[x.id] && R.spon[x.id].auto && !R.spon[x.id].saved; });
+    r.fail = r.secs.map(function (x) { return R.sponFails[x.id]; }).filter(Boolean)[0] || '';
+    r.inAt = r.secs.some(inAroundTown);
+    r.run = !!(sale && r.cust === sale.customerId);
+    return r;
+  }
+  // In this issue first (issue order), then every other franchise of the title (information only). A section with no
+  // franchise stays a row of its own, free choice, as it was before this version.
+  function frRows() {
+    var secs = sections(), rows = [], by = {};
+    secs.forEach(function (x) {
+      var k = x.frId ? x.frId : 's:' + x.id;
+      if (!by[k]) { by[k] = { key: k, frId: x.frId || null, name: x.frId ? frName(x.frId, x.name) : x.name, secs: [] }; rows.push(by[k]); }
+      by[k].secs.push(x);
+    });
+    var out = [];
+    (OB.frs || []).forEach(function (f) { if (!by[f.id]) { by[f.id] = { key: f.id, frId: f.id, name: f.name, secs: [] }; out.push(by[f.id]); } });
+    (obOk() ? (OB.data.sponsors || []) : []).forEach(function (sp) { if (!by[sp.franchiseId]) { by[sp.franchiseId] = { key: sp.franchiseId, frId: sp.franchiseId, name: sp.franchise || 'Franchise', secs: [] }; out.push(by[sp.franchiseId]); } });
+    out.sort(function (a, c) { return String(a.name).localeCompare(String(c.name)); });
+    return rows.concat(out).map(frState);
+  }
+  function frRow(key) { var l = frRows(); for (var i = 0; i < l.length; i++) if (l[i].key === key) return l[i]; return null; }
+  // A sale with a send owed this month comes ticked: a waiting change that Save writes, unless skipped (ruling 4).
+  function applyDefaults() {
+    if (locked() || R.saving || !obOk()) return;
+    var cap = sponsorsMax();
+    frRows().forEach(function (r) {
+      if (!r.sale || !r.owed || !r.secs.length || r.inAt || r.ack || r.mixed || skipNow(r.frId)) return;
+      if (r.secs.some(function (x) { return R.spon[x.id]; })) return;    // a choice already waits on this row
+      if (r.cust === r.sale.customerId) return;
+      if (cap && !r.cust && sponsoredCount(null) + r.secs.length > cap) return;
+      r.secs.forEach(function (x) { R.spon[x.id] = { kind: 'set', custId: r.sale.customerId, auto: true }; delete R.sponFails[x.id]; });
+    });
+  }
+  function frToggle(key) {
+    var r = frRow(key); if (!r || !r.sale || !r.secs.length || locked() || R.saving) return;
+    if (r.inAt) { toast(AT_WHY + '.', 'err'); return; }
+    var c = r.sale.customerId;
+    if (!r.run) {
+      var cap = sponsorsMax();
+      if (cap && !r.cust && sponsoredCount(null) + r.secs.length > cap) { toast('This issue takes at most ' + cap + ' section sponsor' + (cap === 1 ? '' : 's') + '. Remove one first.', 'err'); return; }
+      r.secs.forEach(function (x) { delete R.sponFails[x.id]; if (x.current === c && !x.mixed && !x.ack) delete R.spon[x.id]; else R.spon[x.id] = { kind: 'set', custId: c }; });
+      if (savedSkip(r.frId)) R.skip[r.frId] = false; else delete R.skip[r.frId];
+    } else {
+      r.secs.forEach(function (x) { delete R.sponFails[x.id]; if (x.current === c) R.spon[x.id] = { kind: 'clear' }; else delete R.spon[x.id]; });
+      if (r.owed && !savedSkip(r.frId)) R.skip[r.frId] = true; else if (savedSkip(r.frId)) delete R.skip[r.frId]; else delete R.skip[r.frId];
+    }
+    render();
+  }
+  function frCancel(key) {
+    var r = frRow(key); if (!r) return;
+    r.secs.forEach(function (x) { if (R.spon[x.id] && !R.spon[x.id].saved) delete R.spon[x.id]; delete R.sponFails[x.id]; });
+    if (r.frId) delete R.skip[r.frId];
+    render();
+  }
+  function frEach(key, fn) { var r = frRow(key); if (!r || locked() || R.saving) return; r.secs.forEach(function (x) { delete R.sponFails[x.id]; fn(x, r); }); render(); }
+  function frTile(r) {
+    var lk = locked(), key = FR + r.key, armed = R.armed === key, sale = r.sale, inI = !!r.secs.length, M = monL(obMonth()) || 'this month';
+    var cls = ['ipp-rv-tile', 'is-sponsor', 'is-frrow'];
+    if (armed) cls.push('is-armed');
+    if (r.pending) cls.push('is-pending');
+    if (r.saved) cls.push('is-saved');
+    if ((r.ack || r.mixed) && !r.pending) cls.push('is-ack');
+    if (r.ack && !r.pending) cls.push('ix-confirm');
+    if (r.fail) cls.push('is-fail');
+    if (!inI) cls.push('is-out');
+    if (inI && !r.cust && !sale) cls.push('is-free');                       // not is-empty: the row keeps its who and what lines
+    if (r.inAt) cls.push('is-at');
+    var showC = sale ? sale.customerId : r.cust, pic = showC ? custPic(showC) : '';
+    var who = sale ? (sale.customer || custName(sale.customerId)) : r.cust ? custName(r.cust) : 'No sale';
+    var what = sale ? 'Franchise sponsor · ' + (sale.sales || '') + ' · ' + sale.remaining + ' of ' + sale.qty + ' left'
+      : r.cust ? (r.frId ? 'Picked for this issue (no sale)' : 'Section sponsor')
+      : !inI ? 'Nothing sold' : r.frId ? 'Free choice for this issue' : 'Section · free choice';
+    var ends = sale && sale.runTo ? '<span class="ipp-rv-frends' + (sale.endsSoon ? ' is-soon' : '') + '">Ends ' + esc(monYY(sale.runTo)) + '</span>' : '';
+    var note = '', tone = 'dim';
+    if (r.fail) { note = 'Not saved: ' + r.fail; tone = 'bad'; }
+    else if (!inI) {
+      if (sale && r.owedOb) { note = M + ' send still owed. ' + (OB.data && OB.data.lastInMonth ? 'This is the last ' + M + ' issue, so it goes Missed unless another title carries it.' : 'Due in a later ' + M + ' issue.'); tone = 'bad'; }
+      else if (sale && r.usedOb) note = M + ' send used in ' + (r.usedOb.edition || 'another issue') + '.';
+    }
+    else if (r.inAt && !r.pending) note = 'In Around Town, so no sponsor this issue';
+    else if (r.mixed && !r.pending) { note = 'Blocks disagree. ' + (sale ? 'Tick or untick to set them all.' : 'Pick one to set them all.'); tone = 'ack'; }
+    else if (sale) {
+      if (r.run && r.hereOb) note = 'This issue carries the ' + M + ' send.';
+      else if (r.run && r.owedOb) note = M + ' send is owed. This issue uses it when it sends.';
+      else if (r.owed) note = M + ' send is owed. Unticked, so this issue skips it.';
+      else if (r.usedOb) note = r.run ? 'Runs as an extra. The ' + M + ' send was used in ' + (r.usedOb.edition || 'another issue') + '.' : M + ' send already used in ' + (r.usedOb.edition || 'another issue') + '. Tick to run again as an extra.';
+      else if (r.missedOb) note = M + ' send went Missed. ' + (r.run ? 'Runs as an extra.' : 'Tick to run as an extra.');
+      else note = r.run ? 'Runs as an extra (no send due in ' + M + ').' : 'No send due in ' + M + '. Tick to run as an extra.';
+      if (r.pending && !r.fail) tone = 'gold';
+    }
+    else if (r.pending) { var pc = r.cust; note = pc ? 'New sponsor, waiting for Save' : 'Sponsor removed on Save'; tone = 'gold'; }
+    else if (r.ack) note = '';
+    else if (r.cust) note = 'Sponsors this ' + (r.frId ? 'franchise' : 'section') + ' in this issue';
+    else note = armed && !lk ? NEXT.sponsor : 'Pick a customer, or leave it empty.';
+    var acts = '';
+    if (!lk && !R.saving && inI) {
+      if (r.ack && !r.pending) acts += keepBtn('data-rv-frkeep', r.key) + (r.cust || r.mixed ? delBtn('data-rv-frdel', r.key) : '');
+      else if (sale) acts += '<button type="button" class="ipp-rv-done ipp-rv-run' + (r.run ? ' is-on' : '') + (r.pending ? ' is-pending' : '') + '" data-rv-frrun="' + esc(r.key) + '" aria-pressed="' + r.run + '"' + (r.inAt ? ' disabled' : '') + '>' +
+        '<span class="ipp-rv-done-box" aria-hidden="true"></span>Run this issue</button>';
+      else if (r.cust && !(r.pending && !r.cust)) acts += '<button type="button" class="ix-revert" data-rv-frclear="' + esc(r.key) + '">Remove sponsor</button>';
+      else if (!r.inAt) acts += '<button type="button" class="ix-revert" data-rv-frpick="' + esc(r.key) + '">Pick a sponsor</button>';
+      if (r.pending) acts += '<button type="button" class="ix-revert ipp-rv-cancel" data-rv-frcancel="' + esc(r.key) + '">Cancel</button>';
+    }
+    var arm = inI && !sale && !lk && !r.inAt;
+    return '<div class="' + cls.join(' ') + '" data-rv-fr="' + esc(r.key) + '"' + (arm ? ' tabindex="0" role="button"' : ' data-rv-noarm="1"') + ' title="' + esc(r.name) + '">' +
+      '<div class="ipp-rv-tile-head"><span class="ipp-rv-headtext"><span class="ipp-rv-slotname">' + esc(r.name) + '</span>' +
+        '<span class="ipp-rv-desc">' + esc(inI ? storiesIn(r) : 'Not in this issue') + '</span>' + ends + '</span>' + (armed ? '<span class="ipp-rv-chosen">Chosen</span>' : '') + '</div>' +
+      '<div class="ipp-rv-thumb">' + (pic ? '<img src="' + esc(pic) + '" alt="" loading="lazy">' : '<span>' + (showC ? 'No current banner' : 'No sponsor') + '</span>') + '</div>' +
+      '<div class="ipp-rv-who">' + esc(who) + '</div>' +
+      '<div class="ipp-rv-what">' + esc(what) + '</div>' +
+      '<div class="ipp-rv-note">' + (note ? '<span class="' + tone + '">' + esc(note) + '</span>' : '') + '</div>' +
+      '<div class="ipp-rv-acts">' + acts + '</div></div>';
+  }
+
+  // ── v1.10.0 · one Done tick per pill (ruling 5), on NEWSLETTER revenue-done ──
+  // The field holds the pill keys that are done, and skip:<franchise id> for an owed sponsor unticked on purpose, so a
+  // skip survives a reload (HC-P-RV110-4). Written through Scenario 124 nlmeta after the rest of the Save lands.
+  var SKIP = 'skip:';
+  function doneField() { var p = (board() || {}).publish; return (p && p.fields && p.fields.revenueDone) || ''; }
+  function doneFieldOk() { var p = (board() || {}).publish; return !!doneField() && !!(p && p.types && p.types.revenueDone); }
+  function savedTokens() { var n = pubNl(planNlId()); return n && n.values && Array.isArray(n.values.revenueDone) ? n.values.revenueDone : []; }
+  function savedDone(k) { return savedTokens().indexOf(k) >= 0; }
+  function savedSkip(fr) { return !!fr && savedTokens().indexOf(SKIP + fr) >= 0; }
+  function skipNow(fr) { return !!fr && (hasOwn(R.skip, fr) ? !!R.skip[fr] : savedSkip(fr)); }
+  function skipChanges() { return Object.keys(R.skip).filter(function (f) { return !!R.skip[f] !== savedSkip(f); }); }
+  function pillsShown() { return TABS.filter(function (t) { return t.key !== 'text' || findOn(); }).map(function (t) { return t.key; }); }
+  function pillLabel(k) { for (var i = 0; i < TABS.length; i++) if (TABS[i].key === k) return TABS[i].label; return k; }
+  function sig(k) { var p = partsByPill()[k] || []; return p.length ? JSON.stringify(p) : ''; }
+  function doneNow(k) {
+    var e = R.done[k];
+    if (e) return e.on && e.sig === sig(k);                            // any change after the tick clears it
+    return savedDone(k) && sig(k) === '';                              // a change on the pill clears the saved tick
+  }
+  function doneChanges() { return pillsShown().filter(function (k) { return doneNow(k) !== savedDone(k); }); }
+  function doneWaiting() { return doneChanges().length + skipChanges().length; }
+  function doneWhy(k) {
+    if (!planNlId()) return 'This plan has no newsletter yet, so Done cannot be saved.';
+    if (!doneFieldOk()) return 'NEWSLETTERS has no Revenue Done field (revenue-done) yet, so Done cannot be saved.';
+    if (readiness()[k] === 'needs') return 'Fix what the pill marks first.';
+    return '';
+  }
+  function togglePillDone(k) {
+    if (locked() || R.saving) return;
+    var want = !doneNow(k);
+    if (want && doneWhy(k)) { toast(doneWhy(k), 'err'); return; }
+    R.doneFail = '';
+    if (want === savedDone(k) && sig(k) === '') delete R.done[k]; else R.done[k] = { on: want, sig: sig(k) };
+    render();
+  }
+  function doneBar() {
+    var k = R.tab, on = doneNow(k), chg = on !== savedDone(k), lab = pillLabel(k), lk = locked(), why = on ? '' : doneWhy(k);
+    var cleared = !on && savedDone(k) && !R.done[k];
+    var note = R.doneFail ? '<span class="bad">Not saved: ' + esc(R.doneFail) + '</span>'
+      : lk ? (on ? 'Done.' : 'Not done.')
+      : cleared ? '<span class="gold">A change on this pill cleared Done. Tick it again when the pill is right.</span>'
+      : why ? esc(why)
+      : chg ? '<span class="gold">' + (on ? 'Done' : 'Not done') + ' on Save</span>'
+      : k === 'sponsors' ? 'Ticking Done accepts the ticked sponsors. Any change on this pill clears it. Compile waits for every pill.'
+      : 'Any change on this pill clears Done. Compile waits for every pill.';
+    return '<div class="ipp-rv-donebar"><button type="button" class="ipp-rv-done' + (on ? ' is-on' : '') + (chg ? ' is-pending' : '') + '" data-rv-pilldone="' + esc(k) + '" aria-pressed="' + on + '"' +
+      (lk || R.saving || (!on && why) ? ' disabled' : '') + (why && !on ? ' title="' + esc(why) + '"' : '') + '><span class="ipp-rv-done-box" aria-hidden="true"></span>Done with ' + esc(lab) + '</button>' +
+      (R.done[k] && chg && !lk && !R.saving ? '<button type="button" class="ix-revert ipp-rv-cancel" data-rv-donecancel="' + esc(k) + '">Cancel</button>' : '') +
+      '<span class="ipp-rv-donebar-note">' + note + '</span></div>';
+  }
+  // the pill a waiting change or a failure belongs to
+  function pillOfKey(k) {
+    if (!k) return '';
+    if (k.indexOf(SP) === 0) return 'splash';
+    if (k.indexOf(SEC) === 0 || k.indexOf(FR) === 0) return 'sponsors';
+    if (k.indexOf('find') === 0) return 'text';
+    if (k.indexOf('done:') === 0) return '';
+    var a = addOf(k); if (a && a.house) return 'house';
+    var s = slotById(k); if (s && (isHouseSlot(s) || adKind(s.asset && s.asset.id))) return 'house';
+    return 'banners';
+  }
+
+  var PILL_KEYS = ['banners', 'splash', 'text', 'sponsors', 'house'];                     // HC-P-RV110-5
+  // The Done ticks the NEWSLETTER should hold after this Save: every shown pill that is done now and whose changes all
+  // landed, the ticks of pills not shown (kept), the skips, and anything else the field holds (kept).
+  function doneOp(failed, pnl) {
+    var DF = doneField(); if (!pnl || !DF) return null;
+    var bad = {}; Object.keys(failed).forEach(function (k) { var p = pillOfKey(k); if (p) bad[p] = 1; });
+    var shown = pillsShown(), saved = savedTokens();
+    var toks = saved.filter(function (t) { return PILL_KEYS.indexOf(t) < 0 && t.indexOf(SKIP) !== 0; });
+    shown.forEach(function (k) { if (doneNow(k) && !bad[k]) toks.push(k); });
+    PILL_KEYS.forEach(function (k) { if (shown.indexOf(k) < 0 && saved.indexOf(k) >= 0) toks.push(k); });
+    var skips = {}; saved.forEach(function (t) { if (t.indexOf(SKIP) === 0) skips[t.slice(SKIP.length)] = 1; });
+    Object.keys(R.skip).forEach(function (f) { if (R.skip[f]) skips[f] = 1; else delete skips[f]; });
+    Object.keys(skips).forEach(function (f) { toks.push(SKIP + f); });
+    var fd = {}; fd[DF] = toks.length ? toks.join(',') : null;
+    return { slotId: 'done:' + pnl, slotIds: ['done:' + pnl], nlId: pnl, gone: [], done: toks, op: { id: pnl, body: JSON.stringify({ fieldData: fd }) } };
+  }
+
   // ── events (one delegated set on the canvas) ─────────────────
   function wire(c) {
     c.addEventListener('click', function (e) {
@@ -2962,6 +3518,7 @@
         spWaiting().forEach(function (id) { delete R.sp[id]; }); R.spFails = {};
         sponWaiting().forEach(function (id) { delete R.spon[id]; }); R.sponFails = {};   // v1.5
         fCancelAll();                                                  // v1.8.0
+        R.done = {}; R.skip = {}; R.doneFail = '';                     // v1.10.0
         render(); return;
       }
       if (R.saving) return;
@@ -2995,6 +3552,16 @@
           render(); }
         return;
       }
+      // v1.10.0 Done ticks and the franchise rows
+      if ((el = t.closest('[data-rv-pilldone]'))) { if (!el.disabled) togglePillDone(el.getAttribute('data-rv-pilldone')); return; }
+      if ((el = t.closest('[data-rv-donecancel]'))) { delete R.done[el.getAttribute('data-rv-donecancel')]; R.doneFail = ''; render(); return; }
+      if ((el = t.closest('[data-rv-frrun]'))) { if (!el.disabled) frToggle(el.getAttribute('data-rv-frrun')); return; }
+      if ((el = t.closest('[data-rv-frcancel]'))) { frCancel(el.getAttribute('data-rv-frcancel')); return; }
+      if ((el = t.closest('[data-rv-frclear]'))) { frEach(el.getAttribute('data-rv-frclear'), function (x) { if (x.current) R.spon[x.id] = { kind: 'clear' }; else delete R.spon[x.id]; }); return; }
+      if ((el = t.closest('[data-rv-frkeep]'))) { frEach(el.getAttribute('data-rv-frkeep'), function (x) { if (sponAfter(x).ack || secKeyWaits(x.id)) R.spon[x.id] = { kind: 'keep' }; }); return; }
+      if ((el = t.closest('[data-rv-frdel]'))) { frEach(el.getAttribute('data-rv-frdel'), function (x) { R.spon[x.id] = { kind: 'clear', clone: true }; }); return; }
+      if ((el = t.closest('[data-rv-frpick]'))) { if (!locked()) { R.armed = FR + el.getAttribute('data-rv-frpick'); render(); } return; }
+      if ((el = t.closest('[data-rv-fr]'))) { if (!locked() && !el.hasAttribute('data-rv-noarm')) { R.armed = FR + el.getAttribute('data-rv-fr'); render(); } return; }
       // v1.5 sponsors
       if ((el = t.closest('[data-rv-sponcancel]'))) { var sk2 = el.getAttribute('data-rv-sponcancel'); delete R.spon[sk2]; delete R.sponFails[sk2]; render(); return; }
       if ((el = t.closest('[data-rv-sponclear]'))) { if (!locked()) { var ck = el.getAttribute('data-rv-sponclear'); R.spon[ck] = { kind: 'clear' }; delete R.sponFails[ck]; render(); } return; }
@@ -3026,10 +3593,10 @@
     });
     c.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' && e.key !== ' ') return;
-      var el = e.target.closest && e.target.closest('[data-rv-slot],[data-rv-sec]');
+      var el = e.target.closest && e.target.closest('[data-rv-slot],[data-rv-sec],[data-rv-fr]');
       if (el && e.target === el && !locked() && !R.saving) { e.preventDefault();
-        if (el.hasAttribute('data-rv-noarm')) { toast(AT_WHY + '.', 'err'); return; }   // v1.6.3
-        R.armed = el.hasAttribute('data-rv-sec') ? SEC + el.getAttribute('data-rv-sec') : el.getAttribute('data-rv-slot'); render(); }
+        if (el.hasAttribute('data-rv-noarm')) { if (!el.hasAttribute('data-rv-fr')) toast(AT_WHY + '.', 'err'); return; }   // v1.6.3
+        R.armed = el.hasAttribute('data-rv-fr') ? FR + el.getAttribute('data-rv-fr') : el.hasAttribute('data-rv-sec') ? SEC + el.getAttribute('data-rv-sec') : el.getAttribute('data-rv-slot'); render(); }
     });
     c.addEventListener('change', function (e) {                             // v1.6.5 the Move to… ticks
       var cb = e.target.closest && e.target.closest('[data-rv-mvplan]'); if (!cb) return;
@@ -3109,6 +3676,7 @@
         else FD.lists[k] = { ids: next, base: fresh };
       });
     }
+    if (e && e.detail && e.detail.ok && (OB.state === 'idle' || OB.key !== titleAdminId() + '|' + planNlId())) loadSales();   // v1.10.0 what was sold, once per plan
     if (canvas() && canvas().getAttribute('data-revenue-mounted') === '1') {
       render();
       var v = document.querySelector('.ipp-view[data-view="revenue"]');
@@ -3120,6 +3688,7 @@
     if (!mount()) return;
     render();
     freshOnce();                                                             // v1.7.5
+    if (board() && !OB.busy) loadSales();                                    // v1.10.0 read again each time Revenue opens
   });
   // v1.7.7 — back on the planner after opening a client page: say so and read the plan fresh.
   function backFromClient() {
@@ -3146,5 +3715,5 @@
   });
   document.addEventListener('ipp:ready', mount);
   if (window.IPP && canvas()) mount();
-  window.IPPRevenue = { version: VERSION, render: render, state: R, readiness: readiness, gate: gate, openTab: openTab, addBanner: addBanner, goTo: goTo, pinkCount: pinkCount, keepAll: keepAll, openText: function () { goTo((findSlot() || {}).id || ''); if (findOn()) openTab('text'); }, findPending: fChanges };   // v1.8.0 openText, findPending   // goTo v1.6.5; pinkCount, keepAll v1.7.0
+  window.IPPRevenue = { version: VERSION, render: render, state: R, readiness: readiness, gate: gate, openTab: openTab, addBanner: addBanner, goTo: goTo, pinkCount: pinkCount, keepAll: keepAll, openText: function () { goTo((findSlot() || {}).id || ''); if (findOn()) openTab('text'); }, findPending: fChanges, loadSales: loadSales, owed: owedInfo };   // v1.10.0 loadSales, owed   // v1.8.0 openText, findPending   // goTo v1.6.5; pinkCount, keepAll v1.7.0
 })();

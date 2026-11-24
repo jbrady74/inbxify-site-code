@@ -1,4 +1,21 @@
-/* ipp-publish-v2.83.js */
+/* ipp-publish-v2.84.js */
+/* v2.84 (23 Nov 2026, Publisher Portal S12 · Build 2): COMPILE CHECKS THE REVENUE DONE TICKS AND THE MONTH'S SENDS. Rulings 6 and 10
+   of 23 Nov (S11) and the accepted canvas "Obligations in the Revenue tab · Build 2 mockup v0.1" (Compile frames), in the jobs list.
+   1 · REVENUE PILLS (ruling 6). Each Revenue pill without its saved Done tick (ipp-revenue v1.10.0 gate().pills) is a red job in
+       Revenue: "Tick Done with <pill> on Revenue." with "Go to <pill>", which opens Revenue on that pill. The Revenue rail dot is
+       red until every pill is done. When the NEWSLETTER has no Revenue Done field yet, one Our side job says so.
+   2 · THE MONTH'S SENDS NOT IN THIS ISSUE (ruling 10), from gate().owed (ix-sales /revenue, the saved state):
+       · an earlier issue of the month: listed only, as a grey note ("for your information"), with the later issues that can
+         still carry them. Nothing stops.
+       · the month's last issue: one red job "N <month> sends will go Missed" with "Review". Review (and the Compile button while
+         it stands) opens the acknowledgement: the sends, a tick "I understand these N sends go Missed", Go to Revenue, Cancel,
+         Compile anyway. Compile anyway compiles; the acknowledgement holds for the same sends until the page reloads.
+       · a pool send (no title yet) is listed but never stops Compile: another of the sale's titles may still carry it.
+       · while what was sold is still being read, Compile waits a moment; if it cannot be read, a grey note says so.
+   3 · Opening Compile asks Revenue to read what was sold again (IPPRevenue.loadSales).
+   CSS stays ipp-publish-v2.29.css (the job rows, grey notes and the unlock dialog's classes are reused).
+   Needs ipp-revenue v1.10.0 (older Revenue: no pill or send checks, as v2.83).
+   HARDCODING: HC-P-PUB84-1 the new words (the Done job, the send note, the acknowledgement). */
 /* v2.83 (22 Nov 2026, Jeff on WLN-124B): A NEWSLETTER THAT DID NOT LOAD STOPS THE PAGE HONESTLY, AND A SLOW SITE GETS A
    SECOND LOOK. Two things Jeff hit after unlocking WLN-124B:
    1 · THE NEWSLETTER DID NOT LOAD. One plan read came back without the issue's NEWSLETTER. Send Setup said "This plan's
@@ -975,7 +992,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '2.83';   // v2.42: FILE is derived from this
+  var VERSION = '2.84';   // v2.42: FILE is derived from this
   var DEFAULT_SEND_TIME = '08:00'; // HC-P-S7-17
   var FILE = 'ipp-publish-v' + VERSION + '.js';
   var MOUNTED = 'data-publish-mounted';
@@ -1820,7 +1837,7 @@
     support: 'If it happens again, tell INBXIFY support.',
     showAll: 'Show every job'
   };
-  function J_(g, k, a, b, btn, act) { act = act || {}; return { g: g, k: k, a: a, b: b || '', btn: btn || '', go: act.go || '', slot: act.slot || '', fix: act.fix || null, run: act.run || '', free: !!act.free }; }
+  function J_(g, k, a, b, btn, act) { act = act || {}; return { g: g, k: k, a: a, b: b || '', btn: btn || '', go: act.go || '', slot: act.slot || '', pill: act.pill || '', fix: act.fix || null, run: act.run || '', free: !!act.free }; }   // v2.84 pill
   function qt(x) { return '\u201c' + String(x || 'Untitled') + '\u201d'; }
   function qList(xs) { return andList(xs.map(qt)); }
   function slotOf(id) { var b = boardData(), out = null; ((b && b.slots) || []).forEach(function (s) { if (s.id === id) out = s; }); return out; }
@@ -2032,6 +2049,7 @@
     var rb = b.splash || null, rl = rb && Array.isArray(rb.newsletters) ? rb.newsletters : [];
     if (!rg) J.push(J_('ours', 'ours', 'We couldn\u2019t read the banners for this issue.', 'Reload the page. ' + JW.support, 'Check again', { run: 'recheck' }));
     else if (rg.loaded && rg.empty.length) J.push(J_('revenue', 'red', plural(rg.empty.length, 'banner spot is', 'banner spots are') + ' unsold. Sell ' + (rg.empty.length === 1 ? 'it or remove it.' : 'them or remove them.'), cap(rg.empty.join(', ')) + '.', 'Fill or remove', { go: 'revenue' }));
+    if (rg && rg.loaded) revenueDoneJobs(J, grey, rg);                      // v2.84 rulings 6 and 10
     // v2.72 — advertisers with no current sidebar (rule 4): one red job each, one window for all
     var ns = noSidebarAds(b);
     if (ns.list.length) {
@@ -2097,13 +2115,72 @@
     if (released()) { JW.cells.forEach(function (g) { cells[g] = { n: 0, show: false }; }); return { wait: false, jobs: [], grey: [], cells: cells, names: names, released: true }; }   // v2.66: released, nothing left to do
     return { wait: false, jobs: J, grey: grey, cells: cells, names: names };
   }
+  // v2.84 — ruling 6: every Revenue pill needs its saved Done tick; ruling 10: the month's sends not in this issue (HC-P-PUB84-1)
+  var MISSED = { ack: '', open: false };
+  function owedKey(o) { return o ? o.month + ':' + o.items.filter(function (x) { return !x.pool; }).map(function (x) { return x.id; }).sort().join(',') : ''; }
+  function owedNow() { var rg = window.IPPRevenue && typeof IPPRevenue.gate === 'function' ? IPPRevenue.gate() : null; return rg && rg.loaded && rg.owed ? rg.owed : null; }
+  function sendWords(x) { return x.customer + ' \u00b7 ' + x.what + (x.sales ? ' (' + x.sales + ')' : ''); }
+  function revenueDoneJobs(J, grey, rg) {
+    if (Array.isArray(rg.pills) && rg.pills.length) {
+      if (!rg.doneField) J.push(J_('ours', 'ours', 'The newsletter has no Revenue Done field yet, so the Revenue pills can\u2019t be ticked done.', 'Add the field Revenue Done (revenue-done) to NEWSLETTERS. ' + JW.support, 'Check again', { run: 'recheck' }));
+      else rg.pills.forEach(function (p) {
+        if (p.done) return;
+        J.push(J_('revenue', 'red', 'Tick Done with ' + p.label + ' on Revenue.', p.state === 'needs' ? 'Fix what the pill marks first, then tick Done.' : p.state === 'unsaved' ? 'Save its changes, then tick Done.' : 'Each Revenue pill needs its Done tick before Compile runs.', 'Go to ' + p.label, { go: 'revenue', pill: p.key }));
+      });
+    }
+    var o = rg.owed; if (!o) return;
+    if (o.state === 'loading' || o.state === 'idle') { grey.push('Reading what was sold this month\u2026'); return; }
+    if (o.state === 'off' || o.state === 'err') { grey.push((o.error || 'What was sold could not be read.') + ' Compile cannot check which sends this issue leaves out.'); return; }
+    if (o.state !== 'ok' || !o.items.length) return;
+    var M = o.monthWord || 'this month', hard = o.items.filter(function (x) { return !x.pool; }), pool = o.items.filter(function (x) { return x.pool; });
+    if (!o.lastInMonth) {
+      grey.push(M + ' sends not in this issue, for your information: ' + o.items.map(function (x) { return sendWords(x) + ', ' + x.why.toLowerCase(); }).join('; ') + '. ' +
+        (o.later && o.later.length ? andList(o.later) + ' can still carry ' + (o.items.length === 1 ? 'it' : 'them') + '.' : 'A later issue can still carry ' + (o.items.length === 1 ? 'it' : 'them') + '.'));
+      return;
+    }
+    if (pool.length) grey.push('Another of the sale\u2019s titles can still carry: ' + pool.map(sendWords).join('; ') + '.');
+    if (!hard.length) return;
+    var acked = MISSED.ack === owedKey(o);
+    var j = J_('revenue', 'red', plural(hard.length, M + ' send') + (hard.length === 1 ? ' goes' : ' go') + ' Missed unless this issue carries ' + (hard.length === 1 ? 'it' : 'them') + '.',
+      (acked ? 'You confirmed it. ' : 'This is the last ' + M + ' issue. ') + hard.map(sendWords).join('; ') + '.', acked ? 'Review again' : 'Review', { run: 'missed', free: acked });
+    J.push(j);
+  }
+  function openMissed(then) {
+    var o = owedNow(); if (!o || o.state !== 'ok' || !o.lastInMonth || MISSED.open) return;
+    var hard = o.items.filter(function (x) { return !x.pool; }); if (!hard.length) { if (then) then(); return; }
+    MISSED.open = true;
+    var M = o.monthWord || 'this month', n = hard.length, iss = issueName();
+    var ov = document.createElement('div'); ov.className = 'ix-overlay ipp-cx-unlock-ov'; ov.setAttribute('data-ipp-missed', '');
+    ov.innerHTML = '<div class="ix-modal ipp-cx-unlock" role="dialog" aria-modal="true" aria-labelledby="ipp-cx-missed-t"><div class="ix-modal-bar"></div>' +
+      '<div class="ix-modal-head"><div class="ix-modal-title-block"><h3 class="ix-modal-title" id="ipp-cx-missed-t">' + esc(plural(n, M + ' send') + (n === 1 ? ' will' : ' will') + ' go Missed') + '</h3>' +
+      '<p class="ipp-cx-unlock-p">' + esc((iss ? iss + ' is' : 'This is') + ' the last ' + M + ' issue. ' + (n === 1 ? 'This send is' : 'These sends are') + ' not in it, so ' + (n === 1 ? 'it goes' : 'they go') + ' Missed when ' + M + ' ends. A make good can be added for each one on the Obligations page.') + '</p>' +
+      '<ul class="ipp-cx-unlock-l">' + hard.map(function (x) { return '<li>' + esc(sendWords(x)) + '</li>'; }).join('') + '</ul>' +
+      '<label class="ipp-cx-unlock-p"><input type="checkbox" data-missed-ack> ' + esc('I understand ' + (n === 1 ? 'this send goes' : 'these ' + n + ' sends go') + ' Missed') + '</label></div></div>' +
+      '<div class="ix-modal-footer ipp-cx-unlock-f"><button type="button" class="ix-revert" data-missed-rev>Go to Revenue</button><button type="button" class="ix-revert" data-missed-cancel>Cancel</button>' +
+      '<button type="button" class="ix-btn ix-btn--primary" data-missed-go disabled>Compile anyway</button></div></div>';
+    document.body.appendChild(ov);
+    var close = function () { if (ov.parentNode) ov.parentNode.removeChild(ov); MISSED.open = false; document.removeEventListener('keydown', onKey); };
+    var onKey = function (e) { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onKey);
+    ov.addEventListener('change', function (e) { var cb = e.target.closest && e.target.closest('[data-missed-ack]'); if (cb) ov.querySelector('[data-missed-go]').disabled = !cb.checked; });
+    ov.addEventListener('click', function (e) {
+      var t = e.target; if (!t.closest) return;
+      if (t === ov || t.closest('[data-missed-cancel]')) { e.preventDefault(); close(); return; }
+      if (t.closest('[data-missed-rev]')) { e.preventDefault(); close(); var tab = document.querySelector('.ipp-switcher button[data-view="revenue"]'); if (tab) tab.click(); return; }
+      var go = t.closest('[data-missed-go]');
+      if (go && !go.disabled) { e.preventDefault(); MISSED.ack = owedKey(owedNow() || o); close(); refreshAll(); if (then) then(); }
+    });
+    var c0 = ov.querySelector('[data-missed-ack]'); if (c0) c0.focus();
+  }
+  function issueName() { var b = boardData(); return (b && b.plan && b.plan.name) || ''; }
   function jobBtn(j) {
     if (!j.btn) return '<span class="ipp-wl-btn is-none"></span>';
     if (j.fix) return '<button type="button" class="ipp-wl-btn" data-cor="' + (FIXES.push(j.fix) - 1) + '">' + esc(j.btn) + '</button>';
     if (j.run === 'compile') return '<button type="button" class="ipp-wl-btn" data-publish-go' + (state.running || state.stopped ? ' disabled' : '') + '>' + esc(j.btn) + '</button>';
     if (j.run === 'reload') return '<button type="button" class="ipp-wl-btn" data-publish-reload>' + esc(j.btn) + '</button>';   // v2.83
+    if (j.run === 'missed') return '<button type="button" class="ipp-wl-btn" data-publish-missed>' + esc(j.btn) + '</button>';   // v2.84
     if (j.run === 'recheck') return '<button type="button" class="ipp-wl-btn" data-publish-recheck>' + esc(j.btn) + '</button>';
-    if (j.go) return '<button type="button" class="ipp-wl-btn" data-pub-go="' + esc(j.go) + '"' + (j.slot ? ' data-pub-slot="' + esc(j.slot) + '"' : '') + '>' + esc(j.btn) + '</button>';
+    if (j.go) return '<button type="button" class="ipp-wl-btn" data-pub-go="' + esc(j.go) + '"' + (j.slot ? ' data-pub-slot="' + esc(j.slot) + '"' : '') + (j.pill ? ' data-pub-pill="' + esc(j.pill) + '"' : '') + '>' + esc(j.btn) + '</button>';   // v2.84 pill
     return '<span class="ipp-wl-btn is-none"></span>';
   }
   function jobHtml(j, names) {
@@ -3715,6 +3792,9 @@
   function compile(btn) {
     if (state.running || state.stopped) return;
     if (released()) { IxToast.show('This issue is released', 'info', { detail: 'Unlock it to compile again.' }); return; }   // v2.46
+    var ow = owedNow();                                                      // v2.84 ruling 10
+    if (ow && ow.state === 'loading') { IxToast.show('Reading what was sold', 'info', { detail: 'Compile checks this month\u2019s sends first. Try again in a moment.' }); return; }
+    if (ow && ow.state === 'ok' && ow.lastInMonth && ow.stop && MISSED.ack !== owedKey(ow)) { openMissed(function () { compile(btn); }); return; }
     var cb = compileBlockers();
     if (cb.bad || cb.wait || !setupGate().ok) { refreshAll(); return; }   // v2.0 never compile past the board
     var i = ids();
@@ -3818,12 +3898,15 @@
       if ((el = t.closest('[data-cx-nav]'))) { e.preventDefault(); var nk = el.getAttribute('data-cx-nav'); CX.open = CX.open === nk ? '' : nk; CX.review = false; drawBoard(); return; }   // v2.47: a cell opens its section's checks under the header; again closes them
       if ((el = t.closest('[data-cx-back]'))) { e.preventDefault(); CX.review = false; drawReview(); return; }   // v2.47
       if ((el = t.closest('[data-publish-reload]'))) { e.preventDefault(); location.reload(); return; }   // v2.83
+      if ((el = t.closest('[data-publish-missed]'))) { e.preventDefault(); openMissed(function () { compile(goBtn()); }); return; }   // v2.84: Compile anyway compiles
       if ((el = t.closest('[data-publish-recheck]'))) { e.preventDefault(); state.links = null; runCheck(); runLinks(true); return; }
       if ((el = t.closest('[data-cor]'))) { e.preventDefault(); openCor(FIXES[Number(el.getAttribute('data-cor'))]); return; }   // v2.33: the greeting is on its own tab
       if ((el = t.closest('[data-pub-go]'))) {
         e.preventDefault(); var g = el.getAttribute('data-pub-go'), slot = el.getAttribute('data-pub-slot') || '';
         if (STEPS.some(function (x) { return x.key === g; })) { openStep(g); return; }   // v2.20: confirm from Distribution's locked card; v2.22: any step
         if (slot && g === 'revenue' && window.IPPRevenue && typeof IPPRevenue.goTo === 'function') { IPPRevenue.goTo(slot); return; }   // v2.54
+        var pill = el.getAttribute('data-pub-pill') || '';                    // v2.84 open Revenue on the pill
+        if (pill && g === 'revenue' && window.IPPRevenue && typeof IPPRevenue.openTab === 'function') { var rt = document.querySelector('.ipp-switcher button[data-view="revenue"]'); if (rt) rt.click(); setTimeout(function () { IPPRevenue.openTab(pill); }, 0); return; }
         var tab = document.querySelector('.ipp-switcher button[data-view="' + g + '"]'); if (tab) tab.click();
         if (slot) setTimeout(function () { goToSlot(slot); }, 250);                                   // v2.54: light the tile on the Picker
         return;
@@ -3902,6 +3985,7 @@
     var box = document.querySelector('[data-publish-result]');
     if (box && !box.hidden) { refreshAll(); return; }
     redraw('compile'); runCheck(); if ((!state.rl || state.rl.error) && !released()) runLinks(false);   // v2.23: the Compile view, not Send Setup; v2.66: not once released
+    if (window.IPPRevenue && typeof IPPRevenue.loadSales === 'function' && !released()) IPPRevenue.loadSales();   // v2.84 the month's sends, fresh
   });
   // v2.75 — the first time the plan data is there, start the checks the dots need, whether or not Compile has mounted
   function bootChecks() {
