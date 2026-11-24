@@ -1,4 +1,65 @@
-// ix-issue-data-v1.0.205.js
+// ix-issue-data-v1.0.210.js
+// v1.0.210 (24 Nov 2026, Publisher Portal S12 · Build 2): THE REVENUE TAB'S DONE TICKS, AND EACH SECTION'S FRANCHISE, ON /plan-board.
+//   Built on main's v1.0.208 (Content Home S16). Carries the two changes first written on the branch agent-pp12-build2 as
+//   v1.0.207, v1.0.208 and v1.0.209; none was deployed, and main holds other files under v1.0.207 and v1.0.208.
+//   The branch's v1.0.209 is retired.
+//   1 · DONE TICKS (Jeff, S11, 23 Nov, ruling 5): one Done tick per Revenue pill, on the new NEWSLETTER field Revenue Done
+//       (revenue-done, Plain text, a comma list such as "banners,splash,sponsors,skip:<franchise id>"). The IPP writes it through
+//       Scenario 124 op nlmeta, as it writes clone-pending.
+//       · /plan-board publish.fields.revenueDone: the slug (revenue-done, or IX_CONFIG.revenueDoneField); publish.types.revenueDone
+//         its Webflow type, null with a warning while the field does not exist.
+//       · each newsletter's values.revenueDone: the list, read as clonePending is (v1.0.132): split on commas, trimmed, blanks dropped.
+//       Not changed, on purpose: a clone does not copy revenue-done (only IX_CONFIG.clone.nlCarry is copied), so a new issue starts
+//       with every pill unticked; and revenue-done is not a stamp field, so a released issue refuses a Done write at the release
+//       check like every other Revenue change.
+//   2 · SECTION → FRANCHISE: the Sponsors pill lists every franchise the title sells (ix-sales /franchises, PRODUCT LIBRARY ids) and the
+//       live sponsor sale per franchise (ix-sales /revenue, franchiseId). A slot's section is a SECTIONS row, which points at its
+//       franchise through the SECTIONS Reference field to PRODUCT LIBRARY (the same field /site-ads reads). /plan-board
+//       slots[].section gains franchiseId: that PRODUCT LIBRARY id, or null when the section names none. No new read.
+//   Nothing else changes. /health says 1.0.210.
+//   HARDCODING (provisional): HC-P-PP12-1 the default slug revenue-done (REVENUE_DONE_FIELD). The SECTIONS Reference field is found by
+//   its target collection (C.franchises), not typed.
+//
+// v1.0.208 header follows.
+// v1.0.208 (24 Nov 2026, Content Home S16 · phase 4b): THE TWO HOME TABLES ARE READ FROM D1 WHERE A ROW'S ID MAY NOT BE
+//   WEBFLOW'S. Built on v1.0.207 (Image Links S3). Since ix-content v1.3.0, a table on its D1-first save path
+//   (ALLOCATIONS since 23 Nov; NL-BLOCKS next) gives new rows an id of its own; the Webflow copy has another id (wf_id).
+//   1 · The Compile hold ("<print item> has no article yet") names each print item from D1 by id (or wf_id), and asks
+//       Webflow only when D1 has no such row. Before, it asked Webflow by the D1 id and said "A print item".
+//   2 · /page-frame-backfill reads NL-BLOCKS from the D1 home table instead of listing every NL-BLOCKS item from Webflow
+//       (Content Home S14 finding 10). An empty or unreachable table falls back to Webflow.
+//   Neither depends on contentHome.reads. Nothing else changed.
+//
+// v1.0.207 (23 Nov 2026, Image Links S3): LISTINGS READ ONLY img-main; /re-image-backfill IS GONE.
+//   The backfill ran 23 Nov: 15 listings filled, 30 writes (draft and published) all echoed back, and the check
+//   after showed 15 clean img-main links, nothing left to fill, 8 listings with no picture. So:
+//   1 · rePhotoOf() reads img-main only (JOIN.re.photo). RE_PHOTO_OLD and the fallback to property-image-link
+//       are deleted. HC-P-IL3-1 closed.
+//   2 · GET /re-image-backfill is deleted (one-time route, v1.0.206), with RIB and its helpers.
+//   The Worker no longer reads property-image-link. Built on v1.0.206. Nothing else changes. /health says 1.0.207.
+//
+// v1.0.206 header follows.
+// v1.0.206 (23 Nov 2026, Image Links S3): REAL ESTATE GETS img-main; /re-image-backfill.
+//   REAL ESTATE holds the listing photo in property-image-link (Plain text). Uploadcare Raw Links scoping v0.3
+//   ruled one new field, img-main ("Main image", Plain text, raw Uploadcare link only), as on EVENTS (S2).
+//   1 · Every listing picture read goes through rePhotoOf(): img-main first, then property-image-link. Same places
+//       as before: /plan-board listing thumb, the slot read (photo, thumb), and the email and web listing cards
+//       (photo, photoLead, f_rePhoto, x_hasREPhoto). Before img-main is filled, the pictures come out exactly as in
+//       v1.0.205. The old slug sits in RE_PHOTO_OLD (HC-P-IL3-1); the next version deletes it and this fallback.
+//   2 · NEW GET /re-image-backfill (one-time, the next version deletes it). Reads every REAL ESTATE item, draft
+//       and published, archived included (old issues still show their listings).
+//         no write=1 → the report: does img-main exist on REAL ESTATE; does hero-image-link exist, and every
+//         picture-like field on the collection; per field, how many links are clean, carry a size or a file
+//         name, are not Uploadcare, or are empty; listings whose hero-image-link holds a picture the old field
+//         doesn't; and what img-main would get. Writes nothing.
+//         write=1 [&limit=N] → fills img-main with the clean link (host + photo id, ucBase) from
+//         property-image-link. A link that is not Uploadcare is not written (listed instead). Needs
+//         X-Cleanup-Key = CLEANUP_KEY and WEBFLOW_WRITE_TOKEN, as /event-image-backfill did. Checks every value
+//         Webflow echoes back (TOAST-TRUTH). Refuses when img-main is not on REAL ESTATE yet.
+//   Built on v1.0.205. Nothing else changes. /health says 1.0.206.
+//   HARDCODING (provisional): HC-P-IL3-1 RE_PHOTO_OLD and RIB (the backfill's field names), both go next version.
+//
+// v1.0.205 header follows.
 // v1.0.205 (23 Nov 2026, Image Links S2): EVENTS READ ONLY img-main; /event-image-backfill IS GONE.
 //   The backfill ran 23 Nov: 26 events filled, 45 writes (draft and published) all echoed back, and the check
 //   after showed 26 clean img-main links, nothing left to fill, 21 events with no picture. So:
@@ -4220,7 +4281,7 @@
 const ARTICLE_FORMATS = { 'standard': 'standard', 'photo-essay': 'photo-essay', 'video': 'video' };
 // v1.0.106: the photo essay treatment when the article names none. HC-P-CB-20.
 const DEFAULT_TREATMENT = 'polaroid';
-const VERSION = '1.0.205';   // v1.0.205 (EVENTS read img-main only; /event-image-backfill removed);   // v1.0.204 (a franchise is named by its PRODUCT LIBRARY Name everywhere on the site);   // v1.0.203 (comments: the email-art pair with newsletter-render);   // v1.0.202 (EVENTS img-main; /event-image-backfill);   // v1.0.201 (main-image no longer read);   // v1.0.200 (PF Backfill reads the saved pages); v1.0.199   // v1.0.199 (the headshot is cut as a circle);   // v1.0.198 (/assemble on the read switch); v1.0.197   // v1.0.197 (published-version rule: dates first); v1.0.196   // v1.0.196 (site compare: each side, probe);    // v1.0.195 (public pages on the read switch: "site");   // v1.0.194 (/quill-status and /article-print on the read switch);   // v1.0.193 (franchise sponsor from ix-sales /sponsors: /site-ads and /site?franchise=);   // v1.0.192 (every picture handed out is sized where it is shown);   // v1.0.191 (/plans counts a clone's items as the IPP rail does);   // v1.0.190   // v1.0.190 (/links, /greeting-context, /release-check on the read switch);   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
+const VERSION = '1.0.210';   // v1.0.210 (revenue-done; section.franchiseId);   // v1.0.208 (Compile hold and PF backfill read the home tables from D1);   // v1.0.207 (REAL ESTATE read img-main only; /re-image-backfill removed);   // v1.0.206 (REAL ESTATE img-main read first; /re-image-backfill);   // v1.0.205 (EVENTS read img-main only; /event-image-backfill removed);   // v1.0.204 (a franchise is named by its PRODUCT LIBRARY Name everywhere on the site);   // v1.0.203 (comments: the email-art pair with newsletter-render);   // v1.0.202 (EVENTS img-main; /event-image-backfill);   // v1.0.201 (main-image no longer read);   // v1.0.200 (PF Backfill reads the saved pages); v1.0.199   // v1.0.199 (the headshot is cut as a circle);   // v1.0.198 (/assemble on the read switch); v1.0.197   // v1.0.197 (published-version rule: dates first); v1.0.196   // v1.0.196 (site compare: each side, probe);    // v1.0.195 (public pages on the read switch: "site");   // v1.0.194 (/quill-status and /article-print on the read switch);   // v1.0.193 (franchise sponsor from ix-sales /sponsors: /site-ads and /site?franchise=);   // v1.0.192 (every picture handed out is sized where it is shown);   // v1.0.191 (/plans counts a clone's items as the IPP rail does);   // v1.0.190   // v1.0.190 (/links, /greeting-context, /release-check on the read switch);   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
 // v1.0.170 — the X-IX-Key header against both secrets: IX_KEY (Make, 206) or IX_SERVICE_KEY (ix-content).
 function anyKey(env) { return !!(env.IX_KEY || env.IX_SERVICE_KEY); }
 function keyOk(env, request) {
@@ -4369,7 +4430,7 @@ const JOIN = {
              photoEssay: 'photo-essay-article', video: 'video-article', paid: 'paid-article',   // v1.0.105, HC-P-CB-19
              ogSrc: 'main-image-ulc-link---1-1-ratio',   // ogSrc v1.0.33, HC-P-S9-2; type removed v1.0.49
              mainMediaId: 'main-image-media-id', ogLink: 'main-image-for-og', body: 'post-body', gallery: 'media-items' },   // v1.0.166
-  re: { agent: 'listing-agent-customer', photo: 'property-image-link' },   // photo v1.0.33
+  re: { agent: 'listing-agent-customer', photo: 'img-main' },   // photo v1.0.33; img-main from v1.0.206, read through rePhotoOf()
   ad: { customer: 'associated-advertiser', type: 'add-type', status: 'status',
         bannerLink: 'banner-ad-link', redirectLink: 'redirect-link',
         houseKind: 'house-kind', titles: 'titles', splashLink: 'splash-ad-link--get',
@@ -4987,6 +5048,7 @@ async function buildBoard(run, planId) {
   const secSchema = /^[0-9a-f]{24}$/.test(C.sections || '') ? await run.cachedSchema('sections', C.sections) : null;
   const secOpts = optionMaps(secSchema);
   if (secSchema && !secOpts[JOIN.sections.type]) run.warn('SECTIONS has no Option field "' + JOIN.sections.type + '"; a Section\'s type cannot be read.');
+  const secFrField = (((secSchema && secSchema.fields) || []).find(f => /reference/i.test(String(f.type || '')) && f.validations && f.validations.collectionId === C.franchises) || {}).slug || '';   // v1.0.210
   // v1.0.33 — the DESIGNS schema, for its block-type labels.
   const designSchema = designs ? await run.cachedSchema('designs', C.designs) : null;
 
@@ -5143,7 +5205,7 @@ async function buildBoard(run, planId) {
       thumb = ucSized(f[JOIN.ad.bannerLink], ASM.uc.ad) || null;                                                   // v1.0.192 sized
     } else if (kind === 're') {
       customer = custName(f[JOIN.re.agent]);
-      thumb = ucSized(f['property-image-link'], ASM.uc.card) || null;                                              // v1.0.192 sized
+      thumb = ucSized(rePhotoOf(f), ASM.uc.card) || null;                                                          // v1.0.192 sized
     } else if (kind === 'event') {
       thumb = ucSized(evPhotoOf(f), ASM.uc.card) || null;                                                         // v1.0.192 sized; v1.0.202 evPhotoOf
     }
@@ -5185,7 +5247,7 @@ async function buildBoard(run, planId) {
     if (!id) return null;
     const sec = sectionsBy.get(id);
     if (!sec) { run.warn(where + ': section ' + id + ' is not in SECTIONS.'); return null; }
-    return { id, name: String((sec.fieldData || {}).name || ''), from };
+    return { id, name: String((sec.fieldData || {}).name || ''), from, franchiseId: secFrField ? (refIds((sec.fieldData || {})[secFrField])[0] || null) : null };   // v1.0.210
   };
   const sponsorOfSlot = (fd) => {
     const id = refId(Array.isArray(fd[B.sponsor]) ? fd[B.sponsor][0] : fd[B.sponsor]);
@@ -6039,6 +6101,7 @@ async function publishBoardOf(run, sb, ta, weatherInPlan) {
   const fields = {}, types = {}, statusIds = { draft: null, readyToPublish: null, publishNextAsCurrent: null };
   PUB_KEYS.forEach(k => { fields[k] = P[k]; types[k] = null; });
   fields.clonePending = cloneCfg(run.cfg).nlPendingField; types.clonePending = null;   // v1.0.133: the pages write the remaining keys; they do not type the slug
+  fields.revenueDone = revenueDoneField(run.cfg); types.revenueDone = null;   // v1.0.210: the Revenue tab's Done ticks
   const newsletters = ((sb && sb.newsletters) || []).map(n => {
     const e = n._pub || { slug: null, values: {} }; delete n._pub;
     return { id: n.id, name: n.name, slug: e.slug, values: e.values };
@@ -6059,6 +6122,8 @@ async function publishBoardOf(run, sb, ta, weatherInPlan) {
       });
       if (fields.clonePending in bySlug) types.clonePending = bySlug[fields.clonePending];   // v1.0.133
       else run.warn('NEWSLETTER has no field "' + fields.clonePending + '" (clone pending), so copied words, send setup and splash cannot be confirmed.');
+      if (fields.revenueDone in bySlug) types.revenueDone = bySlug[fields.revenueDone];   // v1.0.210
+      else run.warn('NEWSLETTER has no field "' + fields.revenueDone + '" (Revenue Done), so the Revenue tab\'s Done ticks cannot be saved.');
       // v1.0.32 — the status option ids, by label.
       const opts = optionMaps(sch)[P.status] || {};
       const want = Object.assign({}, PUB_STATUS_LABELS, run.cfg.publishStatusLabels || {});
@@ -6153,6 +6218,7 @@ async function splashBoardOf(run, planId, ads, taId, plan) {
       const P = JOIN.publish, vals = {};                                      // v1.0.29
       PUB_KEYS.forEach(k => { const v = f[P[k]]; vals[k] = (v == null || v === '') ? null : (typeof v === 'object' ? (v.url || null) : String(v)); });
       vals.clonePending = String(f[cloneCfg(run.cfg).nlPendingField] || '').split(',').map(t => t.trim()).filter(Boolean);   // v1.0.132
+      vals.revenueDone = String(f[revenueDoneField(run.cfg)] || '').split(',').map(t => t.trim()).filter(Boolean);   // v1.0.210
       return { id: n.id, name: String(f.name || ''), current,
                source: current.image ? 'paid' : (house ? 'house' : 'none'),
                _pub: { slug: String(n.slug || f.slug || '') || null, values: vals } };
@@ -6993,6 +7059,9 @@ const CLONE_DEFAULTS = {
   requireCompiled: true,                     // v1.0.134, HC-W-134-1: clone or edition only from a compiled issue
   fromFirstEdition: true,                    // v1.0.135, HC-W-135-1: clone or edition only from the issue's first edition
 };
+// v1.0.210 · the NEWSLETTER field that holds the Revenue tab's Done ticks (HC-P-PP12-1)
+const REVENUE_DONE_FIELD = 'revenue-done';
+function revenueDoneField(cfg) { const v = cfg && cfg.revenueDoneField; return (typeof v === 'string' && /^[a-z0-9-]+$/.test(v)) ? v : REVENUE_DONE_FIELD; }
 function cloneCfg(cfg) {
   const c = (cfg && cfg.clone && typeof cfg.clone === 'object') ? cfg.clone : {};
   return {
@@ -7727,8 +7796,8 @@ function itemsOf(CX, assetType, ids) {
       o.venue = venue.replace(/^[,\s\u00b7]+/, '') || null;
       o.teaser = firstWords(f['event-description'], 24);
       o.hasLink = !!String(f['event-link'] || '').trim(); }
-    if (assetType === 're') { o.photo = !!String(f[JOIN.re.photo] || '').trim(); o.mediaId = refId(f[JOIN.reMedia]) || null;   // mediaId v1.0.34
-      o.thumb = ucSized(f['property-image-link'], ASM.uc.card) || null;                                           // thumb v1.0.45; v1.0.192 sized
+    if (assetType === 're') { o.photo = !!rePhotoOf(f); o.mediaId = refId(f[JOIN.reMedia]) || null;   // mediaId v1.0.34
+      o.thumb = ucSized(rePhotoOf(f), ASM.uc.card) || null;                                                       // thumb v1.0.45; v1.0.192 sized
       o.priceHidden = f['hide-price'] === true;                                                                   // v1.0.46
       o.price = (!o.priceHidden && num0(f['property-price']) > 0) ? '$' + fmtNumber0(f['property-price']) : null;
       o.beds = String(f.bedrooms == null ? '' : f.bedrooms).trim() || null;
@@ -10586,6 +10655,27 @@ class Run {
     }
     return this.getItem(label, collId, id);
   }
+  // v1.0.208 · one home row by its id or its Webflow id, from D1 first whatever the read switch says; null if neither has it.
+  async homeById(table, label, collId, id) {
+    if (this.env.IX_DB && ['nl_blocks', 'allocations'].includes(table) && /^[0-9a-f]{24}$/.test(id || '')) {
+      try {
+        const r = await this.env.IX_DB.prepare('SELECT * FROM ' + table + ' WHERE id=? OR wf_id=? LIMIT 1').bind(id, id).first();
+        if (r) { this.from(label, 'd1'); return this.homeItem(r); }
+      } catch (e) { this.d1Err(e); }
+    }
+    try { return await this.getItem(label, collId, id); } catch (e) { return null; }
+  }
+  // v1.0.208 · every row of a home table from D1, whatever the read switch says; null when the table is empty or unreachable.
+  async homeAllRows(table, label) {
+    if (!this.env.IX_DB || !['nl_blocks', 'allocations'].includes(table)) return null;
+    try {
+      const r = await this.env.IX_DB.prepare('SELECT * FROM ' + table).all();
+      const rows = r.results || [];
+      if (!rows.length) return null;
+      this.from(label, 'd1');
+      return rows.map(x => this.homeItem(x));
+    } catch (e) { this.d1Err(e); return null; }
+  }
   async d1Home(table, taId) {                                                   // nl_blocks or allocations; v1.0.184: one title
     if (!(this.d1on || this.siteD1 || this.assembleHome) || !['nl_blocks', 'allocations'].includes(table)) return null;   // siteD1 v1.0.195; assembleHome v1.0.198
     try {
@@ -10756,6 +10846,7 @@ function ucBase(v) {
 }
 // v1.0.202 — the event's picture. v1.0.205: img-main only (JOIN.event.photo); the old fields are not read.
 function evPhotoOf(f) { return t((f || {})[JOIN.event.photo]).trim(); }
+function rePhotoOf(f) { return t((f || {})[JOIN.re.photo]).trim(); }   // v1.0.207 img-main only
 function ucSized(v, recipe) { const b = ucBase(v); return b ? b + (recipe || '') : t(v).trim(); }
 // v1.0.192 — the clean link (host and photo ID) with no recipe; a link that is not Uploadcare comes back as stored.
 function ucClean(v) { return ucBase(v) || t(v).trim(); }
@@ -11184,8 +11275,8 @@ function assemble(run, data, F) {
         beds: q(lf.bedrooms), baths: q(lf.bathrooms), sqft: q(lf['sq-ft']),
         description: q(noComments(lf['property-description'])).replace(/\n/g, ' '),   // v1.0.62 (D5): comments out
         agent: q(gp(l, 'agent.fieldData.name')), brokerage: q(lf.brokerage),
-        photo: ucSized(lf[JOIN.re.photo], ASM.uc.re),             // v1.0.192 from the photo ID (was: file name dropped only)
-        photoLead: ucSized(lf[JOIN.re.photo], ASM.uc.reLead),     // v1.0.82; v1.0.192 from the photo ID
+        photo: ucSized(rePhotoOf(lf), ASM.uc.re),                  // v1.0.192 from the photo ID (was: file name dropped only)
+        photoLead: ucSized(rePhotoOf(lf), ASM.uc.reLead),          // v1.0.82; v1.0.192 from the photo ID
         x_lead: reI === 0 ? 1 : 0,                                                                                    // v1.0.82
         link: (u => q(len(u) > 0 ? tagLink(u, '&utm_content=' + ASM.utm.re + t(pos)) : ''))(t(lf['listing-link']) || t(reDefaultLink(lf.name, run))),   // v1.0.80 Zillow when empty; v1.0.187 tagged
       };
@@ -11299,7 +11390,7 @@ function assemble(run, data, F) {
       f_franchiseLink: frLink,                                                                      // v1.0.131
       f_franchiseLinkEmail: frLink ? frLink + utmAmp + '&utm_content=' + ASM.utm.fr + t(pos) : '',  // v1.0.131
       f_reAddress: q(re.name),
-      f_rePhoto: ucSized(re[JOIN.re.photo], ASM.uc.re),   // v1.0.192 from the photo ID (was: file name dropped only)
+      f_rePhoto: ucSized(rePhotoOf(re), ASM.uc.re),        // v1.0.192 from the photo ID (was: file name dropped only)
       f_reLink: q(len(re['listing-link']) > 0 ? tagLink(re['listing-link'], '&utm_content=' + ASM.utm.re + t(pos)) : ''),   // v1.0.187 fix 5
       f_rePrice: re['hide-price'] === true ? '' : (num0(re['property-price']) > 0 ? '$' + fmtNumber0(re['property-price']) : ''),
       f_reBeds: q(re.bedrooms),
@@ -11314,7 +11405,7 @@ function assemble(run, data, F) {
       x_showPhotoCredit: afd['show-photo-credits'] === true ? 1 : 0,
       x_hasCoAuthor: len(afd['co-writername']) > 0 ? 1 : 0,
       x_isEC: EC_RULE(afd, au),   // F-5 fixed (v1.0.40)
-      x_hasREPhoto: len(re[JOIN.re.photo]) > 0 ? 1 : 0,
+      x_hasREPhoto: rePhotoOf(re) ? 1 : 0,
       x_hasAgent: len(ag.name) > 0 ? 1 : 0,
       x_hasFranchise: len(frName) > 0 ? 1 : 0,
       f_paidAd: d.paidAdImage,
@@ -12449,7 +12540,9 @@ async function pageFrameBackfill(run, asOf) {
     return { draft, liveBy: new Map(live.map(i => [i.id, i])) };
   };
   const [NL, plans, blocks, AR] = await Promise.all([
-    both(C.newsletter), run.listAll(C.plan), run.listAll(C.blocks), both(C.articles)]);
+    both(C.newsletter), run.listAll(C.plan),
+    run.homeAllRows('nl_blocks', 'NL-BLOCKS').then(r => r || run.listAll(C.blocks)),   // v1.0.208: D1 home table first
+    both(C.articles)]);
   const dayOf = t => new Date(t + 5 * 3600 * 1000).toISOString().slice(0, 10);   // HC-P-PF2-5, as 108 reads it
   const cutoff = asOf || dayOf(Date.now() - 5 * 3600 * 1000);   // today, on 108's clock
   const nls = NL.draft.filter(n => !n.isArchived).map(n => {
@@ -12777,7 +12870,9 @@ async function refuseHolds(run, C, blocks) {
   });
   if (!notes.length && !reserved.length) return;
   let titles = new Map();
-  if (reservedIds.length && /^[0-9a-f]{24}$/.test(C.allocations || '')) titles = await run.getMany('ALLOCATIONS', C.allocations, reservedIds);
+  if (reservedIds.length && /^[0-9a-f]{24}$/.test(C.allocations || '')) {           // v1.0.208: D1 first (the id may be D1's own)
+    for (const id of reservedIds) { if (!titles.has(id)) { const a = await run.homeById('allocations', 'ALLOCATIONS', C.allocations, id); if (a) titles.set(id, a); } }
+  }
   const lines = notes.concat(reserved.map(r => {
     const a = titles.get(r.id), fd = (a && a.fieldData) || {};
     const t = String(fd[JOIN.alloc.printTitle] || fd.name || '').trim() || 'A print item';

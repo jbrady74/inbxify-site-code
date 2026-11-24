@@ -5,41 +5,12 @@
 // 108 (S5) call it too. Scoping: Sales-Records-Obligations-Scoping-v0_7.md.
 // Since v1.3.0 also the portal's Ads tab and the advertiser review page.
 //
-// v1.3.14 (23 Nov 2026, Publisher Portal S11 · Build 2) — OBLIGATIONS DRIVE THE REVENUE TAB.
-//   Rulings (Jeff, 23 Nov): one engine for every sale. A sale is a number of sends; each issue that carries the
-//   customer uses one send owed that month; once the month's sends are used, a further run is an extra and counts
-//   nothing. A franchise sponsor is counted the same way. How long a sponsor shows on the website is a separate
-//   choice on the sale: "On the website" = Whole run (default; blank means Whole run) or Weeks in an issue.
-//   · SALES RECORDS gains the Option field on-the-website (Whole run, Weeks in an issue). POST /sales and
-//     PATCH /sales/<id> take onWebsite (a franchise sponsor only; 400 on any other product). It is written only
-//     when sent, so a Worker deployed before the field exists still saves every other sale. /sales answers
-//     onWebsite on sponsor records (blank → Whole run).
-//   · GET /sponsors takes an optional month=YYYY-MM (default this month). It (ix-issue-data's call) leaves out "Weeks in an issue" sponsors, so the site falls back to the sponsor
-//     on the franchise's story in the current issue: the weeks they run. ?all=1 gives every live sponsor, each
-//     with web: "Whole run" | "Weeks in an issue". Each entry also carries endsSoon (see renewal below).
-//   · NEW GET /revenue?title=<TITLES-ADMIN id>&edition=<NEWSLETTER id> (login). One read for the IPP Revenue tab:
-//       month        the issue's month (its PUBLICATION PLAN publication-date; today's month without an edition)
-//       plan         { id, name, date }; laterIssues [{ id, name, date }] the title's other plans later that month;
-//       lastInMonth  true when no later plan of the title falls in the month (Compile's stop)
-//       obligations  every send for the title due that month (pool sends the title may carry included), and any
-//                    send assigned to this edition, not cancelled: { id, name, salesId, sales, customerId,
-//                    customer, shape, franchiseId, franchise, week, dueMonth, status, editionId, edition, here,
-//                    adId, makeGoodOf, pool }. here = assigned to this edition.
-//       sponsors     every live Franchise Sponsor sale on the title this month (as /sponsors?all=1)
-//       renewSends   the red-expiry threshold in use
-//   · NEW POST /obligations/place { edition, title, assign:[{ id, ad? }], unassign:[id] } (login). The Revenue
-//     tab's Save. Each item goes through the same assign rules as /obligations/<id>/assign, with the edition, and
-//     is answered on its own: results [{ id, ok, status, error, unconfirmed }]. A send already assigned to another
-//     edition is refused (409) and not moved. Unassign only takes sends assigned to this edition.
-//   · /obligations/<id>/assign refuses a send already assigned to another edition (was silently moved).
-//   · Renewal: a sponsor sale with remaining sends at or under IX_CONFIG.sponsorRenewalSends (default 2) is
-//     endsSoon, the IPP and TA Studio show its end month in red.
-//   Built on v1.3.13 (Ad Maker Build S3). Nothing else changes.
-//   HARDCODING (provisional): HC-P-PP11-1 the option labels "Whole run" and "Weeks in an issue" (WEB), read by
-//   label from the schema as every option is. HC-P-PP11-2 the renewal default of 2 sends when
-//   IX_CONFIG.sponsorRenewalSends is not set. HC-P-PP11-3 "the month's later issues" are the title's PUBLICATION
-//   PLAN rows with a later publication-date in the same month (the same source as HC-S-6).
-//
+// v1.3.14 (24 Nov 2026, Ad Maker Build S3) — A STOPPED APPROVAL LINK SAYS SO.
+//   Found by Jeff (24 Nov, Test 6): after an ad was deleted, the old approval email's link still opened the page
+//   with its three choices, as if it could be answered. (The answer itself was already refused.)
+//   · GET /review/<token> for an approval link answers { kind:'approval', closed:true, publisher, sentBy } and no
+//     items when the row is Withdrawn, or when none of its ads exists any more. ps-review v1.0.5 shows one card.
+//   · An approval link whose ads are partly gone lists only the ads that still exist.
 // v1.3.13 (23 Nov 2026, Ad Maker Build S3) — DELETE ALSO REMOVES THE PICTURE FILE FROM UPLOADCARE.
 //   Ruling (Jeff, 23 Nov): yes, store the Uploadcare secret key on ix-sales so Delete removes the file too.
 //   · New secret UPLOADCARE_SECRET_KEY (with the existing UPLOADCARE_PUB_KEY). Without it Delete works as in
@@ -403,8 +374,7 @@ const JOIN = {
   sales: { publisher: 'publisher', customer: 'customer', product: 'product', franchise: 'franchise',
            titles: 'titles-sold', status: 'status', type: 'type', placement: 'placement', frequency: 'frequency',
            week: 'week', startMonth: 'start-month', windowEnd: 'window-end', sends: 'sends',
-           splitCounts: 'split-counts', months: 'run-months', enteredBy: 'entered-by', self: 'self-this-item-id',
-           web: 'on-the-website' },                                    // v1.3.14
+           splitCounts: 'split-counts', months: 'run-months', enteredBy: 'entered-by', self: 'self-this-item-id' },
   ob: { publisher: 'publisher', customer: 'customer', sales: 'sales-record', title: 'title-admin',
         edition: 'edition', ad: 'ad', article: 'article', type: 'type', status: 'status', shape: 'slot-shape',
         productId: 'product-id', dueMonth: 'due-month', dueBy: 'due-by', week: 'week', audience: 'audience',
@@ -426,8 +396,6 @@ const PLACEMENT = { single: 'Single', mirrored: 'Mirrored', split: 'Split', pool
 const FREQ = { monthly: 'Monthly', everyEdition: 'Every edition', everyOther: 'Every other month', quarterly: 'Quarterly',
                specific: 'Specific months', window: 'Window', once: 'One time' };
 const TYPES = ['Paid', 'Comp'];
-const WEB = { run: 'Whole run', issue: 'Weeks in an issue' };            // v1.3.14 · HC-P-PP11-1
-const RENEW_DEFAULT = 2;                                                // v1.3.14 · HC-P-PP11-2
 // v1.2.0 · the order the form shows the frequencies in (scoping §5A, T1 to T7)
 const FREQ_ORDER = [FREQ.everyEdition, FREQ.monthly, FREQ.everyOther, FREQ.quarterly, FREQ.specific, FREQ.window, FREQ.once];
 
@@ -467,8 +435,6 @@ export default {
       if (id[1] === 'sales' && !id[3] && m === 'PATCH') return run.out(await editSale(run, id[2], await run.body()), 200);
       if (id[1] === 'sales' && id[3] === 'cancel' && m === 'POST') return run.out(await cancelSale(run, id[2]), 200);
       if (p === '/obligations' && m === 'GET') return run.out(await listObligations(run, url), 200);
-      if (p === '/revenue' && m === 'GET') return run.out(await revenue(run, url), 200);                   // v1.3.14
-      if (p === '/obligations/place' && m === 'POST') return run.out(await place(run, await run.body()), 200);   // v1.3.14
       if (p === '/obligations' && m === 'POST') return run.out({ ok: false, error: 'One-off obligations are gone. Create a one-time sales record instead: POST /sales with frequency One time and sends 1.' }, 405);
       if (id[1] === 'obligations' && id[3] === 'make-good' && m === 'POST') return run.out(await makeGood(run, id[2], await run.body()), 200);
       if (id[1] === 'obligations' && id[3] === 'assign' && m === 'POST') return run.out(await assign(run, id[2], await run.body(), true), 200);
@@ -625,7 +591,6 @@ class Run {
     return new Map((((f || {}).validations || {}).options || []).map(o => [o.id, o.name]));
   }
   async optLabels(collId, slug) { return [...(await this.optMap(collId, slug)).values()]; }
-  async hasOption(collId, slug) { const s = await this.schema(collId); return ((s && s.fields) || []).some(x => x.slug === slug && x.type === 'Option'); }   // v1.3.14
   // ── writes, TOAST-TRUTH ──
   async create(collId, fieldData) {
     const r = await this.wf('/collections/' + collId + '/items', { method: 'POST', body: { isArchived: false, isDraft: false, fieldData } });
@@ -750,8 +715,7 @@ async function saleShape(run, s, custBy, prodBy, taById) {
     status: await run.optLabel(C.sales, S.status, f[S.status]), type: await run.optLabel(C.sales, S.type, f[S.type]),
     placement: await run.optLabel(C.sales, S.placement, f[S.placement]), frequency: await run.optLabel(C.sales, S.frequency, f[S.frequency]),
     week: await run.optLabel(C.sales, S.week, f[S.week]), startMonth: String(f[S.startMonth] || ''), windowEnd: f[S.windowEnd] || null,
-    months: parseMonths(f[S.months]), sendsBought: Number(f[S.sends]) || 0, splitCounts: parseSplit(f[S.splitCounts]), enteredBy: String(f[S.enteredBy] || ''),
-    onWebsite: refId(f[S.franchise]) ? ((await run.optLabel(C.sales, S.web, f[S.web])) || WEB.run) : null };   // v1.3.14
+    months: parseMonths(f[S.months]), sendsBought: Number(f[S.sends]) || 0, splitCounts: parseSplit(f[S.splitCounts]), enteredBy: String(f[S.enteredBy] || '') };
 }
 function parseSplit(v) { if (!v) return null; try { const o = JSON.parse(v); return o && typeof o === 'object' ? o : null; } catch (e) { return null; } }
 // Specific months entries: "YYYY-MM" or "YYYY-MM W1".."W4". A month may repeat
@@ -831,16 +795,7 @@ async function validateSale(run, b, sc, cur) {
     if (!fr) err('franchise is not a PRODUCT LIBRARY row.');
     if (!refIds(fd(fr)[JOIN.product.titles]).includes(titles[0])) err('"' + fd(fr).name + '" does not run on that title (PRODUCT LIBRARY titles).');
   }
-  // v1.3.14 · On the website: a franchise sponsor only; blank means Whole run
-  let web = null;
-  if (b.onWebsite != null && b.onWebsite !== '') {
-    if (shape !== SPONSOR_SHAPE) err('On the website is a choice for a franchise sponsor only.');
-    web = Object.values(WEB).find(x => keyOf(x) === keyOf(b.onWebsite));
-    if (!web) err('onWebsite must be "' + WEB.run + '" or "' + WEB.issue + '".');
-    if (!(await run.hasOption(C.sales, S.web))) throw httpErr(500, 'SALES RECORDS has no Option field "' + S.web + '" (On the website) yet. Add it in Webflow.');
-    if (!(await run.optLabels(C.sales, S.web)).some(l => keyOf(l) === keyOf(web))) throw httpErr(500, 'SALES RECORDS On the website has no "' + web + '" option.');
-  }
-  return { titles, sends, placement, frequency, type: typeLabel, months, startMonth, split, shape, prod, web };
+  return { titles, sends, placement, frequency, type: typeLabel, months, startMonth, split, shape, prod };
 }
 async function nextSrName(run) {
   const sales = await run.listAll(run.cfg.collections.sales);
@@ -865,7 +820,6 @@ async function createSale(run, b) {
   if (v.frequency === FREQ.window) fields[S.windowEnd] = b.windowEnd + 'T00:00:00.000Z';
   if (v.frequency === FREQ.specific) fields[S.months] = v.months.join(',');
   if (v.split) fields[S.splitCounts] = JSON.stringify(v.split);
-  if (v.web) fields[S.web] = await run.optId(C.sales, S.web, v.web);   // v1.3.14
   const w = await run.create(C.sales, fields);
   const gen = await generate(run, w.id, name, Object.assign({}, b, v, { publisher: sc.publisherId }), [], 0);
   return { ok: true, id: w.id, name, unconfirmed: w.unconfirmed, obligations: gen };
@@ -903,7 +857,6 @@ async function editSale(run, id, b) {
     [S.months]: v.frequency === FREQ.specific ? v.months.join(',') : '',
     [S.windowEnd]: v.frequency === FREQ.window ? merged.windowEnd + 'T00:00:00.000Z' : null,
   };
-  if (v.web) fields[S.web] = await run.optId(C.sales, S.web, v.web);   // v1.3.14: only when sent
   const w = await run.patch(C.sales, id, fields);
   // Open schedule sends go (SR-10). Make goods stay: they are owed for a miss, not part of the schedule.
   const cancelledId = await run.optId(C.obligations, O.status, STATUS.cancelled);
@@ -1033,8 +986,8 @@ function monthWords(v) {                                                 // "202
 // Every Franchise Sponsor sales record that is not archived, with its run.
 async function sponsorRecords(run) {
   const C = run.cfg.collections, S = JOIN.sales, O = JOIN.ob;
-  const [sales, obs, prods, srStatus, shapeOf, obStatus, webOf] = await Promise.all([run.listAll(C.sales), run.listAll(C.obligations), run.listAll(C.franchises),
-    run.optMap(C.sales, S.status), run.optMap(C.franchises, JOIN.product.shape), run.optMap(C.obligations, O.status), run.optMap(C.sales, S.web)]);
+  const [sales, obs, prods, srStatus, shapeOf, obStatus] = await Promise.all([run.listAll(C.sales), run.listAll(C.obligations), run.listAll(C.franchises),
+    run.optMap(C.sales, S.status), run.optMap(C.franchises, JOIN.product.shape), run.optMap(C.obligations, O.status)]);
   const prodBy = index(prods);
   const obsBySale = new Map();
   obs.forEach(o => { if (o.isArchived) return; const s = refId(fd(o)[O.sales]); if (!s) return; if (!obsBySale.has(s)) obsBySale.set(s, []); obsBySale.get(s).push(o); });
@@ -1050,7 +1003,7 @@ async function sponsorRecords(run) {
     const months = live.map(o => String(fd(o)[O.dueMonth] || '')).filter(Boolean).sort();
     const fr = prodBy.get(franchiseId);
     rows.push({ id: s.id, name: String(f.name || ''), titles: refIds(f[S.titles]), franchiseId, franchise: fr ? String(fd(fr).name || '') : null,
-      customerId, ended: srStatus.get(f[S.status]) === SR_STATUS.ended, web: webOf.get(f[S.web]) || WEB.run,   // v1.3.14
+      customerId, ended: srStatus.get(f[S.status]) === SR_STATUS.ended,
       runFrom: months[0] || String(f[S.startMonth] || '') || null,
       runTo: f[S.windowEnd] ? ym(f[S.windowEnd]) : (months[months.length - 1] || String(f[S.startMonth] || '') || null), obs: mine });
   });
@@ -1061,12 +1014,10 @@ async function liveSponsors(run, url) {
   const C = run.cfg.collections, O = JOIN.ob;
   const titleId = (url.searchParams.get('title') || '').trim();
   if (!/^[0-9a-f]{24}$/.test(titleId)) throw httpErr(400, 'Missing or malformed title (the TITLES-ADMIN item id).');
-  const mq = (url.searchParams.get('month') || '').trim();                // v1.3.14: the issue's month (the Revenue tab)
-  const nowYm = /^\d{4}-(0[1-9]|1[0-2])$/.test(mq) ? mq : ym(new Date().toISOString()), limit = sponsorLimit(run);       // HC-P-PP10-3
+  const nowYm = ym(new Date().toISOString()), limit = sponsorLimit(run);       // HC-P-PP10-3
   const [{ rows, obStatus }, custs] = await Promise.all([sponsorRecords(run), run.listAll(C.customers)]);
   const custBy = index(custs);
-  const all = url.searchParams.get('all') === '1';                     // v1.3.14: the site leaves out Weeks in an issue
-  const live = rows.filter(r => !r.ended && r.titles.includes(titleId) && r.runFrom && r.runTo && r.runFrom <= nowYm && nowYm <= r.runTo && (all || r.web !== WEB.issue))
+  const live = rows.filter(r => !r.ended && r.titles.includes(titleId) && r.runFrom && r.runTo && r.runFrom <= nowYm && nowYm <= r.runTo)
     .sort((a, b) => String(a.runFrom).localeCompare(String(b.runFrom)) || a.name.localeCompare(b.name));
   const shape = r => {
     const b = boardOf(r.obs, obStatus), mgOf = liveMakeGoods(r.obs, obStatus);
@@ -1075,7 +1026,6 @@ async function liveSponsors(run, url) {
     const cust = custBy.get(r.customerId);
     return { franchiseId: r.franchiseId, franchise: r.franchise, customerId: r.customerId, customer: cust ? String(fd(cust).name || '') : null,
       salesId: r.id, sales: r.name, runFrom: r.runFrom, runTo: r.runTo, qty: b.qty, remaining: b.remaining,
-      web: r.web, endsSoon: b.remaining <= renewSends(run),               // v1.3.14
       thisMonth: due ? { state: stateOf(due, obStatus, mgOf, nowYm), obligationId: due.id, name: String(fd(due).name || '') } : null };
   };
   const sponsors = [], waiting = [], problems = [], count = new Map();
@@ -1191,8 +1141,6 @@ async function assign(run, id, b, on) {
   const pool = !!s && (await run.optLabel(C.sales, S.placement, fd(s)[S.placement])) === PLACEMENT.pool;
   if (on) {
     if (f[O.status] !== openId && f[O.status] !== asgId) throw httpErr(409, 'Only an Open obligation can be assigned.');
-    if (f[O.status] === asgId && b.edition && refId(f[O.edition]) && refId(f[O.edition]) !== b.edition)   // v1.3.14
-      throw httpErr(409, String(f.name || id) + ' is already placed in another issue. Take it out there first.');
     const own = refId(f[O.title]);
     if (!pool && own && b.title && b.title !== own) throw httpErr(409, 'This send was sold for one title and cannot move to another. Edit the sales record to change titles.');
     const title = pool ? (b.title || own) : (own || b.title);
@@ -1208,85 +1156,6 @@ async function assign(run, id, b, on) {
   if (pool) fields[O.title] = null;                                    // a pool send loses its title again; a directed one keeps it
   const w = await run.patch(C.obligations, id, fields);
   return { ok: true, id, status: STATUS.open, pool, unconfirmed: w.unconfirmed };
-}
-
-// ── v1.3.14 · the Revenue tab ────────────────────────────────
-function renewSends(run) { const n = Number(run.cfg.sponsorRenewalSends); return Number.isInteger(n) && n >= 0 ? n : RENEW_DEFAULT; }
-// GET /revenue?title=&edition=  · login
-async function revenue(run, url) {
-  const C = run.cfg.collections, O = JOIN.ob, S = JOIN.sales;
-  const titleId = (url.searchParams.get('title') || '').trim(), edition = (url.searchParams.get('edition') || '').trim();
-  if (!/^[0-9a-f]{24}$/.test(titleId)) throw httpErr(400, 'Missing or malformed title (the TITLES-ADMIN item id).');
-  if (edition && !/^[0-9a-f]{24}$/.test(edition)) throw httpErr(400, 'Malformed edition (the NEWSLETTER item id).');
-  const ta = await run.getItem(C.titles, titleId); if (!ta) throw httpErr(404, 'TITLES-ADMIN row not found.');
-  const sc = await scope(run, refId(fd(ta)[JOIN.ta.publisher]));
-  // the issue's month and the month's other issues (HC-P-PP11-3)
-  let plan = null;
-  if (edition) {
-    const nl = await run.getItem(C.newsletters, edition); if (!nl) throw httpErr(404, 'NEWSLETTER not found.');
-    const pl = await run.getItem(C.plans, refId(fd(nl)[JOIN.nl.plan]));
-    if (pl && fd(pl)[JOIN.plan.date]) plan = { id: pl.id, name: String(fd(pl).name || ''), date: dayOf(fd(pl)[JOIN.plan.date]) };
-    else run.warn('The NEWSLETTER has no PUBLICATION PLAN with a publication-date, so this month is used.');
-  }
-  const month = plan ? plan.date.slice(0, 7) : ym(new Date().toISOString());
-  const [plans, obs, sales, custs, nls, prods] = await Promise.all([run.listAll(C.plans), run.listAll(C.obligations), run.listAll(C.sales),
-    run.listAll(C.customers), run.listAll(C.newsletters), run.listAll(C.franchises)]);
-  const laterIssues = plan ? plans.filter(p => !p.isArchived && p.id !== plan.id && refId(fd(p)[JOIN.plan.ta]) === titleId &&
-      ym(fd(p)[JOIN.plan.date]) === month && dayOf(fd(p)[JOIN.plan.date]) > plan.date)
-    .map(p => ({ id: p.id, name: String(fd(p).name || ''), date: dayOf(fd(p)[JOIN.plan.date]) })).sort((a, b) => a.date.localeCompare(b.date)) : [];
-  const custBy = index(custs), nlBy = index(nls), saleBy = index(sales), prodBy = index(prods);
-  const obStatus = await run.optMap(C.obligations, O.status);
-  const out = [];
-  for (const o of obs) {
-    const f = fd(o); if (o.isArchived || refId(f[O.publisher]) !== sc.publisherId) continue;
-    const status = obStatus.get(f[O.status]) || '';
-    if (status === STATUS.cancelled) continue;
-    const sale = saleBy.get(refId(f[O.sales])), sf = fd(sale);
-    const own = refId(f[O.title]);
-    const fits = own ? own === titleId : refIds(sf[S.titles]).includes(titleId);                 // a pool send: any title the sale names
-    const here = !!edition && refId(f[O.edition]) === edition;
-    const windowOpen = f[O.dueBy] && String(f[O.dueMonth] || '') <= month && dayOf(f[O.dueBy]) >= (plan ? plan.date : dayOf(iso()));
-    if (!here && !(fits && (String(f[O.dueMonth] || '') === month || (status === STATUS.open && windowOpen)))) continue;
-    const cust = custBy.get(refId(f[O.customer])), nl = nlBy.get(refId(f[O.edition])), fr = prodBy.get(refId(sf[S.franchise]));
-    out.push({ id: o.id, name: String(f.name || ''), salesId: sale ? sale.id : null, sales: sale ? String(sf.name || '') : null,
-      customerId: refId(f[O.customer]), customer: cust ? String(fd(cust).name || '') : null,
-      shape: await run.optLabel(C.obligations, O.shape, f[O.shape]), week: await run.optLabel(C.obligations, O.week, f[O.week]),
-      franchiseId: refId(sf[S.franchise]), franchise: fr ? String(fd(fr).name || '') : null,
-      dueMonth: String(f[O.dueMonth] || ''), dueBy: f[O.dueBy] ? dayOf(f[O.dueBy]) : null, status,
-      editionId: refId(f[O.edition]), edition: nl ? String(fd(nl).name || '') : null, here, adId: refId(f[O.ad]),
-      makeGoodOf: String(f[O.makeGoodOf] || '') || null, pool: !own });
-  }
-  out.sort((a, b) => a.dueMonth.localeCompare(b.dueMonth) || a.name.localeCompare(b.name));
-  const sp = await liveSponsors(run, new URL('https://x/sponsors?all=1&title=' + titleId + '&month=' + month));
-  return { ok: true, publisher: sc.publisherId, title: titleId, edition: edition || null, plan, month,
-    lastInMonth: !!plan && !laterIssues.length, laterIssues, renewSends: renewSends(run), obligations: out, sponsors: sp.sponsors, problems: sp.problems };
-}
-// POST /obligations/place { edition, title, assign:[{ id, ad? }], unassign:[id] } · login
-async function place(run, b) {
-  const C = run.cfg.collections, O = JOIN.ob;
-  if (!/^[0-9a-f]{24}$/.test(b.edition || '')) throw httpErr(400, 'edition (NEWSLETTER id) is required.');
-  if (!/^[0-9a-f]{24}$/.test(b.title || '')) throw httpErr(400, 'title (TITLES-ADMIN id) is required.');
-  const ta = await run.getItem(C.titles, b.title); if (!ta) throw httpErr(404, 'TITLES-ADMIN row not found.');
-  await scope(run, refId(fd(ta)[JOIN.ta.publisher]));
-  const results = [];
-  for (const id of (Array.isArray(b.unassign) ? b.unassign : [])) {
-    try {
-      if (!/^[0-9a-f]{24}$/.test(id || '')) throw httpErr(400, 'Malformed obligation id.');
-      const o = await run.getItem(C.obligations, id); if (!o) throw httpErr(404, 'Obligation not found.');
-      if (refId(fd(o)[O.edition]) !== b.edition) throw httpErr(409, String(fd(o).name || id) + ' is not placed in this issue.');
-      results.push(Object.assign({ id, op: 'unassign' }, await assign(run, id, {}, false)));
-    } catch (e) { results.push({ id, op: 'unassign', ok: false, error: (e && e.message) || String(e) }); }
-  }
-  for (const it of (Array.isArray(b.assign) ? b.assign : [])) {
-    const id = it && it.id;
-    try {
-      if (!/^[0-9a-f]{24}$/.test(id || '')) throw httpErr(400, 'Malformed obligation id.');
-      const body = { title: b.title, edition: b.edition }; if (/^[0-9a-f]{24}$/.test(it.ad || '')) body.ad = it.ad;
-      results.push(Object.assign({ id, op: 'assign' }, await assign(run, id, body, true)));
-    } catch (e) { results.push({ id, op: 'assign', ok: false, error: (e && e.message) || String(e) }); }
-  }
-  results.forEach(r => { if (r.ok && r.unconfirmed && r.unconfirmed.length) { r.ok = false; r.error = 'Webflow did not echo: ' + r.unconfirmed.join(', '); } });
-  return { ok: results.every(r => r.ok), edition: b.edition, results };
 }
 
 // ── fulfil (Scenario 108, on publish) ────────────────────────
@@ -2099,9 +1968,12 @@ async function approvalDraft(run, b) {                                // v1.3.10
 async function approvalGet(run, r, expired) {
   const pub = await publisherCard(run, r.publisher);
   if (expired) return { ok: true, kind: 'approval', expired: true, publisher: pub, linkDays: reviewCfg(run).linkDays, sentBy: /@/.test(r.sentBy) ? r.sentBy : '' };
+  const closedAnswer = { ok: true, kind: 'approval', closed: true, expired: false, publisher: pub, sentBy: /@/.test(r.sentBy) ? r.sentBy : '' };   // v1.3.14
+  if (r.status === RV_STATUS.withdrawn) return closedAnswer;
   const C = run.cfg.collections, cust = await run.getItem(C.customers, r.customer);
   const v = await issueData(run, '/customer-ads?archived=1&customer=' + r.customer);
   const rows = await Promise.all((r.data.items || []).map(it => run.getItem(C.ads, it.adId).catch(() => null)));   // the ADS rows themselves: a version saved a moment ago has its picture here
+  if (r.status !== RV_STATUS.done && rows.length && rows.every(x => !x || x.isArchived)) return closedAnswer;   // v1.3.14: every ad on the link was deleted
   const items = (r.data.items || []).map((it, i) => { const list = ((v.versions || {})[it.shape]) || [], row = list.find(x => x.id === it.adId), curId = refId(fd(cust || {})[(ADS_TAB.shapes[it.shape] || {}).pointer]) || (v.current || {})[it.shape] || null, cur = curId && curId !== it.adId ? list.find(x => x.id === curId) : null;
     return { adId: it.adId, shape: it.shape, label: (ADS_TAB.shapes[it.shape] || {}).label || it.shape, name: it.name || (row && row.name) || '', picture: adPicture(rows[i], it.shape) || (row ? row.picture : null),
       current: cur ? { name: cur.name || '', picture: cur.picture || null } : null, decision: it.decision || null, note: it.note || '', decidedAt: it.decidedAt || null }; });

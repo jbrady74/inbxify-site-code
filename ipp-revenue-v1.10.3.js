@@ -1,4 +1,8 @@
-/* ipp-revenue-v1.10.2.js */
+/* ipp-revenue-v1.10.3.js */
+/* v1.10.3 (24 Nov 2026, Publisher Portal S12 · Build 2): v1.10.2 with the Workers named right again. Main took ix-sales v1.3.14
+   (Ad Maker S3) and ix-issue-data v1.0.208 (Content Home S16) for other changes, so this set ships ix-sales v1.3.15 and
+   ix-issue-data v1.0.210. Only the version names change (the header, the ⓘ and the "cannot save the Done ticks" sentence).
+   v1.10.2 was never live. Everything below is v1.10.2 as written, with those names. */
 /* v1.10.2 (23 Nov 2026, Publisher Portal S12 · Build 2): v1.10.0 with the Data Worker named right. (The name v1.10.1 went to the
    branch once holding v1.10.0 unchanged, by a slip in the commit; it is retired, never live.) While this set was built, main's
    ix-issue-data v1.0.207 became the Image Links S3 cut, so the Done ticks and each section's franchise ship in ix-issue-data
@@ -14,7 +18,7 @@
        PP_WEBHOOKS.sales; without it the tab says so and works as v1.9.0 did.
    2 · SPONSORS PILL REBUILT (rulings 4 and 9). One row per franchise the title sells: franchises in this issue first (issue order),
        then "Not in this issue · information only". A franchise is matched to the issue through each section's franchise
-       (ix-issue-data v1.0.209 slots[].section.franchiseId). A sponsor with a send still owed this month comes ticked "Run this
+       (ix-issue-data v1.0.210 slots[].section.franchiseId). A sponsor with a send still owed this month comes ticked "Run this
        issue" (a waiting change Save writes, gold); untick to skip. A sponsor whose month's send is used comes unticked; tick to
        run as an extra. A franchise with no sale is free choice ("Pick a sponsor", then a customer on the shelf), as is a section
        with no franchise. A sale's end month is red when its remaining sends are at or under ix-sales renewSends (endsSoon).
@@ -26,7 +30,7 @@
        says "Counts toward SR-xxxx · Nov" or "Runs as an extra (no sale)".
    4 · ONE DONE TICK PER PILL (ruling 5): "Done with <pill>" in the foot bar, always shown. Any change on a pill clears that
        pill's tick (a saved tick, or one ticked before the change). On Sponsors, Done accepts the ticked rows. Written to the
-       NEWSLETTER field revenue-done (publish.fields.revenueDone, ix-issue-data v1.0.209) through Scenario 124 nlmeta after the
+       NEWSLETTER field revenue-done (publish.fields.revenueDone, ix-issue-data v1.0.210) through Scenario 124 nlmeta after the
        rest of the Save lands, and judged by the fresh read. A pill whose changes failed is written not done. The pill shows a
        green tick when done; the head says "N pills not done".
    5 · SAVE COUNTS THE SENDS (ruling 11). After the Save and the fresh read, the tab works out which send each placement uses
@@ -37,7 +41,7 @@
    6 · gate() gains pills [{key,label,done,state}], notDone [labels], doneField, and owed { state, month, monthWord, lastInMonth,
        later, items[{customer,what,why,sales,pool}], stop } for Compile (ipp-publish v2.84, rulings 6 and 10). readiness() gains
        done {pill: bool}. Done changes count as unsaved changes. IPPRevenue gains loadSales and owed.
-   Needs ix-sales v1.3.14 (/revenue, /obligations/place), ix-issue-data v1.0.209, the NEWSLETTERS field revenue-done, PP_WEBHOOKS.sales
+   Needs ix-sales v1.3.15 (/revenue, /obligations/place), ix-issue-data v1.0.210, the NEWSLETTERS field revenue-done, PP_WEBHOOKS.sales
    on the PUBLICATION PLAN Template head, ipp-revenue-v1.6.9.css, ipp-publish v2.84.
    HARDCODING (provisional): HC-P-RV110-1 the PP_WEBHOOKS key 'sales'; HC-P-RV110-2 the ix-sales slot-shape labels (banner, sidebar,
    splash, sponsor band, list block); HC-P-RV110-3 the words (Done with <pill>, Run this issue, Counts toward, Runs as an extra,
@@ -673,8 +677,8 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.10.2';
-  var FILE = 'ipp-revenue-v1.10.2.js';
+  var VERSION = '1.10.3';
+  var FILE = 'ipp-revenue-v1.10.3.js';
   var BATCH_URL_CEILING = 1800, BATCH_CHUNK = 15;   // HC-P-RV1-2
   var HOUSE = '__house', NONE = '__none';
 
@@ -1391,7 +1395,7 @@
       scenarios: [{ name: 'ix-content \u00b7 POST /nl-blocks/batch', note: 'one Save, one batch (v1.9.0): create (Add, house Add back, Add The Find, a slot Move to\u2026 makes on another plan), update (ad, sponsor, note, clone answer, The Find\u2019s list and theme in design-json, its design, Done picking and print item), delete (Delete slot, removing The Find); every row with its version; refused whole when a row changed since it was read, or when the issue is sent, released or held (PP_WEBHOOKS.content)' },
                   { name: '124 \u00b7 PubPlan Block Writer', note: 'the NEWSLETTER only, after the batch: splash (v2.18) for the Splash; nlmeta for the clone answers on Splash and Sponsors, and for the Done ticks (revenue-done, v1.10.0) (PP_WEBHOOKS.blockWriter)' },
                   { name: 'ix-sales \u00b7 POST /obligations/place', note: 'after Save and the fresh read (v1.10.0): each placed send Assigned to this issue, each send taken out back to Open; read: GET /revenue, GET /franchises (PP_WEBHOOKS.sales, staff login)' }],
-      companions: 'ipp-revenue-v1.6.9.css \u00b7 ix-sales v1.3.14 \u00b7 ix-issue-data v1.0.209 (section.franchiseId, publish.fields.revenueDone) \u00b7 ix-form-controls v1.2.0 (ix-confirm) \u00b7 ipp-shell v1.48 (header Keep all) \u00b7 ix-info v1.0.2 \u00b7 pathways: ix-issue-data v1.0.180 /plan-board (row versions, blockFields, adFields, customers[].current, slots with pending tokens, adPool, splash, house, publish.fields.clonePending) and /plans (Move to\u2026); ix-content v1.2.1 /nl-blocks/batch (writes, Webflow first, then D1); Scenario 124 (NEWSLETTER) \u00b7 ipp-publish (hold links open this view)'
+      companions: 'ipp-revenue-v1.6.9.css \u00b7 ix-sales v1.3.15 \u00b7 ix-issue-data v1.0.210 (section.franchiseId, publish.fields.revenueDone) \u00b7 ix-form-controls v1.2.0 (ix-confirm) \u00b7 ipp-shell v1.48 (header Keep all) \u00b7 ix-info v1.0.2 \u00b7 pathways: ix-issue-data v1.0.180 /plan-board (row versions, blockFields, adFields, customers[].current, slots with pending tokens, adPool, splash, house, publish.fields.clonePending) and /plans (Move to\u2026); ix-content v1.2.1 /nl-blocks/batch (writes, Webflow first, then D1); Scenario 124 (NEWSLETTER) \u00b7 ipp-publish (hold links open this view)'
     });
   }
 
@@ -2469,7 +2473,7 @@
     if (nlOps.length && !CPF) { toast('Can\u2019t save: the plan data does not name the clone-pending field (publish.fields.clonePending, Data Worker v1.0.133). Nothing was sent.', 'err'); return; }
     if (spItems.length && (!SF || !SF.image || !SF.go || !SF.name)) { toast('Can\u2019t save: the plan data does not name the splash fields (Data Worker v1.0.27). Nothing was sent.', 'err'); return; }
     if (dN && !pnl0) { toast('Can\u2019t save the Done ticks: this plan has no newsletter yet. Nothing was sent.', 'err'); return; }   // v1.10.0
-    if (dN && !doneFieldOk()) { toast('Can\u2019t save the Done ticks: NEWSLETTERS has no Revenue Done field (revenue-done), or the plan data does not name it (ix-issue-data v1.0.209 or later). Nothing was sent.', 'err'); return; }
+    if (dN && !doneFieldOk()) { toast('Can\u2019t save the Done ticks: NEWSLETTERS has no Revenue Done field (revenue-done), or the plan data does not name it (ix-issue-data v1.0.210 or later). Nothing was sent.', 'err'); return; }
     if (dN) names['done:' + pnl0] = 'Done ticks';
     if ((spItems.length || nlOps.length || dN) && !blockWriter()) { toast('Can\u2019t save: this page has no PP_WEBHOOKS.blockWriter address (Scenario 124), which writes the newsletter. Nothing was sent.', 'err'); return; }
     // v1.8.0 — The Find's writes, worked out before anything is sent (v1.9.0: fields of its row's update)

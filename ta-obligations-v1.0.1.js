@@ -1,7 +1,9 @@
-/* ta-obligations-v1.0.0.js
+/* ta-obligations-v1.0.1.js
    ════════════════════════════════════════════════════════════════
    INBXIFY · TA Studio · the Obligations tab (read-only)
 
+   v1.0.1 (24 Nov 2026, Publisher Portal S12 · Build 2) — v1.0.0 with ix-sales named right: main took v1.3.14 for Ad Maker S3,
+   so the reads below need ix-sales v1.3.15. Only that name changes (the header and the ⓘ). v1.0.0 was never live.
    v1.0.0 (23 Nov 2026, Publisher Portal S12 · Build 2) — FIRST BUILD, from the accepted canvas "Obligations in the Revenue tab ·
    Build 2 mockup v0.1" (frame 4, TA Studio Obligations tab, Portal look) and ruling 12 of 23 Nov (S11).
      · The title's sales records in one ix-table (v1.0.0): Customer, Product, Runs, Remaining ("7 of 12"), Status, chevron.
@@ -19,7 +21,7 @@
      GET /revenue?title=<TITLES-ADMIN id>       renewSends, the red threshold (absent: 2, as ix-sales)
      GET /obligations?publisher=<id>&sales=<id> a record's sends, when its row is first opened
    It computes no rule: Qty, Remaining, the board counts, each send's state come from ix-sales, as on the Portal.
-   NEEDS: ix-table v1.0.0 (+ CSS), ix-header v1.1.0 (titleRow, onRefresh), ix-info v1.0.2, ix-sales v1.3.14, TA_CONFIG
+   NEEDS: ix-table v1.0.0 (+ CSS), ix-header v1.1.0 (titleRow, onRefresh), ix-info v1.0.2, ix-sales v1.3.15, TA_CONFIG
    salesUrl, taItemId and the publisher (TA_CONFIG.publisherId, else #title-admin-id data-pub). Companion: ta-obligations-v1.0.0.css.
    HARDCODING (provisional): HC-P-TOB1-1 the tab name 'Obligations' the pane is found by; HC-P-TOB1-2 the words (W); HC-P-TOB1-3
    the Portal link /publisher/{slug}#obligations (TA_CONFIG.publisherRoute, as ta-chrome); HC-P-TOB1-4 the renewal default 2
@@ -28,7 +30,7 @@
 (function () {
   'use strict';
   if (window.TaObligations) return;
-  var VERSION = '1.0.0', FILE = 'ta-obligations-v' + VERSION + '.js';
+  var VERSION = '1.0.1', FILE = 'ta-obligations-v' + VERSION + '.js';
   var TAB = 'obligations';                                                  // HC-P-TOB1-1
   var MOUNT_ID = 'ta-ob-mount';
   var RENEW_DEFAULT = 2;                                                    // HC-P-TOB1-4
@@ -191,7 +193,7 @@
     return { file: FILE, version: VERSION, title: W.title,
       blurb: 'The sales records that name this newsletter, read-only. A send is one newsletter edition. Remaining counts the sends not yet run, a missed send with no make good included. ' +
         'A franchise sponsor turns red when its sends left are at or under the renewal line. Open a row to see every send. Edits, cancels and make goods are made in the Publisher Portal.',
-      scenarios: [], companions: 'ta-obligations-v1.0.0.css · ix-table v1.0.0 · ix-header v1.1.0 · pathways: ix-sales v1.3.14 GET /sales, /revenue (renewSends), /obligations' };
+      scenarios: [], companions: 'ta-obligations-v1.0.0.css · ix-table v1.0.0 · ix-header v1.1.0 · pathways: ix-sales v1.3.15 GET /sales, /revenue (renewSends), /obligations' };
   }
   function head() {
     var href = portalHref();

@@ -1,4 +1,4 @@
-/* ps-review-v1.0.4.css */
+/* ps-review-v1.0.5.css */
 /* ============================================================
    INBXIFY · the advertiser review page (/review?t=…)
    v1.0.0 (10 Nov 2026, Publisher Portal S8) — FIRST BUILD, from advertiser
@@ -148,3 +148,5 @@
 /* ════ v1.0.4 (22 Nov 2026) · every end message sits in the centre of the page, not in the left column ════ */
 .ps-rv-main>.ps-rv-end,.ps-rv-main>.ps-rv-loading{grid-column:1/-1;justify-self:center;width:100%;box-sizing:border-box}
 .ps-rv-main>.ps-rv-loading{text-align:center}
+
+/* ════ v1.0.5 (24 Nov 2026) · version only ════ */
