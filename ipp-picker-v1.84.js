@@ -1,4 +1,7 @@
-/* ipp-picker-v1.83.js */
+/* ipp-picker-v1.84.js */
+/* v1.84 (23 Nov 2026, Image Links S3): A LISTING'S THUMBNAIL IS img-main.
+   REAL ESTATE has one picture field, img-main (raw Uploadcare link), backfilled 23 Nov. On the Market's thumb reads
+   it alone; property-image-link (Photo URL) is no longer read. Nothing else changed. */
 /* v1.83 (23 Nov 2026, Legacy Sunset S3): THE ARTICLE THUMBNAIL NO LONGER FALLS BACK TO main-image.
    The Articles shelf thumb read main-image-ulc-link---1-1-ratio, then the native ARTICLES field main-image (LEGACY).
    Image Links S1 phase 1b moved every other reader off main-image; this was the one left. All 148 live articles
@@ -1167,8 +1170,8 @@
   'use strict';
   if (!window.IPP) { console.error('[ipp-picker] shell not loaded'); return; }
   var IPP = window.IPP;
-  var VERSION = '1.83';
-  var FILE = 'ipp-picker-v1.83.js';
+  var VERSION = '1.84';
+  var FILE = 'ipp-picker-v1.84.js';
 
   /* ════════════════════════════════════════════════════════════
      IPP.editState — CANONICAL EDIT-STATE CONTROLLER
@@ -1712,7 +1715,7 @@
       // v1.38, HC-P-STC-4: a listing is fresh when created or changed within LIST_FRESH_MONTHS of the publish date
       var mo = LIST_FRESH_MONTHS[assetType], ch = r.changed ? new Date(r.changed) : null;
       if (mo && ch && !isNaN(ch)) { var lim = freshFrom(); lim.setMonth(lim.getMonth() - mo); r.stale = ch.getTime() < lim.getTime(); }
-      r.thumb = String(f['property-image-link'] || '');   // v1.44: the listing photo
+      r.thumb = String(f['img-main'] || '');   // v1.44: the listing photo; v1.84 img-main
       if (/archiv/i.test(optLabel(src, 'status', f.status))) r.archived = true;
       var sch = optLabel(src, 'schedule-status', f['schedule-status']);
       if (sch && !/^scheduled$/i.test(sch)) r.flag = sch;

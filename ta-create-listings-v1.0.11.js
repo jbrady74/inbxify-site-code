@@ -1,7 +1,14 @@
-/* ta-create-listings-v1.0.10.js
+/* ta-create-listings-v1.0.11.js
    ============================================================
-   ta-create-listings-v1.0.10.js
+   ta-create-listings-v1.0.11.js
    INBXIFY TA Studio — CREATE LISTINGS FROM PRINT (RE build step C)
+
+   v1.0.11 (23 Nov 2026, Image Links S3) — A LISTING'S PHOTO IS img-main.
+     REAL ESTATE has one picture field, img-main (raw Uploadcare link),
+     backfilled 23 Nov. The match card's old photo and the after-save
+     photo check read img-main; property-image-link is no longer read.
+     The photo sent to Make was already clean (host + file id). Make 104
+     and G write img-main. Nothing else changed.
 
    v1.0.10 (1 Nov 2026, Allocator RE Events · 7) — MAKE'S ANSWERS IN
      PLAIN WORDS. Before, a title with no Data Store 83122 row got "did
@@ -206,7 +213,7 @@
    ============================================================ */
 (function () {
   'use strict';
-  var VERSION = '1.0.10';
+  var VERSION = '1.0.11';
   var FILE = 'ta-create-listings-v' + VERSION + '.js';
   var CUT_AT = 400;   // v1.0.4 — the asset list cuts plain text at 400 characters
   var TAG = '[ta-create-listings v' + VERSION + ']';
@@ -607,7 +614,7 @@
       '</div>' +
       '<div class="ixcl-cb">' +
         '<div class="ixcl-photo">' +
-          (c.crop ? '<img src="' + c.crop.show + '" alt="">' : m && m['property-image-link'] ? '<img class="is-old" src="' + esc(m['property-image-link']) + '" alt="" title="The photo this listing has now">' : '<span class="ixcl-nopic">No photo</span>') +
+          (c.crop ? '<img src="' + c.crop.show + '" alt="">' : m && m['img-main'] ? '<img class="is-old" src="' + esc(m['img-main']) + '" alt="" title="The photo this listing has now">' : '<span class="ixcl-nopic">No photo</span>') +
           (lock ? '' : '<button type="button" class="ix-btn ' + (c.crop ? 'ix-btn--ghost' : 'ix-btn--primary') + ' ixcl-drawbtn" data-cl-draw="' + c.key + '">' + (c.crop ? 'Draw again' : 'Draw its photo') + '</button>') +
           (c.crop && !lock ? '<button type="button" class="ix-revert" data-cl-nocrop="' + c.key + '">cancel photo</button>' : '') +
           '<label class="ixcl-tag' + (c.cur.showTag != null ? ' is-chg' : '') + '" title="Untick when the photo already shows the print\u2019s phase banner">' +   /* v1.0.3 */
@@ -899,14 +906,14 @@
           if ('propertyPrice' in s && Number(fd['property-price']) !== Number(s.propertyPrice)) miss.push('price');
           if ('listingPhase' in s && fd['listing-phase'] !== s.listingPhase) miss.push('phase');
           if ('propertyStatus' in s && String(fd['phase-note'] || '') !== String(s.propertyStatus)) miss.push('phase note');
-          if (c.crop && c.crop.url && String(fd['property-image-link'] || '').indexOf(c.crop.url.replace(/\/$/, '')) !== 0) miss.push('photo');
+          if (c.crop && c.crop.url && String(fd['img-main'] || '').indexOf(c.crop.url.replace(/\/$/, '')) !== 0) miss.push('photo');
           if ('hidePhaseTag' in s && isTrue(fd['hide-phase-tag']) !== s.hidePhaseTag) miss.push('phase tag');   // v1.0.3
           if ('hidePrice' in s && isTrue(fd['hide-price']) !== !!s.hidePrice) miss.push('hide price');   // v1.0.4
           if ('printIssueSource' in s && String(fd['print-issue-source'] || '').split(/\r?\n/)[0].trim() !== String(src().issueName || '').trim()) miss.push('print issue');   // v1.0.4
         } else {
           if (normAddr(fd.name) !== normAddr(c.cur.address)) miss.push('address');
           if (c.cur.phaseId && fd['listing-phase'] !== c.cur.phaseId) miss.push('phase');
-          if (c.crop && !fd['property-image-link']) miss.push('photo');
+          if (c.crop && !fd['img-main']) miss.push('photo');   // v1.0.11 img-main
           if (!showTag(c) && !isTrue(fd['hide-phase-tag'])) miss.push('phase tag');   // v1.0.3
           if (String(src().issueName || '').trim() && String(fd['print-issue-source'] || '').split(/\r?\n/)[0].trim() !== String(src().issueName || '').trim()) miss.push('print issue');   // v1.0.4
         }

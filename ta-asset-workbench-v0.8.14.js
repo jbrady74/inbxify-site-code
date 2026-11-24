@@ -1,11 +1,18 @@
-/* ta-asset-workbench-v0.8.13.js
+/* ta-asset-workbench-v0.8.14.js
    ============================================================
-   ta-asset-workbench-v0.8.13.js
+   ta-asset-workbench-v0.8.14.js
    INBXIFY TA Studio — Asset Workbench (detail/management surface)
    Companion stylesheet: ta-asset-workbench-v0.8.6.css  (UNCHANGED —
                          keep the existing head link)
    Shared stylesheet:    ix-internal-notes-v1_0_0.css
                          (self-loaded AND belongs in the Webflow head)
+
+   v0.8.14 (23 Nov 2026, Image Links S3) — A LISTING'S HERO IS img-main.
+   REAL ESTATE has one picture field, img-main (raw Uploadcare link),
+   backfilled 23 Nov. renderRealEstateStandalone() reads the MEDIA
+   reference first as before, then img-main alone. property-image-link
+   and hero-image-link (not on REAL ESTATE) are no longer read. CSS
+   unchanged (0.8.6). Nothing else changed.
 
    v0.8.13 (23 Nov 2026, Image Links S2) — AN EVENT'S HERO IS img-main.
    EVENTS has one picture field, img-main (raw Uploadcare link),
@@ -446,7 +453,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '0.8.13';
+  var VERSION = '0.8.14';
   // The companion stylesheet's own version. It moves only when the CSS
   // file is bumped (v0.8.11: it had been read off VERSION, a dead request).
   var CSS_VERSION = '0.8.6';
@@ -1021,9 +1028,9 @@
   // status row → agent footer → listing link.
   // Slugs PINNED from live Scenario 120 RE payload (2026-06-03).
   function renderRealEstateStandalone(a) {
-    // Hero: hero-image-media-item (ref) OR property-image-link (URL).
+    // Hero: hero-image-media-item (ref) OR img-main (URL; v0.8.14).
     // Both null on a fresh-scraped listing → falls to placeholder.
-    var heroSrc = resolveHeroSrc(a) || fld(a, ['property-image-link', 'hero-image-link']) || '';
+    var heroSrc = resolveHeroSrc(a) || fld(a, ['img-main']) || '';
     var price   = fld(a, ['property-price', 'asking-price']);
     var addr    = a.name || fld(a, ['address', 'name']) || '';
     // status (plain text) is the human label; listing-status is an option HASH.
