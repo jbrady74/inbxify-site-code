@@ -1,7 +1,18 @@
-// ix-ads-board-v1.0.12.js
+// ix-ads-board-v1.0.13.js
 // ============================================================
 // INBXIFY · ix-ads-board · the Ads board, shared by the Publisher Portal and the T-A Ads tab
 //
+// v1.0.13 (25 Nov 2026, Ad Maker Build S4) — TASK LIST AND ADVERTISERS ARE TWO VIEWS. JS and CSS v1.0.13.
+//   Ruling (Jeff, 25 Nov, by voice): the first Ads tab is a task list; the client list moves to its own tab, Advertisers.
+//   · O.view / API setView('tasks' | 'advs') picks the inbxify side's view (the host's two tabs share one board, one read).
+//   · tasks: four stages, Not started · In progress · With the publisher, waiting · From the publisher, to do. No
+//     Resolved stage, no B · S · Sp · T column. A task row opens that customer's cards right under it (click again to
+//     close); every path that opens a customer (Send for approval on a row, a decision) opens them under the
+//     customer's first task row.
+//   · advs: "Advertisers", with the line "Clients of this publisher with an ad, ad space sold or an ad request. Every
+//     client is on the Clients tab.", the search and the B · S · Sp · T column. Only those clients are listed.
+//   · The Portal side is unchanged.
+//   HARDCODING: HC-P-AMB1-2 gains W.ix.board.advs, advsNote; Resolved words dropped.
 // v1.0.12 (25 Nov 2026, Ad Maker Build S4) — THE COVERAGE MARKS SHOW ON THE T-A PAGE. JS only; CSS stays v1.0.11.
 //   Found 25 Nov (Test 4): on the T-A page the B · S · Sp · T column showed dashes and blanks only. The green "running"
 //   dot was painted white by title-admin-page-design's background wildcard (section.publisher-wrapper *, !important),
@@ -160,7 +171,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.12', CSS_VERSION = '1.0.11', FILE = 'ix-ads-board-v' + VERSION + '.js';
+  var VERSION = '1.0.13', CSS_VERSION = '1.0.13', FILE = 'ix-ads-board-v' + VERSION + '.js';
   var SH = ['banner', 'sidebar', 'splash', 'text'];                        // HC-P-PP8-8
   var SHN = { banner: 'Banner', sidebar: 'Sidebar', splash: 'Splash', text: 'Text ad' };
   var W = {                                                              // HC-P-PP8-7
@@ -235,9 +246,9 @@
                pub: 'Publisher:', adv: 'Advertiser:',
                back: 'New {shape} · sent back by the publisher', req: 'New {shape} · the publisher asked for it', gap: '{Shape} · sold, nothing running',
                needs: 'Approving the new {shape}', answered: 'Advertiser answered on the {shape}', advIn: 'Reviewing the new {shape}', unsent: 'New {shape} · not sent for approval',
-               stage: { 'new': 'Not started', wip: 'In progress', wait: 'With the publisher, waiting', todo: 'From the publisher, to do', done: 'Resolved' },   // v1.0.11
-               none: { 'new': 'Nothing waiting to be started.', wip: 'Nothing in progress.', wait: 'Nothing is out with the publisher or an advertiser.', todo: 'Nothing has come back from the publisher.', done: 'Nothing approved in the last {n} days.' },
-               doneSub: 'last {n} days', doneCur: '{Shape} approved \u00b7 running now', doneHold: '{Shape} approved \u00b7 on hold' },
+               stage: { 'new': 'Not started', wip: 'In progress', wait: 'With the publisher, waiting', todo: 'From the publisher, to do' },   // v1.0.11 (v1.0.13: no Resolved)
+               advs: 'Advertisers', advsNote: 'Clients of this publisher with an ad, ad space sold or an ad request. Every client is on the Clients tab.',
+               none: { 'new': 'Nothing waiting to be started.', wip: 'Nothing in progress.', wait: 'Nothing is out with the publisher or an advertiser.', todo: 'Nothing has come back from the publisher.' } },
       act: { edit: 'Edit in Ad Maker', open: 'Open in Ad Maker', make: 'Make {shape}', approve: 'Approve & make current', makeCurrent: 'Make current', coming: 'Tool coming', send: 'Send for approval', sendAgain: 'Send again', hold: 'Approve & hold', reqDone: 'Mark this request done', sendRow: 'Send for approval' },
         reqDone: { going: 'Closing the request', done: 'Request closed: {shape} for {name}.', fail: 'The request was not closed: {msg}' },
         del: { link: 'Delete this ad', ask: 'Delete this ad for good?', what: 'The ad comes off the site. Any approval link for it stops working.', never: 'This cannot be undone.', go: 'Delete for good', going: 'Deleting\u2026', cancel: 'cancel',
@@ -345,14 +356,7 @@
     }
     function covRow(c) { return '<span class="ps-ad-cov">' + SH.map(function (sh) { return covMark(c, sh); }).join('') + '</span>'; }
     function covHead() { return '<span class="ps-ad-covh">' + SH.map(function (sh) { return '<span title="' + esc(SHN[sh]) + '">' + esc({ banner: 'B', sidebar: 'S', splash: 'Sp', text: 'T' }[sh] || SHN[sh].charAt(0)) + '</span>'; }).join('') + '</span>'; }
-    function doneOf(c) {   // v1.0.11 · approved in the last linkDays days (inbxify side, Resolved)
-      var out = [], Bd = B(), since = Date.now() - (S.linkDays || 14) * 864e5;
-      SH.forEach(function (sh) { vOf(c, sh).forEach(function (v) {
-        var d = v.decided || {}; if ((v.state !== 'current' && v.state !== 'ready') || !d.at || new Date(d.at).getTime() < since) return;
-        out.push({ who: 'done', words: fill(v.state === 'current' ? Bd.doneCur : Bd.doneHold, { Shape: SHN[sh] }), at: d.at, tab: v.state === 'current' ? 'current' : 'process', sh: sh, kind: 'done', v: v }); }); });
-      return out;
-    }
-    function stageOf(it) { return it.kind === 'done' ? 'done' : it.kind === 'back' ? 'todo' : it.kind === 'unsent' ? 'wip' : (it.who === 'you' || it.who === 'adv') ? 'wait' : 'new'; }   // v1.0.11
+    function stageOf(it) { return it.kind === 'back' ? 'todo' : it.kind === 'unsent' ? 'wip' : (it.who === 'you' || it.who === 'adv') ? 'wait' : 'new'; }   // v1.0.11
     function itemsOf(c) {   // every thing in motion for one customer: { who: you|ix|adv, words, at, tab, sh, kind, v }
       var out = [], Bd = B();
       SH.forEach(function (sh) {
@@ -395,20 +399,24 @@
       if (a.kind === 'reqdone') return '<button type="button" class="ix-btn ix-btn--secondary ps-ad-sm" data-reqdone="' + esc(c.id + '|' + a.sh + '|' + a.req.id) + '">' + esc(a.label) + '</button>';   // v1.0.9
       return '<button type="button" class="ix-btn ' + (kind2 || 'ix-btn--secondary') + ' ps-ad-sm" data-ix="' + esc(a.kind + '|' + c.id + '|' + a.sh + '|' + (a.v ? a.v.id : '') + '|' + (a.req ? a.req.id : '')) + '"' + (a.coming ? ' disabled title="' + esc(W.ix.act.coming) + '"' : '') + '>' + esc(a.label) + '</button>';
     }
-    function boardRow(c, it, n) {
-      var a = ixActionFor(c, it);
+    function boardRow(c, it, n, task) {   // v1.0.13: task = a Task list row (no coverage column; the customer's cards open under it)
+      var a = ixActionFor(c, it), key = task ? c.id + '|' + it.tab + '|' + (it.kind || '') + '|' + (it.sh || '') : '';
+      if (task) { var open = S.open === c.id && (S.openAt === key || (!S.openShown && !S.openAt)); if (open) S.openShown = true;
+        return '<div class="ps-ad-brow nocov' + (a ? ' has-act' : '') + (open ? ' ps-ad-openrow' : '') + '" data-go="' + esc(c.id + '|' + it.tab + '|' + key) + '" data-anchor="' + esc(c.id) + '" role="button" tabindex="0" aria-expanded="' + open + '"><span class="tx"><span class="cn">' + esc(c.name) + '</span><span class="l2">' + stepHTML(it) +
+          (n > 1 ? '<span class="wh">· ' + esc(fill(B().count, { n: n })) + '</span>' : '') + (it.at ? '<span class="wh">· ' + esc(fill(W.board.since, { on: day(it.at) })) + '</span>' : '') + '</span></span>' + (a ? '<span class="act">' + actBtn(a, c, 'ix-btn--primary') + '</span>' : '') + '<span class="chv">' + CHEV + '</span></div>' + (open ? renderOpen(c) : ''); }
       return '<div class="ps-ad-brow' + (a ? ' has-act' : '') + '" data-go="' + esc(c.id + '|' + it.tab) + '" role="button" tabindex="0"><span class="tx"><span class="cn">' + esc(c.name) + '</span><span class="l2">' + stepHTML(it) +
         (n > 1 ? '<span class="wh">· ' + esc(fill(B().count, { n: n })) + '</span>' : '') + (it.at ? '<span class="wh">· ' + esc(it.kind === 'done' ? day(it.at) : fill(W.board.since, { on: day(it.at) })) + '</span>' : '') + '</span></span>' + (a ? '<span class="act">' + actBtn(a, c, 'ix-btn--primary') + '</span>' : '') + covRow(c) + '<span class="chv">' + CHEV + '</span></div>';
     }
     function renderStages() {   // v1.0.11 · the inbxify side, five stages in the order of the work
-      var Bd = B(), by = { 'new': [], wip: [], wait: [], todo: [], done: [] }, n = S.linkDays || 14;
-      S.customers.forEach(function (c) { itemsOf(c).concat(doneOf(c)).forEach(function (it) { by[stageOf(it)].push({ c: c, it: it }); }); });
-      var byAt = function (a, b) { return String(a.it.at || '9').localeCompare(String(b.it.at || '9')); }, latest = function (a, b) { return String(b.it.at || '').localeCompare(String(a.it.at || '')); };
+      var Bd = B(), by = { 'new': [], wip: [], wait: [], todo: [] }, n = S.linkDays || 14; S.openShown = false;
+      if (S.openAt && !S.customers.some(function (c) { return c.id === S.open && itemsOf(c).some(function (it) { return S.openAt === c.id + '|' + it.tab + '|' + (it.kind || '') + '|' + (it.sh || ''); }); })) S.openAt = '';   // a key that no longer exists: open under the first row
+      S.customers.forEach(function (c) { itemsOf(c).forEach(function (it) { by[stageOf(it)].push({ c: c, it: it }); }); });
+      var byAt = function (a, b) { return String(a.it.at || '9').localeCompare(String(b.it.at || '9')); };
       var fold = function (list) { var seen = {}, out = []; list.forEach(function (x) { var k = x.c.id + '|' + x.it.tab + '|' + stepHTML(x.it); if (seen[k]) seen[k].n++; else { seen[k] = { c: x.c, it: x.it, n: 1 }; out.push(seen[k]); } }); return out; };
-      return '<div class="ps-ad-stages">' + ['new', 'wip', 'wait', 'todo', 'done'].map(function (st) {
-        var list = fold(by[st].sort(st === 'done' ? latest : byAt)), extra = O.slotCount ? (+O.slotCount(st) || 0) : 0, count = list.length + extra;
-        return '<section class="ps-ad-box st-' + st + '"><div class="bh"><b>' + esc(Bd.stage[st]) + '</b><span class="n">' + count + '</span>' + (st === 'done' ? '<span class="sub">' + esc(fill(Bd.doneSub, { n: n })) + '</span>' : '') + '<span class="sp"></span>' + covHead() + '<span class="chvsp"></span></div>' +
-          '<div class="bb">' + (O.slot ? '<div class="ps-ad-slot" data-slot="' + st + '"></div>' : '') + (list.length ? list.map(function (x) { return boardRow(x.c, x.it, x.n); }).join('') : extra ? '' : '<div class="none">' + esc(fill(Bd.none[st], { n: n })) + '</div>') + '</div></section>';
+      return '<div class="ps-ad-stages">' + ['new', 'wip', 'wait', 'todo'].map(function (st) {
+        var list = fold(by[st].sort(byAt)), extra = O.slotCount ? (+O.slotCount(st) || 0) : 0, count = list.length + extra;
+        return '<section class="ps-ad-box st-' + st + '"><div class="bh"><b>' + esc(Bd.stage[st]) + '</b><span class="n">' + count + '</span><span class="sp"></span></div>' +
+          '<div class="bb">' + (O.slot ? '<div class="ps-ad-slot" data-slot="' + st + '"></div>' : '') + (list.length ? list.map(function (x) { return boardRow(x.c, x.it, x.n, true); }).join('') : extra ? '' : '<div class="none">' + esc(fill(Bd.none[st], { n: n })) + '</div>') + '</div></section>';
       }).join('') + '</div>';
     }
     function renderBoard() {
@@ -429,8 +437,10 @@
       };
       return '<div class="ps-ad-two' + (IX ? ' stack' : '') + '">' + box('b-act', Bd.action, act, Bd.noneAction) + box('b-wait', Bd.waiting, wait, Bd.noneWaiting) + '</div>';
     }
+    function isAdv(c) { return SH.some(function (sh) { var x = c.shapes[sh] || {}; return (x.versions || []).length || x.sold || (x.requests || []).length; }); }   // v1.0.13
+    function listCusts() { return IX ? S.customers.filter(isAdv) : S.customers; }
     function listRows() {
-      var q = S.q.trim().toLowerCase(), rs = S.customers.filter(function (c) { return !q || c.name.toLowerCase().indexOf(q) > -1; });
+      var q = S.q.trim().toLowerCase(), rs = listCusts().filter(function (c) { return !q || c.name.toLowerCase().indexOf(q) > -1; });
       if (!rs.length) return '<div class="ps-ad-empty">' + esc(!S.customers.length ? W.emptyAll : W.emptyQ) + '</div>';
       return rs.map(function (c) {
         var open = S.open === c.id, its = itemsOf(c), first = its[0];
@@ -442,7 +452,7 @@
       }).join('');
     }
     function renderList() {
-      return '<section class="ps-ad-box b-list"><div class="bh"><b>' + esc(W.board.list) + '</b><span class="n">' + S.customers.length + '</span><span class="sp"></span>' +
+      return '<section class="ps-ad-box b-list"><div class="bh"><b>' + esc(IX ? W.ix.board.advs : W.board.list) + '</b><span class="n">' + listCusts().length + '</span>' + (IX ? '<span class="sub">' + esc(W.ix.board.advsNote) + '</span>' : '') + '<span class="sp"></span>' +
         '<input type="search" class="ps-ad-search" id="ps-ad-q" placeholder="' + esc(W.search) + '" aria-label="' + esc(W.search) + '" value="' + esc(S.q) + '"></div>' +
         '<div class="ps-ad-lr th"><span>' + esc(W.board.cols.customer) + '</span><span>' + esc(W.board.cols.next) + '</span><span>' + esc(W.board.cols.since) + '</span>' + covHead() + '<span></span></div>' +
         '<div id="ps-ad-list">' + listRows() + '</div></section>';
@@ -667,7 +677,7 @@
       var h = '<div class="ps-ad ix-ab ix-own side-' + side + '">' + (O.title === '' ? '' : '<div class="ps-titlerow"><h1>' + esc(O.title || W.title) + '</h1>' + infoHTML() + '<div class="sp"></div></div>');
       if (!S.loaded) h += ctx.placeholder ? '<div class="ps-ad-tbl"><table style="width:100%"><tbody>' + ctx.placeholder(5, 6) + '</tbody></table></div>' : '<div class="ps-ad-empty">' + esc(W.api.ads) + '…</div>';
       else if (S.loadErr) h += '<div class="ps-err" role="alert">' + esc(fill(W.loadFail, { msg: S.loadErr })) + '</div>';
-      else h += (IX && S.gone && S.open !== S.gone.cust ? goneHTML() : '') + renderBoard() + renderList();
+      else h += (IX && S.gone && S.open !== S.gone.cust ? goneHTML() : '') + (IX ? (S.mode === 'advs' ? renderList() : renderStages()) : renderBoard() + renderList());   // v1.0.13: two views on the inbxify side
       h += renderMail() + '<div id="ps-ad-savewrap">' + renderSave() + '</div>' + renderReq() + '</div>';
       el.innerHTML = h;
       if (IX && O.slot) el.querySelectorAll('[data-slot]').forEach(function (sl) { var node = O.slot(sl.getAttribute('data-slot')); if (node) sl.appendChild(node); });   // v1.0.11
@@ -676,7 +686,7 @@
       if (S.scrollTo) {
         var target = S.scrollTo; S.scrollTo = null;
         [0, 300, 900].forEach(function (ms) { setTimeout(function () {
-          var n = el.querySelector('[data-c="' + target + '"]'); if (!n) return;
+          var n = el.querySelector('[data-c="' + target + '"]') || el.querySelector('.ps-ad-openrow[data-anchor="' + target + '"]') || el.querySelector('[data-anchor="' + target + '"]'); if (!n) return;   // v1.0.13: a task row
           var th = el.querySelector('.ps-ad-lr.th'), off = (th ? th.offsetHeight : 0) + 16;
           window.scrollTo(0, Math.max(0, n.getBoundingClientRect().top + window.scrollY - off));
         }, ms); });
@@ -844,7 +854,7 @@
         if (d.tbkeep) { S.tb = null; render(); return; }
         if (d.tbgo) { goTakeBack(); return; }
         if (d.reqdone) { e.stopPropagation(); reqDone(d.reqdone, t); return; }   // v1.0.9
-        if (d.sendrow) { var sr = d.sendrow.split('|'); S.open = sr[0]; S.tab[sr[0]] = 'process'; S.scrollTo = sr[0]; openSend(sr[1]); return; }   // v1.0.10
+        if (d.sendrow) { var sr = d.sendrow.split('|'), rw = t.closest('[data-go]'), gk = rw ? rw.getAttribute('data-go').split('|') : []; S.open = sr[0]; S.openAt = gk.length > 2 ? gk.slice(2).join('|') : ''; S.tab[sr[0]] = 'process'; S.scrollTo = sr[0]; openSend(sr[1]); return; }   // v1.0.10 (v1.0.13: under its task row)
         if (d.delgo) { goDelete(); return; }
         if (d.goneclose) { S.gone = null; render(); return; }
         if (d.sendgo) { goSend(); return; }
@@ -864,7 +874,8 @@
         if (d.wdask) { S.wd = { key: d.wdask }; render(); return; }
         if (d.wdkeep) { S.wd = null; render(); return; }
         if (d.wdgo) { withdraw(d.wdgo); return; }
-        if (d.go) { var g = d.go.split('|'); S.open = g[0]; S.tab[g[0]] = g[1]; S.scrollTo = g[0]; render(); return; }
+        if (d.go) { var g = d.go.split('|'); if (g.length > 2) { var k = g.slice(2).join('|'); if (S.open === g[0] && S.openAt === k) { S.open = null; S.openAt = ''; render(); return; } S.open = g[0]; S.openAt = k; S.tab[g[0]] = g[1]; render(); return; }   // v1.0.13: a task row opens the cards under it
+          S.open = g[0]; S.tab[g[0]] = g[1]; S.scrollTo = g[0]; render(); return; }
         if (d.mailclose !== undefined) { S.mail.splice(+d.mailclose, 1); render(); return; }
         if (d.mailcopy !== undefined) { var mm = S.mail[+d.mailcopy], txt = (mm.subject || '') + '\n\n' + (mm.body || ''); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast(W.mail.copied, 'ok', 'copy'); }, function () { toast(W.copyFail.replace('{url}', ''), 'error', 'copy'); }); return; }
         if (d.tab) { var tt = d.tab.split('|'); S.tab[tt[0]] = tt[1]; render(); return; }
@@ -900,7 +911,7 @@
 
     // ── mount ──
     var deep = O.deepCustomer || '';
-    S = { customers: [], loaded: false, loadErr: '', q: '', open: null, view: {}, staged: {}, saving: null, mail: [], tab: {}, linkDays: 14, staleMonths: 6,
+    S = { mode: O.view === 'advs' ? 'advs' : 'tasks', openAt: '', openShown: false, customers: [], loaded: false, loadErr: '', q: '', open: null, view: {}, staged: {}, saving: null, mail: [], tab: {}, linkDays: 14, staleMonths: 6,
           req: null, wd: null, tb: null, took: {}, flash: {}, deep: /^[0-9a-f]{24}$/.test(deep) ? deep : null };
     wire(); render();
     load().then(render);
@@ -908,6 +919,7 @@
       refresh: function () { return load().then(render); },
       state: function () { return S; },
       rerender: function () { if (S.loaded) render(); },   // v1.0.11
+      setView: function (v) { var m = v === 'advs' ? 'advs' : 'tasks'; if (S.mode === m) return; S.mode = m; if (S.loaded) render(); },   // v1.0.13
       findRequest: function (id) {   // v1.0.9
         for (var i = 0; i < S.customers.length; i++) { var c = S.customers[i];
           for (var j = 0; j < SH.length; j++) { var q = reqsOf(c, SH[j]).find(function (x) { return x.id === id; }); if (q) return { customer: c, shape: SH[j], request: q }; } }
