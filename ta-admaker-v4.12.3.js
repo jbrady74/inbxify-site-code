@@ -1,6 +1,14 @@
-/* ta-admaker-v4.12.2.js
+/* ta-admaker-v4.12.3.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.3 (25 Nov 2026, Ad Maker Build S4) — THE ADS TAB OPENS ON A TASK LIST; ADVERTISERS IS ITS OWN TAB. JS and CSS v4.12.3.
+     Ruling (Jeff, 25 Nov, by voice): "All ads" becomes "Task list" (four stages, no Resolved, no B · S · Sp · T); the
+     client list moves to a new second tab, "Advertisers", with a line saying they are the clients that advertise.
+     · Both tabs show the one board (one read of ix-sales /ads): the board's host element moves into the open tab's pane
+       and ix-ads-board v1.0.13's setView picks 'tasks' or 'advs'. Refresh works on either.
+     · The ⓘ text describes the Task list and Advertisers; the New ad page's back link reads "Task list".
+     · NEEDS: ix-ads-board v1.0.13.
 
    v4.12.2 (25 Nov 2026, Ad Maker Build S4) — DRAFTS IN CANVA MOVE INTO THE BOARD'S "IN PROGRESS" STAGE. JS and CSS v4.12.2.
      Ruling (Jeff, 25 Nov, by voice): the All ads page reads in the order of the work (ix-ads-board v1.0.11's five stages).
@@ -966,7 +974,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.2', CSS_FILE = 'ta-admaker-v4.12.2.css';
+  var VERSION = '4.12.3', CSS_FILE = 'ta-admaker-v4.12.3.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.18 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -5132,7 +5140,7 @@
   // ══════════════════════════════════════════════════════════════
   var ADS_MOUNT_ID = 'ta-ads-mount';
   var ADS_TABS = [   // HC-P-AMA1-1 · key, label, works
-    ['all', 'All ads', true], ['maker', 'Ad Maker', true], ['form', 'Ad form', true],
+    ['all', 'Task list', true], ['advs', 'Advertisers', true], ['maker', 'Ad Maker', true],   // v4.12.3 ['form', 'Ad form', true],
     ['upload', 'Upload a file', false], ['paste', 'Paste ad copy', false], ['intake', 'Already in Intake', false], ['print', 'From a print issue', false]
   ];
   var ADS_IDEAS = {   // HC-P-AMA1-2 · the idea pages: purpose, decided, open questions
@@ -5157,7 +5165,7 @@
     intake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v13H3z"/><path d="M3 7l3-4h12l3 4"/><path d="M9 12h6"/></svg>',
     print: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>'
   };
-  var ADS_W = { title: 'Ads', newAd: '+ New ad', allAds: 'All ads', idea: 'Idea · not built', works: 'Works today', notBuilt: 'Not built · thinking only', purpose: 'Purpose', decided: 'Decided so far', open: 'Open questions',
+  var ADS_W = { title: 'Ads', newAd: '+ New ad', allAds: 'Task list', idea: 'Idea · not built', works: 'Works today', notBuilt: 'Not built · thinking only', purpose: 'Purpose', decided: 'Decided so far', open: 'Open questions',
     formLine: 'Type an ADS row by hand: the name, the customer, pictures already hosted, the click link. The same form the Articles, Events and Real Estate tabs use.', formBtn: 'Open the ad form', formMissing: 'The Asset Form (ta-asf) is not on this page.' };
   var A = { tab: 'all', page: 'tabs', board: null, mounted: false, pubId: '', pubName: '', contact: null, you: null, linkDays: 14, drafts: { list: null, err: '', loading: false, ask: '', busy: '' } };
   function adsEl() { return document.getElementById(ADS_MOUNT_ID); }
@@ -5167,7 +5175,7 @@
   }
   function adsInfo() {   // v4.11.8: the ⓘ payload, shared by the old head and the title row
     return ({ file: FILE, version: VERSION, title: ADS_W.title,
-      blurb: 'The Ads rail tab: every customer of the publisher on the Portal’s board from inbxify’s side (To make, With the publisher or advertiser, then the client list), Ad Maker (Design in Canva or concepts), the ad form, and four idea tabs. Make sidebar / Make banner on a customer opens an Ad Maker job on that customer’s own ads.',
+      blurb: 'The Ads rail tab. Task list: every ad job of the publisher in four stages (Not started; In progress, with designs still in Canva; With the publisher, waiting; From the publisher, to do); a row opens that customer’s cards under it. Advertisers: the clients with an ad, ad space sold or an ad request, with what runs for each shape. Then Ad Maker (Design in Canva or concepts), the ad form, and four idea tabs. Make sidebar / Make banner opens an Ad Maker job on that customer’s own ads.',
       scenarios: [
         { name: 'Worker — ix-sales', note: 'GET /ads?publisher= (every customer, versions, states, brand, contact); POST /ads/<id>/decide as inbxify (Approve and make current / hold: Scenario G, then 114, logged); POST /ads/send-approval (the review link by email, through ix-members and Resend); POST /ads/delete (a true delete: the ADS row, its MEDIA row, its Uploadcare file, its open links)' },
         { name: 'Worker — ix-canva', note: 'TA_CONFIG.canvaUrl: POST /job, GET /job/<id>, GET /job/<id>/png, POST /job/<id>/export, POST /job/from-design (copies an approved design), GET /drafts, POST /design/state, POST /draft/remove' },
@@ -5216,7 +5224,8 @@
       el.innerHTML = h; return;
     }
     h += '<div class="ix-tabs-l1 ta-ads-strip" role="tablist">' + ADS_TABS.map(function (t) { return '<button type="button" role="tab" class="ix-tab-l1' + (A.tab === t[0] ? ' is-active' : '') + (t[2] ? '' : ' idea') + '" aria-selected="' + (A.tab === t[0]) + '" data-ads="tab" data-v="' + t[0] + '">' + esc(t[1]) + (t[2] ? '' : '<i title="' + ADS_W.idea + '"></i>') + '</button>'; }).join('') + '</div>';
-    h += '<div class="ta-ads-pane" data-pane="all"' + (A.tab === 'all' ? '' : ' hidden') + '><div id="ta-ads-board"></div></div>';   // v4.12.2: Drafts in Canva live in the board's In progress stage
+    h += '<div class="ta-ads-pane" data-pane="all"' + (A.tab === 'all' ? '' : ' hidden') + '><div class="ta-ads-bslot"></div></div>';   // v4.12.3: the board host moves into the open tab's slot
+    h += '<div class="ta-ads-pane" data-pane="advs"' + (A.tab === 'advs' ? '' : ' hidden') + '><div class="ta-ads-bslot"></div></div>';
     h += '<div class="ta-ads-pane" data-pane="maker"' + (A.tab === 'maker' ? '' : ' hidden') + '><div id="' + MOUNT_ID + '"></div></div>';
     h += '<div class="ta-ads-pane" data-pane="form"' + (A.tab === 'form' ? '' : ' hidden') + '><div class="ta-ads-form"><p>' + ADS_W.formLine + '</p>' + (window.InbxASF && InbxASF.open ? '<button type="button" class="ix-btn ix-btn--primary" data-ads="form">' + ADS_W.formBtn + '</button>' : '<div class="am-err">' + ADS_W.formMissing + '</div>') + '</div></div>';
     Object.keys(ADS_IDEAS).forEach(function (k) { var I = ADS_IDEAS[k];
@@ -5234,7 +5243,7 @@
     if (adsRefreshOn || !(window.IxHeader && IxHeader.onRefresh)) return;
     adsRefreshOn = true;
     IxHeader.onRefresh('ta-ads', function () {
-      if (A.tab === 'all' && A.board && A.board.refresh) return A.board.refresh();
+      if ((A.tab === 'all' || A.tab === 'advs') && A.board && A.board.refresh) return A.board.refresh();   // v4.12.3
       adsRender(); return Promise.resolve();
     });
   }
@@ -5242,7 +5251,11 @@
     var el = adsEl(); if (!el) return;
     el.querySelectorAll('.ta-ads-pane').forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== A.tab; });
     el.querySelectorAll('.ta-ads-strip .ix-btn--tab').forEach(function (b) { var on = b.getAttribute('data-v') === A.tab; b.classList.toggle('is-active', on); b.setAttribute('aria-selected', on); });
-    if (A.tab === 'all') { adsBoardMount(); adsDraftsRender(); }
+    if (A.tab === 'all' || A.tab === 'advs') {   // v4.12.3: one board, two views
+      if (!A.boardHost) { A.boardHost = document.createElement('div'); A.boardHost.id = 'ta-ads-board'; }
+      var bs = el.querySelector('.ta-ads-pane[data-pane="' + A.tab + '"] .ta-ads-bslot'); if (bs && A.boardHost.parentNode !== bs) bs.appendChild(A.boardHost);
+      adsBoardMount(); if (A.board && A.board.setView) A.board.setView(A.tab === 'advs' ? 'advs' : 'tasks'); adsDraftsRender();
+    }
     if (A.tab === 'maker') { mount(); placeBar(); }
   }
   function adsBoardMount() {
@@ -5251,7 +5264,7 @@
     if (!window.IxAdsBoard) { host.innerHTML = '<div class="am-err">ix-ads-board is not on the page.</div>'; return; }
     var pub = adsPublisher();
     if (!pub.id) { host.innerHTML = '<div class="am-err">This page names no publisher (TA_CONFIG.publisherId or #title-admin-id data-pub), so the ads cannot be read.</div>'; return; }
-    A.board = IxAdsBoard.mount(host, { side: 'inbxify', title: '', api: adsApi, publisher: pub, who: { staff: true, email: '', name: '' }, info: null,
+    A.board = IxAdsBoard.mount(host, { side: 'inbxify', view: A.tab === 'advs' ? 'advs' : 'tasks', title: '', api: adsApi, publisher: pub, who: { staff: true, email: '', name: '' }, info: null,
       onLoad: function (custs, ans) { adsBrand(custs); if (ans) { A.contact = ans.contact || null; A.you = ans.you || null; A.linkDays = ans.linkDays || 14; } adsDraftsLoad(custs); adsDeepReq(); },
       onAction: function (a) { adsAction(a); }, designUrl: adsDesignUrl, onDeleted: adsDeleted,   // v4.11.7
       slot: function (st) { return st === 'wip' ? adsDraftsNode() : null; }, slotCount: function (st) { return st === 'wip' && A.drafts.list ? A.drafts.list.length : 0; } });   // v4.12.2

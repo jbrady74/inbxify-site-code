@@ -1,4 +1,5 @@
-/* ix-header-v1.1.1.css */
+/* ix-header-v1.1.2.css */
+/* v1.1.2 (25 Nov 2026, TA Reskin S4): a tab not built yet reads --ix-text-faint (4.90:1 on white), not --ix-ink-label (2.56:1, made for the ink rail). Needs ix-tokens-portal-look-v1.0.4.css. Everything else is v1.1.1. */
 /* v1.1.1 (25 Nov 2026, TA Reskin S4 · THE SHARED TAB ROW). Mockup: canvas "One look", page S4 Tab rows; Jeff took every recommendation 25 Nov.
    Everything new is §U at the END of this file; the rules above are v1.1.0 unchanged and §U outranks them where they meet. Tokens only in §U.
    LEVEL 1 (a page's own tabs: .ix-tabs-l1 with .ix-btn--tab, .std-subtabs, and Ad Maker's .ix-tab-l1): the Portal row. Josefin capitals 12 in
@@ -932,7 +933,7 @@ body.ix-saving .ix-save-sharp { z-index: 99500 !important; }
   font-variant-numeric:tabular-nums;color:var(--ix-text-light) !important;text-transform:none !important}
 /* a tab not built yet: lighter, with a hollow ring (no gold: gold means unsaved) */
 .ix-tabs-l1 button.ix-tab-l1.ix-tab-l1.idea,
-.ix-tabs-l1 button.ix-btn.ix-btn--tab.ix-btn--tab.idea{color:var(--ix-ink-label) !important}
+.ix-tabs-l1 button.ix-btn.ix-btn--tab.ix-btn--tab.idea{color:var(--ix-text-faint) !important}
 .ix-tabs-l1 button.ix-tab-l1.ix-tab-l1.idea i,
 .ix-tabs-l1 button.ix-btn.ix-btn--tab.ix-btn--tab.idea i{display:inline-block !important;width:7px !important;height:7px !important;margin:0 !important;
   border-radius:50% !important;background:transparent !important;border:1.5px solid currentColor !important;box-sizing:border-box}
