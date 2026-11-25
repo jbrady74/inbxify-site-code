@@ -1,6 +1,14 @@
-/* ps-obligations-v1.0.3.css */
+/* ps-obligations-v1.0.5.css */
 /* ============================================================
    INBXIFY · Publisher Portal · Obligations tab
+   v1.0.5 (24 Nov 2026, Publisher Portal S14) — v1.0.4 plus one rule: the table and the form read the Portal's muted ink for
+   --ix-text-light (the PR #58 Checks report measured ps-shell's #8A857B at 3.1 to 3.7:1 on the table's grounds). v1.0.4 was
+   never live. Companion JS: ps-obligations-v1.0.7.js.
+   v1.0.4 (24 Nov 2026, Publisher Portal S14) — the table is ix-table v1.1.0 and the form is ix-forms v1.0.0, so their
+   rules go from here: the filter pills (.ps-ob-filters), the hand-built table (.ps-ob-box rows, cells, status pills, the
+   v1.0.2 table armor), the form grid (.grid, .f, .lab, .span*, .req, .val) and the save bar (.savebar). The opened sale's
+   board, tiles and By magazine boxes, the tick list, Where cards, Sends per town and the month grid stay. The grey
+   placeholder rows while the first read is out keep .ps-ob-box. Companion JS: ps-obligations-v1.0.7.js.
    v1.0.3 (4 Nov 2026, Publisher Portal S4) — a changed month in the
    calendar (.ps-ob-mchg) gets the gold changed border, beating the blue
    ticked border, and a small cancel link beside its name (.mrev).
@@ -31,11 +39,6 @@
 .ps-tab-obligations .ps-loading{padding:24px;color:var(--ps-muted)}
 .ps-tab-obligations .ps-err{color:var(--ps-red-deep);font-size:12.5px;font-weight:600;margin-top:8px}
 
-/* ── filters: fixed-width pills, left-justified ── */
-.ps-ob-filters{display:flex;gap:6px;align-items:center;margin-bottom:10px;min-height:32px}
-.ps-ob-filters .ix-btn--pill{width:112px;justify-content:center}
-.ps-ob-filters .sp{flex:1}
-.ps-ob-filters .ps-sel{width:200px}
 
 /* ── selects: ix-picker-input with a drawn chevron (ix-picker-input strips the native arrow) ── */
 .ps-tab-obligations .ps-sel{position:relative;display:block;min-width:0}
@@ -43,29 +46,14 @@
 .ps-tab-obligations .ps-sel::after{content:"";position:absolute;right:11px;top:50%;width:7px;height:7px;margin-top:-6px;border-right:1.6px solid var(--ps-muted);border-bottom:1.6px solid var(--ps-muted);transform:rotate(45deg);pointer-events:none}
 .ps-tab-obligations input.ix-picker-input[type=number]{-moz-appearance:textfield}
 
-/* ── the table ── */
+/* ── the grey placeholder rows while the first read is out ── */
 .ps-ob-box{background:var(--ps-paper);border:1px solid var(--ps-rule);overflow:auto}
 .ps-ob-box table{width:100%;min-width:1080px;border-collapse:collapse;table-layout:fixed}
-.ps-ob-box th{position:sticky;top:0;z-index:2;text-align:left;font-weight:600;font-size:11.5px;color:var(--ps-muted);background:var(--ps-ground-2);padding:8px 6px;border-bottom:1px solid var(--ps-rule);white-space:nowrap;overflow:visible}
-.ps-ob-box td{padding:7px 6px;font-size:12.5px;border-top:1px solid var(--ps-rule-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
-.ps-ob-box tr.ps-ob-row{cursor:pointer}
-.ps-ob-box tr.ps-ob-row:hover td{background:var(--ps-row-hover)}
-.ps-ob-box tr.ps-ob-open td{background:var(--ps-row-open)}
-.ps-ob-box .idc{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--ps-muted)}
-.ps-ob-box .num{text-align:right;font-variant-numeric:tabular-nums}
-.ps-ob-box td.mono{font-variant-numeric:tabular-nums}
-.ps-ob-box td.chv{text-align:center;color:var(--ps-muted)}
-.ps-ob-box td.chv svg{vertical-align:middle;transition:transform .15s}
-.ps-ob-box tr.ps-ob-open td.chv svg{transform:rotate(180deg)}
-.ps-ob-box .hint{color:var(--ps-muted);font-size:12px}
-.ps-ob .b{display:inline-block;width:64px;text-align:center;padding:2px 0;border-radius:10px;font-size:11px;font-weight:600}
-.ps-ob .s-active{background:var(--ps-green-pale);color:var(--ps-green)}
-.ps-ob .s-ended{background:var(--ps-rule-soft);color:var(--ps-muted)}
-.ps-ob .s-comp{background:#FDE6DF;color:#9A3B22;width:48px}
+.ps-ob-box td{padding:9px 6px;border-top:1px solid var(--ps-rule-soft)}
 .ps-ob .due{color:var(--ps-red-deep);font-weight:600}
 .ps-ob .flag{display:inline-block;font-size:11px;font-weight:600;color:var(--ps-red-deep);margin-left:6px}
 
-/* ── board bar in the row ── */
+/* ── the board bar in the row, and the opened sale (inside ix-table's opened row) ── */
 .ps-ob .mbar{display:flex;gap:2px;height:10px;width:100%;max-width:120px;border-radius:3px;overflow:hidden;vertical-align:middle;background:transparent}
 .ps-ob .mb{display:block;height:100%;min-width:3px}
 .ps-ob .mb-ran{background:#1F7A4D}
@@ -75,7 +63,6 @@
 .ps-ob .mb-toCome{background:#E4E0D7}
 
 /* ── an open record ── */
-.ps-ob-box tr.ps-ob-sub td{background:var(--ps-ground);padding:14px 18px 16px 22px;white-space:normal;overflow:visible}
 .ps-ob .bpanel{display:flex;flex-direction:column;gap:12px}
 .ps-ob .gboard{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .ps-ob .gdots{display:flex;gap:4px;flex-wrap:wrap}
@@ -121,15 +108,6 @@
 .ps-ob-form .formhead{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
 .ps-ob-form .formhead h2{margin:0;font-family:var(--ps-serif);font-weight:600;font-size:20px;color:var(--ps-ink)}
 .ps-ob-form .hint{font-size:11.5px;color:var(--ps-muted)}
-.ps-ob-form .grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px 14px;align-items:start}
-.ps-ob-form .f{display:flex;flex-direction:column;gap:4px;min-width:0}
-.ps-ob-form .lab{display:flex;align-items:baseline;gap:6px;font-size:11.5px;font-weight:600;color:var(--ps-muted);min-height:17px;white-space:nowrap}
-.ps-ob-form .lab .ix-revert{padding:0 2px!important}
-.ps-ob-form .req{color:var(--ps-red-deep)}
-.ps-ob-form .val{min-height:36px;display:flex;align-items:center;font-weight:600}
-.ps-ob-form .span2{grid-column:span 2}
-.ps-ob-form .span3{grid-column:span 3}
-.ps-ob-form .spanall{grid-column:1/-1}
 /* titles: one alphabetical list (SR-7) */
 .ps-ob-form .tlist{border:1.5px solid var(--ix-border-input);border-radius:var(--ix-radius-sm);background:#fff;padding:6px 10px;max-height:150px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,220px);gap:2px 16px}
 .ps-ob-form .tlist.ps-chg,.ps-ob-form .splitbox.ps-chg,.ps-ob-form .pcards.ps-chg,.ps-ob-form .mgrid.ps-chg{border:2px solid var(--ix-changed-border,#C4A35A);background:var(--ix-gold-glow,rgba(196,163,90,.12))}
@@ -168,12 +146,6 @@
 .ps-ob-form .mx{color:var(--ps-muted)}
 .ps-ob-form .msum{font-size:12px;color:var(--ps-ink-2);margin-top:6px}
 
-/* Save and Cancel at the bottom of the form */
-.ps-ob-form .savebar{display:flex;align-items:center;gap:16px;border-top:1px solid var(--ps-rule);margin-top:16px;padding:12px 0 14px}
-.ps-ob-form .savebar .what{flex:1;font-size:12.5px;min-width:0}
-.ps-ob-form .savebar .what b{display:block;font-size:13px}
-.ps-ob-form .savebar .need{color:var(--ps-red-deep);font-size:11.5px}
-.ps-ob-form .savebar .ix-btn--primary{min-width:220px}
 
 /* modals: ix-modal body content */
 .ps-ob-modal p,.ps-ob-modal li{font-size:13.5px;color:var(--ps-ink-2)}
@@ -187,10 +159,6 @@
 .ps-tab-obligations .ps-ob-form .formhead h2{font-family:var(--ps-serif)!important;font-size:20px!important;font-weight:600!important;line-height:1.2!important}
 .ps-tab-obligations .ps-ob-modal p,.ps-tab-obligations .ps-ob-modal li{font-size:13.5px!important;margin:0 0 8px!important}
 
-/* ── v1.0.2 armor: rows and the open record stay a table ── */
-.ps-tab-obligations .ps-ob-box tr.ps-ob-row,.ps-tab-obligations .ps-ob-box tr.ps-ob-sub{display:table-row!important;width:auto!important;height:auto!important;overflow:visible!important;opacity:1!important;visibility:visible!important;transform:none!important;position:static!important}
-.ps-tab-obligations .ps-ob-box tr.ps-ob-row td,.ps-tab-obligations .ps-ob-box tr.ps-ob-sub td{display:table-cell!important;letter-spacing:0!important;text-transform:none!important;font-family:var(--ps-sans)!important}
-.ps-tab-obligations .ps-ob-box tr.ps-ob-row td.idc{font-family:ui-monospace,Menlo,monospace!important}
 .ps-tab-obligations .ps-ob .bacts{flex-wrap:wrap}
 .ps-tab-obligations .ps-ob .bacts .ps-link{white-space:nowrap!important;width:auto!important;display:inline!important;font-family:var(--ps-sans)!important;letter-spacing:0!important}
 
@@ -198,3 +166,11 @@
 .ps-ob-form .mcell .mhead{display:flex;align-items:center;justify-content:space-between;gap:4px}
 .ps-ob-form .mcell.ps-ob-mchg{border:2px solid var(--ix-changed-border,#C4A35A)!important;box-shadow:none!important;background:var(--ix-gold-glow,rgba(196,163,90,.12))!important;padding:3px}
 .ps-tab-obligations .ps-ob-form .mrev{font-size:11px!important;padding:0 2px!important;line-height:16px!important;white-space:nowrap}
+
+/* ── v1.0.4: the opened sale sits in ix-table's opened row (inside .ps-ob, so the rules above reach it); the form in ix-forms ── */
+.ps-tab-obligations .ix-table-wrap .ps-ob{padding-top:12px}
+/* the Portal's own --ix-text-light (#8A857B, ps-shell) measures 3.1 to 3.7:1 on the table's grounds; the table and form read the
+   Portal's muted ink instead (#5A5E66, 5.5:1 or better), as the old table did (--ps-muted) */
+.ps-tab-obligations .ix-table-wrap,.ps-tab-obligations .ix-form{--ix-text-light:var(--ps-muted)}
+.ps-ob-form .ix-form{padding-bottom:2px}
+.ps-ob-form .tlist,.ps-ob-form .splitbox,.ps-ob-form .pcards,.ps-ob-form .mgrid{width:100%}

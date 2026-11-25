@@ -1,4 +1,20 @@
-/* ipp-revenue-v1.10.3.js */
+/* ipp-revenue-v1.10.4.js */
+/* v1.10.4 (24 Nov 2026, Publisher Portal S14): THE DONE TICKS. Rulings of 24 Nov (S13 ruling 6) and the S13 fault list.
+   1 · DONE TICKED IN THE SAME SAVE AS A CHANGE IS NO LONGER LOST (S13 fault 1, a TOAST-TRUTH break). Done is judged against the
+       pill's waiting changes; during the Save those changes land and leave the waiting list, so the Done write was worked out
+       without the pill, the field lost it, and Save said "Saved". Now Save records every pill's Done answer the moment it
+       starts (doneAt) and writes from that record. A pill whose own changes fail is still written not done (as v1.10.0).
+   2 · A PILL WITH NO SLOTS NEEDS NO TICK (ruling 6). A pill whose count reads 0/0 in this issue (for example Text ads with no
+       Find, or Splash with no splash) is done by itself: gate().pills marks it empty and done, its foot bar says there is
+       nothing to tick, and it is not written to revenue-done.
+   3 · COMPILE CAN MARK A PILL DONE (ruling 6). gate().pills gains summary (one plain line about the pill) and canMark (the pill
+       is sound: ready, nothing unsaved, not done yet). NEW IPPRevenue.markDone(key) writes that one tick on top of the saved
+       ticks, through the same Scenario 124 nlmeta write and the same fresh read-back as Save; nothing else on the tab is
+       written, and waiting changes on other pills stay waiting. It answers a Promise of { ok, error }.
+   4 · FOUND WHILE BUILDING: The Find's "Done picking" box always read unticked. v1.10.0 added the pill doneNow(k) under the same
+       name as The Find's doneNow(s) in the same scope, so the second replaced the first. The Find's is now fDoneNow(s).
+   Needs ix-sales v1.3.15 or later and ix-issue-data v1.0.210 (unchanged). CSS v1.6.9 unchanged. Goes with ipp-publish v2.85.
+   HARDCODING: HC-P-RV1104-1 the summary words (Kitchen Wise, paid · House splash · Theme: … · N of M sold: …). */
 /* v1.10.3 (24 Nov 2026, Publisher Portal S12 · Build 2): v1.10.2 with the Workers named right again. Main took ix-sales v1.3.14
    (Ad Maker S3) and ix-issue-data v1.0.208 (Content Home S16) for other changes, so this set ships ix-sales v1.3.15 and
    ix-issue-data v1.0.210. Only the version names change (the header, the ⓘ and the "cannot save the Done ticks" sentence).
@@ -677,8 +693,8 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.10.3';
-  var FILE = 'ipp-revenue-v1.10.3.js';
+  var VERSION = '1.10.4';
+  var FILE = 'ipp-revenue-v1.10.4.js';
   var BATCH_URL_CEILING = 1800, BATCH_CHUNK = 15;   // HC-P-RV1-2
   var HOUSE = '__house', NONE = '__none';
 
@@ -1505,8 +1521,12 @@
       if (after(s).adId) filled++; else empty.push(slotName(s));
     });
     // v1.10.0 the Done ticks (saved, as Compile judges the saved plan) and what is owed this month
-    var pills = loaded ? pillsShown().map(function (k) { return { key: k, label: pillLabel(k), done: savedDone(k) }; }) : [];
-    if (loaded) { var rd0 = readiness(); pills.forEach(function (p) { p.state = rd0[p.key]; }); }
+    var pills = loaded ? pillsShown().map(function (k) { var e = emptyPill(k); return { key: k, label: pillLabel(k), done: e || savedDone(k), empty: e }; }) : [];
+    if (loaded) { var rd0 = readiness(); pills.forEach(function (p) {
+      p.state = rd0[p.key];
+      p.summary = pillSummary(p.key);                                          // v1.10.4 for Compile's Mark done row
+      p.canMark = !p.done && p.state === 'ready' && !pillWaiting(p.key) && !doneWhy(p.key) && !R.saving && !locked();
+    }); }
     return { loaded: loaded, total: total, filled: filled, empty: empty, unsaved: loaded ? waiting().length + fChanges() + doneWaiting() : 0,   // v1.8.0 Find changes; v1.10.0 Done
              pills: pills, notDone: pills.filter(function (p) { return !p.done; }).map(function (p) { return p.label; }), doneField: loaded && doneFieldOk(),
              owed: loaded ? owedInfo() : { state: 'idle' } };
@@ -2365,6 +2385,7 @@
     if (R.saving) return;
     var keys = waiting(), spk = spWaiting(), sok = sponWaiting(); if (!keys.length && !spk.length && !sok.length && !fChanges() && !doneWaiting()) return;   // v1.8.0; v1.10.0 Done
     var dN = doneWaiting(), pnl0 = planNlId();                               // v1.10.0 the Done ticks, written after the rest lands
+    var doneAt = {}; pillsShown().forEach(function (k) { doneAt[k] = doneNow(k); });   // v1.10.4 recorded now, before the changes land (S13 fault 1)
     if (locked()) { toast('Can\u2019t save: this plan is locked. Nothing was sent.', 'err'); return; }
     var b0 = board();
     if (!b0 || !b0.plan) { toast('Can\u2019t save: the plan has not been read yet.', 'err'); return; }
@@ -2641,7 +2662,7 @@
         // anything the batch did not land stops its NEWSLETTER answer
         return stage(blockWriter(), 'splash', spItems).then(function (r3) {           // v1.1
           r3.forEach(function (x) { fail(x.slotId, x.why); });
-          if (dN) { var dop = doneOp(failed, pnl0); if (dop) nlOps.push(dop); }      // v1.10.0 the Done ticks, after the rest has landed
+          if (dN) { var dop = doneOp(failed, pnl0, doneAt); if (dop) nlOps.push(dop); }      // v1.10.0 the Done ticks, after the rest has landed
           return nlStage(blockWriter(), nlOps.filter(function (o) { return !o.slotIds.some(function (k) { return failed[k]; }); }));   // v1.7.0; v1.7.2 every answer on the op landed
         }).then(function (rn) {
           rn.forEach(function (x) { if (!x.why) return; nlOps.forEach(function (o) { if (o.slotId === x.slotId) o.slotIds.forEach(function (k) { fail(k, x.why); }); }); });
@@ -2774,7 +2795,7 @@
   function themeNow(s) { return Object.prototype.hasOwnProperty.call(FD.themes, s.id) ? FD.themes[s.id] : themeSaved(s); }
   function themeDirty(s) { return !!s && Object.prototype.hasOwnProperty.call(FD.themes, s.id) && themeWire(FD.themes[s.id]) !== themeSaved(s); }
   // done
-  function doneNow(s) { var d = FD.done[s.id]; return d ? !!d.on : s.listDone === true; }
+  function fDoneNow(s) { var d = FD.done[s.id]; return d ? !!d.on : s.listDone === true; }   // v1.10.4 was doneNow, shadowed by the pill's
   // clone tokens (txa:<id>)
   function fToks(s) { return (s && Array.isArray(s.pending)) ? s.pending : []; }
   function fHasTok(s, id) { return fToks(s).indexOf(TXA_TOK + id) >= 0; }
@@ -2906,7 +2927,7 @@
     if (FD.fails[s.id]) notes.push('<span class="bad">Not saved: ' + esc(FD.fails[s.id]) + '</span>');
     if ((pending || (FD.cki[s.id] && Object.keys(FD.cki[s.id]).length)) && open) notes.push('<span class="gold">Changes wait for Save</span><button type="button" class="ix-revert ipp-rv-cancel" data-rv-flcancel="' + esc(s.id) + '">Cancel changes</button>');
     if (!now.length && !saved.length && !pending && open) notes.push('<button type="button" class="ix-revert ipp-rv-del" data-rv-fremove="' + esc(s.id) + '">Remove ' + esc(findName()) + '</button>');
-    var dn = doneNow(s), dd = !!FD.done[s.id], dWhy = s.listDone == null ? 'The plan data has no Done field yet (Data Worker v1.0.53).' : !blockF('listDone') ? 'NL-BLOCKS has no list-done field, so Done cannot be saved.' : lk ? 'This plan is locked.' : !now.length ? 'Pick at least one first.' : '';
+    var dn = fDoneNow(s), dd = !!FD.done[s.id], dWhy = s.listDone == null ? 'The plan data has no Done field yet (Data Worker v1.0.53).' : !blockF('listDone') ? 'NL-BLOCKS has no list-done field, so Done cannot be saved.' : lk ? 'This plan is locked.' : !now.length ? 'Pick at least one first.' : '';
     var done = '<span class="ipp-rv-find-done"><button type="button" class="ipp-rv-done' + (dn ? ' is-on' : '') + (dd ? ' is-pending' : '') + '" data-rv-fdone="' + esc(s.id) + '"' +
       (dWhy || R.saving ? ' disabled title="' + esc(dWhy) + '"' : '') + ' aria-pressed="' + dn + '"><span class="ipp-rv-done-box" aria-hidden="true"></span>' + esc(FIND_W.done) + '</button>' +
       (dd && !FD.done[s.id].auto && !lk ? '<button type="button" class="ix-revert ipp-rv-cancel" data-rv-fdone-cancel="' + esc(s.id) + '">Cancel</button>' : '') +
@@ -3007,7 +3028,7 @@
     if ((el = t.closest('[data-rv-fdone-cancel]'))) { delete FD.done[s.id]; delete FD.fails['done:' + s.id]; render(); return true; }
     if ((el = t.closest('[data-rv-fdone]'))) {
       if (el.disabled || locked()) return true;
-      var want = !doneNow(s); if (want === (s.listDone === true)) delete FD.done[s.id]; else FD.done[s.id] = { on: want, auto: false };
+      var want = !fDoneNow(s); if (want === (s.listDone === true)) delete FD.done[s.id]; else FD.done[s.id] = { on: want, auto: false };
       delete FD.fails['done:' + s.id]; render(); return true;
     }
     if ((el = t.closest('[data-rv-flcancel]'))) { delete FD.lists[s.id]; delete FD.cki[s.id]; delete FD.fails[s.id]; var d0 = FD.done[s.id]; if (d0 && d0.auto) delete FD.done[s.id]; render(); return true; }
@@ -3445,7 +3466,39 @@
     if (e) return e.on && e.sig === sig(k);                            // any change after the tick clears it
     return savedDone(k) && sig(k) === '';                              // a change on the pill clears the saved tick
   }
-  function doneChanges() { return pillsShown().filter(function (k) { return doneNow(k) !== savedDone(k); }); }
+  function doneChanges() { return pillsShown().filter(function (k) { return !emptyPill(k) && doneNow(k) !== savedDone(k); }); }   // v1.10.4 empty pills: no tick
+  // v1.10.4 — a pill with no slots in this issue (its count reads 0/0) needs no tick (ruling 6)
+  function emptyPill(k) { var c; try { c = tabCounts(k); } catch (e) { return false; } return !!c && c.total === 0; }
+  function pillWaiting(k) { return !!sig(k); }
+  // v1.10.4 — one plain line about a pill, for Compile (HC-P-RV1104-1)
+  function andNames(l) { return l.length <= 1 ? (l[0] || '') : l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1]; }
+  function uniqNames(l) { return l.filter(function (x, i) { return x && l.indexOf(x) === i; }); }
+  function pillSummary(k) {
+    try {
+      var c = tabCounts(k);
+      if (k === 'banners') {
+        var who = [];
+        adSlots().forEach(function (s) { if (isDel(s.id) || isHouseSlot(s)) return; var a = adById(after(s).adId); if (a) who.push(a.customer || a.name); });
+        who = uniqNames(who);
+        return c.filled + ' of ' + c.total + ' sold' + (who.length ? ': ' + andNames(who) : '');
+      }
+      if (k === 'splash') {
+        return spList().map(function (n) { var a = spAfter(n); var w = a.mode === 'paid' ? (a.name || 'Paid splash') + ', paid' : a.mode === 'house' ? 'House splash' : 'No splash';
+          return spList().length > 1 ? (n.name || 'Issue') + ': ' + w : w; }).join(' \u00b7 ');
+      }
+      if (k === 'text') {
+        var fs = findSlot(); if (!fs) return 'No Find in this issue';
+        var th = themeWire(themeNow(fs)), n = fNow(fs).length;
+        return (th ? 'Theme: ' + th + ' \u00b7 ' : '') + n + ' business' + (n === 1 ? '' : 'es');
+      }
+      if (k === 'sponsors') {
+        var l = frRows().filter(function (r) { return r.secs.length; }).map(function (r) { return r.name + ': ' + (r.cust ? custName(r.cust) : 'no sponsor'); });
+        return l.length ? l.join(' \u00b7 ') : 'No sponsored section in this issue';
+      }
+      if (k === 'house') return c.filled + ' of ' + c.total + ' in';
+    } catch (e) { try { console.error('[ipp-revenue] summary', e); } catch (x) {} }
+    return '';
+  }
   function doneWaiting() { return doneChanges().length + skipChanges().length; }
   function doneWhy(k) {
     if (!planNlId()) return 'This plan has no newsletter yet, so Done cannot be saved.';
@@ -3462,6 +3515,7 @@
     render();
   }
   function doneBar() {
+    if (emptyPill(R.tab)) return '<div class="ipp-rv-donebar"><span class="ipp-rv-donebar-note">Nothing to place on ' + esc(pillLabel(R.tab)) + ' in this issue, so it needs no Done tick.</span></div>';   // v1.10.4
     var k = R.tab, on = doneNow(k), chg = on !== savedDone(k), lab = pillLabel(k), lk = locked(), why = on ? '' : doneWhy(k);
     var cleared = !on && savedDone(k) && !R.done[k];
     var note = R.doneFail ? '<span class="bad">Not saved: ' + esc(R.doneFail) + '</span>'
@@ -3491,18 +3545,48 @@
   var PILL_KEYS = ['banners', 'splash', 'text', 'sponsors', 'house'];                     // HC-P-RV110-5
   // The Done ticks the NEWSLETTER should hold after this Save: every shown pill that is done now and whose changes all
   // landed, the ticks of pills not shown (kept), the skips, and anything else the field holds (kept).
-  function doneOp(failed, pnl) {
+  function doneOp(failed, pnl, doneAt) {                                    // v1.10.4 doneAt: each pill's Done when Save started
     var DF = doneField(); if (!pnl || !DF) return null;
     var bad = {}; Object.keys(failed).forEach(function (k) { var p = pillOfKey(k); if (p) bad[p] = 1; });
     var shown = pillsShown(), saved = savedTokens();
     var toks = saved.filter(function (t) { return PILL_KEYS.indexOf(t) < 0 && t.indexOf(SKIP) !== 0; });
-    shown.forEach(function (k) { if (doneNow(k) && !bad[k]) toks.push(k); });
+    shown.forEach(function (k) { var on = doneAt && hasOwn(doneAt, k) ? doneAt[k] : doneNow(k); if (on && !bad[k] && !emptyPill(k)) toks.push(k); });
     PILL_KEYS.forEach(function (k) { if (shown.indexOf(k) < 0 && saved.indexOf(k) >= 0) toks.push(k); });
     var skips = {}; saved.forEach(function (t) { if (t.indexOf(SKIP) === 0) skips[t.slice(SKIP.length)] = 1; });
     Object.keys(R.skip).forEach(function (f) { if (R.skip[f]) skips[f] = 1; else delete skips[f]; });
     Object.keys(skips).forEach(function (f) { toks.push(SKIP + f); });
     var fd = {}; fd[DF] = toks.length ? toks.join(',') : null;
     return { slotId: 'done:' + pnl, slotIds: ['done:' + pnl], nlId: pnl, gone: [], done: toks, op: { id: pnl, body: JSON.stringify({ fieldData: fd }) } };
+  }
+
+  // v1.10.4 — Compile's "Mark done": one pill's tick, on top of the saved ticks, through 124 nlmeta, judged by a fresh read
+  function markDone(k) {
+    function no(why) { return Promise.resolve({ ok: false, error: why }); }
+    if (pillsShown().indexOf(k) < 0) return no('That pill is not on this issue.');
+    if (emptyPill(k)) return Promise.resolve({ ok: true });
+    if (locked()) return no('This plan is locked.');
+    if (R.saving) return no('Revenue is saving. Try again in a moment.');
+    var why = doneWhy(k); if (why) return no(why);
+    if (pillWaiting(k)) return no('Save the changes on ' + pillLabel(k) + ' first.');
+    if (readiness()[k] !== 'ready') return no('Fix what ' + pillLabel(k) + ' marks first.');
+    if (!blockWriter()) return no('PP_WEBHOOKS.blockWriter is not set on this page, so the tick cannot be written.');
+    var pnl = planNlId(), DF = doneField(), saved = savedTokens();
+    if (saved.indexOf(k) >= 0) return Promise.resolve({ ok: true });
+    var toks = saved.concat([k]), fd = {}; fd[DF] = toks.join(',');
+    R.saving = true; render(); announceGate();
+    return nlStage(blockWriter(), [{ slotId: 'done:' + pnl, op: { id: pnl, body: JSON.stringify({ fieldData: fd }) } }]).then(function (r) {
+      if (r[0] && r[0].why) throw new Error(r[0].why);
+      return readBack(3);
+    }).then(function () {
+      if (savedTokens().indexOf(k) < 0) throw new Error('the newsletter did not keep the Done tick');
+      delete R.done[k];
+      return { ok: true };
+    }).catch(function (e) {
+      return { ok: false, error: (e && e.message) || String(e) };
+    }).then(function (out) {
+      R.saving = false; render(); announceGate();
+      return out;
+    });
   }
 
   // ── events (one delegated set on the canvas) ─────────────────
@@ -3715,5 +3799,5 @@
   });
   document.addEventListener('ipp:ready', mount);
   if (window.IPP && canvas()) mount();
-  window.IPPRevenue = { version: VERSION, render: render, state: R, readiness: readiness, gate: gate, openTab: openTab, addBanner: addBanner, goTo: goTo, pinkCount: pinkCount, keepAll: keepAll, openText: function () { goTo((findSlot() || {}).id || ''); if (findOn()) openTab('text'); }, findPending: fChanges, loadSales: loadSales, owed: owedInfo };   // v1.10.0 loadSales, owed   // v1.8.0 openText, findPending   // goTo v1.6.5; pinkCount, keepAll v1.7.0
+  window.IPPRevenue = { version: VERSION, render: render, state: R, readiness: readiness, gate: gate, openTab: openTab, addBanner: addBanner, goTo: goTo, pinkCount: pinkCount, keepAll: keepAll, openText: function () { goTo((findSlot() || {}).id || ''); if (findOn()) openTab('text'); }, findPending: fChanges, loadSales: loadSales, owed: owedInfo, markDone: markDone };   // v1.10.4 markDone   // v1.10.0 loadSales, owed   // v1.8.0 openText, findPending   // goTo v1.6.5; pinkCount, keepAll v1.7.0
 })();

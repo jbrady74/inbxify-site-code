@@ -1,6 +1,31 @@
-// ps-obligations-v1.0.6.js
+// ps-obligations-v1.0.7.js
 // ============================================================
 // INBXIFY · Publisher Portal · the Obligations tab
+//
+// v1.0.7 (24 Nov 2026, Publisher Portal S14) — SECTIONS, TWO FILTERS, THE SALE FORM ON ix-forms, DEEP LINKS.
+//   Rulings (Jeff, 24 Nov, S13 rulings 1 to 5; S14 answers 2 to 7):
+//   · THE TABLE IS ix-table v1.1.0, in four sections, top to bottom: Needs you, Running now, Starting later, Ended (Ended
+//     starts collapsed). Each header shows its count and a chevron at the far right; an empty section is not drawn. Which
+//     section a sale sits in is ix-sales' answer (GET /sales section, v1.3.16); this page works out nothing. A sale from an
+//     older ix-sales with no section goes in Running now.
+//   · The Status column goes, and so do the filter pills (All, Active, Needs you, Comp, Ended). Comp stays as the Type tag.
+//     Two filters, in ix-table's filter row: Customer, and Magazines when the publisher has two or more magazines (a sale on
+//     three magazines passes each one's filter). With one magazine there is nothing to choose, so there is no filter.
+//   · DEEP LINKS (the ps-ads pattern, ?customer=…#ads): ?title=<TITLES-ADMIN id>#obligations opens the tab filtered to that
+//     magazine; ?sale=<sales record id or name>#obligations opens that sale, its section opened, scrolled to it.
+//   · THE SALE FORM IS ix-forms v1.0.0: four equal columns, every row from the left edge, Portal labels.
+//       Row 1  Customer · Product · Type · Magazine (two or more magazines: the fourth cell stays empty and the tick list is
+//              the full-width row under it, then the Where cards and Sends per town)
+//       Row 2  Franchise · On the website (a franchise sponsor only)
+//       Row 3  When · Start month · Edition sends · Week
+//              Window: When · Start month · Window ends · Edition sends, and Week starts row 4
+//              Specific months: When · Edition sends (the count), then the month grid as a full-width row
+//     The save bar: what is being edited and "N fields changed" on the left; Reset, Cancel, Save on the right. Reset puts
+//     back the saved sale when editing, or empties a new one, and keeps the form open; greyed while 0 fields changed.
+//     Cancel closes. Each changed field keeps its small "cancel" at the right end of its label.
+//   Needs ix-sales v1.3.16, ix-table v1.1.0 (+ CSS), ix-forms v1.0.0 (+ CSS) and ix-tokens-portal-look v1.0.1 on the page.
+//   CSS ps-obligations-v1.0.4.css (the old table, filter pills and form grid rules removed).
+//   HARDCODING: HC-P-PP14-4 the query names title and sale; HC-P-PP14-5 the table's column weights.
 //
 // v1.0.6 (23 Nov 2026, Publisher Portal S11 · Build 2) — ON THE WEBSITE, FOR A FRANCHISE SPONSOR.
 //   Jeff ruled 23 Nov: a sponsor sale is counted in sends like any other sale, and how long the sponsor shows on
@@ -111,7 +136,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.6';
+  var VERSION = '1.0.7';
   var WEBS = ['Whole run', 'Weeks in an issue'];                      // v1.0.6 · HC-P-PP11-4
   var FILE = 'ps-obligations-v' + VERSION + '.js';
   var GRID_MONTHS = 24, MG_MONTHS = 12;                                // HC-P-PP4-5
@@ -122,14 +147,14 @@
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var W = {                                                            // HC-P-PP4-4
     title: 'Obligations', add: '+ Sales record',
-    filters: ['All', 'Active', 'Needs you', 'Comp', 'Ended'], allCust: 'All customers', clear: 'Clear',
     loading: 'Loading obligations…', none: 'No sales records yet. Use + Sales record to add the first.',
-    noMatch: 'No sales records match these filters.',
+    noMatch: 'No sales records match these filters.', noIxTable: 'ix-table v1.1.0 is not on this page, so the sales cannot be listed.',
+    noIxForm: 'ix-forms v1.0.0 is not on this page, so the form cannot open.',
     note: 'One tile per send sold. A send is one newsletter edition. A one-time sale is a record with one tile.',
     newH: 'New sales record', newHint: 'One sales record per product. Saving makes its obligations.',
     editH: 'Editing {name}', editHint: 'This sale is live. Saving replaces its open sends; sends that are placed, ran or missed keep their place.',
     save: 'Save and make obligations', saveEdit: 'Save', saving: 'Saving…', cancel: 'Cancel', fieldCancel: 'cancel',
-    changed: '{n} field{s} changed', needs: 'Still needs {list}',
+    needs: 'Still needs {list}',
     loadFail: 'The obligations could not be loaded: {msg}', listsFail: 'The form could not load its lists: {msg}',
     lockCust: 'A send is placed in an edition, so the customer and product cannot change. Unplace it in the Revenue Picker, or cancel this record and start a new one.',
     sponsorOne: 'A franchise sponsor runs on one magazine.',
@@ -182,6 +207,7 @@
   function titleName(id) { var t = S.titles.find(function (x) { return x.id === id; }); return t ? t.name : ''; }
   function obsOf(id) { return S.obs.filter(function (o) { return o.salesId === id; }); }
   function sale(id) { return S.sales.find(function (r) { return r.id === id; }); }
+  function saleByRef(x) { return S.sales.find(function (r) { return r.id === x || String(r.name).toLowerCase() === String(x).toLowerCase(); }); }
   function chev(open, cls) { return '<svg class="' + (cls || '') + (open ? ' up' : '') + '" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>'; }
   function sel(attrs, opts, val, ph, changed, disabled) {
     return '<span class="ps-sel"><select class="ix-picker-input' + (changed ? ' ix-picker-input--changed' : '') + '" ' + attrs + (disabled ? ' disabled' : '') + '>' +
@@ -202,6 +228,7 @@
     var bad = rs.find(function (r) { return r && !r.ok; });
     if (bad) { S.loadErr = (bad.json && bad.json.error) || ('HTTP ' + bad.status); S.loaded = true; return false; }
     S.sales = rs[0].json.sales || [];
+    if (Array.isArray(rs[0].json.sections) && rs[0].json.sections.length) S.sections = rs[0].json.sections;   // v1.0.7
     S.obs = rs[1].json.obligations || [];
     if (rs[2]) S.titles = rs[2].json.titles || [];
     S.loadErr = '';
@@ -226,16 +253,8 @@
     return true;
   }
 
-  // ── rows ────────────────────────────────────────────────────
-  function needsYou(r) { var b = r.board || {}; return (b.missed || 0) > 0 || (r.status === 'Active' && ((b.due || 0) > 0 || !!(r.pace && r.pace.behind))); }
-  function rowsShown() {
-    return S.sales.filter(function (r) {
-      var f = S.filt;
-      var ok = f === 'All' || (f === 'Active' && r.status === 'Active') || (f === 'Ended' && r.status === 'Ended') ||
-        (f === 'Comp' && r.type === 'Comp') || (f === 'Needs you' && needsYou(r));
-      return ok && (!S.fCust || r.customerId === S.fCust);
-    });
-  }
+  // ── rows (v1.0.7: ix-table v1.1.0 in ix-sales' sections) ──
+  var SECTIONS_FALLBACK = [{ key: 'needs', label: 'Needs you' }, { key: 'running', label: 'Running now' }, { key: 'later', label: 'Starting later' }, { key: 'ended', label: 'Ended' }];
   function productLabel(r) { return r.franchise ? r.franchise + ' sponsor' : (r.product || ''); }
   function weekLabel(r) {
     if (r.frequency === L.specific && (r.months || []).some(function (e) { return entWeek(e); })) return 'Per send';
@@ -246,33 +265,58 @@
     var seg = k.filter(function (x) { return b[x]; }).map(function (x) { return '<i class="mb mb-' + x + '" style="flex:' + b[x] + '"></i>'; }).join('');
     return '<span class="mbar" title="' + (b.ran || 0) + ' ran, ' + (b.planned || 0) + ' planned, ' + (b.due || 0) + ' due now, ' + (b.missed || 0) + ' missed, ' + (b.toCome || 0) + ' to come">' + seg + '</span>';
   }
-  function table() {
-    var m = multiPub(), rows = rowsShown();
-    var cols = m
-      ? [['ID', 66], ['Customer', 170], ['Product', 150], ['Type', 60], ['Titles', 100], ['Placement', 84], ['Runs', 140], ['Frequency', 112], ['Qty', 40], ['Remaining', 96], ['Board', 124], ['Status', 80], ['', 30]]
-      : [['ID', 66], ['Customer', 210], ['Product', 180], ['Type', 60], ['Runs', 140], ['Frequency', 116], ['Qty', 44], ['Remaining', 100], ['Week', 70], ['Board', 130], ['Status', 80], ['', 30]];
-    var tot = cols.reduce(function (a, c) { return a + c[1]; }, 0);
-    var h = '<div class="ps-ob-box"><table><colgroup>' + cols.map(function (c) { return '<col style="width:' + (c[1] / tot * 100).toFixed(2) + '%">'; }).join('') + '</colgroup><thead><tr>' +
-      cols.map(function (c, i) { return '<th' + (c[0] === 'Qty' || c[0] === 'Remaining' ? ' class="num"' : '') + '>' + (c[0] ? tip(c[0], i > cols.length - 6) : '') + '</th>'; }).join('') + '</tr></thead><tbody>';
-    if (!S.sales.length) h += '<tr><td colspan="' + cols.length + '" class="hint">' + esc(W.none) + '</td></tr>';
-    else if (!rows.length) h += '<tr><td colspan="' + cols.length + '" class="hint">' + esc(W.noMatch) + '</td></tr>';
-    rows.forEach(function (r) {
-      var open = S.open === r.id, nc = obsOf(r.id).some(function (o) { return o.noCreative; });
-      var titles = (r.titles || []).length === 1 ? (r.titles[0].name || '') : (r.titles || []).length + ' magazines';
-      h += '<tr class="ps-ob-row' + (open ? ' ps-ob-open' : '') + '" data-sr="' + r.id + '" aria-expanded="' + open + '" tabindex="0">' +
-        '<td class="idc">' + esc(r.name) + '</td><td><b>' + esc(r.customer || '') + '</b></td>' +
-        '<td title="' + esc(productLabel(r)) + '">' + esc(productLabel(r)) + (nc ? '<span class="flag">No creative</span>' : '') + '</td>' +
-        '<td>' + (r.type === 'Comp' ? '<span class="b s-comp">Comp</span>' : esc(r.type)) + '</td>' +
-        (m ? '<td>' + esc(titles) + '</td><td>' + esc(r.placement === L.mirrored ? 'Each town' : r.placement) + '</td>' : '') +
-        '<td class="mono">' + mmddyy(r.runFrom || r.startMonth) + ' to ' + mmddyy(r.runTo || r.runFrom || r.startMonth, true) + '</td><td>' + esc(r.frequency) + '</td>' +
-        '<td class="num">' + (r.qty || 0) + '</td>' +
-        '<td class="num">' + (r.remaining || 0) + (r.missedOwed ? ' <span class="due">(' + r.missedOwed + ' missed)</span>' : '') + '</td>' +
-        (m ? '' : '<td>' + esc(weekLabel(r)) + '</td>') +
-        '<td>' + miniBoard(r) + '</td><td><span class="b s-' + esc(String(r.status).toLowerCase()) + '">' + esc(r.status) + '</span></td>' +
-        '<td class="chv">' + chev(false) + '</td></tr>';
-      if (open) h += '<tr class="ps-ob-sub"><td colspan="' + cols.length + '">' + panel(r) + '</td></tr>';
+  function magNames(r) { return (r.titles || []).map(function (t) { return t.name || titleName(t.id); }).filter(Boolean); }
+  function columns() {                                                   // HC-P-PP14-5 the weights
+    var m = multiPub();
+    var c = [
+      { key: 'name', label: 'ID', w: 84, type: 'id' },
+      { key: 'customer', label: 'Customer', w: m ? 200 : 210, type: 'strong', filter: true, sortable: true, text: function (r) { return r.customer || ''; } },
+      { key: 'product', label: 'Product', w: m ? 140 : 190, type: 'html', text: productLabel, title: productLabel,
+        html: function (r) { var nc = obsOf(r.id).some(function (o) { return o.noCreative; }); return esc(productLabel(r)) + (nc ? '<span class="flag">No creative</span>' : ''); } },
+      { key: 'type', label: 'Type', w: 84, type: 'html', text: function (r) { return r.type || ''; }, html: function (r) { return r.type === 'Comp' ? IxTable.pill('comp', 'Comp') : esc(r.type || ''); } }
+    ];
+    if (m) c.push(
+      { key: 'mags', label: 'Magazines', w: 160, type: 'text', filter: true, values: magNames,
+        text: function (r) { var n = magNames(r); return n.length === 1 ? n[0] : n.length + ' magazines'; }, title: function (r) { return magNames(r).join(', '); } },
+      { key: 'placement', label: 'Placement', w: 80, type: 'text', text: function (r) { return r.placement === L.mirrored ? 'Each town' : (r.placement || ''); } });
+    c.push(
+      { key: 'runs', label: 'Runs', w: m ? 156 : 140, type: 'date', text: function (r) { return mmddyy(r.runFrom || r.startMonth) + ' to ' + mmddyy(r.runTo || r.runFrom || r.startMonth, true); }, sortValue: function (r) { return String(r.runFrom || r.startMonth || ''); }, sortable: true },
+      { key: 'frequency', label: 'Frequency', w: m ? 96 : 116, type: 'text', text: function (r) { return r.frequency || ''; } },
+      { key: 'qty', label: 'Qty', w: 44, type: 'number', text: function (r) { return String(r.qty || 0); } },
+      { key: 'remaining', label: 'Remaining', w: m ? 86 : 100, type: 'html', align: 'right', text: function (r) { return String(r.remaining || 0); },
+        html: function (r) { return (r.remaining || 0) + (r.missedOwed ? ' <span class="due">(' + r.missedOwed + ' missed)</span>' : ''); } });
+    if (!m) c.push({ key: 'week', label: 'Week', w: 70, type: 'text', text: weekLabel });
+    c.push({ key: 'board', label: 'Board', w: m ? 104 : 130, type: 'html', html: miniBoard, title: function () { return ''; } });
+    c.forEach(function (x) { if (TIPS[x.label]) x.tip = TIPS[x.label]; });
+    return c;
+  }
+  function sectionOf(r) { return r.section || 'running'; }
+  // the table draws into its own mount; its filters, open row and sections are kept when the page draws again
+  function drawTable() {
+    var mt = el.querySelector('#ps-ob-table'); if (!mt) return;
+    if (!window.IxTable || typeof IxTable.create !== 'function') { mt.innerHTML = '<div class="ps-err" role="alert">' + esc(W.noIxTable) + '</div>'; return; }
+    var st = S.tState || {};
+    var secs = (S.sections || SECTIONS_FALLBACK).map(function (x) { return { key: x.key, label: x.label, collapsed: x.key === 'ended' }; });   // Ended starts collapsed
+    S.table = IxTable.create(mt, {
+      id: 'ps-obligations', noun: ['sales record', 'sales records'], zebra: false, minWidth: 1080,
+      columns: columns(), rows: S.sales, rowId: function (r) { return r.id; },
+      sections: secs, section: sectionOf, sort: { key: 'customer', dir: 'asc' },
+      state: { filters: st.filters || {}, open: S.open ? [S.open] : [], collapsed: st.collapsed },
+      expand: function (r) { return '<div class="ps-ob">' + panel(r) + '</div>'; },
+      onOpen: function (rid, now) { S.open = now ? rid : null; },
+      words: { empty: W.none, noMatch: W.noMatch }
     });
-    return h + '</tbody></table></div>';
+    S.tState = S.table.state();
+  }
+  // v1.0.7 deep links: ?title=<TITLES-ADMIN id> filters the magazine; ?sale=<id or name> opens the sale (HC-P-PP14-4)
+  function applyDeepLink() {
+    if (S.deepDone || !S.table) return;
+    S.deepDone = true;
+    var q; try { q = new URLSearchParams(location.search); } catch (e) { return; }
+    var t = q.get('title'), sl = q.get('sale');
+    if (t && multiPub()) { var nm = titleName(t); if (nm) S.table.setFilter('mags', nm); }
+    if (sl) { var r = saleByRef(sl); if (r) { S.open = r.id; S.table.reveal(r.id); } }
+    S.tState = S.table.state();
   }
 
   // ── an open record ──────────────────────────────────────────
@@ -379,10 +423,12 @@
     if (sendsDerived() == null && !(+c.sends >= 1 && Number.isInteger(+c.sends))) n.push('edition sends');
     return n;
   }
-  function lab(k, text, req) {
-    var c = dirty(k) ? ' <button type="button" class="ix-revert" data-revert="' + k + '">' + esc(W.fieldCancel) + '</button>' : '';
-    return '<span class="lab">' + text + (req ? ' <span class="req">*</span>' : '') + c + '</span>';
+  // v1.0.7 the form on ix-forms: four equal columns, rows from the left edge
+  function fld(k, label, html, o) {
+    o = o || {};
+    return IxForm.field({ key: k, label: label, tip: o.tip, html: html, req: o.req, span: o.span, hint: o.hint, warn: o.warn, changed: k ? dirty(k) : false, cancel: W.fieldCancel });
   }
+  function selK(k, opts, ph, label, disabled) { return IxForm.select({ key: k, options: opts, value: F().cur[k], placeholder: ph, changed: dirty(k), disabled: disabled, label: label }); }
   function startMonths() {
     var a = [], s = addM(nowYm(), -1), cur = F().orig.startMonth;
     for (var i = 0; i < GRID_MONTHS + 1; i++) a.push(addM(s, i));
@@ -395,59 +441,67 @@
     var custOpts = Lz.customers.map(function (x) { return [x.id, x.name]; });
     if (c.customer && !custOpts.some(function (x) { return x[0] === c.customer; })) custOpts.unshift([c.customer, f.custName || c.customer]);
     var prodOpts = Lz.products.map(function (x) { return [x.id, x.name]; });
-    var shape = shapeOf(c.product);
-    var g = '';
-    g += '<div class="f span2">' + lab('customer', 'Customer', true) + sel('data-k="customer" aria-label="Customer"', custOpts, c.customer, 'Select', dirty('customer'), f.lock) + '</div>';
-    g += '<div class="f span2">' + lab('product', 'Product', true) + sel('data-k="product" aria-label="Product"', prodOpts, c.product, 'Select', dirty('product'), f.lock) +
-      '<span class="hint">' + (shape ? 'Slot shape: ' + esc(shape) : '') + '</span></div>';
-    g += '<div class="f span2">' + lab('type', tip('Type'), false) + sel('data-k="type" aria-label="Type"', Lz.types, c.type, null, dirty('type')) + '</div>';
-    if (f.lock) g += '<div class="f spanall"><span class="warn">' + esc(W.lockCust) + '</span></div>';
-    if (isSponsor()) {
-      var t0 = c.titles[0];
-      var fr = Lz.franchises.filter(function (x) { return !t0 || x.titleIds.indexOf(t0) >= 0; }).map(function (x) { return [x.id, x.name]; });
-      g += '<div class="f span2">' + lab('franchise', 'Franchise', true) + sel('data-k="franchise" aria-label="Franchise"', fr, c.franchise, 'Select', dirty('franchise')) +
-        (fr.length ? '' : '<span class="warn">' + esc(W.noFranchise) + '</span>') + '</div>';
-      g += '<div class="f span2">' + lab('web', 'On the website', false) + sel('data-k="web" aria-label="On the website"', WEBS, c.web, null, dirty('web')) +   // v1.0.6
-        '<span class="hint">' + esc(c.web === WEBS[1] ? W.webIssue : W.webRun) + '</span></div>';
-    }
+    var shape = shapeOf(c.product), rows = '';
+    // row 1: Customer · Product · Type · Magazine
+    rows += IxForm.row([
+      fld('customer', 'Customer', selK('customer', custOpts, 'Select', 'Customer', f.lock), { req: true }),
+      fld('product', 'Product', selK('product', prodOpts, 'Select', 'Product', f.lock), { req: true, hint: shape ? 'Slot shape: ' + esc(shape) : '' }),
+      fld('type', '', selK('type', Lz.types, null, 'Type'), { tip: tip('Type') }),
+      m ? '' : fld('', 'Magazine', IxForm.value((S.titles[0] || {}).name || ''))
+    ]);
+    if (f.lock) rows += '<div class="ix-form-row"><div class="ix-form-f ix-form-sfull"><span class="ix-form-warn">' + esc(W.lockCust) + '</span></div></div>';
     if (m) {
       var tl = S.titles.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
-      g += '<div class="f spanall">' + lab('titles', 'Magazines', true) + '<div class="tlist' + (dirty('titles') ? ' ps-chg' : '') + '">' +
-        tl.map(function (t) { return '<label><input type="checkbox" data-title="' + t.id + '"' + (c.titles.indexOf(t.id) >= 0 ? ' checked' : '') + '> ' + esc(t.name) + '</label>'; }).join('') +
-        '</div><span class="hint">' + c.titles.length + ' ticked' + (isSponsor() && !f.titleWarn ? '. ' + esc(W.sponsorOne) : '') + '</span>' + (f.titleWarn ? '<span class="warn">' + esc(f.titleWarn) + '</span>' : '') + '</div>';
-    } else {
-      g += '<div class="f span2"><span class="lab">Magazine</span><div class="val">' + esc((S.titles[0] || {}).name || '') + '</div></div>';
+      rows += IxForm.row([fld('titles', 'Magazines', '<div class="tlist' + (dirty('titles') ? ' ps-chg' : '') + '">' +
+        tl.map(function (t) { return '<label><input type="checkbox" data-title="' + t.id + '"' + (c.titles.indexOf(t.id) >= 0 ? ' checked' : '') + '> ' + esc(t.name) + '</label>'; }).join('') + '</div>',
+        { req: true, span: 'full', hint: c.titles.length + ' ticked' + (isSponsor() && !f.titleWarn ? '. ' + esc(W.sponsorOne) : ''), warn: f.titleWarn ? esc(f.titleWarn) : '' })]);
     }
     if (m && c.titles.length > 1) {
       var k = c.titles.length, n = +c.sends || 0;
       var sub = { Mirrored: n ? n + ' in each town, ' + (n * k) + ' sends in all' : 'The same sends in all ' + k + ' towns',
                   Split: 'Set the count for each town below', Pool: n ? n + ' sends in all, placed wherever there is room' : 'One total, placed wherever there is room' };
-      g += '<div class="f spanall">' + lab('placement', esc(fill(W.whereQ, { k: k })), true) + '<div class="pcards' + (dirty('placement') ? ' ps-chg' : '') + '" role="radiogroup">' +
-        W.where.map(function (w) { var on = c.placement === w[0]; return '<label class="pcard' + (on ? ' ps-ob-on' : '') + '"><input type="radio" name="ps-where" data-where="' + w[0] + '"' + (on ? ' checked' : '') + '><span><b>' + esc(w[1]) + '</b><em>' + esc(sub[w[0]]) + '</em></span></label>'; }).join('') + '</div></div>';
+      rows += IxForm.row([fld('placement', fill(W.whereQ, { k: k }), '<div class="pcards' + (dirty('placement') ? ' ps-chg' : '') + '" role="radiogroup">' +
+        W.where.map(function (w) { var on = c.placement === w[0]; return '<label class="pcard' + (on ? ' ps-ob-on' : '') + '"><input type="radio" name="ps-where" data-where="' + w[0] + '"' + (on ? ' checked' : '') + '><span><b>' + esc(w[1]) + '</b><em>' + esc(sub[w[0]]) + '</em></span></label>'; }).join('') + '</div>',
+        { req: true, span: 'full' })]);
     }
     if (placementOut() === L.split) {
-      g += '<div class="f spanall">' + lab('split', 'Sends per town', true) + '<div class="splitbox' + (dirty('split') ? ' ps-chg' : '') + '">' +
-        c.titles.map(function (t) { return '<div class="splitrow"><span>' + esc(titleName(t)) + '</span><input class="ix-picker-input" type="number" min="0" step="1" data-split="' + t + '" value="' + esc(c.split[t] == null ? '' : c.split[t]) + '"></div>'; }).join('') +
-        '</div><span class="hint" id="ps-splitsum">Edition sends total ' + splitSum() + '</span></div>';
+      rows += IxForm.row([fld('split', 'Sends per town', '<div class="splitbox' + (dirty('split') ? ' ps-chg' : '') + '">' +
+        c.titles.map(function (t) { return '<div class="splitrow"><span>' + esc(titleName(t)) + '</span><input class="ix-picker-input" type="number" min="0" step="1" data-split="' + t + '" value="' + esc(c.split[t] == null ? '' : c.split[t]) + '"></div>'; }).join('') + '</div>',
+        { req: true, span: 'full', hint: '<span id="ps-splitsum">Edition sends total ' + splitSum() + '</span>' })]);
     }
-    g += '<div class="f span2">' + lab('frequency', 'When', false) + sel('data-k="frequency" aria-label="When"', Lz.frequencies, c.frequency, null, dirty('frequency')) + '</div>';
-    if (!isSpecific()) g += '<div class="f">' + lab('startMonth', c.frequency === L.once ? 'Month' : 'Start month', true) + sel('data-k="startMonth" aria-label="Start month"', startMonths(), c.startMonth, 'Select', dirty('startMonth')) + '</div>';
-    if (c.frequency === L.window) g += '<div class="f">' + lab('windowEnd', 'Window ends', true) + '<input class="ix-picker-input' + (dirty('windowEnd') ? ' ix-picker-input--changed' : '') + '" type="date" data-k="windowEnd" value="' + esc(c.windowEnd) + '" aria-label="Window ends"></div>';
+    // row 2: Franchise · On the website (a franchise sponsor only)
+    if (isSponsor()) {
+      var t0 = c.titles[0];
+      var fr = Lz.franchises.filter(function (x) { return !t0 || x.titleIds.indexOf(t0) >= 0; }).map(function (x) { return [x.id, x.name]; });
+      rows += IxForm.row([
+        fld('franchise', 'Franchise', selK('franchise', fr, 'Select', 'Franchise'), { req: true, warn: fr.length ? '' : esc(W.noFranchise) }),
+        fld('web', 'On the website', selK('web', WEBS, null, 'On the website'), { hint: esc(c.web === WEBS[1] ? W.webIssue : W.webRun) })   // v1.0.6
+      ]);
+    }
+    // row 3: When · Start month · Edition sends · Week (Window: Window ends before Edition sends, Week on row 4)
     var der = sendsDerived();
-    g += '<div class="f">' + lab('sends', tip('Edition sends'), true) + (der != null
-      ? '<div class="val" id="ps-sendsval">' + der + '</div>'
-      : '<input class="ix-picker-input' + (dirty('sends') ? ' ix-picker-input--changed' : '') + '" type="number" min="1" step="1" data-k="sends" value="' + esc(c.sends) + '" aria-label="Edition sends">') + '</div>';
-    if (!isSpecific()) g += '<div class="f">' + lab('week', tip('Week'), false) + sel('data-k="week" aria-label="Week"', Lz.weeks, c.week, null, dirty('week')) + '</div>';
-    if (isSpecific()) g += '<div class="f spanall">' + lab('months', 'Months', true) + monthGrid() + '</div>';
-
-    var n = missing(), ch = changedKeys().length;
-    var canSave = !n.length && (f.mode === 'new' || ch > 0) && !f.busy;
-    var save = '<div class="savebar"><div class="what"><b>' + esc(head) + '</b>' + esc(fill(W.changed, { n: ch, s: plural(ch) })) +
-      (n.length ? '<div class="need">' + esc(fill(W.needs, { list: n.join(', ') })) + '</div>' : '') + (f.err ? '<div class="ps-err" role="alert">' + esc(f.err) + '</div>' : '') + '</div>' +
-      '<button type="button" class="ix-revert" id="ps-fcancel">' + esc(W.cancel) + '</button>' +
-      '<button type="button" class="ix-btn ix-btn--primary" id="ps-fsave"' + (canSave ? '' : ' disabled') + '>' + esc(f.busy ? W.saving : (f.mode === 'new' ? W.save : W.saveEdit)) + '</button></div>';
+    var sendsF = fld('sends', '', der != null ? IxForm.value(String(der), 'id="ps-sendsval"')
+      : IxForm.input({ key: 'sends', type: 'number', min: 1, step: 1, value: c.sends, changed: dirty('sends'), label: 'Edition sends' }), { req: true, tip: tip('Edition sends') });
+    var whenF = fld('frequency', 'When', selK('frequency', Lz.frequencies, null, 'When'));
+    if (isSpecific()) {
+      rows += IxForm.row([whenF, sendsF]);
+      rows += IxForm.row([fld('months', 'Months', monthGrid(), { req: true, span: 'full' })]);
+    } else {
+      var startF = fld('startMonth', c.frequency === L.once ? 'Month' : 'Start month', selK('startMonth', startMonths(), 'Select', 'Start month'), { req: true });
+      var weekF = fld('week', '', selK('week', Lz.weeks, null, 'Week'), { tip: tip('Week') });
+      if (c.frequency === L.window) {
+        rows += IxForm.row([whenF, startF, fld('windowEnd', 'Window ends', IxForm.input({ key: 'windowEnd', type: 'date', value: c.windowEnd, changed: dirty('windowEnd'), label: 'Window ends' }), { req: true }), sendsF]);
+        rows += IxForm.row([weekF]);
+      } else rows += IxForm.row([whenF, startF, sendsF, weekF]);
+    }
     return '<section class="ps-ob-form" aria-label="' + esc(head) + '"><div class="formhead"><h2>' + esc(head) + '</h2><span class="hint">' + esc(f.mode === 'new' ? W.newHint : W.editHint) + '</span></div>' +
-      '<div class="grid">' + g + '</div>' + save + '</section>';
+      IxForm.wrap(rows + barHtml(), { label: head }) + '</section>';
+  }
+  function barHtml() {
+    var f = F(), n = missing(), ch = changedKeys().length;
+    return IxForm.bar({ what: f.mode === 'new' ? W.newH : fill(W.editH, { name: f.name }), changed: ch,
+      need: n.length ? fill(W.needs, { list: n.join(', ') }) : '', err: f.err, canSave: !n.length && (f.mode === 'new' || ch > 0) && !f.busy,
+      saving: !!f.busy, saveLabel: f.mode === 'new' ? W.save : W.saveEdit, resetLabel: 'Reset', cancelLabel: W.cancel });
   }
   function monthGrid() {
     var c = F().cur, first = nowYm(), earliest = c.months.length ? entMonth(c.months[0]) : first;
@@ -567,7 +621,7 @@
     S.modal = null;
     await load(true);
     var listed = !!sale(id);
-    S.form = null; S.open = id; S.filt = 'All'; S.fCust = '';
+    S.form = null; S.open = id; S.tState = null;   // v1.0.7 back to the table, filters cleared, the saved sale open
     render();
     if (!listed) toast(fill(W.notListed, { name: name }), 'unverified', 'save:' + id);
     else if (unc.length) toast(fill(W.unconfirmed, { name: name, fields: uniq(unc).join(', ') }), 'unverified', 'save:' + id);
@@ -602,8 +656,8 @@
   // ── render and wiring ───────────────────────────────────────
   function info() {
     return ctx.info({ file: FILE, version: VERSION, title: W.title,
-      blurb: 'Sales records and the obligations they make, for this publisher. A send is one newsletter edition. Saving a record makes its sends; editing a live one replaces its open sends; cancelling ends it. Board, Qty, Remaining, Behind pace and each send\'s state come from ix-sales. Pathways: ix-sales /sales, /obligations, /titles, /products, /customers, /franchises, /options, POST /sales, PATCH /sales/<id>, /sales/<id>/cancel, /obligations/<id>/make-good; ix-members /whoami (shell).',
-      scenarios: [], companions: 'ps-obligations-v1.0.3.css · ps-shell v' + window.PsShell.version + ' · ix-sales v1.2.0 · ix-form-controls v1.2.0' });
+      blurb: 'Sales records and the obligations they make, for this publisher, in four sections: Needs you, Running now, Starting later, Ended (ix-sales decides the section). Filters: Customer, and Magazines when there are two or more. Links: ?title=<TITLES-ADMIN id> filters a magazine, ?sale=<id> opens a sale. A send is one newsletter edition. Saving a record makes its sends; editing a live one replaces its open sends; cancelling ends it. Board, Qty, Remaining, Behind pace and each send\'s state come from ix-sales. Pathways: ix-sales /sales, /obligations, /titles, /products, /customers, /franchises, /options, POST /sales, PATCH /sales/<id>, /sales/<id>/cancel, /obligations/<id>/make-good; ix-members /whoami (shell).',
+      scenarios: [], companions: 'ps-obligations-v1.0.4.css · ps-shell v' + window.PsShell.version + ' · ix-sales v1.3.16 (sections) · ix-table v1.1.0 · ix-forms v1.0.0 · ix-form-controls v1.2.0' });
   }
   function render() {
     var y = window.scrollY, act = document.activeElement, focusKey = act && act.getAttribute ? (act.getAttribute('data-k') || act.id || '') : '';
@@ -612,16 +666,12 @@
     if (!S.loaded) h += ctx.placeholder ? '<div class="ps-ob-box"><table><tbody>' + ctx.placeholder(4, 9) + '</tbody></table></div>'
       : '<div class="ps-loading">' + esc(W.loading) + '</div>';
     else if (S.loadErr) h += '<div class="ps-err" role="alert">' + esc(fill(W.loadFail, { msg: S.loadErr })) + '</div>';
-    else if (S.form) h += form();
-    else {
-      var custs = []; S.sales.forEach(function (r) { if (r.customerId && !custs.some(function (c) { return c[0] === r.customerId; })) custs.push([r.customerId, r.customer || r.customerId]); });
-      custs.sort(function (a, b) { return String(a[1]).localeCompare(String(b[1])); });
-      h += '<div class="ps-ob-filters">' + W.filters.map(function (f) { return '<button type="button" class="ix-btn ix-btn--pill" data-active="' + (f === S.filt) + '" data-f="' + esc(f) + '">' + esc(f) + '</button>'; }).join('') +
-        '<span class="sp"></span>' + (S.fCust ? '<button type="button" class="ix-revert" id="ps-fclear">' + esc(W.clear) + '</button>' : '') +
-        sel('id="ps-fcust" aria-label="Customer"', custs, S.fCust, W.allCust, false) + '</div>' + table() + '<p class="ps-ob-note">' + esc(W.note) + '</p>';
-    }
+    else if (S.form) h += window.IxForm ? form() : '<div class="ps-err" role="alert">' + esc(W.noIxForm) + '</div>';
+    else h += '<div id="ps-ob-table"></div><p class="ps-ob-note">' + esc(W.note) + '</p>';   // v1.0.7 ix-table draws here
     h += '</div>' + modalHtml();
+    if (S.table) { try { S.tState = S.table.state(); } catch (e) {} S.table.destroy(); S.table = null; }   // the table is drawn again below, where it was
     el.innerHTML = h;
+    if (S.loaded && !S.loadErr && !S.form) { drawTable(); applyDeepLink(); }
     wire();
     if (focusKey) { var back = el.querySelector('[data-k="' + focusKey + '"]') || el.querySelector('#' + focusKey.replace(/[^\w-]/g, '')); if (back && back.focus) back.focus({ preventScroll: true }); }
     window.scrollTo(0, y);
@@ -630,15 +680,6 @@
   function wire() {
     var add = el.querySelector('#ps-add');
     if (add) add.addEventListener('click', openNew);
-    on('[data-f]', 'click', function (e) { S.filt = e.currentTarget.getAttribute('data-f'); render(); });
-    var fc = el.querySelector('#ps-fcust'); if (fc) fc.addEventListener('change', function () { S.fCust = fc.value; render(); });
-    var fx = el.querySelector('#ps-fclear'); if (fx) fx.addEventListener('click', function () { S.fCust = ''; render(); });
-    on('tr[data-sr]', 'click', function (e) { var id = e.currentTarget.getAttribute('data-sr'); S.open = S.open === id ? null : id; render(); });
-    on('tr[data-sr]', 'keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } });
-    on('[data-mt]', 'click', function (e) { e.stopPropagation(); var k = e.currentTarget.getAttribute('data-mt'); S.magOpen[k] = e.currentTarget.getAttribute('aria-expanded') !== 'true'; render(); });
-    on('[data-mg]', 'click', function (e) { e.stopPropagation(); askMakeGood(e.currentTarget.getAttribute('data-mg')); });
-    on('[data-edit]', 'click', function (e) { e.stopPropagation(); openEdit(e.currentTarget.getAttribute('data-edit')); });
-    on('[data-cxl]', 'click', function (e) { e.stopPropagation(); askCancel(e.currentTarget.getAttribute('data-cxl')); });
     if (S.form) wireForm();
     if (S.modal) wireModal();
   }
@@ -656,8 +697,8 @@
       n.classList.toggle('ix-picker-input--changed', dirty(k));
       refreshSaveBar(); refreshLabel(k);
     });
-    on('[data-revert]', 'click', function (e) {
-      var k = e.currentTarget.getAttribute('data-revert'); c[k] = JSON.parse(JSON.stringify(F().orig[k])); F().titleWarn = ''; render();
+    on('[data-ixf-revert]', 'click', function (e) {
+      var k = e.currentTarget.getAttribute('data-ixf-revert'); F().t.revert(k); F().titleWarn = ''; render();
     });
     on('input[data-title]', 'change', function (e) {
       var t = e.currentTarget.getAttribute('data-title'), ticked = e.currentTarget.checked;
@@ -702,21 +743,26 @@
       for (var i = 0; i < n; i++) a.push(addM(from, i * step));
       setMonths(a); render();
     });
-    el.querySelector('#ps-fcancel').addEventListener('click', function () { S.form = null; render(); });
-    el.querySelector('#ps-fsave').addEventListener('click', function () { if (F().mode === 'edit') askEdit(); else doSave(); });
+    wireBar();
   }
-  function refreshSaveBar() {                                          // update the bottom bar without a full re-draw
-    var bar = el.querySelector('.ps-ob-form .savebar'); if (!bar) return;
-    var tmp = document.createElement('div'); tmp.innerHTML = form();
-    var nb = tmp.querySelector('.savebar'); bar.querySelector('.what').innerHTML = nb.querySelector('.what').innerHTML;
-    var btn = bar.querySelector('#ps-fsave'); btn.disabled = nb.querySelector('#ps-fsave').disabled;
+  function wireBar() {                                                 // v1.0.7 Reset · Cancel · Save (ix-forms)
+    var r = el.querySelector('[data-ixf-reset]'), x = el.querySelector('[data-ixf-cancel]'), s2 = el.querySelector('[data-ixf-save]');
+    if (r) r.addEventListener('click', function () { if (r.disabled) return; F().t.reset(); F().err = ''; F().titleWarn = ''; F().fillFrom = null; render(); });   // keeps the form open
+    if (x) x.addEventListener('click', function () { S.form = null; render(); });
+    if (s2) s2.addEventListener('click', function () { if (s2.disabled) return; if (F().mode === 'edit') askEdit(); else doSave(); });
+  }
+  function refreshSaveBar() {                                          // update the bottom bar without a full re-draw (typing keeps focus)
+    var bar = el.querySelector('.ix-form-bar'); if (!bar) return;
+    var tmp = document.createElement('div'); tmp.innerHTML = barHtml();
+    bar.parentNode.replaceChild(tmp.firstChild, bar);
+    wireBar();
   }
   function refreshLabel(k) {                                           // show or hide the field's cancel link in place
-    var n = el.querySelector(k === 'split' ? '[data-split]' : '[data-k="' + k + '"]'); if (!n) return;
-    var f = n.closest('.f'); var labEl = f && f.querySelector('.lab'); if (!labEl) return;
-    var has = labEl.querySelector('[data-revert]');
-    if (dirty(k) && !has) { var b = document.createElement('button'); b.type = 'button'; b.className = 'ix-revert'; b.setAttribute('data-revert', k); b.textContent = W.fieldCancel;
-      b.addEventListener('click', function () { F().cur[k] = JSON.parse(JSON.stringify(F().orig[k])); render(); }); labEl.appendChild(document.createTextNode(' ')); labEl.appendChild(b); }
+    var f = el.querySelector('[data-ixf-field="' + k + '"]'); var labEl = f && f.querySelector('.ix-form-lab'); if (!labEl) return;
+    var has = labEl.querySelector('[data-ixf-revert]');
+    f.classList.toggle('ix-form-chg', dirty(k));
+    if (dirty(k) && !has) { var b = document.createElement('button'); b.type = 'button'; b.className = 'ix-revert ix-form-rv'; b.setAttribute('data-ixf-revert', k); b.textContent = W.fieldCancel;
+      b.addEventListener('click', function () { F().t.revert(k); render(); }); labEl.appendChild(b); }
     if (!dirty(k) && has) has.remove();
   }
   function wireModal() {
@@ -735,24 +781,42 @@
     if (!ok) { render(); toast(fill(W.listsFail, { msg: S.listsErr }), 'err', 'lists'); }
     return ok;
   }
+  // v1.0.7 a form keeps its values in an ix-forms tracker: cur and orig read through it, so Reset and cancel are one call
+  function makeForm(f, snapshot) {
+    f.t = IxForm.track(snapshot);
+    Object.defineProperty(f, 'cur', { get: function () { return f.t.cur; }, enumerable: true });
+    Object.defineProperty(f, 'orig', { get: function () { return f.t.orig; }, enumerable: true });
+    return f;
+  }
   async function openNew() {
+    if (!window.IxForm) { toast(W.noIxForm, 'err', 'form'); return; }
     if (!(await ensureLists())) return;
-    var cur = blank();
-    S.form = { mode: 'new', cur: cur, orig: JSON.parse(JSON.stringify(cur)), err: '', titleWarn: '' };
+    S.form = makeForm({ mode: 'new', err: '', titleWarn: '' }, blank());   // v1.0.7 Reset empties a new one
     S.modal = null; render();
   }
   async function openEdit(id) {
+    if (!window.IxForm) { toast(W.noIxForm, 'err', 'form'); return; }
     if (!(await ensureLists())) return;
-    var r = sale(id), cur = fromRow(r);
+    var r = sale(id);
     var lock = obsOf(id).some(function (o) { return o.status === 'Assigned'; });
-    S.form = { mode: 'edit', id: id, name: r.name, custName: r.customer, cur: cur, orig: JSON.parse(JSON.stringify(cur)), lock: lock, err: '', titleWarn: '' };
+    S.form = makeForm({ mode: 'edit', id: id, name: r.name, custName: r.customer, lock: lock, err: '', titleWarn: '' }, fromRow(r));   // Reset puts back the saved sale
     S.modal = null; render();
   }
 
   // ── mount ───────────────────────────────────────────────────
+  // v1.0.7 the opened row's buttons are drawn by ix-table, so their clicks are caught once, on the tab
+  function onPanelClick(e) {
+    var t = e.target, b;
+    if ((b = t.closest('[data-mt]'))) { e.preventDefault(); var k = b.getAttribute('data-mt'); S.magOpen[k] = b.getAttribute('aria-expanded') !== 'true'; if (S.table) S.table.redraw(); return; }
+    if ((b = t.closest('[data-mg]'))) { e.preventDefault(); askMakeGood(b.getAttribute('data-mg')); return; }
+    if ((b = t.closest('[data-edit]'))) { e.preventDefault(); openEdit(b.getAttribute('data-edit')); return; }
+    if ((b = t.closest('[data-cxl]'))) { e.preventDefault(); askCancel(b.getAttribute('data-cxl')); return; }
+  }
   function mount(node, c) {
     ctx = c; el = node;
-    S = { sales: [], obs: [], titles: [], loaded: false, loadErr: '', filt: 'All', fCust: '', open: null, magOpen: {}, form: null, modal: null, lists: null, listsErr: '' };
+    if (S && S.table) { try { S.table.destroy(); } catch (e) {} }
+    S = { sales: [], obs: [], titles: [], sections: null, loaded: false, loadErr: '', open: null, magOpen: {}, form: null, modal: null, lists: null, listsErr: '', table: null, tState: null, deepDone: false };
+    if (!el.__psObWired) { el.addEventListener('click', onPanelClick); el.__psObWired = true; }
     render();
     load(false).then(render);
   }

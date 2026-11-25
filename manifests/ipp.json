@@ -13,7 +13,7 @@
     "ipp-shell-v1.20.css",
     "ipp-picker-v1.43.css",
     "ix-ai-v1.3.1.css",
-    "ipp-publish-v2.29.css",
+    "ipp-publish-v2.30.css",
     "ipp-words-v1.0.5.css",
     "ipp-revenue-v1.6.9.css",
     "ipp-layout-v1.0.28.css",
@@ -26,10 +26,10 @@
     "ipp-picker-markup-v1.20.js",
     "ipp-picker-v1.85.js",
     "ix-success-toast-v1.0.1.js",
-    "ipp-revenue-v1.10.3.js",
+    "ipp-revenue-v1.10.4.js",
     "ipp-layout-v1.0.63.js",
     "ix-ai-v1.4.1.js",
     "ipp-words-v1.2.2.js",
-    "ipp-publish-v2.84.js"
+    "ipp-publish-v2.85.js"
   ]
 }

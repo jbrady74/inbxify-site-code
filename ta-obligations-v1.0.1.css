@@ -1,0 +1,12 @@
+/* ta-obligations-v1.0.1.css */
+/* v1.0.1 (24 Nov 2026, Publisher Portal S14): the Obligations tab is now a way into the Publisher Portal (ta-obligations-v1.0.2.js), so
+   v1.0.0's table, Remaining and tile rules go. What is left: the pane, one card with a line and the Open button, and the line that
+   says the Portal link cannot be built. Portal-look tokens only. HARDCODING: none. */
+.ta-ob { min-width: var(--ix-page-min); padding: 0 0 var(--ix-sp-32); }
+.ta-ob-head { display: flex; align-items: baseline; gap: var(--ix-sp-16); margin: 0 0 var(--ix-sp-16); }
+.ta-ob-head h2 { margin: 0; font: 600 var(--ix-fs-32)/1.1 var(--ix-font-display); color: var(--ix-text-dark); }
+.ta-ob-head span { flex: 1; font: 400 var(--ix-fs-small) var(--ix-font-body); color: var(--ix-text-mid); }
+.ta-ob-card { display: flex; align-items: center; gap: var(--ix-sp-24); padding: var(--ix-sp-16) var(--ix-sp-24); background: var(--ix-white); border: 1px solid var(--ix-border); }
+.ta-ob-card p { flex: 1 1 auto; margin: 0; font: 400 var(--ix-fs-body)/var(--ix-lh-body) var(--ix-font-body); color: var(--ix-text-dark); }
+.ta-ob-card .ta-ob-open { flex: 0 0 220px; justify-content: center; white-space: nowrap; }
+.ta-ob-card .ta-ob-bad { color: var(--ix-danger); }

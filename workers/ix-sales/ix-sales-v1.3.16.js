@@ -1,11 +1,26 @@
-// ix-sales-v1.3.15.js
+// ix-sales-v1.3.16.js
 // INBXIFY · Cloudflare Worker · ix-sales
 // SALES RECORDS and OBLIGATIONS: the one place the rules live. The portal
 // (S2) and Studio (S3) both call this; the Revenue Picker (S4) and Scenario
 // 108 (S5) call it too. Scoping: Sales-Records-Obligations-Scoping-v0_7.md.
 // Since v1.3.0 also the portal's Ads tab and the advertiser review page.
 //
-// v1.3.15 (24 Nov 2026, Publisher Portal S11/S12 · Build 2) — OBLIGATIONS DRIVE THE REVENUE TAB.
+// v1.3.16 (24 Nov 2026, Publisher Portal S14) — EVERY SALE ANSWERS ITS SECTION. THE RULE LIVES HERE ONLY.
+//   Ruling (Jeff, 24 Nov, S13 ruling 4, S14 answers 2 and 3): obligations tables are four sections, top to bottom, and a sale
+//   sits in the first one that fits. GET /sales rows gain section ('needs' | 'running' | 'later' | 'ended') and sectionWhy
+//   (one plain sentence for the Needs you rows, else ''). The Portal, the client page and anything else read these words;
+//   none of them works the rule out.
+//     needs    a missed send with no make good (any status); or, on an Active sale, behind pace; or a send due and not
+//              placed in the month's last issue: the month has passed, or at most one issue of the sale's magazines is
+//              still to come this month (today or later). Before that, a due send leaves the sale in Running now.
+//     ended    the sale is Ended; or nothing is left to run and its last month has passed (S14 answer 2).
+//     later    the first send is in a future month.
+//     running  everything else: this month is inside the run.
+//   GET /sales also answers sections: [{ key, label }] in order, so every table draws the same names.
+//   Built on main's v1.3.15. Nothing else changes.
+//   HARDCODING (provisional): HC-P-PP14-1 the four section keys and labels (SECTIONS); HC-P-PP14-2 "the month's last issue"
+//   is at most one PUBLICATION PLAN of the sale's magazines with a publication-date from today to the month's end.
+//// v1.3.15 (24 Nov 2026, Publisher Portal S11/S12 · Build 2) — OBLIGATIONS DRIVE THE REVENUE TAB.
 //   Written in S11 as v1.3.14 on v1.3.13 (branch agent-pp12-build2, never deployed). Ad Maker S3 took v1.3.14 on main
 //   (the stopped approval link, deployed), so this is that change merged onto main's v1.3.14 as v1.3.15. Nothing below differs.
 //   Rulings (Jeff, 23 Nov): one engine for every sale. A sale is a number of sends; each issue that carries the
@@ -389,7 +404,9 @@
 //           month falls back to the calendar month end.
 // ============================================================
 
-const VERSION = '1.3.15';
+const VERSION = '1.3.16';
+// v1.3.16 the obligations table sections, in order (HC-P-PP14-1)
+const SECTIONS = [{ key: 'needs', label: 'Needs you' }, { key: 'running', label: 'Running now' }, { key: 'later', label: 'Starting later' }, { key: 'ended', label: 'Ended' }];
 // v1.3.7 · CUSTOMERS slugs that make up a customer's brand record (HC-P-AMB1-1)
 const CUST_BRAND = { logo: 'logo-link', logoLight: 'logo-link-light', main: 'brand-color-main', accent: 'brand-color-accent', fontHead: 'brand-font-heading', fontBody: 'brand-font-body',
   phone: ['business-phone', 'phone', 'contact-phone'], website: ['contact-website', 'website', 'business-website'], email: ['business-email', 'email', 'contact-email'],
@@ -680,7 +697,8 @@ async function scope(run, publisherId) {
 async function listSales(run, url) {
   const C = run.cfg.collections, S = JOIN.sales, O = JOIN.ob;
   const sc = await scope(run, url.searchParams.get('publisher'));
-  const [sales, obs, custs, prods] = await Promise.all([run.listAll(C.sales), run.listAll(C.obligations), run.listAll(C.customers), run.listAll(C.franchises)]);
+  const [sales, obs, custs, prods, plans] = await Promise.all([run.listAll(C.sales), run.listAll(C.obligations), run.listAll(C.customers), run.listAll(C.franchises),
+    run.listAll(C.plans)]);                                                                                          // v1.3.16 plans for the last-issue rule
   const custBy = index(custs), prodBy = index(prods), taById = sc.taById;
   const obStatus = await run.optMap(C.obligations, O.status);
   const obsBySale = new Map(); obs.forEach(o => { if (o.isArchived) return; const s = refId(fd(o)[O.sales]); if (s) { if (!obsBySale.has(s)) obsBySale.set(s, []); obsBySale.get(s).push(o); } });
@@ -701,9 +719,36 @@ async function listSales(run, url) {
       sends: mine.length, delivered: st[STATUS.fulfilled] || 0, missed: st[STATUS.missed] || 0, open: st[STATUS.open] || 0,
       assigned: st[STATUS.assigned] || 0, cancelled: st[STATUS.cancelled] || 0, reached,
       endsMonth: f[S.windowEnd] ? ym(f[S.windowEnd]) : (months[months.length - 1] || null) }));
+    Object.assign(rows[rows.length - 1], sectionOf(rows[rows.length - 1], mine, obStatus, plans));                 // v1.3.16
   }
   rows.sort((a, b) => b.name.localeCompare(a.name));
-  return { ok: true, publisher: sc.publisherId, sales: rows };
+  return { ok: true, publisher: sc.publisherId, sections: SECTIONS, sales: rows };
+}
+// v1.3.16 — the section a sale sits in (S13 ruling 4; S14 answers 2 and 3). The first that fits wins.
+function sectionOf(row, obs, obStatus, plans) {
+  const O = JOIN.ob, now = new Date().toISOString(), nowYm = ym(now), today = dayOf(now);
+  const titleIds = (row.titles || []).map(t => t.id);
+  const left = month => plans.filter(p => !p.isArchived && titleIds.includes(refId(fd(p)[JOIN.plan.ta])) &&
+    ym(fd(p)[JOIN.plan.date]) === month && dayOf(fd(p)[JOIN.plan.date]) >= today).length;   // HC-P-PP14-2
+  const mgOf = liveMakeGoods(obs, obStatus);
+  const slots = obs.filter(o => !o.isArchived && !fd(o)[O.makeGoodOf] && obStatus.get(fd(o)[O.status]) !== STATUS.cancelled);
+  const dueMonths = [];
+  slots.forEach(o => {
+    const live = obStatus.get(fd(o)[O.status]) === STATUS.missed ? mgOf.get(o.id) : o;
+    if (!live || stateOf(live, obStatus, mgOf, nowYm) !== 'due') return;
+    const f = fd(live); dueMonths.push(f[O.dueBy] ? ym(f[O.dueBy]) : String(f[O.dueMonth] || ''));
+  });
+  const active = row.status === SR_STATUS.active;
+  const lastCall = dueMonths.filter(m => m && (m < nowYm || left(m) <= 1));
+  if (row.missedOwed > 0) return { section: 'needs', sectionWhy: row.missedOwed + ' missed send' + (row.missedOwed === 1 ? '' : 's') + ' with no make good.' };
+  if (active && row.pace && row.pace.behind) return { section: 'needs', sectionWhy: 'Behind pace: ' + row.pace.placed + ' placed, about ' + row.pace.expected + ' expected by now.' };
+  if (active && lastCall.length) return { section: 'needs', sectionWhy: lastCall.length + ' send' + (lastCall.length === 1 ? '' : 's') + ' due and not placed, and this month\u2019s last issue is the last chance.' };
+  if (!active) return { section: 'ended', sectionWhy: '' };
+  const last = row.runTo || row.runFrom || row.startMonth || '';
+  if (!row.remaining && last && last < nowYm) return { section: 'ended', sectionWhy: '' };
+  const first = row.runFrom || row.startMonth || '';
+  if (first && first > nowYm) return { section: 'later', sectionWhy: '' };
+  return { section: 'running', sectionWhy: '' };
 }
 // The green board (scoping §10). A slot is one send sold: not cancelled, not
 // a make good. A missed send with a live make good takes the make good's

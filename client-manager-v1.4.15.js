@@ -1,6 +1,18 @@
-/* client-manager-v1.4.14.js
+/* client-manager-v1.4.15.js
    ============================================================
-   client-manager-v1.4.14.js
+   client-manager-v1.4.15.js
+
+   v1.4.15 (24 Nov 2026, Publisher Portal S14) — COMMITMENTS IN THE SAME SECTIONS AS THE PORTAL.
+     Rulings (Jeff, 24 Nov, S13 rulings 4 and 5; S14 answer 2a): the client page keeps its Commitments tab, one customer's
+     sales, read-only, in the same table and sections as the Publisher Portal: Needs you, Running now, Starting later,
+     Ended (collapsed), each with its count and a chevron at the far right; empty sections are not drawn. The table is
+     ix-table v1.1.0; the section is ix-sales' answer (GET /sales section, v1.3.16), worked out nowhere here. The Status
+     column goes (the section says it); Comp is the Type tag.
+     · Each row ends with "Open in Portal", which opens the Publisher Portal in this browser tab on that sale
+       (?sale=<id>#obligations, its section opened), with ?back= this client's Commitments tab, so the Portal's
+       "← Back to TA Studio" link returns here (ps-shell v1.0.6).
+     · Sections and the table's state are kept while the page redraws (another tab, a save).
+     Needs ix-table v1.1.0 (+ CSS) and ix-sales v1.3.16 on TA Studio. HARDCODING: HC-P-PP14-7 the column weights and words.
 
    v1.4.14 (10 Nov 2026, Publisher Portal S9) — AD DECISIONS MOVE TO THE PUBLISHER PORTAL (option B).
      Jeff ruled (10 Nov): staff act on ads in the Publisher Portal "as the publisher", so there is one
@@ -847,7 +859,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var PUBLISHER_NAME = firstCustEl?.dataset?.publisherName || '';
   var PUBLISHER_ID = firstCustEl?.dataset?.publisherId || '';
 
-  var CM_VERSION = '1.4.14';   // v1.2.0 — the mount log said 1.0.2 while the file said 1.1.4
+  var CM_VERSION = '1.4.15';   // v1.2.0 — the mount log said 1.0.2 while the file said 1.1.4
 
   var CUSTOMERS = [];
   document.querySelectorAll('.customers-wrapper').forEach(function (el) {
@@ -1126,7 +1138,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }).then(function (r) { return r.json().catch(function () { return { ok: false, error: 'HTTP ' + r.status }; }); })
       .then(function (j) {
         if (!j || j.ok !== true) throw new Error((j && j.error) || 'ix-sales did not answer.');
-        if (MODAL && MODAL.custId === custId) MODAL.sales = { state: 'ok', rows: (j.sales || []).filter(function (r) { return r.customerId === custId; }) };
+        if (MODAL && MODAL.custId === custId) MODAL.sales = { state: 'ok', rows: (j.sales || []).filter(function (r) { return r.customerId === custId; }), sections: j.sections || null };   // v1.4.15 sections
       })
       .catch(function (e) { if (MODAL && MODAL.custId === custId) MODAL.sales = { state: 'error', error: (e && e.message) || 'ix-sales did not answer.' }; })
       .finally(function () { if (MODAL && MODAL.custId === custId) repaintKeepScroll(); });
@@ -1171,13 +1183,6 @@ document.addEventListener('DOMContentLoaded', function () {
   function fmtYm(ym) {
     var m = /^(\d{4})-(\d{2})/.exec(ym || ''); if (!m) return '';
     return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m[2] - 1] + ' \u2019' + m[1].slice(2);
-  }
-  function salesState(r) {
-    var b = r.board || {};
-    if (String(r.status).toLowerCase() === 'ended') return '<span class="cm-chip plain">Ended</span>';
-    if (b.missed) return '<span class="cm-chip warn">Missed</span>';
-    if (b.due) return '<span class="cm-chip warn">Due now</span>';
-    return '<span class="cm-chip ok">On track</span>';
   }
   function emptyLine(t) { return '<div class="cm-quiet">' + esc(t) + '</div>'; }
 
@@ -1304,20 +1309,50 @@ document.addEventListener('DOMContentLoaded', function () {
     var href = portalHref();
     if (href) window.open(href, '_blank', 'noopener'); else cmToast('The page has no data-publisher-slug, so the portal link cannot be built.', 'error');
   };
+  // v1.4.15 · Commitments: ix-table v1.1.0 in ix-sales' sections, read-only, each row opens the Portal on its sale
+  var CM_SECTIONS = [{ key: 'needs', label: 'Needs you' }, { key: 'running', label: 'Running now' }, { key: 'later', label: 'Starting later' }, { key: 'ended', label: 'Ended' }];
+  var CM_TABLE = null, CM_TSTATE = null;
+  function salePortalHref(r) {                                         // HC-P-PP9-5 route; ?sale and ?back (HC-P-PP14-4)
+    var el = document.querySelector('[data-publisher-slug]');
+    var slug = el ? String(el.getAttribute('data-publisher-slug') || '').trim() : '';
+    if (!slug || !r) return '';
+    var route = String((window.TA_CONFIG && window.TA_CONFIG.publisherRoute) || '/publisher/{slug}');
+    var back = location.pathname + location.search + '#client=' + ((MODAL && MODAL.custId) || '') + '&tab=commitments';
+    return route.replace('{slug}', encodeURIComponent(slug)) + '?sale=' + encodeURIComponent(r.id) + '&back=' + encodeURIComponent(back) + '#obligations';
+  }
   function recCommitments() {
     var S = MODAL.sales || { state: 'loading' };
     var h = '<div class="cm-card"><h3>What they bought</h3>';
     if (S.state === 'loading') return h + emptyLine('Loading\u2026') + '</div>';
     if (S.state === 'error') return h + '<div class="cm-err">' + esc(S.error) + '</div></div>';
     if (!S.rows.length) return h + emptyLine('No sales records for this client. Add one in the Publisher Portal\u2019s Obligations tab.') + '</div>';
-    h += '<div class="cm-tblw"><table class="cm-rtbl"><tr><th>Record</th><th>Product</th><th>Type</th><th>Runs</th><th>Frequency</th><th>Qty</th><th>Remaining</th><th>Board</th><th>Status</th></tr>';
-    S.rows.forEach(function (r) {
-      var b = r.board || {};
-      h += '<tr><td>' + esc(r.name) + '</td><td>' + esc(r.product || '') + '</td><td>' + esc(r.type || '') + '</td><td>' + esc(fmtYm(r.runFrom)) + ' to ' + esc(fmtYm(r.runTo)) +
-           '</td><td>' + esc(r.frequency || '') + '</td><td>' + (r.qty || 0) + '</td><td>' + (r.remaining || 0) + (r.missedOwed ? ' (' + r.missedOwed + ' missed)' : '') +
-           '</td><td title="' + esc(boardSum(b, r.qty)) + '">' + boardBar(b, r.qty) + '</td><td>' + salesState(r) + '</td></tr>';
+    if (!window.IxTable || typeof IxTable.create !== 'function') return h + '<div class="cm-err">ix-table v1.1.0 is not on this page, so the commitments cannot be listed.</div></div>';
+    return h + '<div id="cm-commit-table"></div><div class="cm-quiet" style="margin-top:10px">Sales are made, changed and made good in the Publisher Portal. Open in Portal opens that sale there, with a link back here.</div></div>';
+  }
+  function drawCommitments() {                                         // after the page is drawn
+    if (CM_TABLE) { try { CM_TSTATE = CM_TABLE.state(); } catch (e) {} CM_TABLE.destroy(); CM_TABLE = null; }
+    var mt = document.getElementById('cm-commit-table'); if (!mt || !MODAL || !MODAL.sales || MODAL.sales.state !== 'ok') return;
+    var secs = (MODAL.sales.sections || CM_SECTIONS).map(function (x) { return { key: x.key, label: x.label, collapsed: x.key === 'ended' }; });
+    var plab = function (r) { return r.franchise ? r.franchise + ' sponsor' : (r.product || ''); };
+    CM_TABLE = IxTable.create(mt, {
+      id: 'cm-commitments', noun: ['sales record', 'sales records'], zebra: false, minWidth: 900,
+      rows: MODAL.sales.rows, rowId: function (r) { return r.id; },
+      sections: secs, section: function (r) { return r.section || 'running'; }, sort: { key: 'runs', dir: 'asc' },
+      state: CM_TSTATE ? { collapsed: CM_TSTATE.collapsed } : null,
+      columns: [                                                       // HC-P-PP14-7
+        { key: 'name', label: 'Record', w: 90, type: 'id' },
+        { key: 'product', label: 'Product', w: 190, type: 'strong', text: plab },
+        { key: 'type', label: 'Type', w: 84, type: 'html', text: function (r) { return r.type || ''; }, html: function (r) { return r.type === 'Comp' ? IxTable.pill('comp', 'Comp') : esc(r.type || ''); } },
+        { key: 'runs', label: 'Runs', w: 130, type: 'date', text: function (r) { return fmtYm(r.runFrom) + ' to ' + fmtYm(r.runTo); }, sortValue: function (r) { return String(r.runFrom || ''); } },
+        { key: 'frequency', label: 'Frequency', w: 110, type: 'text', text: function (r) { return r.frequency || ''; } },
+        { key: 'qty', label: 'Qty', w: 44, type: 'number', text: function (r) { return String(r.qty || 0); } },
+        { key: 'remaining', label: 'Remaining', w: 100, type: 'html', align: 'right', text: function (r) { return String(r.remaining || 0); },
+          html: function (r) { return (r.remaining || 0) + (r.missedOwed ? ' (' + r.missedOwed + ' missed)' : ''); } },
+        { key: 'board', label: 'Board', w: 120, type: 'html', title: function (r) { return boardSum(r.board || {}, r.qty); }, html: function (r) { return boardBar(r.board || {}, r.qty); } },
+        { key: 'open', label: '', w: 128, fixed: true, type: 'action', html: function (r) { var hf = salePortalHref(r); return hf ? '<a class="ix-table-btn" href="' + esc(hf) + '">Open in Portal</a>' : ''; } }
+      ],
+      words: { empty: 'No sales records for this client.' }
     });
-    return h + '</table></div><div class="cm-quiet" style="margin-top:10px">Each record\u2019s sends, make goods and edits live in the Publisher Portal\u2019s Obligations tab.</div></div>';
   }
   function readVal(f) {
     var v = MODAL.edit[f.s];
@@ -1401,6 +1436,7 @@ document.addEventListener('DOMContentLoaded', function () {
     h += '<button class="cm-mf-pub cm-pbtn ghost"' + (dc === 0 ? ' disabled' : '') + ' onclick="cmDoSave(true)">Save &amp; Publish</button>';
     h += '</div></div></div>';
     mount.innerHTML = h;
+    if (M.tab === 'commitments') drawCommitments(); else if (CM_TABLE) { try { CM_TSTATE = CM_TABLE.state(); } catch (e) {} CM_TABLE.destroy(); CM_TABLE = null; }   // v1.4.15
   }
 
   // Portal fonts, once (HC-P-CM140-3).
