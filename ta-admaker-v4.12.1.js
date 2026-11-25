@@ -1,6 +1,16 @@
-/* ta-admaker-v4.12.0.js
+/* ta-admaker-v4.12.1.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.1 (25 Nov 2026, Ad Maker Build S4) — SAVE NEVER WAITS SILENTLY FOR "WHERE A CLICK GOES". JS and CSS v4.12.1.
+     Test 1 (25 Nov): Save on Check stayed grey until a click was picked, and nothing in view said so. Ruling (Jeff, option
+     A): keep the choice required (12 Nov), make the wait obvious.
+     · Save on Check is clickable once What happens is chosen. With no click picked it does not save: it scrolls to Where a
+       click goes, outlines it in red with "Pick where a click goes, then Save" in its head, and the bar says the same in
+       bold. Picking one clears the outline.
+     · The bar after Save: "Back to Needs action" is "Back to All ads" and opens the All ads tab (Needs action is gone
+       since the Ads tab).
+     · NEEDS: ix-ads-board v1.0.10 (pending ads with no email out read "Not sent").
 
    v4.12.0 (25 Nov 2026, Ad Maker Build S4) — A PUBLISHER'S REQUEST IS CLOSED WHEN ITS AD IS SAVED, AND QUILL'S LINK
      OPENS IT. JS and CSS v4.12.0 (CSS: one rule for the request tab).
@@ -949,7 +959,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.0', CSS_FILE = 'ta-admaker-v4.12.0.css';
+  var VERSION = '4.12.1', CSS_FILE = 'ta-admaker-v4.12.1.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.17 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -1047,7 +1057,7 @@
     atLeastOne: 'Pick at least one banner or sidebar.', saves: 'Saves', editing: 'Editing', crop: 'Crop', dragPhoto: 'drag the photo', zoom: 'Zoom',
     resetCrop: 'Reset crop', separate: 'Separate the subject \u00b7 Coming', headline: 'Headline', sizes: 'Sizes', thisOnly: 'this shape only',
     checks: 'Checks', toSave: 'Save this one', saved: 'Saved', saving: 'Saving', keepOpen: 'Saving. Keep this tab open.',
-    savedMsg: 'Saved. The publisher can now review the shapes.', again: 'Back to Needs action', pending: 'Pending',
+    savedMsg: 'Saved. The publisher can now review the shapes.', again: 'Back to All ads', pending: 'Pending',
     fixing: 'Fixing a sent-back shape', whatSave: 'What Save does', forRef: 'For reference: the',
     noteOnly: 'From a slot note', addInClients: 'Add the customer in CLIENTS', notInList: 'Not in the list?',
     sentNoNote: 'No note came with the send-back.', toolComing: 'are made in a tool that is coming soon. This item stays on the list until then, so nothing booked is missed.'
@@ -2989,7 +2999,8 @@
   }
   function clickCardHTML() {
     var ch = clickChoices(), cur = S.click || null, typed = cur && cur.kind === 'custom';
-    return '<div class="am-card am-click' + (cur ? '' : ' need') + '"><div class="am-fch"><b>Where a click goes</b><span>' + (cur ? esc(cur.url) : 'Choose one before saving') + '</span></div>' +
+    if (cur) S.clickNudge = false;   // v4.12.1
+    return '<div class="am-card am-click' + (cur ? '' : ' need') + (!cur && S.clickNudge ? ' nudge' : '') + '"><div class="am-fch"><b>Where a click goes</b><span>' + (cur ? esc(cur.url) : S.clickNudge ? '<b class="am-bad">Pick where a click goes, then Save</b>' : 'Choose one before saving') + '</span></div>' +
       ch.map(function (q) { return '<label class="am-clk"><input type="radio" name="am-click" data-click="' + esc(q.kind) + '" data-url="' + esc(q.url) + '"' + (cur && cur.kind === q.kind ? ' checked' : '') + '> ' + esc(q.label) + '</label>'; }).join('') +
       (ch.length ? '' : '<div class="am-light">The customer record has no phone, website or social pages. Type the link.</div>') +
       '<label class="am-clk"><input type="radio" name="am-click" data-click="custom"' + (typed || S.clickCustom ? ' checked' : '') + '> A link I type</label><input class="am-inp" data-clickurl="1" placeholder="https://\u2026 or tel:\u2026" value="' + esc(typed ? cur.url : '') + '"' + (typed || S.clickCustom ? '' : ' style="display:none"') + '></div>';
@@ -4882,7 +4893,7 @@
       '<div class="am-card am-sum">' + fcHead + '<div class="am-sumrow big"><div class="pic" id="am-cvbig"></div><div class="am-sumr"><b>' + esc(shapeLabel(S.shape)) + '</b> · ' + (cv.existing ? 'saved' : 'made in Canva') + '<div class="am-srcl">' + checkNameLine(cv, c) + '</div>' +
       '<div class="am-phoneh" style="margin-top:8px">On a phone <span>' + PHONE_W + ' px</span></div><div class="am-phonepic" id="am-cvphone"></div></div></div></div>' + clickCardHTML();   // v4.11.5: What happens moved to the right-hand column
     later(function () { if (!img) return; var b = document.getElementById('am-cvbig'), p = document.getElementById('am-cvphone'); if (b) { var i1 = new Image(); i1.src = img.src; i1.style.width = Math.min(dims.w || 700, 700) + 'px'; i1.style.display = 'block'; b.innerHTML = ''; b.appendChild(i1); } if (p) { var i2 = new Image(); i2.src = img.src; i2.style.width = PHONE_W + 'px'; i2.style.display = 'block'; p.innerHTML = ''; p.appendChild(i2); } });
-    shell(mid, barHTML(whatBarMsg(), ghost('back', W.back) + (cv.editUrl ? btn('cvAgain', CANVA_WORDS.again, 'secondary') : '') + btn('cvSave', W.saveBtn, 'primary', !whatCan())), { right: whatHTML() });   // v4.11.3: one Save; the choice above it decides what it does
+    shell(mid, barHTML(whatBarMsg(), ghost('back', W.back) + (cv.editUrl ? btn('cvAgain', CANVA_WORDS.again, 'secondary') : '') + btn('cvSave', W.saveBtn, 'primary', !whatCanBut())), { right: whatHTML() });   // v4.11.3: one Save; the choice above it decides what it does
   }
   function canvaAsk() {
     var cv = S.canva, cfg = CFG(); if (!cv || !cv.img || cv.fc.busy) return;
@@ -4912,7 +4923,7 @@
     sendTo: 'Send to', toPublisher: '{name} · {email}', toPublisherUnknown: 'The publisher’s contact', toTest: '{email} (test)', toTestUnknown: 'Me (test)', toTestNote: 'The same email, sent to you.',
     noContact: 'The PUBLISHERS record has no Contact Name or Business Email, so only a test can be sent.',
     mail: { subject: 'Subject', message: 'Message', loading: 'Reading the email…', fail: 'The email’s words could not be read ({msg}). The standard email goes out.', added: 'Added under your message: the {shape}, a “{button}” button, and “{until}”', need: 'The subject and the message cannot be empty' },   // v4.11.5
-    need: 'Choose what happens, then Save', needClick: 'Choose where a click goes first',
+    need: 'Choose what happens, then Save', needClick: 'Pick where a click goes, then Save',
     bar: { draft: 'Save keeps the design in Canva as a draft', send: 'Save writes the ad, then emails {to}', current: 'Save writes the ad, approves it and makes it current', hold: 'Save writes the ad, approves it and holds it', plain: 'Save writes the splash to the customer' },
     barSaved: { send: 'Save emails {to}', current: 'Save approves it and makes it current', hold: 'Save approves it and holds it', plain: 'Already saved' },
     optsSaved: { send: 'Emails a review link that needs no login. The ad stays Pending until the answer comes back.' },
@@ -4967,11 +4978,16 @@
       return '<label class="am-clk am-whatl' + (on ? ' am-what-on' : '') + '"><input type="radio" name="am-what" data-what="' + k + '"' + (on ? ' checked' : '') + '><span class="tx"><b>' + esc(o[0]) + '</b><small>' + esc(fillW((cv.existing && SW.optsSaved[k]) || o[1], { customer: c.name || 'the customer', shape: low })) + '</small></span></label>' + more; }).join('');
     return '<div class="am-card am-what' + (cv.what ? '' : ' need') + '"><div class="am-fch"><b>' + SW.head + '</b><span>' + (cv.what ? esc(SW.opts[cv.what][0]) : SW.sub) + '</span>' + (cv.what ? revert('whatCancel') : '') + '</div>' + rows + '</div>';
   }
+  function whatCanBut() { var cv = S.canva || {}; if (!cv.what || !cv.img) return false; if (cv.what === 'send' && mailBad()) return false; return true; }   // v4.12.1: all but the click
+  function clickNudge() {   // v4.12.1: Save pressed with no click picked
+    S.clickNudge = true; render();
+    setTimeout(function () { var el = document.querySelector('#' + MOUNT_ID + ' .am-click'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 30);
+  }
   function whatCan() { var cv = S.canva || {}; if (!cv.what || !cv.img) return false; if (cv.what === 'draft') return true; if (cv.what === 'send' && mailBad()) return false; return !!(cv.existing || S.click); }
   function whatBarMsg() {
     var cv = S.canva || {}, SW = SAVE_WORDS;
     if (!cv.what) return SW.need;
-    if (cv.what !== 'draft' && !cv.existing && !S.click) return SW.needClick;
+    if (cv.what !== 'draft' && !cv.existing && !S.click) return '<b' + (S.clickNudge ? ' class="am-bad"' : '') + '>' + SW.needClick + '</b>';   // v4.12.1: bold, red once Save was pressed
     if (cv.what === 'send' && mailBad()) return SW.mail.need;
     var w = cv.what === 'send' ? sendToWho() : null;
     return fillW((cv.existing ? SW.barSaved : SW.bar)[cv.what] || SW.bar[cv.what], { to: w ? esc(cv.to === 'test' ? w.testName : w.pubName) : '' });
@@ -5000,7 +5016,8 @@
     p.then(function () { S.saving.done = true; render(); if (window.IxAdsTab) IxAdsTab.refresh(); }).catch(function (e) { S.saving.err = (e && e.message) || String(e); render(); });
   }
   function canvaSave() {
-    var c = cust(), cfg = CFG(), cv = S.canva, sh = S.shape; if (!cv || !cv.what || !whatCan()) return;
+    var c = cust(), cfg = CFG(), cv = S.canva, sh = S.shape; if (cv && cv.what && whatCanBut() && cv.what !== 'draft' && !cv.existing && !S.click) { clickNudge(); return; }
+    if (!cv || !cv.what || !whatCan()) return;
     var what = cv.what, ex = cv.existing || null, fromV = cv.fromVersion || null, low = shapeLabel(sh).toLowerCase(), pub = pagePublisher();
     if (what === 'draft') { canvaKeepDraft(); return; }
     if (!ex && !cv.blob) return;
@@ -5701,7 +5718,7 @@
       case 'cvAgain': if (S.canva && S.canva.editUrl) { S.screen = 'canva'; S.canva.seenExport = S.canva.job && S.canva.job.exportedAt; render(); window.open(S.canva.editUrl, '_blank'); canvaPollStart(); } break;
       case 'cvSave': canvaSave(); break;
       case 'doFix': doFix(); break;
-      case 'again': doClose(S); canvaPollStop(); loadNeeds().then(render); loadAds().then(render); loadMedia().then(render); if (window.IxAdsTab) IxAdsTab.refresh(); break;   // v2.8.0: the saved job closes; the lists reload
+      case 'again': doClose(S); canvaPollStop(); loadNeeds().then(render); loadAds().then(render); loadMedia().then(render); if (window.IxAdsTab) IxAdsTab.refresh(); A.tab = 'all'; A.page = 'tabs'; adsRender(); break;   // v4.12.1: back to the All ads tab   // v2.8.0: the saved job closes; the lists reload
     }
   }
   // v2.7.0: the business name slot is filled from the customer unless the read supplied one
