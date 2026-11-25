@@ -1,5 +1,82 @@
-// ix-perf-v1.2.0.js
+// ix-perf-v1.2.3.js
 // INBXIFY · Cloudflare Worker · ix-perf · the performance collector and its reads
+//
+// v1.2.3 (24 Nov 2026, Performance Report S5) — EDITIONS: A SOURCE'S REPORT AND OUR COUNT SIDE BY SIDE, AND EVERY
+//   COUNTED ROW OF AN EDITION ON THE SCREEN (Jeff, 24 Nov: "have our counts side by side and persist alongside
+//   anything else"; and yes to closing the gaps so that Site plus Editions accounts for every row in Raw counts).
+//   Needs quill-performance v1.2.0. An older page reads this answer wrongly; a v1.2.0 page says so on an older Worker.
+//   1 · GET /edition KEEPS THE TWO KINDS OF NUMBER APART. Before, our count stood in a source's own cells until its
+//       report arrived, then vanished. Now, for every email source:
+//         top.sends / top.opens / top.clicks [source]   THE SOURCE'S OWN numbers only (typed or uploaded)
+//         topOurs.opens / topOurs.clicks [source]       OUR COUNT (open picture; click links), always
+//         line.clicks[source]                           the source's own clicks on that link
+//         line.oursClicks[source]                       our counted clicks on that link
+//         line.views[source], line.oursViews[source]    each side's opens x the block's share
+//       sources[].hasTheirs and sources[].hasOurs say which sides hold a number. Nothing is added across the two
+//       sides here: which side a total uses is the page's rule (the source's own where it has a number, else ours).
+//   2 · OPENS AND CLICKS WITH NO SENDER NAMED are a source of their own, key "unnamed" (sender blank, "email" or
+//       "unknown": files downloaded before the sender was named). Our count only; it cannot be typed into.
+//   3 · THE ISSUE'S OWN WEB PAGE: top.webOpens.own = page views of the issue page.
+//   4 · ADS SEEN AND CLICKS ON A PAGE THAT BELONGS TO THE EDITION, not only on the issue page: an article or franchise
+//       page a reader reached from the edition carries its issue, so its ads and clicks now count toward the
+//       edition's lines (a click by its address, an ad by spot and advertiser). Clicks that match no line stay one
+//       line under Other links. With 2 and 3, every row Raw counts holds for an edition is on its Editions screen,
+//       and every other row is on Site.
+//   5 · The note about NL-BLOCKS positions is gone: blocks inside a group are not NL-BLOCKS rows, so running the
+//       curve over the blocks that carry links is the normal case (curve.from says "links" or "blocks").
+//   POST /typed refuses the source name "unnamed". No schema change. No new variable or binding.
+//   HARDCODING (provisional): HC-P-PR5-13 the key and name of the unnamed source.
+//
+// v1.2.2 (24 Nov 2026, Performance Report S5) — EDITIONS READS A REAL COMPILED EMAIL CORRECTLY. Found by reading the
+//   real WLN-125A email file against the WLN-124B Editions screen (articles, paid links and several banners sat under
+//   "Other links" with no spot; franchise links had no name; Our count showed no views).
+//   1 · SPOT CODES WITH A DECIMAL. A block inside a group is numbered between whole blocks (FA-b5.3, BA-b5.7, PA-b11.5).
+//       The spot rule took whole numbers only, so those links lost their spot and their group. It now takes
+//       <CODE>-b<number>[.<one or two digits>]. The same rule reads the spot on an email click (GET /r).
+//   2 · ARTICLE LINKS GO THROUGH THE SPLASH PAGE (https://splash.../?n=<id>&to=<the article's address>). The line's
+//       destination is now the address in "to", without its codes. So Our count's page views and issue-page clicks
+//       match the article's line, and the line's key no longer holds the splash address.
+//       A line saved under an old key (typed before this version) shows under "Not in the compiled email" with its
+//       number intact; none has been typed on a live edition yet.
+//   3 · A LINK'S WORDS FROM EVERY PICTURE IN IT. A franchise band holds two pictures: the mascot (no words) and the
+//       wordmark ("Our Neighbors"). Only the first was read. Every picture's words are read now. "Read the story"
+//       is not a line's name; the headline is.
+//   4 · OUR COUNT'S AD VIEWS BY ADVERTISER. On the web page banners rotate, so an ad is seen in a spot other than the
+//       one its email link names. Ads seen on the issue page are matched to a line by spot and advertiser; when the
+//       spot does not match, by advertiser alone (to that advertiser's first ad line). Unverified against live rows.
+//   No schema change. No new variable or binding. /r, /o, /site, /raw and POST /typed are otherwise unchanged.
+//   HARDCODING (provisional): HC-P-PR5-12 the splash link shape (a host starting "splash." with a "to" address).
+//
+// v1.2.1 (24 Nov 2026, Performance Report S5) — OUR OWN EMAIL CLICK COUNT: GET /r (Jeff, 24 Nov: the list vendor's own
+//   click links fail on phones, so we count clicks ourselves and can ask a vendor to send our links as they are).
+//   1 · GET /r/<NEWSLETTERS item id>/<sender>/<the destination, base64url>     (also HEAD)
+//       The address ix-issue-data v1.0.211 writes into a downloaded email in place of each link that leaves our site.
+//       It holds only letters, digits, "-", "_" and "/": no "?", no "&", no "%", so a vendor's own link wrapper, a mail
+//       program or a scanner cannot mangle it. The reader is sent on at once (302) to the destination, unchanged.
+//       · WHERE IT MAY SEND A READER. Only to a link of that newsletter: the destination (compared without utm codes), or
+//         at least its site, must be in the newsletter's compiled email in the CMS copy. So localtap.link cannot be used
+//         by a stranger to bounce people to an address of their choosing.
+//           in the compiled email                                         -> 302
+//           the compiled email is read, and the destination is not in it  -> 404, nothing counted
+//           the compiled email cannot be read (no row yet, no CMS_DB)     -> a small page with one link to the
+//             destination's site, so a real reader is never stranded and nothing is sent on unseen
+//         The list of a newsletter's links is kept 10 minutes (1 minute when it could not be read).
+//       · THE COUNT. A GET writes one row to clicks: source "localtap", kind "email", link_code = the sender, issue_id,
+//         issue_code, and the spot (utm_content), advertiser (utm_term) and destination taken from the link itself.
+//         A HEAD is a link checker: sent on, not counted. Scanner clicks are not separated (Jeff, 17 Nov). The row is
+//         written after the reader has been sent on, so counting never slows or blocks the click.
+//       · Raw counts shows these as Click on the surface Email, with no change to quill-performance.
+//   2 · EDITIONS READS OUR EMAIL CLICKS. On GET /edition a sender's clicks counted by /r fill that source's column, line
+//       by line and in its Clicks total, until that source has clicks typed in or uploaded; then the source's own are
+//       used and ours are not added (the same rule as opens). sources[].clicksFrom says "ours" or "source".
+//       ours.clicksBySender is in the answer. A sender we have clicks for is a source in use.
+//   3 · /health adds emailClicks24.
+//   4 · LINE NAMES, from the first real screen (WLN-124B, 24 Nov): a franchise band link that is a picture with no words
+//       reads the franchise's name from its page address (recipe-corner -> Recipe Corner), not "www.inbxify.com";
+//       every numbered character code in a link's words is decoded (&#128222; is a telephone).
+//   No schema change (clicks has held source, link_code and kind since v1.0.0). No new variable or binding.
+//   HARDCODING (provisional): HC-P-PR5-9 the /r path shape, the 10 minute and 1 minute keeps, the 2,400 character limit
+//     and the shape named for each spot code on a click row (R_SHAPE); HC-P-PR5-10 the words of the small page.
 //
 // v1.2.0 (17 Nov 2026, Performance Report S5) — THE EDITIONS AND SITE SCREENS (mockup v0.6, Jeff's rulings of 17 Nov).
 //   Four new staff-only routes for Quill Performance (quill-performance v1.1.0), email opens in Raw counts, and article
@@ -222,7 +299,7 @@
 //     HC-P-PR2-3 the default origins and zone; HC-P-PR2-4 the size limits and field lengths; HC-P-PR2-5 the
 //     one-minute status stamp.
 
-const VERSION = '1.2.0';
+const VERSION = '1.2.3';
 const DEF_SEEN = { ratio: 0.5, ms: 500 };                                   // HC-P-PR2-2
 const DEF_ORIGINS = ['https://inbxify.com', 'https://www.inbxify.com'];     // HC-P-PR2-3
 const DEF_TZ = 'America/New_York';                                          // HC-P-PR2-3
@@ -827,7 +904,8 @@ async function sourcesRead(env) {
 // ══════════════════════════════════════════════════════════
 const CURVE = { top: 100, bottom: 18 };                                                                    // HC-P-PR4-11
 const PROVIDERS = { stirista: 'Stirista', mailchimp: 'Mailchimp', nexstar: 'Nexstar', 'data-axle': 'Data Axle' };   // HC-P-PR5-2
-const NO_SENDER = ['', 'email', 'unknown'];                                                                // HC-P-PR5-2: open-picture senders that name no source
+const UNNAMED = 'unnamed';                                                                                  // HC-P-PR5-13
+const NO_SENDER = ['', 'email', 'unknown', UNNAMED];                                                                // HC-P-PR5-2: open-picture senders that name no source
 // HC-P-PR5-1: the spot codes ix-issue-data writes into every link (ASM.utm), and where the IPP pickers put each.
 const SPOTS = { FA: ['editorial', 'feature'], FR: ['editorial', 'franchise'], EV: ['editorial', 'events'], RE: ['editorial', 'market'],
   BA: ['revenue', 'banner'], HA: ['revenue', 'banner'], SP: ['revenue', 'sponsor'], TXA: ['revenue', 'text'], PA: ['revenue', 'paid'] };
@@ -839,9 +917,9 @@ const GROUPS = [
   { key: 'other', name: 'Other links', note: 'Not placements, so no views', noViews: true, subs: [['other', '']] } ];
 const HTML_FIELDS = ['email-render-html', 'web-render-html'];                                              // HC-P-PR5-3 (ix-issue-data JOIN.publish.html)
 const SENT_FIELD = 'publish-date';                                                                         // HC-P-PR5-3
-const GENERIC_WORDS = /^(read more|learn more|more|view|view more|details|click here|here|see more|shop now|visit|website)\W*$/i;   // HC-P-PR5-4
-const W5 = { house: 'House ad', frPage: 'Franchise page', noName: 'Link', siteOther: 'Other links on the issue page', gone: 'Not in the compiled email',
-  own: 'Our count', ownSub: 'ix-perf \u00b7 site', oursSub: 'Our open picture' };                                                       // HC-P-PR5-4
+const GENERIC_WORDS = /^(read more|read the story|read on|learn more|more|view|view more|details|click here|here|see more|shop now|visit|website)\W*$/i;   // v1.2.2: read the story   // HC-P-PR5-4
+const W5 = { house: 'House ad', frPage: 'Franchise page', noName: 'Link', siteOther: 'Other links on the edition\u2019s pages', gone: 'Not in the compiled email',
+  own: 'Our count', ownSub: 'ix-perf \u00b7 site', oursSub: 'Our open picture', unnamed: 'No sender named' };                                                       // HC-P-PR5-4
 const ED_MAX = 600, NUM_MAX = 1000000000, SITE_DAYS = [7, 28, 90], SITE_PATHS = 40;                         // HC-P-PR5-5
 const SHAPE_W = { banner: 'Banner ad', sidebar: 'Sidebar ad', house: 'House ad', text: 'Text ad', sponsor: 'Sponsor ad', paid: 'Paid placement' };   // HC-P-PR5-4
 const KIND_W = { issue: 'Issue', article: 'Articles', archives: 'Archives', directory: 'Directory', franchise: 'Franchise pages', home: 'Home', other: 'Other pages' };
@@ -850,7 +928,19 @@ let healedVisitsOnce = false;
 
 function decodeEnt(s) {
   return String(s).replace(/&amp;/g, '&').replace(/&#0*38;/g, '&').replace(/&#x0*26;/gi, '&').replace(/&quot;/g, '"').replace(/&#0*39;/g, "'")
-    .replace(/&rsquo;|&#8217;/g, '’').replace(/&nbsp;|&#160;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    .replace(/&rsquo;|&#8217;/g, '’').replace(/&nbsp;|&#160;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&#(\d{2,7});/g, (m, d) => { try { return String.fromCodePoint(+d); } catch (e) { return m; } })           // v1.2.1
+    .replace(/&#x([0-9a-f]{2,6});/gi, (m, h) => { try { return String.fromCodePoint(parseInt(h, 16)); } catch (e) { return m; } })
+    .replace(/&rarr;/g, '\u2192').replace(/&middot;/g, '\u00b7').replace(/&[a-z]{2,8};/gi, ' ');                          // v1.2.2: no named code left in a line's words
+}
+// v1.2.1 — a franchise band link's name: its own words, else the franchise's page address read as words.
+function frWords(L) {
+  const real = L.texts.concat(L.alts).filter(t => t && !GENERIC_WORDS.test(t)).sort((a, b) => b.length - a.length)[0];
+  if (real) return real.slice(0, LEN.label);
+  let seg = '';
+  try { seg = decodeURIComponent(new URL(L.url).pathname.replace(/\/+$/, '').split('/').pop() || ''); } catch (e) {}
+  const words = seg.replace(/[-_]+/g, ' ').trim().replace(/\b[a-z]/g, c => c.toUpperCase());
+  return words ? words.slice(0, LEN.label) : W5.frPage;
 }
 // One link, whatever its tracking codes: site (no www), path (no trailing slash) and every parameter that is not utm_*.
 function urlKey(u) {
@@ -865,7 +955,15 @@ function urlKey(u) {
   } catch (e) { return raw.toLowerCase().slice(0, 400); }
 }
 function pathKey(u) { try { return new URL(u).pathname.toLowerCase().replace(/\/+$/, '') || '/'; } catch (e) { return String(u || '').toLowerCase().replace(/[?#].*$/, '').replace(/\/+$/, '') || '/'; } }
-function slotOf(v) { const m = String(v || '').match(/^([A-Z]{2,4})-b(\d{1,3})$/); return m ? { code: m[1], pos: parseInt(m[2], 10) } : null; }
+function slotOf(v) { const m = String(v || '').match(/^([A-Z]{2,4})-b(\d{1,3}(?:\.\d{1,2})?)$/); return m ? { code: m[1], pos: parseFloat(m[2]) } : null; }   // v1.2.2: b5.3
+// v1.2.2 — where a link really goes: an article link runs through the splash page and carries its address in "to". HC-P-PR5-12
+function realDest(href) {
+  try {
+    const u = new URL(href), to = u.searchParams.get('to') || '';
+    if (/^splash\./i.test(u.host) && /^https?:\/\//i.test(to)) return to.replace(/[?#].*$/, '');
+  } catch (e) {}
+  return href;
+}
 
 // Every link of the compiled email, one line per link. The line's key is its spot and its address without utm codes.
 function emailLines(html) {
@@ -880,13 +978,14 @@ function emailLines(html) {
     if (/^https?:/i.test(href)) { try { const sp = new URL(href).searchParams; slot = String(sp.get('utm_content') || ''); adv = String(sp.get('utm_term') || ''); } catch (e) {} }
     const so = slotOf(slot);
     if (!so) slot = '';
-    const key = (slot + ' ' + urlKey(href)).slice(0, 480);
+    const dest = /^https?:/i.test(href) ? realDest(href) : href;                                               // v1.2.2
+    const key = (slot + ' ' + urlKey(dest)).slice(0, 480);
     const text = decodeEnt(m[2].replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim().slice(0, 120);
-    const alt = decodeEnt((/alt\s*=\s*(["'])([\s\S]*?)\1/i.exec(m[2]) || [])[2] || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+    const alts = [...m[2].matchAll(/alt\s*=\s*(["'])([\s\S]*?)\1/gi)].map(a => decodeEnt(a[2]).replace(/\s+/g, ' ').trim().slice(0, 120)).filter(Boolean);   // v1.2.2: every picture
     let L = map.get(key);
-    if (!L) { L = { key, slot, code: so ? so.code : '', pos: so ? so.pos : null, url: href.slice(0, LEN.dest), adv: idOk(adv) ? adv : '', texts: [], alts: [], order: order++ }; map.set(key, L); }
+    if (!L) { L = { key, slot, code: so ? so.code : '', pos: so ? so.pos : null, url: dest.slice(0, LEN.dest), adv: idOk(adv) ? adv : '', texts: [], alts: [], order: order++ }; map.set(key, L); }
     if (text) L.texts.push(text);
-    if (alt) L.alts.push(alt);
+    alts.forEach(a => L.alts.push(a));
   }
   return [...map.values()];
 }
@@ -969,7 +1068,7 @@ async function editionBuild(env, id, warnings) {
   if (html) raw = emailLines(html);
   else warnings.push('This edition has no compiled email in the CMS copy (' + HTML_FIELDS.join(', ') + '), so its links are listed from typed and counted numbers only.');
   const frAt = {}, withBand = new Set();
-  raw.forEach(L => { if (L.code === 'FR' || L.code === 'SP') withBand.add(L.pos); if (L.code === 'FR') frAt[L.pos] = bestWords(L); });
+  raw.forEach(L => { if (L.code === 'FR' || L.code === 'SP') withBand.add(L.pos); if (L.code === 'FR') frAt[L.pos] = frWords(L); });
   const advNames = await namesRead(env, { publisher: new Set(), title: new Set(), advertiser: new Set(raw.map(L => L.adv).filter(Boolean)) }, warnings);
   const lines = raw.map(L => {
     const sp = SPOTS[L.code];
@@ -992,7 +1091,6 @@ async function editionBuild(env, id, warnings) {
       const r = await env.CMS_DB.prepare('SELECT DISTINCT position AS p FROM nl_blocks WHERE plan_id = ? AND is_archived = 0 AND position IS NOT NULL ORDER BY position').bind(row.plan).all();
       const got = (r.results || []).map(x => Number(x.p)).filter(Number.isFinite);
       if (got.length && linkPos.every(p => got.indexOf(p) >= 0)) { positions = got; from = 'blocks'; }
-      else if (got.length) warnings.push('Some links name a block position that the issue’s NL-BLOCKS rows do not hold, so the curve runs over the blocks that carry links (' + linkPos.length + ').');
     } catch (e) {}
   }
   if (!positions.length) positions = linkPos;
@@ -1001,11 +1099,13 @@ async function editionBuild(env, id, warnings) {
   // 3 · our own count for this edition
   const ISS = '(issue_id = ?1 OR issue_code = ?2)', code2 = code || '~no code~';   // a blank code must never match blank rows
   const own = await db.batch([
-    db.prepare("SELECT COALESCE(slot,'') AS slot, COALESCE(dest,'') AS dest, COUNT(*) AS n FROM clicks WHERE kind = 'issue' AND " + ISS + ' GROUP BY 1, 2').bind(id, code2),
-    db.prepare("SELECT COALESCE(slot,'') AS slot, COUNT(*) AS n FROM ad_views WHERE seen = 1 AND kind = 'issue' AND " + ISS + ' GROUP BY 1').bind(id, code2),
+    db.prepare("SELECT COALESCE(slot,'') AS slot, COALESCE(dest,'') AS dest, COUNT(*) AS n FROM clicks WHERE kind <> 'email' AND " + ISS + ' GROUP BY 1, 2').bind(id, code2),   // v1.2.3: every page of the edition
+    db.prepare("SELECT COALESCE(slot,'') AS slot, COALESCE(advertiser_id,'') AS adv, COUNT(*) AS n FROM ad_views WHERE seen = 1 AND " + ISS + ' GROUP BY 1, 2').bind(id, code2),
     db.prepare("SELECT COALESCE(path,'') AS path, COUNT(*) AS n FROM page_views WHERE kind <> 'issue' AND " + ISS + ' GROUP BY 1').bind(id, code2),
     db.prepare("SELECT COUNT(*) AS n FROM page_views WHERE kind = 'issue' AND " + ISS).bind(id, code2),
-    db.prepare("SELECT COALESCE(list,'') AS list, COUNT(*) AS n FROM email_opens WHERE issue_id = ?1 GROUP BY 1").bind(id)
+    db.prepare("SELECT COALESCE(list,'') AS list, COUNT(*) AS n FROM email_opens WHERE issue_id = ?1 GROUP BY 1").bind(id),
+    db.prepare("SELECT COALESCE(link_code,'') AS s, COALESCE(slot,'') AS slot, COALESCE(dest,'') AS dest, COUNT(*) AS n FROM clicks" +     // v1.2.1
+      " WHERE kind = 'email' AND source = 'localtap' AND issue_id = ?1 GROUP BY 1, 2, 3").bind(id)
   ]);
   const byUrl = {}, bySlot = {};
   lines.forEach(L => { (byUrl[urlKey(L.url)] = byUrl[urlKey(L.url)] || []).push(L); if (L.spot) (bySlot[L.spot] = bySlot[L.spot] || []).push(L); });
@@ -1016,7 +1116,13 @@ async function editionBuild(env, id, warnings) {
     const hit = cands.filter(L => L.spot === r.slot)[0] || (cands.length === 1 ? cands[0] : null) || (r.slot && (bySlot[r.slot] || []).length === 1 ? bySlot[r.slot][0] : null);
     if (hit) hit.clicks.own = (hit.clicks.own || 0) + r.n; else ownLoose += r.n;
   });
-  (own[1].results || []).forEach(r => { anyOwn = true; (bySlot[r.slot] || []).forEach(L => { if (L.group === 'revenue') L.views.own = (L.views.own || 0) + r.n; }); });
+  // v1.2.2 · an ad seen on the issue page: its spot and advertiser; else (banners rotate on the web) its advertiser alone
+  const adLines = lines.filter(L => L.group === 'revenue');
+  (own[1].results || []).forEach(r => {
+    anyOwn = true;
+    const hit = adLines.filter(L => L.spot === r.slot && (!r.adv || !L.adv || L.adv === r.adv))[0] || (r.adv ? adLines.filter(L => L.adv === r.adv)[0] : null);
+    if (hit) hit.views.own = (hit.views.own || 0) + r.n;
+  });
   const byPath = {};
   lines.forEach(L => { if (/^https?:/i.test(L.url) && L.group === 'editorial') (byPath[pathKey(L.url)] = byPath[pathKey(L.url)] || []).push(L); });
   (own[2].results || []).forEach(r => { anyOwn = true; (byPath[pathKey(r.path)] || []).forEach(L => { L.views.own = (L.views.own || 0) + r.n; }); });
@@ -1024,7 +1130,24 @@ async function editionBuild(env, id, warnings) {
   if (issuePageViews) anyOwn = true;
   if (ownLoose) lines.push({ key: ' site-other', spot: '', code: '', pos: null, group: 'other', sub: 'other', label: W5.siteOther, who: '', url: '', adv: '', order: 1e6, share: null, clicks: { own: ownLoose }, views: {} });
   const ours = { bySender: {}, unnamed: 0 };
-  (own[4].results || []).forEach(r => { if (NO_SENDER.indexOf(r.list) >= 0) ours.unnamed += r.n; else ours.bySender[r.list] = r.n; });
+  const senderKey = v => (NO_SENDER.indexOf(v) >= 0 ? UNNAMED : v);                                          // v1.2.3
+  (own[4].results || []).forEach(r => { const k = senderKey(r.list); ours.bySender[k] = (ours.bySender[k] || 0) + r.n; });
+  // v1.2.1 · our own email clicks (GET /r), per sender and line
+  ours.clicksBySender = {}; ours.clicksUnnamed = 0;
+  const oursLine = {};                                    // sender -> { line key -> clicks }
+  (own[5].results || []).forEach(r => {
+    r.s = senderKey(r.s);
+    ours.clicksBySender[r.s] = (ours.clicksBySender[r.s] || 0) + r.n;
+    const cands = byUrl[urlKey(r.dest)] || [];
+    let hit = cands.filter(L => L.spot === r.slot)[0] || (cands.length === 1 ? cands[0] : null);
+    if (!hit) {
+      const key = ((slotOf(r.slot) ? r.slot : '') + ' ' + urlKey(r.dest)).slice(0, 480);
+      hit = lines.filter(L => L.key === key)[0];
+      if (!hit) { hit = { key, spot: slotOf(r.slot) ? r.slot : '', code: '', pos: null, group: 'other', sub: 'other', label: hostOf(r.dest) || W5.noName, who: '', url: r.dest, adv: '', order: 15e5, share: null, clicks: {}, views: {}, oursClicks: {}, oursViews: {} }; lines.push(hit); }
+    }
+    const m = oursLine[r.s] = oursLine[r.s] || {};
+    m[hit.key] = (m[hit.key] || 0) + r.n;
+  });
 
   // 4 · typed and uploaded numbers
   let srcRows = [], lineRows = [];
@@ -1040,33 +1163,45 @@ async function editionBuild(env, id, warnings) {
     if (r.clicks != null) L.clicks[r.source] = r.clicks;
   });
 
-  // 5 · the sources in use, and the three top rows
-  const sources = [], top = { sends: {}, opens: {}, clicks: {} };
-  if (anyOwn) { sources.push({ key: 'own', name: W5.own, sub: W5.ownSub, kind: 'own', issuePageViews }); top.clicks.own = ownClicks; }
-  const keys = [...new Set(srcRows.map(r => r.source).concat(lineRows.map(r => r.source)).concat(Object.keys(ours.bySender)))];
-  const rank = k => { const i = Object.keys(PROVIDERS).indexOf(k); return i < 0 ? 99 : i; };
+  // 5 · the sources in use, and the top rows. v1.2.3: a source's own numbers and our count are kept apart.
+  const sources = [], top = { sends: {}, opens: {}, clicks: {}, webOpens: {} }, topOurs = { opens: {}, clicks: {} };
+  lines.forEach(L => { L.oursClicks = L.oursClicks || {}; L.oursViews = L.oursViews || {}; });
+  if (anyOwn) { sources.push({ key: 'own', name: W5.own, sub: W5.ownSub, kind: 'own' }); top.clicks.own = ownClicks; top.webOpens.own = issuePageViews; }
+  const keys = [...new Set(srcRows.map(r => r.source).concat(lineRows.map(r => r.source)).concat(Object.keys(ours.bySender)).concat(Object.keys(ours.clicksBySender)))];
+  const rank = k => { if (k === UNNAMED) return 999; const i = Object.keys(PROVIDERS).indexOf(k); return i < 0 ? 99 : i; };
   keys.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+  const byKey = {}; lines.forEach(L => { byKey[L.key] = L; });
   keys.forEach(k => {
-    const r = srcRows.filter(x => x.source === k)[0] || null;
-    const o = { key: k, name: (r && r.label) || PROVIDERS[k] || k, kind: 'typed', origin: r ? r.origin || 'typed' : '', file: r ? r.file_name || '' : '',
-      enteredAt: r ? r.entered_at || null : null, oursOpens: ours.bySender[k] == null ? null : ours.bySender[k], opensFrom: '' };
-    o.sub = !r ? (o.oursOpens != null ? W5.oursSub : '') : (o.origin === 'upload' ? 'Report ' : 'Typed in ') + (o.enteredAt ? dShortTz(o.enteredAt, tz) : '');
+    const r = k === UNNAMED ? null : srcRows.filter(x => x.source === k)[0] || null;
+    const o = { key: k, name: k === UNNAMED ? W5.unnamed : (r && r.label) || PROVIDERS[k] || k, kind: 'typed', unnamed: k === UNNAMED,
+      origin: r ? r.origin || 'typed' : '', file: r ? r.file_name || '' : '', enteredAt: r ? r.entered_at || null : null };
+    o.sub = !r ? '' : (o.origin === 'upload' ? 'Report ' : 'Typed in ') + (o.enteredAt ? dShortTz(o.enteredAt, tz) : '');
     if (r && r.sends != null) top.sends[k] = r.sends;
-    if (r && r.opens != null) { top.opens[k] = r.opens; o.opensFrom = 'source'; }
-    else if (o.oursOpens != null) { top.opens[k] = o.oursOpens; o.opensFrom = 'ours'; }
+    if (r && r.opens != null) top.opens[k] = r.opens;
     if (r && r.clicks != null) top.clicks[k] = r.clicks;
+    if (ours.bySender[k] != null) topOurs.opens[k] = ours.bySender[k];
+    if (ours.clicksBySender[k] != null) topOurs.clicks[k] = ours.clicksBySender[k];
+    Object.keys(oursLine[k] || {}).forEach(key => { if (byKey[key]) byKey[key].oursClicks[k] = oursLine[k][key]; });
+    o.hasTheirs = (!!r && (r.sends != null || r.opens != null || r.clicks != null)) || lineRows.some(x => x.source === k && x.clicks != null);
+    o.hasOurs = topOurs.opens[k] != null || topOurs.clicks[k] != null;
     sources.push(o);
   });
-  // views for the email sources: that source's opens times the block's share
-  sources.forEach(s => { if (s.kind === 'own') return; const op = top.opens[s.key];
-    if (op != null) lines.forEach(L => { if (L.share != null) L.views[s.key] = Math.round(op * L.share / 100); }); });
+  // views, each side from its own opens: opens times the block's share
+  sources.forEach(s => {
+    if (s.kind === 'own') return;
+    const a = top.opens[s.key], b = topOurs.opens[s.key];
+    lines.forEach(L => { if (L.share == null) return;
+      if (a != null) L.views[s.key] = Math.round(a * L.share / 100);
+      if (b != null) L.oursViews[s.key] = Math.round(b * L.share / 100); });
+  });
 
-  return { edition, sources, top, lines, ours, curve: { top: CURVE.top, bottom: CURVE.bottom, blocks: positions.length, positions, from } };
+  return { edition, sources, top, topOurs, lines, ours, curve: { top: CURVE.top, bottom: CURVE.bottom, blocks: positions.length, positions, from } };
 }
 function groupLines(lines) {
   return GROUPS.map(G => ({ key: G.key, name: G.name, note: G.note, noViews: !!G.noViews, subs: G.subs.map(s => ({ key: s[0], name: s[1],
     lines: lines.filter(L => L.group === G.key && L.sub === s[0]).sort((a, b) => (a.pos == null ? 1e9 : a.pos) - (b.pos == null ? 1e9 : b.pos) || a.order - b.order)
-      .map(L => ({ key: L.key, spot: L.spot, label: L.label, who: L.who, pos: L.pos, share: L.share, url: L.url, clicks: L.clicks, views: L.views })) }))
+      .map(L => ({ key: L.key, spot: L.spot, label: L.label, who: L.who, pos: L.pos, share: L.share, url: L.url, clicks: L.clicks, views: L.views,
+        oursClicks: L.oursClicks || {}, oursViews: L.oursViews || {} })) }))
     .filter(s => s.lines.length) })).filter(G => G.subs.length);
 }
 async function siblingsOf(env, ed, warnings) {
@@ -1086,27 +1221,30 @@ async function editionRead(url, env) {
   one.edition.siblings = sibs;
   const base = { ok: true, providers: PROVIDERS, warnings };
   if (url.searchParams.get('roll') !== '1' || sibs.length < 2)
-    return Object.assign(base, { rollup: false, edition: one.edition, sources: one.sources, top: one.top, groups: groupLines(one.lines), ours: one.ours, curve: one.curve });
+    return Object.assign(base, { rollup: false, edition: one.edition, sources: one.sources, top: one.top, topOurs: one.topOurs, groups: groupLines(one.lines), ours: one.ours, curve: one.curve });
   // the series added up: every number is the editions' numbers added; a line is the same link in the same group
   const parts = [];
   for (const s of sibs) parts.push(s.id === id ? one : await editionBuild(env, s.id, warnings));
-  const sources = [], top = { sends: {}, opens: {}, clicks: {} }, lineBy = new Map(), ours = { bySender: {}, unnamed: 0 };
+  const sources = [], top = { sends: {}, opens: {}, clicks: {}, webOpens: {} }, topOurs = { opens: {}, clicks: {} }, lineBy = new Map(), ours = { bySender: {}, unnamed: 0, clicksBySender: {} };
   parts.forEach(p => {
-    p.sources.forEach(s => { if (!sources.some(x => x.key === s.key)) sources.push(Object.assign({}, s, { sub: s.kind === 'own' ? s.sub : sibs.length + ' editions', opensFrom: '', oursOpens: null })); });
-    ['sends', 'opens', 'clicks'].forEach(f => Object.keys(p.top[f]).forEach(k => { top[f][k] = (top[f][k] || 0) + p.top[f][k]; }));
+    p.sources.forEach(s => { const have = sources.filter(x => x.key === s.key)[0];
+      if (!have) sources.push(Object.assign({}, s, { sub: s.kind === 'own' ? s.sub : sibs.length + ' editions' }));
+      else { have.hasTheirs = have.hasTheirs || s.hasTheirs; have.hasOurs = have.hasOurs || s.hasOurs; } });
+    ['sends', 'opens', 'clicks', 'webOpens'].forEach(f => Object.keys(p.top[f]).forEach(k => { top[f][k] = (top[f][k] || 0) + p.top[f][k]; }));
+    ['opens', 'clicks'].forEach(f => Object.keys(p.topOurs[f]).forEach(k => { topOurs[f][k] = (topOurs[f][k] || 0) + p.topOurs[f][k]; }));
     Object.keys(p.ours.bySender).forEach(k => { ours.bySender[k] = (ours.bySender[k] || 0) + p.ours.bySender[k]; });
+    Object.keys(p.ours.clicksBySender || {}).forEach(k => { ours.clicksBySender[k] = (ours.clicksBySender[k] || 0) + p.ours.clicksBySender[k]; });
     ours.unnamed += p.ours.unnamed;
     p.lines.forEach(L => {
       const k = L.group + '|' + L.sub + '|' + (L.url ? urlKey(L.url) : L.key);
       let T = lineBy.get(k);
-      if (!T) { T = Object.assign({}, L, { key: k, spot: L.code || L.spot, pos: null, share: null, clicks: {}, views: {}, order: lineBy.size }); lineBy.set(k, T); }
-      Object.keys(L.clicks).forEach(s => { T.clicks[s] = (T.clicks[s] || 0) + L.clicks[s]; });
-      Object.keys(L.views).forEach(s => { T.views[s] = (T.views[s] || 0) + L.views[s]; });
+      if (!T) { T = Object.assign({}, L, { key: k, spot: L.code || L.spot, pos: null, share: null, clicks: {}, views: {}, oursClicks: {}, oursViews: {}, order: lineBy.size }); lineBy.set(k, T); }
+      ['clicks', 'views', 'oursClicks', 'oursViews'].forEach(f => Object.keys(L[f] || {}).forEach(s => { T[f][s] = (T[f][s] || 0) + L[f][s]; }));
     });
   });
-  const rank = s => (s.kind === 'own' ? -1 : Object.keys(PROVIDERS).indexOf(s.key) < 0 ? 99 : Object.keys(PROVIDERS).indexOf(s.key));
+  const rank = s => (s.kind === 'own' ? -1 : s.key === UNNAMED ? 999 : Object.keys(PROVIDERS).indexOf(s.key) < 0 ? 99 : Object.keys(PROVIDERS).indexOf(s.key));
   sources.sort((a, b) => rank(a) - rank(b) || a.key.localeCompare(b.key));
-  return Object.assign(base, { rollup: true, edition: one.edition, sources, top, groups: groupLines([...lineBy.values()]), ours,
+  return Object.assign(base, { rollup: true, edition: one.edition, sources, top, topOurs, groups: groupLines([...lineBy.values()]), ours,
     curve: { top: CURVE.top, bottom: CURVE.bottom, blocks: null, positions: [], from: 'series' } });
 }
 
@@ -1166,7 +1304,7 @@ async function typedWrite(request, env, who) {
     .bind(crypto.randomUUID(), now, by, id, source, line, field, val, origin));
   for (const s of list) {
     const source = String((s && s.source) || '').toLowerCase();
-    if (!/^[a-z0-9][a-z0-9-]{1,39}$/.test(source) || source === 'own') throw httpErr(400, 'A source needs a name of letters, digits and hyphens.');
+    if (!/^[a-z0-9][a-z0-9-]{1,39}$/.test(source) || source === 'own' || source === UNNAMED) throw httpErr(400, 'A source needs a name of letters, digits and hyphens.');
     const origin = s.origin === 'upload' ? 'upload' : 'typed';
     if (s.remove) {
       stmts.push(db.prepare('DELETE FROM edition_sources WHERE issue_id = ? AND source = ?').bind(id, source));
@@ -1213,12 +1351,92 @@ async function writeRoute(url, request, env, origin) {
   }
 }
 
+// ══════════════════════════════════════════════════════════
+// v1.2.1 — OUR OWN EMAIL CLICK COUNT: GET /r/<NEWSLETTERS item id>/<sender>/<destination, base64url>
+// ══════════════════════════════════════════════════════════
+const R_PATH = /^\/r\/([0-9a-f]{24})\/([a-z0-9-]{1,40})\/([A-Za-z0-9_-]{8,3400})\/?$/;                       // HC-P-PR5-9
+const R_MAX = 2400, R_KEEP_MS = 10 * 60 * 1000, R_MISS_MS = 60 * 1000;                                      // HC-P-PR5-9
+const R_SHAPE = { BA: 'banner', HA: 'house', SP: 'sponsor', TXA: 'text', PA: 'paid' };                      // HC-P-PR5-9
+const R_WORDS = { title: 'One more step', line: 'This link goes to', go: 'Continue', gone: 'This link is not part of that newsletter.' };   // HC-P-PR5-10
+const linkSets = new Map();                                // NEWSLETTERS id -> { at, read, keys, hosts }
+function b64uText(s) {
+  let t = String(s).replace(/-/g, '+').replace(/_/g, '/');
+  while (t.length % 4) t += '=';
+  return new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(atob(t), c => c.charCodeAt(0)));
+}
+const bareHost = u => { try { return new URL(u).host.toLowerCase().replace(/^www\./, ''); } catch (e) { return ''; } };
+// The links of one newsletter's compiled email, from the CMS copy. read = false when it could not be read.
+async function linkSet(env, id, now) {
+  const hit = linkSets.get(id);
+  if (hit && now - hit.at < (hit.read ? R_KEEP_MS : R_MISS_MS)) return hit;
+  const out = { at: now, read: false, keys: new Set(), hosts: new Set() };
+  try {
+    if (env.CMS_DB) {
+      const r = await env.CMS_DB.prepare('SELECT field_data AS fd FROM copy_items WHERE item_id = ? LIMIT 4').bind(id).all();
+      for (const row of (r.results || [])) {
+        let fd = {}; try { fd = JSON.parse(row.fd || '{}') || {}; } catch (e) {}
+        const html = HTML_FIELDS.map(f => String(fd[f] || '')).filter(h => h.trim()).join('\n');
+        if (!html) continue;
+        emailLines(html).forEach(L => { if (/^https?:/i.test(L.url)) { out.keys.add(urlKey(L.url)); const h = bareHost(L.url); if (h) out.hosts.add(h); } });
+        out.read = out.keys.size > 0;
+        if (out.read) break;
+      }
+    }
+  } catch (e) {}
+  if (linkSets.size > 300) linkSets.clear();
+  linkSets.set(id, out);
+  return out;
+}
+async function clickWriteEmail(env, id, sender, dest, now) {
+  const db = env.PERF_DB;
+  if (!db) return;
+  try {
+    let slot = '', adv = '';
+    try { const sp = new URL(dest).searchParams; slot = String(sp.get('utm_content') || ''); adv = String(sp.get('utm_term') || ''); } catch (e) {}
+    const so = slotOf(slot);
+    let code = '';
+    try { code = (await issueCodes(env, [id], []))[id] || ''; } catch (e) {}
+    await db.prepare('INSERT INTO clicks (id, at, day, source, page_view_id, reader, visit, publisher, title, kind, issue_id, issue_code, ad_id, advertiser_id,' +
+      " slot, shape, link_type, dest, dest_host, internal, label, link_code, scanner) VALUES (?,?,?,'localtap','','','','','','email',?,?,'',?,?,?,'WEB',?,?,0,'',?,0)")
+      .bind(crypto.randomUUID(), now, dayOf(now, tzOf(env)), id, code, idOk(adv) ? adv : '', so ? slot : '', so ? (R_SHAPE[so.code] || '') : '',
+        dest.slice(0, LEN.dest), hostOf(dest), sender).run();
+  } catch (e) { console.log('click write failed: ' + ((e && e.message) || e)); }
+}
+function plainPage(status, body) {
+  return new Response('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<meta name="robots" content="noindex"><title>' + R_WORDS.title + '</title></head><body style="font:16px/1.5 Georgia,serif;margin:48px 24px;color:#22252B">' + body + '</body></html>',
+    { status, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
+}
+const escH = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+async function clickRoute(m, request, env, ctx) {
+  const id = m[1], sender = m[2], now = Date.now();
+  let dest = '';
+  try { dest = b64uText(m[3]).trim(); } catch (e) { dest = ''; }
+  let ok = false;
+  try { const u = new URL(dest); ok = /^https?:$/.test(u.protocol) && !!u.host && dest.length <= R_MAX && !/[\u0000-\u001f\s<>"]/.test(dest); } catch (e) {}
+  if (!ok) return plainPage(404, '<p>' + R_WORDS.gone + '</p>');
+  const set = await linkSet(env, id, now);
+  const known = set.read && (set.keys.has(urlKey(dest)) || set.hosts.has(bareHost(dest)));
+  if (set.read && !known) return plainPage(404, '<p>' + R_WORDS.gone + '</p>');
+  if (request.method === 'GET') {                         // a HEAD is a link checker, not a click
+    const job = clickWriteEmail(env, id, sender, dest, now);
+    if (ctx && ctx.waitUntil) ctx.waitUntil(job); else await job;
+  }
+  if (known) return new Response(null, { status: 302, headers: { Location: dest, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
+  // the compiled email could not be read: show where the link goes and let the reader go there
+  return plainPage(200, '<p>' + R_WORDS.line + ' <b>' + escH(bareHost(dest)) + '</b>.</p><p><a href="' + escH(dest) + '" rel="noreferrer" style="font-weight:bold">' + R_WORDS.go + ' &rarr;</a></p>');
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin') || '';
     const allowed = originsOf(env).indexOf(origin.replace(/\/+$/, '')) >= 0;
     if (request.method === 'OPTIONS') return new Response(null, { status: allowed ? 204 : 403, headers: allowed ? cors(origin) : {} });
+    if (url.pathname.indexOf('/r/') === 0 && (request.method === 'GET' || request.method === 'HEAD')) {         // v1.2.1
+      const rm = R_PATH.exec(url.pathname);
+      return rm ? clickRoute(rm, request, env, ctx) : plainPage(404, '<p>' + R_WORDS.gone + '</p>');
+    }
     if (url.pathname === '/o' && (request.method === 'GET' || request.method === 'HEAD')) {                    // v1.1.5
       if (request.method === 'GET') {       // a HEAD is a link checker, not an open
         const job = openWrite(env, url, request.headers.get('User-Agent'), Date.now());
@@ -1227,12 +1445,14 @@ export default {
       return gif();
     }
     if (url.pathname === '/health') {
+      let emailClicks24 = null;                                                                                 // v1.2.1
+      if (env.PERF_DB) { try { emailClicks24 = ((await env.PERF_DB.prepare("SELECT COUNT(*) AS n FROM clicks WHERE kind = 'email' AND at >= ?").bind(Date.now() - 86400000).first()) || {}).n || 0; } catch (e) { emailClicks24 = null; } }
       let opens24 = null;                                                                                       // v1.1.5
       if (env.PERF_DB) { try { opens24 = ((await env.PERF_DB.prepare('SELECT COUNT(*) AS n FROM email_opens WHERE at >= ?').bind(Date.now() - 86400000).first()) || {}).n || 0; } catch (e) { opens24 = 'email_opens not readable: ' + ((e && e.message) || e); } }
       let issueLookup = 'ix-perf has no CMS_DB binding.';                                                       // v1.1.3
       if (env.CMS_DB) { try { issueLookup = issueReady(await cmsCollections(env, [])) || 'ready'; } catch (e) { issueLookup = 'CMS copy not readable: ' + ((e && e.message) || e); } }
       return json({ ok: true, version: VERSION, d1: !!env.PERF_DB, seen: seenOf(env), tz: tzOf(env),
-        members: !!(env.MEMBERS && typeof env.MEMBERS.fetch === 'function'), cms: !!env.CMS_DB, issueLookup, opens24 });  // v1.1.0, v1.1.5
+        members: !!(env.MEMBERS && typeof env.MEMBERS.fetch === 'function'), cms: !!env.CMS_DB, issueLookup, opens24, emailClicks24 });  // v1.1.0, v1.1.5
     }
     if (['/raw', '/sources', '/editions', '/edition', '/site'].indexOf(url.pathname) >= 0 && request.method === 'GET') {   // v1.1.0, v1.2.0
       if (!allowed) return json({ ok: false, error: 'This page may not read ix-perf.' }, 403);

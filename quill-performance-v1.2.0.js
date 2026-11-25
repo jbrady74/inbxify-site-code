@@ -1,7 +1,27 @@
-// quill-performance-v1.1.0.js
+// quill-performance-v1.2.0.js
 // ============================================================
-// quill-performance-v1.1.0.js
+// quill-performance-v1.2.0.js
 // INBXIFY — Quill · Performance tab (Raw counts, Editions, Site, Sources)
+//
+// v1.2.0 (24 Nov 2026, Performance Report S5) — EDITIONS: A SOURCE'S REPORT AND OUR COUNT SIDE BY SIDE, ALWAYS BOTH.
+//   Jeff, 24 Nov: "have our counts side by side and persist alongside anything else. That's the whole point."
+//   Before, our own count stood in a source's column until its report arrived, then showed only inside the ⓘ.
+//   · EACH EMAIL SOURCE IS TWO BLOCKS under one name: "Their report" (typed or uploaded; the only side that can be
+//     edited) and "Our count" (our open picture and our click links; never editable, never hidden). Each block has its
+//     own Opens and Clicks on top, and Clicks and Views per link. Each side's Views come from its own Opens.
+//     "Their report" with nothing in it yet shows dashes and "No data", with Edit and Upload report.
+//   · THE WEBSITE BLOCK (was "Our count") is what the site counted for the edition. It gains the row "Web page opens".
+//   · TOTAL COUNTS EACH SOURCE ONCE: its own report where it has a number, our count where it does not. The two sides
+//     are never added together. Opens and clicks with no sender named ("No sender named") are their own block; they
+//     are left out of a total once a named source's own number is in, since they are inside it.
+//   · The typed column stands at the right while fewer than four blocks are on screen; otherwise "Add a source".
+//   · "Link rows add up to" checks every block against its own Clicks.
+//   · The ⓘ on Views shows the curve only. Our open count is in the table now, so it is not repeated there.
+//   · UPLOAD REPORT reads spots with a decimal (FA-b5.3) and article links that run through the splash page.
+//   · Needs ix-perf v1.2.3 (GET /edition answers topOurs, oursClicks, oursViews, webOpens). On an older ix-perf the
+//     Editions screen says so and shows nothing, so a half-right table is never drawn.
+//   Companion CSS: quill-performance-v1.2.0.css.
+//   HARDCODING (provisional, S5 delta): HC-P-PR5-8 the words (W5) and the four-block rule (MAXCOLS).
 //
 // v1.1.0 (17 Nov 2026, Performance Report S5) — THE EDITIONS AND SITE SCREENS (mockup v0.6, Jeff's rulings of 17 Nov).
 //   SUB-TABS are now Raw counts, Editions, Site, Sources, Reports (ruling 8). Reports is grey (S6). The grey Ads, Email
@@ -82,7 +102,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.1.0', FILE = 'quill-performance-v1.1.0.js';
+  var VERSION = '1.2.0', FILE = 'quill-performance-v1.2.0.js';
   var QC = window.QUILL_CONFIG || {};
   var CFG = {
     perfUrl: String(QC.perfUrl || 'https://ix-perf.jeff-2cd.workers.dev').replace(/\/+$/, ''),   // HC-P-PR3-6
@@ -117,23 +137,22 @@
     { key: 'rep', name: 'Reports', step: 'S6', blurb: 'Advertiser reports, and one overall report per title, built from an edition\u2019s numbers and the site\u2019s.' }
   ];
   var W5 = {                                                                // HC-P-PR5-8
+    website: 'Website', ours: 'Our count', theirs: 'Their report', allSrc: 'All sources', needs: '1.2.3',
     pick: 'Choose an edition', roll: 'Series roll-up', addSrc: 'Add a source', nameSrc: 'Name the source', typedIn: 'Typed in', edit: 'Edit',
     upload: 'Upload report', cancelLc: 'cancel', noData: 'No data', link: 'Link', addUp: 'Link rows add up to',
     noLinks: 'No links are known for this edition yet.', nameFirst: 'Name the source to save', notSaved: 'Not saved: ',
     leave: 'You have changes that are not saved. Leave them?', noNumbers: 'no numbers yet', searchOrType: 'Search, or type a new name\u2026',
-    oursTip: 'Counted by our open picture. This source\u2019s own number is not in yet.', viTip: 'How views are worked out',
-    foot: 'Our count views are counted on the website. Views for the email sources come from one curve applied to that source\u2019s opens: click the {i}. A sponsor and its story sit in the same block, so they get the same share.',
+    viTip: 'How views are worked out',
+    foot: 'Total counts each source once: its own report where it has a number, our count where it does not. Website views are counted on the site. Email views come from one curve applied to that side\u2019s opens: click the {i}.',
     footRoll: 'Every number is the editions\u2019 numbers added together. Numbers are typed on each edition, not here.',
     curveTitle: 'How views are worked out',
     curveText: 'An email cannot report what a reader scrolled past, so email views are opens \u00d7 a share. The share depends only on how far down the email the block sits: {t} at the first block, {b} at the last, a straight line between. One rule for every email, however many blocks it has. This edition has {n} blocks. Every link in a block gets that block\u2019s share. It cannot be changed here.',
-    curveLinks: 'The issue\u2019s block list could not be matched, so the blocks counted are the ones that carry links.',
     curveRoll: 'Each edition\u2019s views were worked out on its own: opens \u00d7 a share that runs from {t}% at the first block to {b}% at the last. The roll-up adds them.',
-    oursTitle: 'Our open picture counted', oursUnnamed: 'no sender named', oursNone: 'nothing for this edition yet.',
     upNothing: 'no sends, opens, clicks or link rows were found in this file.',
     upWrongPo: 'its PO Number is {po}, and this edition is {id}. Check it is the right report.',
     upRead: '{n} link rows read. Check the gold boxes, then Save.',
     upLoose: '{n} of them ({c} clicks) match no link in the compiled email; they will be listed under Other links after Save.',
-    upFailed: 'could not be read: ', oldWorker: 'ix-perf v1.2.0 is not deployed yet{v}. This screen needs it.',
+    upFailed: 'could not be read: ', oldWorker: 'ix-perf v1.2.3 is not deployed yet{v}. This screen needs it.',
     siteSub: 'pages tied to no edition \u00b7 Our count only', sitePages: 'Site pages readers open outside an issue',
     siteAds: 'Ads and listings on those pages. Views are counted: half on screen for half a second',
     siteNone: 'No pages outside an issue were opened in this period.', siteNoAds: 'No ads were shown on those pages in this period.', noTitle: '(no title)',
@@ -211,7 +230,7 @@
         { name: 'ix-perf GET /sources', note: 'each source\u2019s last delivery and health' },
         { name: 'ix-members /whoami', note: 'ix-perf checks the login is staff' } ],
       heading: 'Pathways',
-      companions: 'quill-performance-v1.1.0.css · quill-home v2.0.2 · ps-shell-v1.0.2.css · ix-info v1.0.2'
+      companions: 'quill-performance-v1.2.0.css · quill-home v2.0.2 · ps-shell-v1.0.2.css · ix-info v1.0.2'
     });
   }
 
@@ -733,7 +752,7 @@
   var E = { list: null, listErr: '', id: '', roll: false, data: null, err: '', loading: false, seq: 0,
     editing: {}, pend: {}, add: null, adding: false, upload: {}, notes: [], saving: false, saveErr: '' };
   var ADD = '+';                                  // the not-yet-named column's key
-  var MAXCOLS = 4;                                // sources the frame shows before "Add a source" (question 6)
+  var MAXCOLS = 4;                                // blocks the frame shows before "Add a source" (question 6; v1.2.0 counts blocks)
 
   function edShell() {
     return '<div class="qed-head"><button type="button" class="qed-h2" id="qed-pick" aria-haspopup="listbox"></button>' +
@@ -796,7 +815,8 @@
   // only says the fetch failed; the version /sources answered tells the two apart.
   function needsWorker(msg) {
     var v = S.sources && S.sources.version ? String(S.sources.version).split('.').map(Number) : null;
-    var old = v && (v[0] < 1 || (v[0] === 1 && v[1] < 2));
+    var need = W5.needs.split('.').map(Number), old = false;
+    if (v) for (var i = 0; i < 3; i++) { if ((v[i] || 0) < need[i]) { old = true; break; } if ((v[i] || 0) > need[i]) break; }
     return old || /No such route/i.test(msg || '') ? W5.oldWorker.replace('{v}', v ? ' (it answers v' + S.sources.version + ')' : '') : msg;
   }
   function enterEd() {
@@ -817,33 +837,57 @@
   function loadEdition() {
     var my = ++E.seq; E.loading = true; paintEd();
     call('/edition?n=' + encodeURIComponent(E.id) + (E.roll ? '&roll=1' : '')).then(function (j) {
-      if (my !== E.seq) return; E.data = j; E.err = ''; if (!j.rollup) E.roll = false;
+      if (my !== E.seq) return;
+      if (!j.topOurs) { E.data = null; E.err = W5.oldWorker.replace('{v}', j.version ? ' (it answers v' + j.version + ')' : ''); return; }   // v1.2.0
+      E.data = j; E.err = ''; if (!j.rollup) E.roll = false;
     }).catch(function (e) {
       if (my !== E.seq) return; E.data = null; E.err = needsWorker((e && e.message) || String(e)); console.error('[Quill Performance] /edition:', e);
     }).then(function () { if (my !== E.seq) return; E.loading = false; S.readAt = Date.now(); paintEd(); paintStatus(); });
   }
 
   // ── values: what is saved, what is waiting, what shows ────
+  // v1.2.0: an email source has two sides. "theirs" is its own report (typed or uploaded; the only side that can be
+  // edited). "ours" is our count (open picture, click links). Both stay on screen. A total uses theirs where it has a
+  // number and ours where it does not; the two are never added together.
   function srcOf(k) { return ((E.data && E.data.sources) || []).filter(function (s) { return s.key === k; })[0] || null; }
-  function savedTop(k, f) {
-    var d = E.data; if (!d || k === ADD) return null;
-    var s = srcOf(k);
-    if (f === 'opens' && s && s.opensFrom === 'ours') return null;        // ours stands in; nothing is saved for the source
-    var v = d.top[f][k]; return v == null ? null : v;
-  }
-  function shownTop(k, f) {
-    var p = E.pend[k] && E.pend[k].top;
-    if (p && f in p) return p[f];
-    var d = E.data; if (!d || k === ADD) return null;
-    var v = d.top[f][k]; return v == null ? null : v;
-  }
+  function savedTop(k, f) { var d = E.data; if (!d || k === ADD) return null; var v = (d.top[f] || {})[k]; return v == null ? null : v; }
+  function shownTop(k, f) { var p = E.pend[k] && E.pend[k].top; if (p && f in p) return p[f]; return savedTop(k, f); }
+  function oursTop(k, f) { var d = E.data, v = d && d.topOurs && d.topOurs[f] ? d.topOurs[f][k] : null; return v == null ? null : v; }
   function savedLine(k, L) { var v = L.clicks[k]; return v == null || k === ADD ? null : v; }
   function shownLine(k, L) { var p = E.pend[k] && E.pend[k].lines; if (p && L.key in p) return p[L.key]; return savedLine(k, L); }
-  function viewsOf(k, L, noViews) {
+  function oursLine(k, L) { var v = (L.oursClicks || {})[k]; return v == null ? null : v; }
+  function theirsHasLines(k) { var p = E.pend[k] && E.pend[k].lines; if (p && Object.keys(p).some(function (x) { return p[x] != null; })) return true;
+    return allLines().some(function (L) { return shownLine(k, L) != null; }); }
+  function usedOpens(k) { var a = shownTop(k, 'opens'); return a != null ? a : oursTop(k, 'opens'); }
+  function usedTopClicks(k) { var a = shownTop(k, 'clicks'); return a != null ? a : oursTop(k, 'clicks'); }
+  function share(o, L) { return o == null || L.share == null ? null : Math.round(o * L.share / 100); }
+  // one block's numbers
+  function blockTop(c, f) {
+    if (c.side === 'own') return f === 'clicks' || f === 'webOpens' ? savedTop('own', f) : null;
+    if (f === 'webOpens') return null;
+    if (c.side === 'ours') return f === 'sends' ? null : oursTop(c.key, f);
+    return shownTop(c.key, f);
+  }
+  function blockClicks(c, L) { return c.side === 'own' ? savedLine('own', L) : c.side === 'ours' ? oursLine(c.key, L) : shownLine(c.key, L); }
+  function blockViews(c, L, noViews) {
     if (noViews) return null;
-    if (k === 'own' || E.data.rollup) { var v = L.views[k]; return v == null ? null : v; }
-    if (L.share == null) return null;
-    var o = shownTop(k, 'opens'); return o == null ? null : Math.round(o * L.share / 100);
+    var d = E.data, v;
+    if (c.side === 'own') { v = L.views.own; return v == null ? null : v; }
+    if (d.rollup) { v = (c.side === 'ours' ? (L.oursViews || {}) : L.views)[c.key]; return v == null ? null : v; }
+    return share(c.side === 'ours' ? oursTop(c.key, 'opens') : shownTop(c.key, 'opens'), L);
+  }
+  // the total's share of one source: theirs where it has a number, else ours
+  // Opens and clicks with no sender named belong to some send. Once a named source's own number is in, they are inside
+  // it, so the unnamed source is left out of that total.
+  function namedIn(f) { return ((E.data && E.data.sources) || []).some(function (s) { return s.kind !== 'own' && !s.unnamed &&
+    (f === 'opens' ? shownTop(s.key, 'opens') != null : shownTop(s.key, 'clicks') != null || theirsHasLines(s.key)); }); }
+  function skipInTotal(k, f) { var s = srcOf(k); return !!(s && s.unnamed) && namedIn(f); }
+  function totalClicks(k, L) { return skipInTotal(k, 'clicks') ? null : theirsHasLines(k) ? shownLine(k, L) : oursLine(k, L); }
+  function totalViews(k, L) {
+    var d = E.data, v;
+    if (skipInTotal(k, 'opens')) return null;
+    if (d.rollup) { v = (shownTop(k, 'opens') != null ? L.views : (L.oursViews || {}))[k]; return v == null ? null : v; }
+    return share(usedOpens(k), L);
   }
   function setPend(k, top, line, raw) {
     var txt = String(raw == null ? '' : raw).replace(/[,\s]/g, ''), v = txt === '' ? null : Number(txt);
@@ -861,14 +905,25 @@
   function pendCount() { var n = 0; Object.keys(E.pend).forEach(function (k) { n += Object.keys(E.pend[k].top).length + Object.keys(E.pend[k].lines).length; }); return n; }
   function revertCol(k) { delete E.pend[k]; delete E.editing[k]; delete E.upload[k]; if (k === ADD || (E.add && E.add.key === k)) { E.add = null; E.adding = false; } E.notes = E.notes.filter(function (n) { return n.src !== k; }); paintEd(); }
   function cancelEd() { resetEdits(); paintEd(); }
-  function cols() {                                                        // the columns on screen, in order
-    var d = E.data, list = d.sources.map(function (s) { return { key: s.key, name: s.name, sub: s.sub, own: s.kind === 'own', src: s }; });
+  // The blocks on screen, in order: Website, then per source "Their report" and "Our count", then the typed column.
+  function cols() {
+    var d = E.data, list = [];
+    d.sources.forEach(function (s) {
+      if (s.kind === 'own') { list.push({ key: 'own', side: 'own', name: W5.website, label: W5.ours, src: s }); return; }
+      var ours = s.hasOurs || allLines().some(function (L) { return oursLine(s.key, L) != null; });
+      if (!s.unnamed) list.push({ key: s.key, side: 'theirs', name: s.name, label: W5.theirs, sub: s.sub, src: s, span: ours ? 2 : 1 });
+      if (ours) list.push({ key: s.key, side: 'ours', name: s.name, label: W5.ours, src: s, second: !s.unnamed });
+    });
     if (d.rollup) return list;
-    if (E.add && !srcOf(E.add.key)) list.push({ key: E.add.key, name: E.add.label, sub: '', fresh: true });
-    else if (!E.add && (d.sources.length < MAXCOLS || E.adding)) list.push({ key: ADD, name: '', sub: '', fresh: true, unnamed: true });
+    if (E.add && !srcOf(E.add.key)) list.push({ key: E.add.key, side: 'theirs', name: E.add.label, label: W5.theirs, fresh: true, span: 1 });
+    else if (!E.add && (list.length < MAXCOLS || E.adding)) list.push({ key: ADD, side: 'theirs', name: '', fresh: true, unnamed: true, span: 1 });
     return list;
   }
-  function isEditing(c) { return !c.own && !E.data.rollup && (c.fresh || !!E.editing[c.key]); }
+  function isEditing(c) { return c.side === 'theirs' && !E.data.rollup && (c.fresh || !!E.editing[c.key]); }
+  function hasNumbers(k) {
+    var any = ['sends', 'opens', 'clicks'].some(function (f) { return shownTop(k, f) != null; });
+    return any || allLines().some(function (L) { return shownLine(k, L) != null; });
+  }
 
   // ── paint ────────────────────────────────────────────────
   function paintEd(keepFocus) {
@@ -879,14 +934,15 @@
     $('qed-pick').disabled = !E.list;
     $('qed-load').hidden = !(E.loading || E.listBusy);
     $('qed-sub').innerHTML = ed ? [ed.publisher ? esc(ed.publisher) : '', ed.title ? '<b>' + esc(ed.title) + '</b>' : '',
-      !d.rollup && ed.sentDay ? 'sent ' + esc(dLong(ed.sentDay)) : ''].filter(Boolean).join(' \u00b7 ') : '';
+      !d.rollup && ed.sentDay ? 'sent ' + esc(dLong(ed.sentDay)) : ''].filter(Boolean).join(' · ') : '';
+    var C = d ? cols() : [];
     var sib = (ed && ed.siblings) || [], sh = '';
     if (ed && ed.series) {
       sh = '<span class="lbl">' + esc(ed.series) + ' series</span>' + sib.map(function (s) {
         return '<button type="button" class="qed-pill' + (!d.rollup && s.id === ed.id ? ' on' : '') + '" data-ed="' + esc(s.id) + '">' + esc(s.code) + '</button>'; }).join('') +
         (sib.length > 1 ? '<button type="button" class="qed-pill' + (d.rollup ? ' on' : '') + '" data-roll="1">' + esc(W5.roll) + '</button>' : '');
     }
-    if (d && !d.rollup && d.sources.length >= MAXCOLS && !E.adding && !E.add) sh += '<span class="sp"></span><a href="#" class="qed-link" data-addsrc="1">' + esc(W5.addSrc) + '</a>';
+    if (d && !d.rollup && !E.add && !C.some(function (c) { return c.unnamed; })) sh += '<span class="sp"></span><a href="#" class="qed-link" data-addsrc="1">' + esc(W5.addSrc) + '</a>';
     $('qed-series').innerHTML = sh;
     var msgs = [];
     if (E.listErr) msgs.push(['err', W.failed + E.listErr]);
@@ -897,64 +953,85 @@
     $('qed-msgs').innerHTML = msgs.map(function (m) { return '<div class="qed-msg ' + m[0] + '">' + esc(m[1]) + '</div>'; }).join('');
     if (!d) { el.innerHTML = ''; $('qed-foot').textContent = ''; paintSave(); return; }
 
-    var C = cols(), NC = 1 + C.length * 2 + 2, h = '';
-    C.forEach(function (c) { c.nodata = !c.own && !isEditing(c) && !hasNumbers(c.key); });   // question 5: dashes, and "No data" once
+    var NC = 1 + C.length * 2 + 2, h = '';
+    var SRC = d.sources.filter(function (s) { return s.kind !== 'own'; }).map(function (s) { return s.key; });
+    C.forEach(function (c) { if (c.side === 'theirs' && c.key !== ADD && SRC.indexOf(c.key) < 0) SRC.push(c.key); });
+    if (C.some(function (c) { return c.key === ADD; })) SRC.push(ADD);
+    C.forEach(function (c) { c.ed = isEditing(c); c.nodata = c.side === 'theirs' && !c.ed && !hasNumbers(c.key); c.cls = c.ed ? ' typed' : c.side === 'ours' ? ' ours' : ''; });
     h += '<colgroup><col class="a">' + C.map(function () { return '<col class="h"><col class="h">'; }).join('') + '<col class="h"><col class="h"></colgroup>';
-    // row 1 · the sources
+    // row 1 · who: one name over a source's two sides
+    h += '<tr class="g0"><th></th>' + C.map(function (c) {
+      if (c.second) return '';
+      if (c.unnamed) return '<th colspan="2" class="pl typed"><button type="button" class="qed-name" data-name="' + ADD + '">' + esc(W5.nameSrc) + '</button></th>';
+      var tip = c.src && c.src.file ? ' title="' + esc(c.src.file) + '"' : '';
+      return '<th colspan="' + (2 * (c.span || 1)) + '" class="pl"><span class="pn"' + tip + '>' + esc(c.name) + '</span></th>';
+    }).join('') + '<th colspan="2" class="pl tot"><span class="pn">Total</span></th></tr>';
+    // row 2 · which side, where it came from, and its links
     h += '<tr class="g1"><th></th>' + C.map(function (c) {
-      var ed2 = isEditing(c), acts = '', sub = c.sub ? esc(c.sub) : '';
-      if (c.unnamed) return '<th colspan="2" class="pl typed"><button type="button" class="qed-name" data-name="' + ADD + '">' + esc(W5.nameSrc) + '</button><span class="ps">' + esc(W5.typedIn) + '</span><span class="acts">' +
+      var acts = '', sub = c.side === 'theirs' ? (c.sub ? esc(c.sub) : '') : '';
+      if (c.unnamed) return '<th colspan="2" class="pl typed"><span class="ps2">' + esc(W5.typedIn) + '</span><span class="ps">&nbsp;</span><span class="acts">' +
         (E.adding ? '<a href="#" data-revert="' + ADD + '">' + esc(W5.cancelLc) + '</a>' : '') + '</span></th>';
-      if (!c.own && !d.rollup) {
-        acts = ed2 ? '<a href="#" data-upload="' + esc(c.key) + '">' + esc(W5.upload) + '</a><a href="#" data-revert="' + esc(c.key) + '">' + esc(W5.cancelLc) + '</a>'
+      if (c.side === 'theirs' && !d.rollup) {
+        acts = c.ed ? '<a href="#" data-upload="' + esc(c.key) + '">' + esc(W5.upload) + '</a><a href="#" data-revert="' + esc(c.key) + '">' + esc(W5.cancelLc) + '</a>'
           : '<a href="#" data-edit="' + esc(c.key) + '">' + esc(W5.edit) + '</a><a href="#" data-upload="' + esc(c.key) + '">' + esc(W5.upload) + '</a>';
-        if (c.nodata || (c.fresh && !c.unnamed && !hasNumbers(c.key))) sub = '<span class="nodata">' + esc(W5.noData) + '</span>';
-        else if (c.fresh) sub = esc(W5.typedIn);
+        if (c.nodata || (c.fresh && !hasNumbers(c.key))) sub = '<span class="nodata">' + esc(W5.noData) + '</span>';
       }
-      var fileTip = c.src && c.src.file ? ' title="' + esc(c.src.file) + '"' : '';
-      return '<th colspan="2" class="pl' + (ed2 ? ' typed' : '') + '"><span class="pn"' + fileTip + '>' + esc(c.name) + '</span><span class="ps">' + (sub || '&nbsp;') + '</span><span class="acts">' + acts + '</span></th>';
-    }).join('') + '<th colspan="2" class="pl tot"><span class="pn">Total</span><span class="ps">All sources</span><span class="acts"></span></th></tr>';
-    // rows 2 to 4 · sends, opens, clicks
-    [['sends', 'Sends', 'Delivered'], ['opens', 'Opens', ''], ['clicks', 'Clicks', 'All links']].forEach(function (r, i) {
-      var t = 0, any = false;
-      h += '<tr class="top3' + (i === 2 ? ' last' : '') + '"><td>' + r[1] + (r[2] ? ' <span class="k2">\u00b7 ' + r[2] + '</span>' : '') + '</td>' + C.map(function (c) {
-        var v = shownTop(c.key, r[0]); if (v != null) { t += v; any = true; }
-        if (isEditing(c) && !(c.own)) return '<td colspan="2" class="pl soc typed">' + box(c.key, r[0], null, v, savedTop(c.key, r[0]), 'big') + '</td>';
-        var tip = r[0] === 'opens' && c.src && c.src.opensFrom === 'ours' ? ' title="' + esc(W5.oursTip) + '"' : '';
-        return '<td colspan="2" class="pl soc' + (v == null ? ' z' : '') + '"' + tip + '>' + (v == null ? '\u2013' : fmt(v)) + '</td>';
-      }).join('') + '<td colspan="2" class="pl tot soc">' + (any ? fmt(t) : '\u2013') + '</td></tr>';
+      return '<th colspan="2" class="pl' + c.cls + '"><span class="ps2">' + esc(c.label) + '</span><span class="ps">' + (sub || '&nbsp;') + '</span><span class="acts">' + acts + '</span></th>';
+    }).join('') + '<th colspan="2" class="pl tot"><span class="ps2">' + esc(W5.allSrc) + '</span><span class="ps">&nbsp;</span><span class="acts"></span></th></tr>';
+    // the top rows
+    var hasOwn = C.some(function (c) { return c.side === 'own'; });
+    var TOPS = [['sends', 'Sends', 'Delivered'], ['opens', 'Opens', 'Email'], ['clicks', 'Clicks', 'All links']];
+    if (hasOwn) TOPS.push(['webOpens', 'Web page opens', '']);
+    TOPS.forEach(function (r, i) {
+      var f = r[0], t = 0, any = false, add = function (v) { if (v != null) { t += v; any = true; } };
+      if (f === 'clicks') add(savedTop('own', 'clicks'));
+      if (f === 'webOpens') add(savedTop('own', 'webOpens'));
+      if (f !== 'webOpens') SRC.forEach(function (k) { add(f === 'sends' ? shownTop(k, 'sends') : skipInTotal(k, f) ? null : f === 'opens' ? usedOpens(k) : usedTopClicks(k)); });
+      h += '<tr class="top3' + (i === TOPS.length - 1 ? ' last' : '') + '"><td>' + r[1] + (r[2] ? ' <span class="k2">· ' + r[2] + '</span>' : '') + '</td>' + C.map(function (c) {
+        var v = blockTop(c, f);
+        if (c.ed && f !== 'webOpens') return '<td colspan="2" class="pl soc typed">' + box(c.key, f, null, v, savedTop(c.key, f), 'big') + '</td>';
+        var na = (c.side === 'own' && (f === 'sends' || f === 'opens')) || (c.side !== 'own' && f === 'webOpens') || (c.side === 'ours' && f === 'sends');
+        return '<td colspan="2" class="pl soc' + c.cls + (v == null ? ' z' : '') + '">' + (v == null ? (na ? '' : '–') : fmt(v)) + '</td>';
+      }).join('') + '<td colspan="2" class="pl tot soc">' + (any ? fmt(t) : '–') + '</td></tr>';
     });
     // the links, group by group; Clicks and Views sit under each dark band (Jeff, 17 Nov)
     var grand = {};
     d.groups.forEach(function (G) {
       h += '<tr class="grp"><td colspan="' + NC + '">' + esc(G.name) + '<span>' + esc(G.note) + '</span></td></tr>';
       h += '<tr class="g2"><th>' + esc(W5.link) + '</th>' + C.map(function (c) {
-        return '<th class="pl' + (isEditing(c) ? ' typed' : '') + '">Clicks</th><th class="' + (isEditing(c) ? 'typed' : '') + '">' + (G.noViews ? '' : 'Views' + (c.own ? '' : '<a href="#" class="qed-vi" data-vi="1" title="' + esc(W5.viTip) + '">i</a>')) + '</th>'; }).join('') +
+        return '<th class="pl' + c.cls + '">Clicks</th><th class="' + c.cls.trim() + '">' + (G.noViews ? '' : 'Views' + (c.side === 'own' ? '' : '<a href="#" class="qed-vi" data-vi="1" title="' + esc(W5.viTip) + '">i</a>')) + '</th>'; }).join('') +
         '<th class="pl tot">Clicks</th><th class="tot">' + (G.noViews ? '' : 'Views') + '</th></tr>';
       var gs = { c: {}, v: {}, tc: 0, tv: 0, anyc: false, anyv: false };
       G.subs.forEach(function (sb) {
         if (sb.name) h += '<tr class="sec"><td colspan="' + NC + '">' + esc(sb.name) + '</td></tr>';
         sb.lines.forEach(function (L) {
-          var rc = 0, rv = 0, anyc = false, anyv = false;
-          h += '<tr><td title="' + esc(L.label + (L.url ? ' \u00b7 ' + L.url : '')) + '"><span class="sp2">' + esc(L.spot || '\u2013') + '</span><span class="ct-l">' + esc(L.label) + (L.who ? '<span class="who">\u00b7 ' + esc(L.who) + '</span>' : '') + '</span></td>';
-          C.forEach(function (c) {
-            var v = shownLine(c.key, L);
-            if (v != null) { gs.c[c.key] = (gs.c[c.key] || 0) + v; grand[c.key] = (grand[c.key] || 0) + v; rc += v; anyc = true; }
-            h += isEditing(c) ? '<td class="pl typed">' + box(c.key, null, L.key, v, savedLine(c.key, L), '') + '</td>' : num(v, 'pl', !c.nodata);
-            var vw = viewsOf(c.key, L, G.noViews);
-            if (vw != null) { gs.v[c.key] = (gs.v[c.key] || 0) + vw; rv += vw; anyv = true; }
-            h += num(vw, isEditing(c) ? 'typed' : '', G.noViews || !c.nodata);
+          var rc = 0, rv = 0, anyc = false, anyv = false, x;
+          h += '<tr><td title="' + esc(L.label + (L.url ? ' · ' + L.url : '')) + '"><span class="sp2">' + esc(L.spot || '–') + '</span><span class="ct-l">' + esc(L.label) + (L.who ? '<span class="who">· ' + esc(L.who) + '</span>' : '') + '</span></td>';
+          C.forEach(function (c, ci) {
+            var v = blockClicks(c, L);
+            if (v != null) { gs.c[ci] = (gs.c[ci] || 0) + v; grand[ci] = (grand[ci] || 0) + v; }
+            h += c.ed ? '<td class="pl typed">' + box(c.key, null, L.key, v, savedLine(c.key, L), '') + '</td>' : num(v, 'pl' + c.cls, !c.nodata);
+            var vw = blockViews(c, L, G.noViews);
+            if (vw != null) gs.v[ci] = (gs.v[ci] || 0) + vw;
+            h += num(vw, c.cls.trim(), G.noViews || !c.nodata);
+          });
+          // the total: the website, plus each source once (its report where it has a number, else our count)
+          if ((x = savedLine('own', L)) != null && hasOwn) { rc += x; anyc = true; }
+          if (!G.noViews && hasOwn && (x = L.views.own) != null) { rv += x; anyv = true; }
+          SRC.forEach(function (k) {
+            if ((x = totalClicks(k, L)) != null) { rc += x; anyc = true; }
+            if (!G.noViews && (x = totalViews(k, L)) != null) { rv += x; anyv = true; }
           });
           gs.tc += rc; gs.tv += rv; if (anyc) gs.anyc = true; if (anyv) gs.anyv = true;
           h += num(anyc ? rc : null, 'pl tot', true) + num(anyv ? rv : null, 'tot', true) + '</tr>';
         });
       });
-      h += '<tr class="sub"><td>' + esc(G.name) + ' total</td>' + C.map(function (c) { var t = isEditing(c) ? ' typed' : ''; return num(gs.c[c.key], 'pl' + t, !c.nodata) + num(G.noViews ? null : gs.v[c.key], t, G.noViews || !c.nodata); }).join('') +
+      h += '<tr class="sub"><td>' + esc(G.name) + ' total</td>' + C.map(function (c, ci) { return num(gs.c[ci], 'pl' + c.cls, !c.nodata) + num(G.noViews ? null : gs.v[ci], c.cls.trim(), G.noViews || !c.nodata); }).join('') +
         num(gs.anyc ? gs.tc : null, 'pl tot', true) + num(gs.anyv ? gs.tv : null, 'tot', true) + '</tr>';
     });
-    if (d.groups.length) h += '<tr class="sum"><td>' + esc(W5.addUp) + '</td>' + C.map(function (c) {
-      var s = grand[c.key], tt = shownTop(c.key, 'clicks'), bad = tt != null && s != null && tt !== s;
-      return '<td class="pl' + (s == null ? ' z' : '') + (bad ? ' bad' : '') + '" colspan="2">' + (s == null ? (c.nodata ? '\u2013' : '') : fmt(s) + (bad ? ' \u2260 ' + fmt(tt) : '')) + '</td>'; }).join('') +
+    if (d.groups.length) h += '<tr class="sum"><td>' + esc(W5.addUp) + '</td>' + C.map(function (c, ci) {
+      var s = grand[ci], tt = blockTop(c, 'clicks'), bad = tt != null && s != null && tt !== s;
+      return '<td class="pl' + (s == null ? ' z' : '') + (bad ? ' bad' : '') + '" colspan="2">' + (s == null ? (c.nodata ? '–' : '') : fmt(s) + (bad ? ' ≠ ' + fmt(tt) : '')) + '</td>'; }).join('') +
       '<td class="pl tot" colspan="2"></td></tr>';
     else h += '<tr class="qed-none"><td colspan="' + NC + '">' + esc(W5.noLinks) + '</td></tr>';
     var foc = keepFocus && keepFocus.length === 3 ? keepFocus : null;
@@ -968,11 +1045,7 @@
       if (again && again.focus) { again.focus({ preventScroll: true }); if (again.select) again.select(); }
     }
   }
-  function hasNumbers(k) {
-    var d = E.data, any = ['sends', 'opens', 'clicks'].some(function (f) { return shownTop(k, f) != null; });
-    return any || allLines().some(function (L) { return shownLine(k, L) != null; });
-  }
-  function num(v, cls, blank) { return '<td class="' + (cls || '') + (v == null ? ' z' : '') + '">' + (v == null ? (blank ? '' : '\u2013') : fmt(v)) + '</td>'; }
+  function num(v, cls, blank) { return '<td class="' + (cls || '') + (v == null ? ' z' : '') + '">' + (v == null ? (blank ? '' : '–') : fmt(v)) + '</td>'; }
   function box(k, top, line, v, saved, size) {
     var ch = (v == null ? null : v) !== (saved == null ? null : saved);
     return '<input type="text" inputmode="numeric" class="qed-n' + (size ? ' ' + size : '') + (ch ? ' ch' : '') + '" data-src="' + esc(k) + '"' +
@@ -984,7 +1057,7 @@
     var unnamed = !!E.pend[ADD];
     $('qed-savemsg').textContent = unnamed ? W5.nameFirst : n + (n === 1 ? ' change' : ' changes') + ' not saved';
     $('qed-savebtn').disabled = unnamed || E.saving;
-    $('qed-savebtn').textContent = E.saving ? 'Saving\u2026' : 'Save';
+    $('qed-savebtn').textContent = E.saving ? 'Saving…' : 'Save';
   }
 
   // ── choosing: an edition, a source's name ─────────────────
@@ -1031,7 +1104,7 @@
     var items = Object.keys(P).filter(function (k) { return !used[k]; }).map(function (k) { return { v: k, t: P[k] }; });
     chooser($('qed-pop'), btn, S.el.querySelector('[data-view="ed"]'), items, null, function (it) {
       var key = it.v || slug(it.typed), label = it.v ? P[it.v] : String(it.typed).trim().slice(0, 40);
-      if (!key || key.length < 2 || key === 'own') return;
+      if (!key || key.length < 2 || key === 'own' || key === 'unnamed') return;
       var have = srcOf(key);
       if (E.pend[ADD]) { E.pend[key] = E.pend[ADD]; delete E.pend[ADD]; }
       if (have) { E.editing[key] = true; E.add = null; } else E.add = { key: key, label: label };
@@ -1059,7 +1132,7 @@
     if (d.rollup) h += '<p>' + esc(W5.curveRoll.replace('{t}', c.top).replace('{b}', c.bottom)) + '</p>';
     else {
       var n = c.positions.length, sh = function (i) { return n <= 1 ? c.top : Math.round((c.top - (c.top - c.bottom) * i / (n - 1)) * 10) / 10; };
-      h += '<p>' + W5.curveText.replace('{t}', '<b>' + c.top + '%</b>').replace('{b}', '<b>' + c.bottom + '%</b>').replace('{n}', n) + (c.from === 'links' ? ' ' + esc(W5.curveLinks) : '') + '</p>';
+      h += '<p>' + W5.curveText.replace('{t}', '<b>' + c.top + '%</b>').replace('{b}', '<b>' + c.bottom + '%</b>').replace('{n}', n) + '</p>';
       if (n > 1) {
         var Wd = 700, H = 190, L = 44, R = 14, T = 12, B = 28, x = function (i) { return L + (Wd - L - R) * i / (n - 1); }, y = function (s) { return T + (H - T - B) * (100 - s) / 100; };
         var g = '<svg viewBox="0 0 ' + Wd + ' ' + H + '" width="' + Wd + '" height="' + H + '" role="img" aria-label="The views curve">';
@@ -1075,13 +1148,14 @@
         var s = (by[p] || []).filter(function (v, j, a) { return a.indexOf(v) === j; }).join(', ');
         return '<div><span>' + p + (s ? ' \u00b7 ' + esc(s) : '') + '</span><b>' + sh(i) + '%</b></div>'; }).join('') + '</div>';
     }
-    var o = d.ours || { bySender: {}, unnamed: 0 }, bits = Object.keys(o.bySender).map(function (k) { return esc((d.providers[k] || k)) + ' <b>' + fmt(o.bySender[k]) + '</b>'; });
-    if (o.unnamed) bits.push(esc(W5.oursUnnamed) + ' <b>' + fmt(o.unnamed) + '</b>');
-    h += '<p class="qed-ours"><span class="k">' + esc(W5.oursTitle) + '</span> ' + (bits.length ? bits.join(' \u00b7 ') : esc(W5.oursNone)) + '</p>';
     $('qed-modalc').innerHTML = h; $('qed-modal').hidden = false;
   }
 
   // ── a provider's report as a file (.csv or .xlsx) ─────────
+  function realDest(href) {                                                // the same rule as ix-perf's realDest
+    try { var u = new URL(href), to = u.searchParams.get('to') || ''; if (/^splash\./i.test(u.host) && /^https?:\/\//i.test(to)) return to.replace(/[?#].*$/, ''); } catch (e) {}
+    return href;
+  }
   function urlKey(u) {                                                     // the same rule as ix-perf's urlKey
     var raw = String(u || '').trim();
     try {
@@ -1105,8 +1179,9 @@
       var sums = {}, loose = 0, looseClicks = 0;
       rep.links.forEach(function (r) {
         var slot = ''; try { slot = new URL(r.url).searchParams.get('utm_content') || ''; } catch (e) {}
+        r.url = realDest(r.url);                                            // v1.2.0: an article link runs through the splash page
         var c = by[urlKey(r.url)] || [], hit = c.filter(function (L) { return L.spot === slot; })[0] || (c.length === 1 ? c[0] : null);
-        var key = hit ? hit.key : ((/^[A-Z]{2,4}-b\d{1,3}$/.test(slot) ? slot : '') + ' ' + urlKey(r.url)).slice(0, 480);
+        var key = hit ? hit.key : ((/^[A-Z]{2,4}-b\d{1,3}(\.\d{1,2})?$/.test(slot) ? slot : '') + ' ' + urlKey(r.url)).slice(0, 480);
         if (!hit) { loose++; looseClicks += r.clicks; }
         sums[key] = (sums[key] || 0) + r.clicks;
       });

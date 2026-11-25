@@ -1,15 +1,20 @@
-/* quill-performance-v1.1.0.css
-   INBXIFY — Quill · Performance tab (Raw counts, Editions, Site, Sources). Companion to quill-performance-v1.1.0.js.
+/* quill-performance-v1.2.0.css
+   INBXIFY — Quill · Performance tab (Raw counts, Editions, Site, Sources). Companion to quill-performance-v1.2.0.js.
+   v1.2.0 (24 Nov 2026, Performance Report S5): a source's report and our count side by side on Editions. The header is
+   two rows: the source's name once over both of its blocks (tr.g0), then each block's side, where it came from and its
+   links (tr.g1). "Our count" blocks carry a pale blue tint (.ours) so the two sides read apart at a glance; the typed
+   side keeps its pale gold. Colours: the grey that measured 2.42:1 on white (Agent Groundwork G2's check) is now
+   --ps-muted, and the gold is the token --ix-gold / --ix-changed-border, not a typed value.
    v1.1.0 (17 Nov 2026, Performance Report S5): the Editions and Site screens, from mockup v0.6 (classes .qed-*, .qst-*).
    Fixed sizes: every source column is two 92 px columns; series pills 96 px; period pills 110 px; number boxes 58 px
    (the three top boxes 96 px); spot codes 70 px. The first column takes the room that is left. No cell wraps. The dark
-   group band comes first and the bold Clicks / Views headings sit under it, in every group (Jeff, 17 Nov). Gold #C4A35A
+   group band comes first and the bold Clicks / Views headings sit under it, in every group (Jeff, 17 Nov). Gold var(--ix-gold)
    is the border of a changed box. "No data" is small and red, once, under the source's name. The email-open event pill.
    v1.0.1 (17 Nov 2026, Test 1): searchable filter pickers (.qpf-fbtn, .qpf-fpop, .qpf-fsearch, .qpf-flist, .qpf-fopt);
    the status line link pinned to the Portal's 12 px sans (the site's link style had made Refresh a large serif).
    v1.0.0 (16 Nov 2026, Performance Report S3): first build, from mockup quill-performance-mockup-v0_1 (accepted).
    Portal tokens only (--ps-*, from ps-shell-v1.0.2.css). Fixed sizes for every repeated element: sub-tabs 150 px,
-   date pills 84 px, event pills 84 px, link type tags 62 px, page buttons 28 px. No cell wraps. Gold #C4A35A is the
+   date pills 84 px, event pills 84 px, link type tags 62 px, page buttons 28 px. No cell wraps. Gold var(--ix-gold) is the
    editing border on a filter with a value. Load after ps-shell-v1.0.2.css and quill-home-v2.0.0.css. */
 
 .qpf{font-family:var(--ps-sans);font-size:13px;color:var(--ps-ink)}
@@ -24,7 +29,7 @@
   padding:8px 16px;font-family:var(--ps-serif)!important;font-size:17px;font-weight:600;color:var(--ps-muted);cursor:pointer;white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis}
 .qpf-tab:hover{color:var(--ps-ink)}
-.qpf-tab.unb{color:#A9A69F}
+.qpf-tab.unb{color:var(--ps-muted)}
 .qpf-tab.on{color:var(--ps-ink);border-bottom-color:var(--ps-ink)}
 .qpf-nb{margin-top:10px!important;color:var(--ps-muted)}
 
@@ -34,7 +39,7 @@
 .qpf-status a,.qpf-status a:visited{color:var(--ps-blue-text)!important;text-decoration:none!important;cursor:pointer;font:400 12px var(--ps-sans)!important;letter-spacing:0!important}
 .qpf-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:1px}
 .qpf-dot.ok{background:#2E9B6A}.qpf-dot.warn{background:#D99A2B}.qpf-dot.bad{background:var(--ps-red-deep)}
-.qpf-dot.off{background:transparent;border:1px solid #A9A69F;width:7px;height:7px}
+.qpf-dot.off{background:transparent;border:1px solid var(--ps-muted);width:7px;height:7px}
 
 /* toolbar */
 .qpf-tool{display:flex;align-items:center;gap:8px;height:34px;margin-bottom:8px;position:relative}
@@ -75,7 +80,7 @@
 .qpf-t th,.qpf-t td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;padding:0 10px;height:30px;border-bottom:1px solid var(--ps-rule-soft)}
 .qpf-t th{font:600 11px var(--ps-caps);letter-spacing:1.2px;text-transform:uppercase;color:var(--ps-muted)}
 .qpf-t .n{text-align:right;font-variant-numeric:tabular-nums}
-.qpf-t td.all{color:#A9A69F;font-style:italic}
+.qpf-t td.all{color:var(--ps-muted);font-style:italic}
 .qpf-t .chev{width:36px;padding:0;text-align:center}
 .qpf-t .chev i{display:inline-block;width:7px;height:7px;border-right:1.5px solid var(--ps-muted);border-bottom:1.5px solid var(--ps-muted);transform:rotate(-45deg)}
 .qpf-t tr.op .chev i{transform:rotate(45deg)}
@@ -99,7 +104,7 @@
 .qpf-t tr.qpf-det td{height:26px;font-size:12px;background:#FCFAF6;padding-left:24px;color:var(--ps-ink-2)}
 .qpf-det .k{color:var(--ps-muted);font-size:11px;text-transform:uppercase;letter-spacing:.8px}
 .qpf-det .v{display:inline-block;max-width:420px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
-.qpf-det .dv{color:#A9A69F;margin:0 10px}
+.qpf-det .dv{color:var(--ps-muted);margin:0 10px}
 .qpf-t tr.qpf-msg td{height:30px;color:var(--ps-muted);background:#FCFAF6}
 .qpf-t tr.qpf-more a{color:var(--ps-blue-text);text-decoration:none}
 .qpf-err{color:var(--ps-red-deep)!important}
@@ -130,7 +135,7 @@
 .qpf-fbtn{width:100%;height:26px;border:1px solid var(--ps-rule);background:var(--ps-paper);border-radius:2px;font:12px var(--ps-sans)!important;
   color:var(--ps-ink);padding:0 22px 0 8px;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}
 .qpf-fbtn::after{content:'';position:absolute;right:9px;top:8px;width:5px;height:5px;border-right:1.5px solid var(--ps-muted);border-bottom:1.5px solid var(--ps-muted);transform:rotate(45deg)}
-.qpf-fbtn.set{border:1.5px solid #C4A35A}
+.qpf-fbtn.set{border:1.5px solid var(--ix-changed-border)}
 .qpf-fbtn:focus-visible{outline-offset:2px}
 .qpf-fpop{padding:0;width:auto;max-width:420px}
 .qpf-fsearch{display:block;width:100%;height:34px;border:0;border-bottom:1px solid var(--ps-rule-soft);padding:0 12px;font:13px var(--ps-sans);color:var(--ps-ink);outline:none;background:var(--ps-paper)}
@@ -210,9 +215,9 @@ table.qed-t{border-collapse:collapse;table-layout:fixed;width:100%;background:va
 .qed-t tr.qed-none td,.qst-t tr.qed-none td{text-align:left;color:var(--ps-muted);background:#FCFAF6}
 .qed-n{width:58px;height:22px;border:1px solid var(--ps-rule);border-radius:2px;padding:0 5px;font:13px var(--ps-sans);text-align:right;color:var(--ps-ink);background:#fff;box-sizing:border-box}
 .qed-n.big{width:96px;height:30px;font:600 18px var(--ps-serif);text-align:center}
-.qed-n.ch{border:1.5px solid #C4A35A;font-weight:700}
+.qed-n.ch{border:1.5px solid var(--ix-changed-border);font-weight:700}
 .qed-t td.typed{padding-top:3px;padding-bottom:3px}
-.qed-vi,.qed-vi:visited{display:inline-flex;width:14px;height:14px;border-radius:50%;background:#C4A35A;color:#fff!important;font:600 9px var(--ps-serif)!important;align-items:center;justify-content:center;
+.qed-vi,.qed-vi:visited{display:inline-flex;width:14px;height:14px;border-radius:50%;background:var(--ix-gold);color:#fff!important;font:600 9px var(--ps-serif)!important;align-items:center;justify-content:center;
   margin-left:4px;cursor:pointer;vertical-align:1px;letter-spacing:0;text-transform:none;text-decoration:none!important}
 .qed-vi.st{cursor:default;margin:0 2px}
 .qed-foot{font-size:12px;color:var(--ps-muted);margin:10px 0 18px;max-width:900px;white-space:normal}
@@ -228,7 +233,7 @@ table.qed-t{border-collapse:collapse;table-layout:fixed;width:100%;background:va
 /* the curve window */
 .qed-modal{position:fixed;inset:0;background:rgba(34,37,43,.45);display:flex;align-items:center;justify-content:center;z-index:99999}
 .qed-modal[hidden]{display:none}
-.qed-modalb{width:760px;max-height:90vh;overflow-y:auto;background:var(--ps-paper);border-top:4px solid #C4A35A;padding:22px 26px 24px;box-shadow:0 10px 40px rgba(0,0,0,.3);font-family:var(--ps-sans)}
+.qed-modalb{width:760px;max-height:90vh;overflow-y:auto;background:var(--ps-paper);border-top:4px solid var(--ix-gold);padding:22px 26px 24px;box-shadow:0 10px 40px rgba(0,0,0,.3);font-family:var(--ps-sans)}
 .qed-modalb h3{margin:0 0 4px;font:600 22px var(--ps-serif);color:var(--ps-ink)}
 .qed-modalb p{margin:0 0 12px;font-size:13px;line-height:1.45;color:var(--ps-ink-2)}
 .qed-modalb svg{display:block;max-width:100%;font-family:var(--ps-sans)}
@@ -261,3 +266,11 @@ table.qst-t{border-collapse:collapse;table-layout:fixed;width:100%;background:va
 .qst-t tr.sub td:first-child{font:600 11px var(--ps-caps);letter-spacing:1.2px;text-transform:uppercase}
 .qst-title{width:240px;vertical-align:middle;margin-right:2px}
 .qst-bar .qpf-btn{width:96px}
+
+/* ── v1.2.0 — a source's report and our count, side by side ── */
+.qed-t tr.g0 th{text-align:center;padding:12px 6px 0;height:36px;border-bottom:0;vertical-align:bottom}
+.qed-t tr.g0 .pn{display:block;height:22px;line-height:22px;font:600 17px/22px var(--ps-serif);letter-spacing:0;text-transform:none;color:var(--ps-ink);overflow:hidden;text-overflow:ellipsis}
+.qed-t tr.g1 th{padding:4px 6px 8px;height:62px}
+.qed-t tr.g1 .ps2{display:block;height:15px;line-height:15px;font:600 10px/15px var(--ps-caps);letter-spacing:1.2px;text-transform:uppercase;color:var(--ps-ink-2);overflow:hidden;text-overflow:ellipsis}
+.qed-t .ours{background:#F3F6FB}
+.qed-t tr.sub td.ours,.qed-t tr.sum td.ours{background:var(--ps-ground)}

@@ -1,4 +1,16 @@
-/* ipp-picker-v1.84.js */
+/* ipp-picker-v1.85.js */
+/* v1.85 (24 Nov 2026, Jeff): EDIT ARTICLE ON A FILLED ARTICLE TILE.
+   Until now the only way from a placed article to its form was "Set it on the article", shown only when the article has
+   no Section. An article with the wrong Section (or any other fix) had no way in. A saved, filled article tile now shows
+   a small "Edit article" text link in its actions row, left of "Empty this slot". It opens the article's form (the ASF)
+   in edit mode with the article's current values, Section included, by the same path as "Set it on the article"
+   (editArticle): in place when the ASF is on this page, else on the TITLES-ADMIN Template page and back here when the
+   form closes. The form's own Cancel reverts. The tile and the shelf are read fresh when the form closes, so a changed
+   Section shows on the tile (the 24 Nov look-back rule). A tile with no Section keeps "Set it on the article" and gets no
+   second link, so one tile never offers the same action twice. A locked plan shows neither. Copied tiles waiting for
+   Keep or Delete get no Edit link (their actions row is Keep / Delete). Pairs ipp-picker-v1.43.css (unchanged; the link
+   reuses .ipp-tsec-go, with margin-left reset in the actions row inline) and markup v1.20 (unchanged).
+   HARDCODING: HC-P-PK85-1 the link words "Edit article". */
 /* v1.84 (23 Nov 2026, Image Links S3): A LISTING'S THUMBNAIL IS img-main.
    REAL ESTATE has one picture field, img-main (raw Uploadcare link), backfilled 23 Nov. On the Market's thumb reads
    it alone; property-image-link (Photo URL) is no longer read. Nothing else changed. */
@@ -1171,7 +1183,7 @@
   if (!window.IPP) { console.error('[ipp-picker] shell not loaded'); return; }
   var IPP = window.IPP;
   var VERSION = '1.84';
-  var FILE = 'ipp-picker-v1.84.js';
+  var FILE = 'ipp-picker-v1.85.js';
 
   /* ════════════════════════════════════════════════════════════
      IPP.editState — CANONICAL EDIT-STATE CONTROLLER
@@ -2478,6 +2490,12 @@
         (LOCKED ? '' : '<button type="button" class="ipp-tsec-go" data-ipp-edit-art="' + esc(assetId) + '">Set it on the article</button>');
     return '<div class="ipp-tfacts" data-ipp-facts>' + line + '<div class="ipp-ttype">' + type + '</div></div>';
   }
+  // v1.85 — "Edit article" on a filled tile; only when the article has a Section ("Set it on the article" covers the rest).
+  var EDIT_ART_W = 'Edit article';   // HC-P-PK85-1
+  function editArtLink(id){
+    if (!id || LOCKED || !artTypeOf(id).type) return '';
+    return '<button type="button" class="ipp-tsec-go" style="margin-left:0;margin-right:auto" data-ipp-edit-art="' + esc(id) + '">' + EDIT_ART_W + '</button>';
+  }
   // v1.34 — open the article's form: here if the ASF is on this page, else on the T-A page.
   function editArticle(id){
     if (!id) return;
@@ -2576,7 +2594,7 @@
       return '<div class="ipp-ctile filled ipp-slot ipp-slot--ok" data-slot-key="' + esc(key) + '" data-ipp-open="1">' + head + check() +
         thumbHtml(a.thumb, 'ipp-art-thumb') +
         '<div class="ipp-ttitle">' + esc(a.name || 'Untitled article') + '</div>' + factsHtml(a.id, key) + artFlags(a, key) + failLine(key) +
-        (LOCKED ? '' : '<div class="ipp-tile-actions"><button type="button" class="ix-revert ipp-tile-remove" data-ipp-empty="' + esc(key) + '">Empty this slot</button></div>') + '</div>';   // v1.33; flags v1.72; Empty v1.78
+        (LOCKED ? '' : '<div class="ipp-tile-actions">' + editArtLink(a.id) + '<button type="button" class="ix-revert ipp-tile-remove" data-ipp-empty="' + esc(key) + '">Empty this slot</button></div>') + '</div>';   // v1.33; flags v1.72; Empty v1.78; Edit v1.85
     }
     if (P.noteDels[key]) {   // v1.50: a saved note deleted on Save
       return '<div class="ipp-ctile ghost ipp-slot ipp-dirty ipp-slot--note" data-slot-key="' + esc(key) + '">' + head +
