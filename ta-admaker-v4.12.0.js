@@ -1,6 +1,25 @@
-/* ta-admaker-v4.11.9.js
+/* ta-admaker-v4.12.0.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.0 (25 Nov 2026, Ad Maker Build S4) — A PUBLISHER'S REQUEST IS CLOSED WHEN ITS AD IS SAVED, AND QUILL'S LINK
+     OPENS IT. JS and CSS v4.12.0 (CSS: one rule for the request tab).
+     Found 24 Nov (TA Reskin S1, then this chat): Quill's "ad requests" link carried ?admaker=open&request=<id> with no
+     #Ads, so the page stayed on Issues; this file never read request=; and nothing on the page closed a request, so
+     a request stayed on the board's To make and in Quill's count after the ad was made. (The Requested list and
+     "Mark this request done" were in ta-admaker v3.1.5 (Publisher Portal S9, 10 Nov) and were lost when v4.0.0
+     replaced that file on 11 Nov. Since the Ads tab, the board's To make box lists requests, so the list is not
+     rebuilt here; ix-ads-board v1.0.9 carries "Mark this request done".)
+     · A job opened from a request row (ix-ads-board v1.0.9 passes the request) keeps it: its tab is shaded blue
+       (ruling of 10 Nov), its start note says who asked, when, and their note.
+     · Save (Canva Check, any choice but Keep as draft, not a send-back fix) closes every open request of that
+       customer for that shape: ix-sales POST /ads/request/<id>/done { adIds:[the saved ad] }, one step per request on
+       the Save screen. A job not opened from a request still closes them: the ad answers the ask either way.
+     · Quill's link ?admaker=open&request=<id>#Ads opens the Ads tab, waits for the board, and opens that request as a
+       job (banner, sidebar); a splash or text ad request opens the customer's row on the board instead, as the board's
+       own row offers Mark this request done for those.
+     · #ads is matched in any letter case (ta-chrome v1.0.14 writes #Ads).
+     · NEEDS names ix-sales v1.3.17 (the board's Take back this email).
 
    v4.11.9 (24 Nov 2026, Ad Maker Build S3): the ⓘ card named Workers this page no longer matches ("ix-canva
      v0.3.1 · ix-sales v1.3.9"). It now names the least version each Worker must be (NEEDS, HC-P-AMS3-12), and
@@ -930,8 +949,8 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.11.9', CSS_FILE = 'ta-admaker-v4.11.7.css';   // v4.11.8, v4.11.9: JS only; the CSS is unchanged
-  var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.14 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
+  var VERSION = '4.12.0', CSS_FILE = 'ta-admaker-v4.12.0.css';
+  var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.17 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
   var ADVICE_BIGGER = 1.25;   // HC-P-SSB8-25
@@ -1130,7 +1149,7 @@
   function tabsHTML() {
     return '<div class="am-tabs" role="tablist">' + JOBS.map(function (j, i) {
       var on = j === S, nm = tabName(j), d = dirtyOf(j);
-      return '<div class="am-tab' + (on ? ' on' : '') + '"><button type="button" class="am-tabb" role="tab" aria-selected="' + on + '" data-tab="' + i + '" title="' + esc(nm) + '"><span class="nm">' + esc(nm) + '</span>' +
+      return '<div class="am-tab' + (on ? ' on' : '') + (j.req ? ' req' : '') + '"' + (j.req ? ' title="' + esc(REQ_WORDS.tab) + '"' : '') + '><button type="button" class="am-tabb" role="tab" aria-selected="' + on + '" data-tab="' + i + '" title="' + esc(nm) + '"><span class="nm">' + esc(nm) + '</span>' +
         (d ? '<i class="am-gdot" role="img" aria-label="Unsaved changes"></i>' : '') + '</button><button type="button" class="am-tabx" data-tabx="' + i + '" aria-label="Close ' + esc(nm) + '">\u00d7</button></div>';
     }).join('') + '</div>';
   }
@@ -5050,6 +5069,13 @@
         .then(function (j) { if ((j.unconfirmed || []).length) throw new Error('ix-sales answered, but Webflow did not confirm ' + j.unconfirmed.join(', ') + '. Open the customer on All ads and check the ' + low + '.'); row.outcome = what; row.current = what === 'current'; })
         .then(function () { if (designId) return run(step(SAVE_WORDS.step.approved, 'ix-canva'), canvaMark(designId, 'approved', row.id, true)); });
     });
+    if (!fromV) chain = chain.then(function () {   // v4.12.0: the saved ad answers the publisher's open requests for this shape
+      var list = openReqsFor(c.id, sh), who = (A.contact && A.contact.person) || 'the publisher', p = Promise.resolve();
+      list.forEach(function (r) { p = p.then(function () {
+        return run(step(fillW(REQ_WORDS.step, { who: who, shape: low }), 'ix-sales'), salesCall('/ads/request/' + encodeURIComponent(r.id) + '/done', { adIds: [row.id] }, 'Closing the request'))
+          .catch(function (e) { throw new Error(fillW(REQ_WORDS.fail, { msg: (e && e.message) || String(e) })); }); }); });
+      return p.then(function () { if (list.length) S.req = null; });
+    });
     chain.then(function () { S.saving.done = true; render(); return loadAds(); }).then(function () { render(); if (window.IxAdsTab) IxAdsTab.refresh(); })
       .catch(function (e) { S.saving.err = (e && e.message) || String(e); render(); if (S.saving.rows.length) { loadAds().then(render); if (window.IxAdsTab) IxAdsTab.refresh(); } });
   }
@@ -5202,8 +5228,15 @@
     var pub = adsPublisher();
     if (!pub.id) { host.innerHTML = '<div class="am-err">This page names no publisher (TA_CONFIG.publisherId or #title-admin-id data-pub), so the ads cannot be read.</div>'; return; }
     A.board = IxAdsBoard.mount(host, { side: 'inbxify', title: '', api: adsApi, publisher: pub, who: { staff: true, email: '', name: '' }, info: null,
-      onLoad: function (custs, ans) { adsBrand(custs); if (ans) { A.contact = ans.contact || null; A.you = ans.you || null; A.linkDays = ans.linkDays || 14; } adsDraftsLoad(custs); },
+      onLoad: function (custs, ans) { adsBrand(custs); if (ans) { A.contact = ans.contact || null; A.you = ans.you || null; A.linkDays = ans.linkDays || 14; } adsDraftsLoad(custs); adsDeepReq(); },
       onAction: function (a) { adsAction(a); }, designUrl: adsDesignUrl, onDeleted: adsDeleted });   // v4.11.7
+  }
+  function adsDeepReq() {   // v4.12.0 · Quill's ?admaker=open&request=<id>: once, after the board's first read
+    var id = A.deepReq; if (!id || !A.board || !A.board.findRequest) return; A.deepReq = '';
+    var f = A.board.findRequest(id);
+    if (!f) { toast(REQ_WORDS.gone, 'err'); return; }
+    if (f.shape !== 'banner' && f.shape !== 'sidebar') { if (A.board.open) A.board.open(f.customer.id, 'current'); toast(fillW(REQ_WORDS.textAd, { shape: shapeLabel(f.shape), name: f.customer.name }), 'err'); return; }   // the board says the same (Mark this request done)
+    adsAction({ kind: 'make', customer: f.customer, shape: f.shape, version: null, request: f.request });
   }
   // the board's customers carry their brand record (ix-sales v1.3.7); a customer not in the page's hidden list joins CUST from it
   function adsBrand(custs) {
@@ -5212,8 +5245,23 @@
     CUST.sort(function (a, b) { return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1; });
   }
   // Make sidebar / Make banner / Edit in Ad Maker / Open in Ad Maker from the board → an Ad Maker job on that customer (seed rulings 5-8)
+  var REQ_WORDS = {   // v4.12.0 · HC-P-AMS4-1
+    tab: 'The publisher asked for this ad', note: '{who} asked for a new {shape} on {on}.', wanted: ' Wanted by {on}.', said: ' Their note: \u201c{note}\u201d', files: ' {n} file{s} came with it (on the board\u2019s request).',
+    step: 'Closing {who}\u2019s request for the {shape}', fail: 'The ad is saved, but the publisher\u2019s request is still open on the board: {msg}',
+    textAd: '{shape} requests are not made in Ad Maker yet. The request is on {name}\u2019s row: use Mark this request done there once it is handled.', gone: 'That request is no longer open. The Ads board shows what is.'
+  };
+  function reqDay(v) { var d = new Date(v || ''); return isNaN(d) ? '' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+  function reqNote(r, sh) {
+    var who = (A.contact && A.contact.person) || 'The publisher', n = (r.files || []).length;
+    return fillW(REQ_WORDS.note, { who: who, shape: shapeLabel(sh).toLowerCase(), on: reqDay(r.askedAt) }) + (r.wantedBy ? fillW(REQ_WORDS.wanted, { on: reqDay(r.wantedBy) }) : '') +
+      (r.note ? fillW(REQ_WORDS.said, { note: String(r.note).slice(0, 400) }) : '') + (n ? fillW(REQ_WORDS.files, { n: n, s: n === 1 ? '' : 's' }) : '');
+  }
+  function openReqsFor(custId, sh) {   // every open request of one customer for one shape, from the board's last read
+    var st = A.board && A.board.state ? A.board.state() : null, c = st && (st.customers || []).filter(function (x) { return x.id === custId; })[0];
+    return c && c.shapes && c.shapes[sh] ? (c.shapes[sh].requests || []).slice() : [];
+  }
   function adsAction(a) {
-    var c = a.customer, sh = a.shape, v = a.version;
+    var c = a.customer, sh = a.shape, v = a.version, rq = a.request || null;   // v4.12.0: a request row passes its request
     if (!(sh === 'banner' || sh === 'sidebar' || sh === 'splash')) { toast(shapeLabel(sh) + ' ads are made in a tool that is coming.', 'err'); return; }
     A.tab = 'maker'; adsShowTab();
     var it = { kind: 'needed', id: 'board-' + c.id + '-' + sh + '-' + (v ? v.id : 'new') + '-' + Date.now(), custId: c.id, shape: sh, title: c.name, what: shapeLabel(sh), m: a.kind === 'make' ? 'From the Ads board' : 'Edit in Ad Maker', q: '', coming: false };
@@ -5224,6 +5272,7 @@
       if (!cur && a.kind === 'make') { var other = sh === 'sidebar' ? 'banner' : 'sidebar'; cur = vs.filter(function (x) { return x[other] && !isCanvaRecipe(x.recipe); })[0] || vs.filter(function (x) { return x[other]; })[0] || null; }   // the current other shape, first
       if (cur) { var rec = srcRecFor('version', cur.id); if (rec) S.srcs.push(rec); }
       S.startNote = a.kind === 'make' ? 'Making the ' + sh + ' for ' + c.name + '. Pick one of their own ads to start from below; the current ' + (sh === 'sidebar' ? 'banner' : 'sidebar') + ' is picked first.' : 'Opening ' + (v ? v.name : c.name) + ' in Ad Maker.';
+      if (rq) { S.req = rq; S.startNote = reqNote(rq, sh) + ' ' + S.startNote; }   // v4.12.0
       var vv = v ? (cur && cur.id === v.id ? cur : v) : null, dz = vv ? canvaDesignOf(vv.recipe) : '';   // v4.11.3: the board's version carries no recipe; the page's own copy of the row does
       if (dz) { canvaEditAgain(Object.assign({}, vv, { state: v.state, approval: v.approval }), { designId: dz, shape: sh }, { note: v.state === 'back' && v.sentBack ? v.sentBack.note || '' : '' }); return; }
       render();
@@ -5321,15 +5370,18 @@
     A.mounted = true; A.pubId = adsPublisher().id;
     el.addEventListener('click', adsOnClick);
     var q = {}; try { new URLSearchParams(location.search).forEach(function (v, k) { q[k] = v; }); } catch (e) {}
-    if (q.admaker === 'open') A.tab = 'maker';   // Quill's deep link opens Ad Maker
+    if (q.admaker === 'open') A.tab = /^[0-9a-f]{24}$/.test(q.request || '') ? 'all' : 'maker';   // Quill's deep link opens Ad Maker (v4.12.0: a request waits for the board first)
+    if (q.admaker === 'open' && /^[0-9a-f]{24}$/.test(q.request || '')) A.deepReq = q.request;
     adsRender();
-    if (q.admaker === 'open' && q.customer) setTimeout(function () { var c0 = custById(q.customer); if (c0) openJob({ kind: 'needed', id: 'deep-' + Date.now(), custId: c0.id, shape: q.shape || '', title: c0.name, what: q.shape ? shapeLabel(q.shape) : 'Ad', m: 'Opened from Quill', q: '', coming: false }); }, 400);
+    if (q.admaker === 'open' && q.customer && !A.deepReq) setTimeout(function () {   // v4.12.0: a request link opens its request instead (adsDeepReq)
+      var c0 = custById(q.customer); if (c0) openJob({ kind: 'needed', id: 'deep-' + Date.now(), custId: c0.id, shape: q.shape || '', title: c0.name, what: q.shape ? shapeLabel(q.shape) : 'Ad', m: 'Opened from Quill', q: '', coming: false }); }, 400);
     return true;
   }
   function adsWire() {
     var open = function () { setTimeout(adsMount, 0); };
     document.querySelectorAll('[data-w-tab="Ads"]').forEach(function (l) { l.addEventListener('click', open); });
-    if (/^#ads\b/.test(location.hash)) { var lk = document.querySelector('.w-tab-link[data-w-tab="Ads"]'); if (lk) { lk.click(); open(); } }
+    if (/^#ads\b/i.test(location.hash)) {   // v4.12.0: any case (ta-chrome writes #Ads)
+      var lk = document.querySelector('.w-tab-link[data-w-tab="Ads"]'); if (lk) { lk.click(); open(); } }
     var pane = adsEl(); if (pane && pane.closest('.w-tab-pane') && pane.closest('.w-tab-pane').classList.contains('w--tab-active')) open();
   }
   window.IxAdsTab = { mount: adsMount, refresh: function () { if (A.board) A.board.refresh(); }, _state: function () { return A; } };

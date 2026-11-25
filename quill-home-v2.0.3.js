@@ -1,8 +1,13 @@
-// quill-home-v2.0.2.js
+// quill-home-v2.0.3.js
 // ============================================================
-// quill-home-v2.0.2.js
+// quill-home-v2.0.3.js
 // INBXIFY — Quill platform home
 //
+// v2.0.3 (25 Nov 2026, Ad Maker Build S4) — THE AD REQUESTS LINK OPENS THE ADS TAB ON THE OLDEST REQUEST.
+//   Found 24 Nov (TA Reskin S1): the link carried ?admaker=open&request=<id> but no #Ads, so the T-A page opened on its
+//   first tab and Ad Maker never saw it. The link now ends in #Ads (after the query) and also carries customer=<id>.
+//   ta-admaker v4.12.0 opens the request as a job. HC-P-PP9-3 (the ?admaker=open&request= words) gains the #Ads tab name.
+//   Companion CSS unchanged (quill-home-v2.0.0.css). No other change.
 // v2.0.2 (16 Nov 2026, Performance Report S3) — A SEPARATE FILE CAN DRAW A TAB.
 //   Jeff (16 Nov, mockup D12): the Performance tab is drawn by its own file, quill-performance v1.0.0, which registers
 //   into this shell. window.QuillShell.register(key, draw) hands that file the tab's panel the first time the tab is
@@ -841,12 +846,15 @@
   // v1.0.8 — AD REQUESTS (ix-sales /ads/requests/counts)
   // ══════════════════════════════════════════════════════════
   var RQ = { pubs: null, err: '' };
+  var REQ_TAB = '#Ads';                                               // v2.0.3 · HC-P-PP9-3: the T-A rail tab Ad Maker lives in
   var REQ_W = { one: ' ad request', many: ' ad requests', tip: 'The publisher asked inbxify for new ads. Opens Ad Maker on the oldest request.' };   // HC-P-PP9-4
   function reqLink(p) {
     var r = RQ.pubs && RQ.pubs[p.id]; if (!r || !r.open) return '';
     var base = r.titleSlug ? route(CFG.titleRoute, r.titleSlug) : '';
     if (!base || base.indexOf('{slug}') > -1) return '<span class="qh-stat qh-stat--req" title="' + esc(REQ_W.tip) + '">' + r.open + (r.open === 1 ? REQ_W.one : REQ_W.many) + '</span>';
-    var href = base + (base.indexOf('?') > -1 ? '&' : '?') + 'admaker=open' + (r.oldest && r.oldest.id ? '&request=' + encodeURIComponent(r.oldest.id) : '');   // HC-P-PP9-3
+    var cut = base.indexOf('#'), path = cut > -1 ? base.slice(0, cut) : base;   // v2.0.3: the query goes before any #, then #Ads
+    var href = path + (path.indexOf('?') > -1 ? '&' : '?') + 'admaker=open' + (r.oldest && r.oldest.id ? '&request=' + encodeURIComponent(r.oldest.id) : '') +
+      (r.oldest && r.oldest.customerId ? '&customer=' + encodeURIComponent(r.oldest.customerId) : '') + REQ_TAB;   // HC-P-PP9-3
     return '<a class="qh-stat qh-stat--req" href="' + esc(href) + '" title="' + esc(REQ_W.tip) + '">' + r.open + (r.open === 1 ? REQ_W.one : REQ_W.many) + '</a>';
   }
   function reqStyles() {}                                            // v2.0.0: rules live in quill-home-v2.0.0.css
@@ -1167,7 +1175,7 @@
     if (!window.IxInfo || !window.IxInfo.badge) return '';
     var t = tabByKey(key), i = INFO[key] || {};
     return window.IxInfo.badge({
-      file: 'quill-home-v2.0.2.js', version: '2.0.2', title: 'Quill · ' + t.name,
+      file: 'quill-home-v2.0.3.js', version: '2.0.3', title: 'Quill · ' + t.name,
       blurb: i.blurb || (t.blurb ? t.blurb + ' Not built yet.' : ''),
       scenarios: i.scenarios || [], heading: 'Pathways',
       companions: 'quill-home-v2.0.0.css · ps-shell-v1.0.2.css · ix-tokens v1.0.4 · ix-info v1.0.2'
