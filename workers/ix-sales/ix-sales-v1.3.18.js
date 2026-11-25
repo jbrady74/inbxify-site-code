@@ -1,10 +1,29 @@
-// ix-sales-v1.3.16.js
+// ix-sales-v1.3.18.js
 // INBXIFY · Cloudflare Worker · ix-sales
 // SALES RECORDS and OBLIGATIONS: the one place the rules live. The portal
 // (S2) and Studio (S3) both call this; the Revenue Picker (S4) and Scenario
 // 108 (S5) call it too. Scoping: Sales-Records-Obligations-Scoping-v0_7.md.
 // Since v1.3.0 also the portal's Ads tab and the advertiser review page.
 //
+// v1.3.18 (25 Nov 2026, Ad Maker Build S4) — A SEND-BACK CARRIES THE ADVERTISER'S WORDS UNDER THE PUBLISHER'S NOTE.
+//   Ruling (Jeff, 25 Nov, by voice): when the advertiser has answered and the publisher sends the ad back, the note inbxify
+//   sees holds both, the publisher's note on top, so the publisher does not copy and paste.
+//   · GET /ads: a version's sentBack gains publisherNote (the publisher's own words) and advertiser { at, by, answer,
+//     like, change } (the last answer on that ad before the send-back); sentBack.note is the two together:
+//     "<publisher's note>\n\nThe advertiser (<name>, <day>) asked for changes. Changes: <change> · Liked: <like>".
+//     Everything that shows the note (the board, Ad Maker's fix) shows both with no change of its own.
+//   Built on v1.3.17. Nothing else changes.
+// v1.3.17 (25 Nov 2026, Ad Maker Build S4) — TAKE BACK AN APPROVAL EMAIL, KEEP THE AD.
+//   Ruling (Jeff, 24 Nov, S4 B1): an action that stops an approval link but keeps the ad. The card asks first.
+//   · NEW POST /ads/approval/withdraw { publisher, adId }  Staff only. Every open "Send for approval" row of this
+//     publisher that carries the ad (Send again leaves the earlier link working, so there can be more than one)
+//     → Withdrawn, with withdrawnAt / withdrawnBy in its data. A link past its date is left alone (it has stopped).
+//     The ADS row is not touched. A stopped link shows "This link is closed" (v1.3.14's rule).
+//     Answers { ok, links, otherAds:[{ adId, shape, name }], unconfirmed }. otherAds are the other ads on those links:
+//     their link stops too. 409 when no open approval link carries the ad.
+//   · GET /ads: a version's sent{} gains links (how many open approval links carry it) and otherAds (how many other
+//     ads ride on them), so the card can say so before it asks.
+//   Built on main's v1.3.16. Nothing else changes.
 // v1.3.16 (24 Nov 2026, Publisher Portal S14) — EVERY SALE ANSWERS ITS SECTION. THE RULE LIVES HERE ONLY.
 //   Ruling (Jeff, 24 Nov, S13 ruling 4, S14 answers 2 and 3): obligations tables are four sections, top to bottom, and a sale
 //   sits in the first one that fits. GET /sales rows gain section ('needs' | 'running' | 'later' | 'ended') and sectionWhy
@@ -404,7 +423,7 @@
 //           month falls back to the calendar month end.
 // ============================================================
 
-const VERSION = '1.3.16';
+const VERSION = '1.3.18';
 // v1.3.16 the obligations table sections, in order (HC-P-PP14-1)
 const SECTIONS = [{ key: 'needs', label: 'Needs you' }, { key: 'running', label: 'Running now' }, { key: 'later', label: 'Starting later' }, { key: 'ended', label: 'Ended' }];
 // v1.3.7 · CUSTOMERS slugs that make up a customer's brand record (HC-P-AMB1-1)
@@ -505,6 +524,7 @@ export default {
       if (p === '/ads/request/file' && m === 'POST') return run.out(await requestFile(run, await run.body()), 200);
       const rq = p.match(/^\/ads\/request\/([0-9a-f]{24})\/(withdraw|done)$/);
       if (rq && m === 'POST') return run.out(rq[2] === 'withdraw' ? await withdrawRequest(run, rq[1], await run.body()) : await doneRequest(run, rq[1], await run.body()), 200);
+      if (p === '/ads/approval/withdraw' && m === 'POST') return run.out(await withdrawApproval(run, await run.body()), 200);   // v1.3.17
       if (p === '/ads/requests' && m === 'GET') return run.out(await listRequests(run, url), 200);
       if (p === '/ads/requests/counts' && m === 'GET') return run.out(await requestCounts(run), 200);
       if (p === '/ads/delete' && m === 'POST') return run.out(await deleteAd(run, await run.body()), 200);                 // v1.3.12
@@ -1656,6 +1676,15 @@ async function soldShapes(run, sc) {
   return out;
 }
 
+// v1.3.18 · the send-back note inbxify reads: the publisher's words, then the advertiser's (HC-P-AMS4-2, words)
+const BACK_WORDS = { adv: 'The advertiser ({by}, {on}) {what}', approve: 'approved it', change: 'asked for changes', changes: 'Changes: ', liked: 'Liked: ' };
+function backWords(note, av) {
+  const pub = String(note || '').trim(); if (!av) return pub;
+  const d = new Date(av.at || ''), on = isNaN(d) ? '' : d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }), parts = [];
+  if (av.change) parts.push(BACK_WORDS.changes + av.change.trim()); if (av.like) parts.push(BACK_WORDS.liked + av.like.trim());
+  const head = BACK_WORDS.adv.replace('{by}', av.by || 'name not given').replace('{on}', on).replace('{what}', av.answer === 'approve' ? BACK_WORDS.approve : BACK_WORDS.change);
+  return (pub ? pub + '\n\n' : '') + head + '.' + (parts.length ? ' ' + parts.join(' \u00b7 ') : '');
+}
 // ── GET /ads?publisher= · the whole tab in one answer ──
 async function adsTab(run, url) {
   const C = run.cfg.collections, cfg = reviewCfg(run);
@@ -1664,24 +1693,26 @@ async function adsTab(run, url) {
   const [custRows, versions, sold, reviews] = await Promise.all([run.listAll(C.customers), versionsFor(run, ids), soldShapes(run, sc), reviewRows(run)]);
   const mine = reviews.filter(r => r.publisher === sc.publisherId);
   // per ad+shape: the open or answered link item, the last decision, the last send-back note
-  const link = {}, decided = {}, backNote = {}, reqs = {}, sent = {};
+  const link = {}, decided = {}, backNote = {}, reqs = {}, sent = {}, advAns = {};   // v1.3.18: advAns, the advertiser's last answer per ad
   mine.forEach(r => { if (r.action !== RV_ACTION.request || r.status !== RV_STATUS.open) return;   // v1.3.5: open requests per customer and shape
     const k = r.customer + '|' + (r.data.shape || ''); (reqs[k] = reqs[k] || []).push(requestOut(r)); });
   mine.slice().sort((a, b) => String(a.createdOn).localeCompare(String(b.createdOn))).forEach(r => {
     const items = Array.isArray(r.data.items) ? r.data.items : [];
     items.forEach(it => { const k = it.adId + '|' + it.shape;
+      if (r.action === RV_ACTION.ask && r.data.answeredAt && it.answer) advAns[k] = { at: r.data.answeredAt, by: r.data.answeredBy || '', answer: it.answer, like: it.like || '', change: it.change || '' };   // v1.3.18
       if (r.action === RV_ACTION.ask && (r.status === RV_STATUS.open || r.status === RV_STATUS.answered))
         link[k] = { reviewId: r.id, status: r.status, sentBy: r.sentBy, sentAt: r.data.sentAt || r.createdOn, openedAt: r.data.openedAt || null, until: r.expires,
           url: r.token ? cfg.pageUrl + (cfg.pageUrl.includes('?') ? '&' : '?') + 't=' + r.token : null,   // v1.3.1
           answeredAt: r.data.answeredAt || null, answeredBy: r.data.answeredBy || null, answer: it.answer || null, like: it.like || '', change: it.change || '', files: it.files || [] };
       if (r.action === RV_ACTION.sendApproval) {                       // v1.3.9: an approval link out to the publisher (or a test)
         if (r.status === RV_STATUS.open && !(r.expires && new Date(r.expires).getTime() < Date.now()) && !it.decision)
-          sent[k] = { reviewId: r.id, to: r.data.sentTo || '', toName: r.data.sentToName || '', test: !!r.data.test, sentBy: r.sentBy, sentAt: r.data.sentAt || r.createdOn, openedAt: r.data.openedAt || null, until: r.expires,
+          sent[k] = { reviewId: r.id, links: ((sent[k] && sent[k].links) || 0) + 1, otherAds: ((sent[k] && sent[k].otherAds) || 0) + items.filter(o => o.adId !== it.adId).length, to: r.data.sentTo || '', toName: r.data.sentToName || '', test: !!r.data.test, sentBy: r.sentBy, sentAt: r.data.sentAt || r.createdOn, openedAt: r.data.openedAt || null, until: r.expires,
             url: r.token ? cfg.pageUrl + (cfg.pageUrl.includes('?') ? '&' : '?') + 't=' + r.token : null };
         else delete sent[k];
         return; }
       if (r.action !== RV_ACTION.ask) { decided[k] = { action: r.action, by: r.sentBy, at: r.createdOn, inbxify: r.data.by === 'inbxify', via: r.data.via || '' }; delete sent[k]; }
-      if (r.action === RV_ACTION.back) backNote[k] = { note: r.note, by: r.sentBy, at: r.createdOn }; });
+      if (r.action === RV_ACTION.back) { const av = advAns[k] && String(advAns[k].at) <= String(r.createdOn) ? advAns[k] : null;   // v1.3.18
+        backNote[k] = { note: backWords(r.note, av), publisherNote: r.note || '', advertiser: av, by: r.sentBy, at: r.createdOn }; } });
   });
   const customers = custRows.filter(c => ids.has(c.id) && !c.isArchived && !c.isDraft).map(c => {
     const v = versions[c.id] || { current: {}, versions: {}, problems: ['ix-issue-data had no answer for this customer.'] };
@@ -1872,6 +1903,23 @@ async function withdrawRequest(run, id, b) {
   const data = Object.assign({}, r.data, { withdrawnAt: iso(), withdrawnBy: run.actor() });
   const w = await patchReview(run, id, { [RV.status]: await run.optId(coll, RV.status, RV_STATUS.withdrawn), [RV.data]: JSON.stringify(data) });
   return { ok: true, id, status: RV_STATUS.withdrawn, unconfirmed: w.unconfirmed };
+}
+async function withdrawApproval(run, b) {                            // v1.3.17 · take back the approval email(s) for one ad, keep the ad
+  if (!run.who || !run.who.staff) throw httpErr(403, 'Only inbxify staff take back an approval email.');
+  if (!/^[0-9a-f]{24}$/.test((b && b.adId) || '')) throw httpErr(400, 'Name the ad.');
+  const ctx = await adContext(run, b.adId, b.publisher), now = Date.now();
+  const open = (await reviewRows(run)).filter(r => r.action === RV_ACTION.sendApproval && r.status === RV_STATUS.open && r.publisher === ctx.sc.publisherId &&
+    !(r.expires && new Date(r.expires).getTime() < now) && (Array.isArray(r.data.items) ? r.data.items : []).some(it => it.adId === b.adId));
+  if (!open.length) throw httpErr(409, 'No approval email for this ad is still open. Nothing was changed.');
+  const coll = needCollection(run, 'reviews', 'PUBLISHER REVIEWS'), wd = await run.optId(coll, RV.status, RV_STATUS.withdrawn);
+  const otherAds = [], unconfirmed = [];
+  for (const r of open) {
+    const data = Object.assign({}, r.data, { withdrawnAt: iso(), withdrawnBy: run.actor() });
+    const w = await patchReview(run, r.id, { [RV.status]: wd, [RV.data]: JSON.stringify(data) });
+    (w.unconfirmed || []).forEach(x => unconfirmed.push(x));
+    r.data.items.filter(it => it.adId !== b.adId).forEach(it => otherAds.push({ adId: it.adId, shape: it.shape, name: it.name || '' }));
+  }
+  return { ok: true, links: open.length, otherAds, unconfirmed };
 }
 async function doneRequest(run, id, b) {
   if (!run.who || !run.who.staff) throw httpErr(403, 'Only inbxify staff close a request (Ad Maker does, on Save).');

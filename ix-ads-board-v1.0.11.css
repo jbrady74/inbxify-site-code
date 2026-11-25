@@ -1,6 +1,9 @@
-/* ix-ads-board-v1.0.9.css */
+/* ix-ads-board-v1.0.11.css */
 /* ============================================================
    INBXIFY · ix-ads-board · the Ads board shared by the Publisher Portal and the T-A Ads tab
+   v1.0.11 (25 Nov 2026, Ad Maker Build S4): the inbxify side's five stage boxes (.ps-ad-stages, .st-new … .st-done), stacked full
+   width; the left rule of each head says whose move it is (ink: not started; red: yours; purple: the publisher's; green: resolved).
+   v1.0.10 (25 Nov 2026, Ad Maker Build S4): the line under a card never wraps its links (nowrap; the take-back words are shorter).
    v1.0.9 (25 Nov 2026, Ad Maker Build S4): the line under a card holds Take back this email (left) and Delete this ad (right);
    .ps-ad-tbbox is the take-back question, an ink border (not red: nothing is deleted). Companion JS ix-ads-board-v1.0.9.js.
    v1.0.1 (18 Nov 2026): tokens only — every colour and font size reads ix-tokens v1.0.5 (--ps-*, --ix-fs-*); no other change.
@@ -351,7 +354,8 @@ textarea.ps-ad-sendin{min-height:128px;resize:vertical}
 /* ════ v1.0.6 (23 Nov 2026, Ad Maker Build S3) · DELETE THIS AD (inbxify side) ════ */
 .ps-ad-delrow{margin-top:8px;display:flex;justify-content:space-between;align-items:baseline;gap:12px}   /* v1.0.9: Take back on the left, Delete on the right */
 .ps-ad-delrow .ps-ad-cancel.tb{color:var(--ps-ink)}
-.ps-ad-delrow .tbdone{font-size:var(--ix-fs-12);color:var(--ps-muted)}
+.ps-ad-delrow .tbdone{font-size:var(--ix-fs-12);color:var(--ps-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ps-ad-delrow .ps-ad-cancel{white-space:nowrap;flex:none}   /* v1.0.10 */
 .ps-ad-tbbox{margin-top:10px;padding:12px 14px;border:1.5px solid var(--ps-ink);border-radius:3px;background:var(--ps-paper);display:flex;flex-direction:column;gap:6px;font-size:var(--ix-fs-13);color:var(--ps-ink)}
 .ps-ad-tbbox b{font-size:var(--ix-fs-14)}
 .ps-ad-tbbox .dba{display:flex;align-items:center;gap:14px;margin-top:4px}
@@ -371,3 +375,15 @@ textarea.ps-ad-sendin{min-height:128px;resize:vertical}
 .ps-ad-gone .gl{margin-top:6px}
 
 /* ════ v1.0.8 (23 Nov 2026) · version only ════ */
+
+/* ════ v1.0.11 · the inbxify side's five stages ════ */
+.ps-ad-stages{display:flex;flex-direction:column;gap:14px;margin-bottom:14px}
+.ps-ad-box.st-new .bh{border-left-color:var(--ps-ink-2)}
+.ps-ad-box.st-wip .bh,.ps-ad-box.st-todo .bh{border-left-color:var(--ps-red-deep)}
+.ps-ad-box.st-wip .bh .n,.ps-ad-box.st-todo .bh .n{color:var(--ps-red-deep);font-weight:700}
+.ps-ad-box.st-wait .bh{border-left-color:var(--ps-purple)}
+.ps-ad-box.st-done .bh{border-left-color:var(--ps-green)}
+.ps-ad-box .bh .sub{font-size:var(--ix-fs-12-5);color:var(--ps-muted)}
+.ps-ad-slot:empty{display:none}
+.ps-ad-step.s-done i{background:var(--ps-green)}
+.ps-ad q{white-space:pre-line}   /* v1.0.11: a send-back note keeps its lines (publisher, then advertiser) */
