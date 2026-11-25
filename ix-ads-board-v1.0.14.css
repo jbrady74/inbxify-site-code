@@ -1,0 +1,399 @@
+/* ix-ads-board-v1.0.14.css */
+/* v1.0.14 CSS (25 Nov 2026, TA Reskin S4b): the box headings (Not started, In progress, With the publisher, From the publisher) are the platform section heading: Newsreader 22 semibold (--ix-fs-section, --ix-fw-section), on T-A and the Portal alike. They were 21 regular on T-A, 19 semibold on the Portal. CSS only; the JS stays ix-ads-board-v1.0.13.js. */
+/* ============================================================
+   INBXIFY · ix-ads-board · the Ads board shared by the Publisher Portal and the T-A Ads tab
+   v1.0.13 (25 Nov 2026, Ad Maker Build S4): Task list rows carry no coverage column (.ps-ad-brow.nocov); a task row's
+   cards open right under it; the Advertisers head carries a note (.bh .sub). (v1.0.12 was JS only.)
+   v1.0.11 (25 Nov 2026, Ad Maker Build S4): the inbxify side's five stage boxes (.ps-ad-stages, .st-new … .st-done), stacked full
+   width; the left rule of each head says whose move it is (ink: not started; red: yours; purple: the publisher's; green: resolved).
+   v1.0.10 (25 Nov 2026, Ad Maker Build S4): the line under a card never wraps its links (nowrap; the take-back words are shorter).
+   v1.0.9 (25 Nov 2026, Ad Maker Build S4): the line under a card holds Take back this email (left) and Delete this ad (right);
+   .ps-ad-tbbox is the take-back question, an ink border (not red: nothing is deleted). Companion JS ix-ads-board-v1.0.9.js.
+   v1.0.1 (18 Nov 2026): tokens only — every colour and font size reads ix-tokens v1.0.5 (--ps-*, --ix-fs-*); no other change.
+   v1.0.0 (18 Nov 2026, Ad Maker Build S1) — LIFTED FROM ps-ads-v1.0.12.css, unchanged for the Portal.
+   Every class keeps its ps-ad- name. New here:
+   · .ix-ab carries the Portal's --ps-* tokens itself, so a page without ps-shell (T-A) gets the same look.
+   · .ps-ad-two.stack  the inbxify side: the two boards stacked full width, no height cap (the page grows).
+   · .ps-ad-brow.has-act  a board row carrying a button (Make sidebar, Open in Ad Maker) at its right.
+   Companion JS: ix-ads-board-v1.0.1.js. ps-ads v1.0.13 loads this file in place of ps-ads-v1.0.12.css.
+   ============================================================ */
+.ps-portal{--ps-ok-pale:var(--ps-green-pale)}
+.ps-ad{position:relative}
+/* filter bar */
+.ps-ad-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}.ps-ad-bar .sp{flex:1}
+.ps-ad-pill{height:30px;border:1px solid var(--ps-rule);background:var(--ps-paper);color:var(--ps-ink-2);font:inherit!important;font-size:var(--ix-fs-12-5)!important;cursor:pointer;padding:0 14px;border-radius:15px;display:inline-flex;align-items:center;gap:7px}
+.ps-ad-pill b{font-weight:600}
+.ps-ad-pill[aria-pressed="true"]{background:var(--ps-ink);border-color:var(--ps-ink);color:var(--ps-ground);font-weight:600}
+.ps-ad-pill.p-you{border-color:var(--ps-red-deep);color:var(--ps-red-deep)}
+.ps-ad-pill.p-you[aria-pressed="true"]{background:var(--ps-red-deep);border-color:var(--ps-red-deep);color:var(--ps-paper)}
+.ps-ad-search{height:32px;padding:0 10px;border:1px solid var(--ps-rule);background:var(--ps-paper);color:var(--ps-ink);font:inherit!important;font-size:var(--ix-fs-13)!important;width:220px;border-radius:2px}
+/* whose move marks */
+.ps-ad-own{font-size:var(--ix-fs-11-5);font-weight:600;color:var(--ps-muted);white-space:nowrap}
+.ps-ad-own.o-you{color:var(--ps-red-deep);font-weight:700}
+.ps-ad-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ps-ok);vertical-align:middle;flex:none}
+.ps-ad-dash{display:inline-block;width:12px;border-top:1.5px solid var(--ps-muted);vertical-align:middle;opacity:.7}
+.ps-ad-badge{display:inline-flex;align-items:center;gap:6px;font-size:var(--ix-fs-12);font-weight:700;padding:5px 12px;border-radius:14px;white-space:nowrap}
+.ps-ad-badge.b-you{background:var(--ps-red-deep);color:var(--ps-paper)}
+.ps-ad-badge.b-adv,.ps-ad-badge.b-ix{border:1.5px solid var(--ps-red-deep);color:var(--ps-red-deep);padding:3.5px 10.5px}
+.ps-ad-badge.b-ok{color:var(--ps-ok);font-weight:600;padding-right:0}.ps-ad-badge.b-ok .ps-ad-dot{width:8px;height:8px}
+.ps-ad-badge.b-plain{border:1px solid var(--ps-rule);color:var(--ps-muted);font-weight:600}
+/* table */
+.ps-ad-tbl{background:var(--ps-paper);border:1px solid var(--ps-rule)}
+.ps-ad-tr{display:grid;grid-template-columns:minmax(0,2.2fr) repeat(4,minmax(0,1fr)) 40px;align-items:center;min-height:46px;border-top:1px solid var(--ps-rule-soft)}
+.ps-ad-tr.th{min-height:34px;border-top:0;background:var(--ps-ground-2);border-bottom:1px solid var(--ps-rule);font-size:var(--ix-fs-11-5);font-weight:600;color:var(--ps-muted);position:sticky;top:0;z-index:3}
+.ps-ad-tr.th>div{padding:0 14px}.ps-ad-tr.th .c{text-align:center}
+.ps-ad-tr.r{cursor:pointer}.ps-ad-tr.r:hover{background:var(--ps-row-hover)}.ps-ad-tr.ps-ad-openrow{background:var(--ps-row-open)}
+.ps-ad-tr .nm{padding:0 14px;font-weight:600;font-size:var(--ix-fs-14);min-width:0}
+.ps-ad-tr .nm .cn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.ps-ad-tr .c{display:flex;justify-content:center}
+.ps-ad-cbtn{background:none;border:0;padding:6px 8px;cursor:pointer;border-radius:4px;display:inline-flex;font:inherit}
+.ps-ad-cbtn .stk{display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.15}
+.ps-ad-cbtn:hover{background:var(--ps-ground-2)}
+.ps-ad-tr .chv{display:flex;justify-content:center;color:var(--ps-muted)}.ps-ad-tr .chv svg{transition:transform .15s}
+.ps-ad-tr.ps-ad-openrow .chv svg{transform:rotate(180deg)}
+.ps-ad-empty{padding:28px 16px;color:var(--ps-muted);text-align:center}
+.ps-ad-probs{grid-column:1/-1;font-size:var(--ix-fs-12);color:var(--ps-red-deep);background:var(--ps-red-pale);padding:8px 12px}
+/* open area */
+.ps-ad-ex{border-top:1px solid var(--ps-rule-soft);background:var(--ps-row-open);padding:12px 16px 20px;cursor:default}
+.ps-ad-stack{display:flex;flex-direction:column;gap:14px;min-width:0}
+.ps-ad-shp{background:var(--ps-paper);border:1px solid var(--ps-rule);padding:14px 16px 16px;scroll-margin-top:60px}
+.ps-ad-shp.flash{animation:ps-ad-fl 1.2s ease-out}
+@keyframes ps-ad-fl{0%{box-shadow:0 0 0 3px var(--ps-ok)}100%{box-shadow:0 0 0 0 transparent}}
+.ps-ad-shp.slim{padding:9px 16px;display:flex;align-items:center;gap:12px;color:var(--ps-muted)}
+.ps-ad-shp .shead{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.ps-ad-shp .sl{font-family:var(--ps-serif)!important;font-size:var(--ix-fs-19);font-weight:600;color:var(--ps-ink)}
+.ps-ad-shp.slim .sl{font-size:var(--ix-fs-15);color:var(--ps-muted);font-weight:400;width:72px}
+.ps-ad-shp .vt{font-size:var(--ix-fs-12-5);color:var(--ps-ink-2)}
+.ps-ad-shp .shead .sp{flex:1}
+.ps-ad-link{background:none;border:0;padding:0;font:inherit!important;font-size:var(--ix-fs-12)!important;color:var(--ps-blue-text);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.ps-ad-cancel{background:none;border:0;padding:0;font:inherit!important;font-size:var(--ix-fs-12)!important;color:var(--ps-muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.ps-ad-frame{border:1.5px solid transparent;display:inline-block;max-width:100%;transition:border-color .15s;line-height:0}
+.ps-ad-frame.chg{border-color:var(--ps-gold);box-shadow:0 0 0 3px var(--ps-gold-glow);padding:4px}
+.ps-ad-img{display:block;max-width:100%;height:auto}
+.ps-ad-img.th{width:88px}
+.ps-ad-textad{border:1px solid var(--ps-rule);padding:12px 14px;max-width:560px;background:var(--ps-paper);color:var(--ps-ink);line-height:1.4}
+.ps-ad-textad b{display:block;font-size:var(--ix-fs-14)}.ps-ad-textad div{font-size:var(--ix-fs-13);color:var(--ps-ink-2);margin:3px 0}
+.ps-ad-textad.th{padding:4px 6px;width:88px;overflow:hidden;line-height:1.2}.ps-ad-textad.th b{font-size:var(--ix-fs-9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ps-ad-textad.th div{font-size:var(--ix-fs-8);margin:1px 0;overflow:hidden;max-height:3em}
+.w-banner{width:100%;max-width:420px}.w-sidebar{width:100%;max-width:200px}.w-splash{width:100%;max-width:300px}
+.ps-ad-holder{border:1.5px dashed var(--ps-rule);display:flex;align-items:center;justify-content:center;text-align:center;color:var(--ps-muted);padding:28px 20px;font-size:var(--ix-fs-13);max-width:100%}
+.ps-ad-meta{margin-top:10px;font-size:var(--ix-fs-12-5);color:var(--ps-ink-2);max-width:78ch}.ps-ad-meta q{font-style:italic}
+.ps-ad-stale{margin-top:10px;font-size:var(--ix-fs-12-5);color:var(--ps-ink-2);border-left:3px solid var(--ps-coral);padding:4px 10px;max-width:78ch}
+.ps-ad-acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.ps-ad-staged{margin-top:12px;display:flex;align-items:center;gap:12px;font-size:var(--ix-fs-12-5);font-weight:600;color:var(--ps-ink)}
+.ps-ad-staged .tag{display:inline-block;border:1.5px solid var(--ps-gold);background:var(--ps-gold-glow);padding:3px 10px}
+.ps-ad-note{font:inherit!important;font-size:var(--ix-fs-13)!important;width:100%;max-width:560px;min-height:64px;padding:8px 10px;border:1.5px solid var(--ps-rule);border-radius:2px;background:var(--ps-paper);color:var(--ps-ink);resize:vertical;display:block}
+.ps-ad .chg{border-color:var(--ps-gold)!important;box-shadow:0 0 0 3px var(--ps-gold-glow)}
+.ps-ad-need{font-size:var(--ix-fs-11-5);color:var(--ps-red-deep);margin-top:4px}
+.ps-ad-quiet{font-size:var(--ix-fs-12);color:var(--ps-muted)}
+/* right rail */
+.ps-ad-rail{display:flex;flex-direction:column;gap:14px;position:sticky;top:46px;max-height:calc(100vh - 70px);overflow:auto;min-width:0}
+.ps-ad-side{background:var(--ps-paper);border:1px solid var(--ps-rule)}
+.ps-ad-side h3{margin:0!important;padding:12px 14px 10px;font-family:var(--ps-serif)!important;font-size:var(--ix-fs-18)!important;font-weight:600!important;border-bottom:1px solid var(--ps-rule-soft);display:flex;align-items:baseline;gap:8px;color:var(--ps-ink)}
+.ps-ad-side h3 .cnt{font:400 var(--ix-fs-12) var(--ps-sans);color:var(--ps-muted)}
+.ps-ad-side .grp{padding:10px 14px 12px;border-bottom:1px solid var(--ps-rule-soft)}
+.ps-ad-side .grp.hot{background:var(--ps-ok-pale);border-left:4px solid var(--ps-ok);padding-left:10px}
+.ps-ad-side .gh{font-size:var(--ix-fs-12);font-weight:700;color:var(--ps-ink);display:flex;align-items:center;gap:7px;margin-bottom:8px}.ps-ad-side .gh span{font-weight:400;color:var(--ps-muted)}
+.ps-ad-vi{display:flex;gap:10px;align-items:center;width:100%;background:var(--ps-paper);border:1px solid var(--ps-rule-soft);padding:6px;margin-top:6px;cursor:pointer;text-align:left;color:var(--ps-ink);font:inherit}
+.ps-ad-vi:hover{border-color:var(--ps-rule)}
+.ps-ad-vi[aria-current="true"]{border-color:var(--ps-ink);box-shadow:inset 0 0 0 1px var(--ps-ink)}
+.ps-ad-vi .th{width:88px;flex:none;line-height:0}
+.ps-ad-vi .vm{min-width:0;font-size:var(--ix-fs-12);line-height:1.35}.ps-ad-vi .vm b{display:block;font-size:var(--ix-fs-12-5)}.ps-ad-vi .vm span{color:var(--ps-muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ps-ad-vi.gold{border-color:var(--ps-gold);box-shadow:0 0 0 2px var(--ps-gold-glow)}
+.ps-ad-sendbox{padding:12px 14px;border-bottom:1px solid var(--ps-rule-soft)}
+.ps-ad-sendbox .lnk{font-size:var(--ix-fs-12);color:var(--ps-ink-2);background:var(--ps-ground);border:1px solid var(--ps-rule-soft);padding:8px 10px}
+/* save bar */
+.ps-ad-savebar{position:fixed;right:24px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--ps-paper);border:1px solid var(--ps-rule);border-top:3px solid var(--ps-gold);box-shadow:0 14px 34px var(--ps-ink-ghost);padding:12px 16px;display:flex;align-items:center;gap:18px;min-width:420px;max-width:calc(100vw - 48px)}
+.ps-ad-savebar .what{flex:1;font-size:var(--ix-fs-12-5)}.ps-ad-savebar .what b{display:block;font-size:var(--ix-fs-13);margin-bottom:2px}
+.ps-ad-savebar ul{margin:0!important;padding-left:16px;color:var(--ps-ink-2)}.ps-ad-savebar li{font-size:var(--ix-fs-12-5)!important;margin:0!important}
+.ps-ad-savebar .steps{list-style:none;padding:0;margin:4px 0 0!important;font-size:var(--ix-fs-12)}.ps-ad-savebar .steps li{padding:2px 0;color:var(--ps-muted)}
+.ps-ad-savebar .steps li.done{color:var(--ps-ok)}.ps-ad-savebar .steps li.on{color:var(--ps-ink);font-weight:600}
+@media (max-width:1100px){.ps-ad-grid{grid-template-columns:1fr}}
+@media (max-width:760px){.ps-ad-tr{grid-template-columns:minmax(0,1.3fr) repeat(4,44px) 26px}.ps-ad-tr.th{font-size:var(--ix-fs-9-5)}.ps-ad-tr.th>div{padding:0 2px}.ps-ad-tr.th>div:first-child{padding-left:10px}
+ .ps-ad-tr .nm{padding:0 10px}.ps-ad-own{font-size:var(--ix-fs-9-5)}.ps-ad-savebar{left:12px;right:12px;min-width:0;flex-wrap:wrap}.w-sidebar{width:100%}.ps-ad-search{width:100%}}
+
+/* v1.0.1 · heading over the left column (Jeff, 10 Nov) · same type as the rail tiles' h3 */
+.ps-ad-stackh{margin:0 0 -2px!important;font-family:var(--ps-serif)!important;font-size:var(--ix-fs-18)!important;font-weight:600!important;color:var(--ps-ink)}
+
+/* v1.0.1 · the message after an Ask (mailto cannot open itself after an async save) */
+.ps-ad-mailwrap{margin:14px 0 0}
+.ps-ad-mail{background:var(--ps-paper);border:1px solid var(--ps-gold,var(--ps-gold-deep));padding:14px 16px 16px;margin-bottom:12px}
+.ps-ad-mail .mh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px;font-family:var(--ps-serif);font-size:var(--ix-fs-17)}
+.ps-ad-mail .ml{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:var(--ix-fs-12);color:var(--ps-muted)}
+.ps-ad-mail .ml input{flex:1;font:inherit;font-size:var(--ix-fs-14);color:var(--ps-ink);background:var(--ps-ground);border:1px solid var(--ps-rule-soft);padding:7px 10px}
+.ps-ad-mail textarea{width:100%;box-sizing:border-box;font:inherit;font-size:var(--ix-fs-14);line-height:1.5;color:var(--ps-ink);background:var(--ps-ground);border:1px solid var(--ps-rule-soft);padding:10px;resize:vertical}
+.ps-ad-mail .ma{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+.ps-ad-mail .ma a.ix-btn{text-decoration:none}
+
+/* v1.0.4 · three columns (mockup v0.11) */
+.ps-ad-col{min-width:0;display:flex;flex-direction:column;gap:12px}
+.ps-ad-col .ps-ad-stackh{margin:0!important}
+.ps-ad-col .ps-ad-stackh .cnt{font:400 var(--ix-fs-12) var(--ps-sans);color:var(--ps-muted);margin-left:6px}
+.ps-ad-shp.gold{border-color:var(--ps-gold);box-shadow:0 0 0 3px var(--ps-gold-glow)}
+.ps-ad-shp .sl{font-size:var(--ix-fs-17)}
+.ps-ad-linkbox{background:var(--ps-ground);border:1px solid var(--ps-rule-soft);padding:9px 12px;font-size:var(--ix-fs-12);color:var(--ps-ink-2)}
+.ps-ad-linkbox b{color:var(--ps-ink)}.ps-ad-linkbox .s{display:block;color:var(--ps-muted);margin-top:3px}
+.ps-ad-sub{font-family:var(--ps-caps);font-size:var(--ix-fs-11);font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ps-muted);margin-top:4px}
+.ps-ad-sub span{font-family:var(--ps-sans);letter-spacing:0;text-transform:none;font-weight:400}
+.ps-ad-ans{background:var(--ps-ok-pale);border:1px solid var(--ps-rule-soft);padding:8px 10px;font-size:var(--ix-fs-12-5);margin-top:8px;color:var(--ps-ink)}
+.ps-ad-ans b{display:block;color:var(--ps-ok);margin-bottom:2px}
+
+/* v1.0.5 · full-width tabs */
+.ps-ad-tabs{display:flex;gap:0;border-bottom:1px solid var(--ps-rule);margin-bottom:14px}
+.ps-ad-tab{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:10px 16px 9px;font-family:var(--ps-serif)!important;font-size:var(--ix-fs-17);font-weight:600;color:var(--ps-muted);cursor:pointer}
+.ps-ad-tab .cnt{font:400 var(--ix-fs-12) var(--ps-sans);color:var(--ps-muted);margin-left:6px}
+.ps-ad-tab:hover{color:var(--ps-ink)}
+.ps-ad-tab.on{color:var(--ps-ink);border-bottom-color:var(--ps-ink)}
+.ps-ad-tab.hot .cnt{color:var(--ps-red-deep);font-weight:700}
+.ps-ad-tab.hot.on{border-bottom-color:var(--ps-red-deep)}
+.ps-ad-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:12px;align-items:start}
+.ps-ad-tabbody .ps-ad-sub{margin:4px 0 8px}
+.ps-ad-tabbody .ps-ad-sub+.ps-ad-grid{margin-bottom:16px}
+.ps-ad-tabbody .ps-ad-linkbox{margin-bottom:12px}
+
+/* v1.0.6 · Current tab: four equal cards, pictures in a fixed stage */
+.ps-ad-four{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch}
+.ps-ad-shp.four{display:flex;flex-direction:column;min-width:0}
+.ps-ad-shp.four .shead{margin-bottom:4px}
+.ps-ad-shp.four .sl,.ps-ad-shp.noad .sl{font-size:var(--ix-fs-18);font-weight:600;color:var(--ps-ink)}
+.ps-ad-shp .vt{display:block;font-size:var(--ix-fs-12);color:var(--ps-muted);margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ps-ad-stage{background:var(--ps-ground-2);border:1px solid var(--ps-rule-soft);height:190px;display:flex;align-items:center;justify-content:center;padding:10px;overflow:hidden}
+.ps-ad-stage .ps-ad-frame{max-width:100%;max-height:100%}
+.ps-ad-stage .ps-ad-img{max-width:100%;max-height:170px;width:auto;height:auto}
+.ps-ad-stage .w-banner,.ps-ad-stage .w-sidebar,.ps-ad-stage .w-splash{width:auto;max-width:100%}
+.ps-ad-stage .ps-ad-textad{max-width:100%;font-size:var(--ix-fs-12)}
+.ps-ad-stage .ps-ad-holder{border:0;padding:0;background:none;color:var(--ps-muted);font-size:var(--ix-fs-13)}
+.ps-ad-shp.noad{color:var(--ps-muted)}
+.ps-ad-shp.four .ps-ad-meta{margin-top:auto;padding-top:10px}
+@media (max-width:1100px){.ps-ad-four{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.ps-ad-four{grid-template-columns:1fr}}
+
+/* v1.0.7 · identical card anatomy, pictures fill the stage */
+.ps-ad-shp.four,.ps-ad-shp.noad{display:flex;flex-direction:column;min-width:0;text-align:left}
+.ps-ad-shp.noad .shead{margin-bottom:4px;justify-content:flex-start}
+.ps-ad-shp.four .vt,.ps-ad-shp.noad .vt{min-height:17px}
+.ps-ad-stage{width:100%;height:210px;box-sizing:border-box}
+.ps-ad-stage .ps-ad-frame{display:flex;align-items:center;justify-content:center;max-width:100%;max-height:100%;line-height:0}
+.ps-ad-stage.s-banner .ps-ad-img{width:100%;height:auto;max-height:100%;object-fit:contain}
+.ps-ad-stage.s-sidebar .ps-ad-img,.ps-ad-stage.s-splash .ps-ad-img{height:100%;max-height:188px;width:auto;max-width:100%;object-fit:contain}
+.ps-ad-stage.s-text .ps-ad-textad{width:100%}
+.ps-ad-shp.four .ps-ad-meta,.ps-ad-shp.noad .ps-ad-meta{min-height:36px;margin-top:10px}
+
+/* v1.0.8 · Publisher Portal S9 · request new ads (mockup v0.13) */
+/* the card head stays on one line: the pill's words shorten instead of wrapping under the shape name */
+.ps-ad-shp.four .shead,.ps-ad-shp.noad .shead{flex-wrap:nowrap;min-width:0}
+.ps-ad-shp.four .sl,.ps-ad-shp.noad .sl{flex:none}
+.ps-ad-shp.four .ps-ad-badge{min-width:0;max-width:100%;overflow:hidden}
+.ps-ad-badge .bl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* the button on the open row's tab line */
+.ps-ad-tabs{align-items:flex-end}
+.ps-ad-tabs .sp{flex:1}
+.ps-ad-reqbtn{align-self:center;margin-bottom:6px;display:inline-flex!important;align-items:center;gap:7px;white-space:nowrap}
+/* the request band at the foot of a Current card; blank keeps the same space on the others */
+.ps-ad-shp.four .ps-ad-meta{margin-bottom:12px}
+.ps-ad-req{margin:auto -16px -16px;height:76px;box-sizing:border-box;overflow:hidden;background:var(--ps-blue-pale);border-top:1px solid var(--ps-blue-line);padding:9px 16px 10px;font-size:var(--ix-fs-12-5);color:var(--ps-ink-2);line-height:1.45}
+.ps-ad-shp.four .ps-ad-req{margin-top:auto}
+.ps-ad-req.blank{background:transparent;border-top-color:transparent}
+.ps-ad-req b{display:block;color:var(--ps-ink);font-size:var(--ix-fs-12-5)}
+.ps-ad-req .ln{display:block;color:var(--ps-muted);font-size:var(--ix-fs-12)}
+.ps-ad-req .cf{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;color:var(--ps-ink);font-weight:600}
+.ps-ad-sm{height:28px!important;padding:0 10px!important;font-size:var(--ix-fs-12)!important}
+/* the request box */
+.ps-ad-ov{position:fixed;inset:0;z-index:99990;background:var(--ps-scrim);display:flex;align-items:center;justify-content:center;padding:20px}
+.ps-ad-modal{background:var(--ps-paper);border:1px solid var(--ps-rule);border-top:3px solid var(--ps-blue-text);width:min(720px,100%);max-height:calc(100vh - 40px);overflow:auto;box-shadow:0 24px 60px var(--ps-shadow-ink);text-align:left}
+.ps-ad-modal .mh{padding:16px 20px 12px;border-bottom:1px solid var(--ps-rule-soft)}
+.ps-ad-modal .mh h2{margin:0!important;font-family:var(--ps-serif)!important;font-size:var(--ix-fs-21)!important;font-weight:600!important;color:var(--ps-ink)}
+.ps-ad-modal .mh p{margin:4px 0 0!important;color:var(--ps-muted);font-size:var(--ix-fs-12-5)}
+.ps-ad-modal .mb{padding:16px 20px 6px}
+.ps-ad-modal .fld{margin-bottom:18px}
+.ps-ad-modal .fl{display:flex;align-items:baseline;gap:8px;margin:0 0 8px;font-size:var(--ix-fs-12-5);font-weight:700;color:var(--ps-ink)}
+.ps-ad-modal .fl .opt{font-weight:400;color:var(--ps-muted)}
+.ps-ad-modal .fl .sp{flex:1}
+.ps-ad-picks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.ps-ad-pick{border:1.5px solid var(--ps-rule);background:var(--ps-paper);height:46px;padding:0 12px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:9px;font-family:var(--ps-serif)!important;font-size:var(--ix-fs-16);font-weight:600;color:var(--ps-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ps-ad-pick .box{width:15px;height:15px;border:1.5px solid var(--ps-muted);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.ps-ad-pick.on{border-color:var(--ps-gold);box-shadow:0 0 0 3px var(--ps-gold-glow)}
+.ps-ad-pick.on .box{background:var(--ps-ink);border-color:var(--ps-ink)}
+.ps-ad-pick.on .box::after{content:'';width:7px;height:4px;border-left:2px solid var(--ps-paper);border-bottom:2px solid var(--ps-paper);transform:rotate(-45deg) translate(1px,-1px)}
+.ps-ad-in{height:36px;border:1.5px solid var(--ps-rule);background:var(--ps-paper);color:var(--ps-ink);padding:0 10px;font-family:var(--ps-sans)!important;font-size:var(--ix-fs-13)!important;width:200px;border-radius:2px;box-sizing:border-box}
+textarea.ps-ad-in{height:auto;min-height:110px;width:100%;padding:9px 10px;line-height:1.45;resize:vertical;display:block}
+.ps-ad-in.chg{border-color:var(--ps-gold);box-shadow:0 0 0 3px var(--ps-gold-glow)}
+.ps-ad-files{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ps-ad-fchip{border:1px solid var(--ps-gold);box-shadow:0 0 0 2px var(--ps-gold-glow);background:var(--ps-paper);padding:4px 10px;font-size:var(--ix-fs-12);display:inline-flex;gap:8px;align-items:center;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ps-ad-fchip em{color:var(--ps-muted);font-style:normal}
+.ps-ad-addf{height:32px;border:1px dashed var(--ps-rule);background:var(--ps-ground);padding:0 12px;cursor:pointer;font-size:var(--ix-fs-12-5);color:var(--ps-ink-2)}
+.ps-ad-modal .mf{padding:12px 20px 16px;border-top:1px solid var(--ps-rule-soft);display:flex;align-items:center;gap:16px}
+.ps-ad-modal .mf .what{flex:1;font-size:var(--ix-fs-12-5);color:var(--ps-ink-2);min-width:0}
+.ps-ad-prog{height:4px;background:var(--ps-rule-soft);overflow:hidden;margin-top:6px;width:220px;max-width:100%}
+.ps-ad-prog i{display:block;height:100%;width:40%;background:var(--ps-blue-text);animation:ps-ad-pg 1s linear infinite}
+@keyframes ps-ad-pg{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+@media (max-width:760px){.ps-ad-picks{grid-template-columns:repeat(2,minmax(0,1fr))}.ps-ad-modal .mf{flex-wrap:wrap}}
+@media (prefers-reduced-motion:reduce){.ps-ad-prog i,.ps-ad-shp.flash{animation:none}}
+
+/* v1.0.9 · an open request is a small purple square on the line of the cell's last mark */
+/* the mark keeps its centre (it never moves when a square is added); the square hangs to its right */
+.ps-ad-ml{position:relative;display:inline-flex;align-items:center}
+.ps-ad-reqsq{display:inline-block;width:7px;height:7px;background:var(--ps-purple);flex:none}
+.ps-ad-ml>.ps-ad-reqsq:not(:only-child){position:absolute;left:100%;top:50%;margin-left:4px;transform:translateY(-50%)}
+
+/* v1.0.12 · Needs action · Waiting · Client list (mockup v0.2) */
+.ps-ad-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-bottom:14px}
+.ps-ad-box{background:var(--ps-paper);border:1px solid var(--ps-rule);min-width:0}
+.ps-ad-box .bh{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--ps-rule-soft);border-left:4px solid var(--ps-ink-2);min-height:50px}
+.ps-ad-box.b-act .bh{border-left-color:var(--ps-red-deep)}.ps-ad-box.b-wait .bh{border-left-color:var(--ps-purple)}
+.ps-ad-box .bh b{font-family:var(--ps-serif)!important;font-size:var(--ix-fs-section);font-weight:var(--ix-fw-section);color:var(--ps-ink)}
+.ps-ad-box .bh .n{font-size:var(--ix-fs-12-5);color:var(--ps-muted)}
+.ps-ad-box.b-act .bh .n{color:var(--ps-red-deep);font-weight:700}
+.ps-ad-box .bh .sp{flex:1}
+.ps-ad-box .bh .chvsp{width:26px;flex:none}
+.ps-ad-box .bb{overflow-y:auto;overscroll-behavior:contain}
+.ps-ad-box .none{padding:16px 14px;color:var(--ps-muted);font-size:var(--ix-fs-13)}
+.ps-ad-brow{display:grid;grid-template-columns:minmax(0,1fr) auto 26px;gap:10px;align-items:center;width:100%;min-height:58px;padding:8px 14px;border:0;border-top:1px solid var(--ps-rule-soft);background:var(--ps-paper);text-align:left;cursor:pointer;font:inherit;color:var(--ps-ink)}
+.ps-ad-brow:first-child{border-top:0}
+.ps-ad-brow:hover{background:var(--ps-row-hover)}
+.ps-ad-brow .tx{min-width:0;display:block}
+.ps-ad-brow .cn{display:block;font-weight:600;font-size:var(--ix-fs-14);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ps-ad-brow .l2{display:flex;align-items:center;gap:6px;min-width:0;margin-top:2px}
+.ps-ad-brow .wh,.ps-ad-lr .wh{color:var(--ps-muted);font-size:var(--ix-fs-12);white-space:nowrap;flex:none}
+.ps-ad-brow .chv,.ps-ad-lr .chv{display:flex;justify-content:center;color:var(--ps-muted)}
+.ps-ad-step{display:inline-flex;align-items:center;gap:6px;font-size:var(--ix-fs-12-5);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ps-ink-2)}
+.ps-ad-step i{width:8px;height:8px;flex:none}
+.ps-ad-step.s-you{color:var(--ps-red-deep);font-weight:700}.ps-ad-step.s-you i{border-radius:50%;background:var(--ps-red-deep)}
+.ps-ad-step.s-ix i{background:var(--ps-purple)}
+.ps-ad-step.s-adv i{border-radius:50%;background:var(--ps-amber)}
+.ps-ad-step .pre{color:var(--ps-muted)}
+.ps-ad-cov,.ps-ad-covh{display:inline-grid;grid-template-columns:repeat(4,22px);gap:6px;align-items:center;flex:none}
+.ps-ad-covh{font-size:var(--ix-fs-10-5);font-weight:600;color:var(--ps-muted);text-align:center}
+.ps-ad-cv{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center}
+.ps-ad-cv i{display:block}
+.ps-ad-cv.live i{width:10px;height:10px;border-radius:50%;background:var(--ps-ok)}
+.ps-ad-cv.gap i{width:10px;height:10px;border-radius:50%;border:2px solid var(--ps-red-deep);box-sizing:border-box}
+.ps-ad-cv.no i{width:10px;border-top:1.5px solid var(--ps-muted);opacity:.55}
+.ps-ad-box.b-list .bh{border-left-color:var(--ps-ink-2)}
+.ps-ad-lr{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,2fr) 80px auto 26px;gap:14px;align-items:center;padding:0 14px;min-height:46px;border-top:1px solid var(--ps-rule-soft)}
+.ps-ad-lr.th{min-height:34px;border-top:0;background:var(--ps-ground-2);border-bottom:1px solid var(--ps-rule);font-size:var(--ix-fs-11-5);font-weight:600;color:var(--ps-muted);position:sticky;top:0;z-index:3}
+.ps-ad-lr.r{cursor:pointer}.ps-ad-lr.r:hover{background:var(--ps-row-hover)}.ps-ad-lr.ps-ad-openrow{background:var(--ps-row-open)}
+.ps-ad-lr .nm{font-weight:600;font-size:var(--ix-fs-14);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ps-ad-lr .nx{display:flex;align-items:center;gap:4px;min-width:0}
+.ps-ad-lr .more{font-size:var(--ix-fs-12);color:var(--ps-muted);white-space:nowrap;flex:none}
+.ps-ad-lr.ps-ad-openrow .chv svg{transform:rotate(180deg)}
+@media (max-width:1000px){.ps-ad-two{grid-template-columns:1fr}}
+@media (max-width:760px){.ps-ad-lr{grid-template-columns:minmax(0,1fr) auto 26px}.ps-ad-lr>:nth-child(2),.ps-ad-lr>:nth-child(3){display:none}}
+
+/* v1.0.0 ix-ads-board · tokens on the board itself, for pages without ps-shell (T-A) */
+/* v1.0.3: the colour tokens come from ix-tokens (:root). v1.0.1 set each one to itself here, which is a loop:
+   the browser throws a looped value away, so inside the board every --ps-* colour was empty (no borders, no fills, no coverage dots). */
+.ix-ab{
+  --ps-serif:Newsreader,Georgia,serif;--ps-sans:Sen,system-ui,sans-serif;--ps-caps:'Josefin Sans',system-ui,sans-serif;
+  font-family:var(--ps-sans);color:var(--ps-ink);font-size:var(--ix-fs-14);line-height:1.45}
+.ix-ab .ps-titlerow{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.ix-ab .ps-titlerow h1{margin:0;font:400 var(--ix-fs-30)/1.1 var(--ps-serif);letter-spacing:-.3px}
+.ix-ab .ps-titlerow .sp{flex:1}
+.ix-ab .ps-err{background:var(--ps-red-pale);color:var(--ps-red-deep);padding:12px 14px;border:1px solid var(--ps-red-deep)}
+/* the inbxify side: boards stacked full width, the page grows */
+.ps-ad-two.stack{grid-template-columns:1fr}
+.ps-ad-two.stack .ps-ad-box .bb{height:auto!important;max-height:none;overflow:visible}
+.side-inbxify .ps-ad-box.b-act .bh{border-left-color:var(--ps-purple)}
+.side-inbxify .ps-ad-box.b-act .bh .n{color:var(--ps-purple);font-weight:700}
+.side-inbxify .ps-ad-box.b-wait .bh{border-left-color:var(--ps-red-deep)}
+.side-inbxify .ps-ad-step.s-ix{color:var(--ps-ink);font-weight:700}
+.side-inbxify .ps-ad-step.s-you{color:var(--ps-ink-2);font-weight:400}.side-inbxify .ps-ad-step.s-you i{background:var(--ps-red-deep)}
+.side-inbxify .ps-ad-badge.b-you{background:transparent;border:1.5px solid var(--ps-red-deep);color:var(--ps-red-deep);padding:3.5px 10.5px}
+.side-inbxify .ps-ad-badge.b-ix{background:var(--ps-purple);border-color:var(--ps-purple);color:var(--ps-paper)}
+/* a board row carrying a button */
+.ps-ad-brow{position:relative}
+.ps-ad-brow.has-act{grid-template-columns:minmax(0,1fr) auto auto 26px}
+.ps-ad-brow .act{display:flex;align-items:center}
+.ps-ad-brow .act .ix-btn{white-space:nowrap}
+.ps-ad-shp.noad .ps-ad-meta .ps-ad-acts .ix-btn{width:100%;justify-content:center}
+@media (max-width:760px){.ps-ad-brow.has-act{grid-template-columns:minmax(0,1fr) 26px}.ps-ad-brow.has-act .act,.ps-ad-brow.has-act .ps-ad-cov{display:none}}
+
+/* ════ v1.0.3 (19 Nov 2026, Ad Maker Build S3) · THE INBXIFY SIDE'S SECTIONS TAKE THE DRAFTS IN CANVA CARD (Jeff, 19 Nov) ════
+   To make · With the publisher or advertiser · Client list: one bordered card each, the same head (serif name, a neutral
+   count pill, a hairline under it), rows flush with the card's padding, the same small fixed-width buttons.
+   Scoped to .side-inbxify, so the Publisher Portal is unchanged. Sizes and colours from ix-tokens only.
+   The section.publisher-wrapper copies are for the T-A page, whose own rules flatten borders and backgrounds. */
+.side-inbxify .ps-ad-two.stack{gap:18px;margin-bottom:18px}
+.side-inbxify .ps-ad-box,section.publisher-wrapper .side-inbxify .ps-ad-box{background:var(--ps-paper)!important;border:1px solid var(--ps-rule)!important;border-radius:3px;padding:14px 18px 8px!important}
+.side-inbxify .ps-ad-box .bh,section.publisher-wrapper .side-inbxify .ps-ad-box .bh{align-items:baseline;gap:10px;padding:0 0 10px!important;min-height:0;border-left:0!important;border-bottom:1px solid var(--ps-rule-soft)!important}
+.side-inbxify .ps-ad-box .bh b,section.publisher-wrapper .side-inbxify .ps-ad-box .bh b{font:var(--ix-fw-section) var(--ix-fs-section)/1.2 var(--ps-serif)!important;color:var(--ps-ink)}
+.side-inbxify .ps-ad-box .bh .n,.side-inbxify .ps-ad-box.b-act .bh .n,section.publisher-wrapper .side-inbxify .ps-ad-box .bh .n{font:700 var(--ix-fs-12)/1 var(--ps-sans)!important;color:var(--ps-ink)!important;background:var(--ps-ground-2)!important;border-radius:10px;padding:3px 8px}
+.side-inbxify .ps-ad-box .none{padding:12px 0 8px}
+.side-inbxify .ps-ad-brow,section.publisher-wrapper .side-inbxify .ps-ad-brow{padding:8px 0!important;min-height:64px}
+.side-inbxify .ps-ad-brow .act .ix-btn,section.publisher-wrapper .side-inbxify .ps-ad-brow .act .ix-btn{height:30px!important;padding:0 12px!important;font-size:var(--ix-fs-12-5)!important;width:148px;justify-content:center}
+.side-inbxify .ps-ad-lr,section.publisher-wrapper .side-inbxify .ps-ad-lr{padding:0!important}
+.side-inbxify .ps-ad-lr.th,section.publisher-wrapper .side-inbxify .ps-ad-lr.th{background:var(--ps-paper)!important;border-bottom:1px solid var(--ps-rule-soft)}
+/* the version card's buttons: one equal grid, never a ragged wrap (three buttons = the main one across, two under it) */
+.side-inbxify .ps-ad-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.side-inbxify .ps-ad-acts .ix-btn{width:100%;justify-content:center;white-space:nowrap}
+.side-inbxify .ps-ad-acts>:first-child:nth-last-child(3),.side-inbxify .ps-ad-acts>:only-child{grid-column:1/3}
+
+/* ════ v1.0.4 (22 Nov 2026, Ad Maker Build S3) · THE SEND FOR APPROVAL BOX, IN THE CARD (inbxify side) ════ */
+.side-inbxify .ps-ad-acts.three>:first-child{grid-column:auto}
+.side-inbxify .ps-ad-acts.three>:last-child{grid-column:1/3}
+.side-inbxify .ps-ad-acts .ps-ad-btnon{border-color:var(--ps-gold)!important;box-shadow:0 0 0 3px var(--ps-gold-glow)}
+.ps-ad-again{margin-left:6px;white-space:nowrap}
+.ps-ad-sendbox{margin-top:12px;padding:14px 16px;border:1.5px solid var(--ps-gold);box-shadow:0 0 0 3px var(--ps-gold-glow);border-radius:3px;background:var(--ps-paper);display:flex;flex-direction:column;gap:10px}
+.ps-ad-sendbox .sbh{display:flex;justify-content:space-between;align-items:baseline}
+.ps-ad-sendbox .sbh b{font-size:var(--ix-fs-15);color:var(--ps-ink)}
+.ps-ad-sendbox .sbf{display:flex;flex-direction:column;gap:5px}
+.ps-ad-sendbox .sbl{font:700 var(--ix-fs-11)/1 var(--ps-caps);letter-spacing:1.4px;text-transform:uppercase;color:var(--ps-muted)}
+.ps-ad-sendbox .sbr{display:flex;align-items:baseline;gap:8px;font-size:var(--ix-fs-13-5);color:var(--ps-ink)}
+.ps-ad-sendbox .sbr input{margin:0;flex:none;position:relative;top:1px}
+.ps-ad-sendin{box-sizing:border-box;width:100%;font:inherit!important;font-size:var(--ix-fs-14)!important;line-height:1.45;padding:8px 10px;border:1.5px solid var(--ps-rule);border-radius:2px;background:var(--ps-paper);color:var(--ps-ink)}
+textarea.ps-ad-sendin{min-height:128px;resize:vertical}
+.ps-ad-sendin:focus{outline:none;border-color:var(--ps-ink)}
+.ps-ad-sendin.chg{border-color:var(--ps-gold);box-shadow:0 0 0 3px var(--ps-gold-glow)}
+.ps-ad-sendbox .sba{display:flex;justify-content:flex-end}
+.ps-ad-sendbox .sba .ix-btn{width:150px;justify-content:center}
+
+/* ════ v1.0.5 (23 Nov 2026, Ad Maker Build S3) · CARDS IN A ROW ARE ONE HEIGHT, BUTTONS ON ONE LINE (inbxify side) ════ */
+.side-inbxify .ps-ad-grid{align-items:stretch}
+.side-inbxify .ps-ad-grid.sending{align-items:start}
+.side-inbxify .ps-ad-grid>.ps-ad-shp{display:flex;flex-direction:column;min-width:0}
+.side-inbxify .ps-ad-grid>.ps-ad-shp .ps-ad-meta{line-height:1.45;min-height:2.9em}
+.side-inbxify .ps-ad-grid>.ps-ad-shp>.ps-ad-acts,.side-inbxify .ps-ad-grid>.ps-ad-shp>.ps-ad-staged{margin-top:auto}
+.side-inbxify .ps-ad-grid>.ps-ad-shp>.ps-ad-meta+.ps-ad-acts,.side-inbxify .ps-ad-grid>.ps-ad-shp>.ps-ad-meta+.ps-ad-staged{padding-top:12px}
+
+/* ════ v1.0.6 (23 Nov 2026, Ad Maker Build S3) · DELETE THIS AD (inbxify side) ════ */
+.ps-ad-delrow{margin-top:8px;display:flex;justify-content:space-between;align-items:baseline;gap:12px}   /* v1.0.9: Take back on the left, Delete on the right */
+.ps-ad-delrow .ps-ad-cancel.tb{color:var(--ps-ink)}
+.ps-ad-delrow .tbdone{font-size:var(--ix-fs-12);color:var(--ps-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ps-ad-delrow .ps-ad-cancel{white-space:nowrap;flex:none}   /* v1.0.10 */
+.ps-ad-tbbox{margin-top:10px;padding:12px 14px;border:1.5px solid var(--ps-ink);border-radius:3px;background:var(--ps-paper);display:flex;flex-direction:column;gap:6px;font-size:var(--ix-fs-13);color:var(--ps-ink)}
+.ps-ad-tbbox b{font-size:var(--ix-fs-14)}
+.ps-ad-tbbox .dba{display:flex;align-items:center;gap:14px;margin-top:4px}
+.ps-ad-delrow .ps-ad-cancel{color:var(--ps-red-deep)}
+.ps-ad-delbox{margin-top:10px;padding:12px 14px;border:1.5px solid var(--ps-red-deep);border-radius:3px;background:var(--ps-paper);display:flex;flex-direction:column;gap:6px;font-size:var(--ix-fs-13);color:var(--ps-ink)}
+.ps-ad-delbox b{font-size:var(--ix-fs-14)}
+.ps-ad-delbox .never{font-weight:700;color:var(--ps-red-deep)}
+.ps-ad-delbox .dba{display:flex;align-items:center;gap:14px;margin-top:4px}
+.ps-ad-gone{margin:0 0 14px;padding:12px 16px;border:1.5px solid var(--ps-gold);box-shadow:0 0 0 3px var(--ps-gold-glow);border-radius:3px;background:var(--ps-paper);font-size:var(--ix-fs-13-5);color:var(--ps-ink)}
+.ps-ad-gone .gh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:4px}
+.ps-ad-gone ul{margin:4px 0 0;padding-left:20px}
+.ps-ad-gone li{margin:2px 0}
+.ps-ad-gone a{color:var(--ps-ink);text-decoration:underline}
+
+/* ════ v1.0.7 (23 Nov 2026) · the deleted notice inside the customer's area ════ */
+.ps-ad-tabbody>.ps-ad-gone{margin:0 0 12px}
+.ps-ad-gone .gl{margin-top:6px}
+
+/* ════ v1.0.8 (23 Nov 2026) · version only ════ */
+
+/* ════ v1.0.11 · the inbxify side's five stages ════ */
+.ps-ad-stages{display:flex;flex-direction:column;gap:14px;margin-bottom:14px}
+.ps-ad-box.st-new .bh{border-left-color:var(--ps-ink-2)}
+.ps-ad-box.st-wip .bh,.ps-ad-box.st-todo .bh{border-left-color:var(--ps-red-deep)}
+.ps-ad-box.st-wip .bh .n,.ps-ad-box.st-todo .bh .n{color:var(--ps-red-deep);font-weight:700}
+.ps-ad-box.st-wait .bh{border-left-color:var(--ps-purple)}
+.ps-ad-box.st-done .bh{border-left-color:var(--ps-green)}
+.ps-ad-box .bh .sub{font-size:var(--ix-fs-12-5);color:var(--ps-muted)}
+.ps-ad-slot:empty{display:none}
+.ps-ad-step.s-done i{background:var(--ps-green)}
+.ps-ad q{white-space:pre-line}   /* v1.0.11: a send-back note keeps its lines (publisher, then advertiser) */
+/* ════ v1.0.13 · Task list rows without the coverage column; Advertisers note ════ */
+.ps-ad-brow.nocov{grid-template-columns:minmax(0,1fr) 26px}
+.ps-ad-brow.nocov.has-act{grid-template-columns:minmax(0,1fr) auto 26px}
+.ps-ad-brow.ps-ad-openrow{background:var(--ps-row-hover)}
+.ps-ad-stages .ps-ad-ex{border-top:1px solid var(--ps-rule-soft)}
+.ps-ad-box.b-list .bh .sub{font-size:var(--ix-fs-12-5);color:var(--ps-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+@media (max-width:760px){.ps-ad-brow.nocov.has-act{grid-template-columns:minmax(0,1fr) 26px}}
