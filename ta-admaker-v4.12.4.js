@@ -1,6 +1,10 @@
-/* ta-admaker-v4.12.3.js
+/* ta-admaker-v4.12.4.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.4 (25 Nov 2026, Ad Maker Build S4) — THE AD FORM TAB IS BACK. JS only; the CSS is TA Reskin S4b's ta-admaker-v4.12.4.css.
+     v4.12.3 put its version comment in front of ['form', 'Ad form', true] on the ADS_TABS line, which made that entry a
+     comment, so the Ad form tab did not draw (Test 6, 25 Nov). The entry is restored; CSS_FILE names v4.12.4.css.
 
    v4.12.3 (25 Nov 2026, Ad Maker Build S4) — THE ADS TAB OPENS ON A TASK LIST; ADVERTISERS IS ITS OWN TAB. JS and CSS v4.12.3.
      Ruling (Jeff, 25 Nov, by voice): "All ads" becomes "Task list" (four stages, no Resolved, no B · S · Sp · T); the
@@ -974,7 +978,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.3', CSS_FILE = 'ta-admaker-v4.12.3.css';
+  var VERSION = '4.12.4', CSS_FILE = 'ta-admaker-v4.12.4.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.18 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -5140,7 +5144,7 @@
   // ══════════════════════════════════════════════════════════════
   var ADS_MOUNT_ID = 'ta-ads-mount';
   var ADS_TABS = [   // HC-P-AMA1-1 · key, label, works
-    ['all', 'Task list', true], ['advs', 'Advertisers', true], ['maker', 'Ad Maker', true],   // v4.12.3 ['form', 'Ad form', true],
+    ['all', 'Task list', true], ['advs', 'Advertisers', true], ['maker', 'Ad Maker', true], ['form', 'Ad form', true],   // v4.12.3: Task list, Advertisers (v4.12.4: Ad form restored)
     ['upload', 'Upload a file', false], ['paste', 'Paste ad copy', false], ['intake', 'Already in Intake', false], ['print', 'From a print issue', false]
   ];
   var ADS_IDEAS = {   // HC-P-AMA1-2 · the idea pages: purpose, decided, open questions
