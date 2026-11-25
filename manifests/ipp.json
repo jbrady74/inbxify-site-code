@@ -14,7 +14,7 @@
     "ix-info-v1.0.0.css",
     "ix-success-toast-v1.0.0.css",
     "ix-progress-v1.0.0.css",
-    "ix-header-v1.1.0.css",
+    "ix-header-v1.1.1.css",
     "ipp-shell-v1.22.css",
     "ipp-picker-v1.43.css",
     "ix-ai-v1.3.1.css",
@@ -27,7 +27,7 @@
   "body": [
     "ix-info-v1.0.2.js",
     "ix-uc-v1.0.0.js",
-    "ix-header-v1.1.0.js",
+    "ix-header-v1.1.1.js",
     "ipp-shell-v1.53.js",
     "ipp-picker-markup-v1.20.js",
     "ipp-picker-v1.85.js",
