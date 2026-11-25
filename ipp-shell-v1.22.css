@@ -1,4 +1,5 @@
-/* ipp-shell-v1.21.css */
+/* ipp-shell-v1.22.css */
+/* v1.22 (25 Nov 2026, TA Reskin S3, Test 1): a hovered rail tab no longer gets a background. On ink, the hover bed (white at 6 per cent) was nearly the same as the open tab's bed (--ix-ink-lift), so two tabs looked open. Hover now only turns the words white; the open tab alone has the bed and the white spine. Everything else is v1.21. */
 /* v1.21 (25 Nov 2026, TA Reskin S3 · the IPP shell in the Portal look). Goes with ipp-shell-v1.53.js, ix-header-v1.1.0 and ix-tokens-portal-look-v1.0.3.css (all three loaded by manifests/ipp.json). Mockup: canvas "One look", page S3 IPP shell, ruled by Jeff 25 Nov (red rail A, kind colours A, Refresh A, build yes).
    Everything new is the "v1.21" block at the END of this file; the rules above it are v1.20 unchanged and the block outranks them where they meet. Tokens only: no colour or font size typed in the new block.
    1. SALMON BECOMES THE PORTAL RED on the whole IPP page (ruling 1): --ix-salmon and its family are re-pointed to --ix-danger and its family on :root. This file loads only on the PUBLICATION PLAN Template, so T-A is not touched. Every IPP tab that used salmon (clone items, "needs you" marks) is now red.
@@ -492,7 +493,7 @@
 [data-ipp-root].ipp-b.ipp-sheet .ipp-b-open.is-off{color:var(--ix-ink-label);text-decoration:none}
 [data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button{border-radius:var(--ix-radius-sm);font-family:var(--ix-font-body);
   font-size:var(--ix-fs-15);color:var(--ipp-ink-text)}
-[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button:hover{color:var(--ix-white);background:var(--ix-ink-hover)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button:not(.on):hover{color:var(--ix-white);background:transparent}
 [data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button.on{background:var(--ipp-ink-lift);color:var(--ix-white);box-shadow:inset 3px 0 0 var(--ix-white)}
 [data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button:focus-visible{outline:2px solid var(--ix-white)}
 [data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button .ipp-sw-dot{background:var(--ix-ink-dot)}
