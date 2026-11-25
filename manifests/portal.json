@@ -7,7 +7,7 @@
     { "link": { "rel": "preconnect", "href": "https://fonts.gstatic.com", "crossorigin": true } },
     { "css": "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Josefin+Sans:wght@400;600&family=Sen:wght@400;500;600;700&display=swap" },
     "ix-tokens-v1.0.5.css",
-    "ix-tokens-portal-look-v1.0.2.css",
+    "ix-tokens-portal-look-v1.0.3.css",
     "ix-buttons-v1.0.7.css",
     "ix-form-controls-v1.2.0.css",
     "ix-forms-v1.0.0.css",

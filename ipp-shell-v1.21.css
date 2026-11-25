@@ -1,0 +1,600 @@
+/* ipp-shell-v1.21.css */
+/* v1.21 (25 Nov 2026, TA Reskin S3 · the IPP shell in the Portal look). Goes with ipp-shell-v1.53.js, ix-header-v1.1.0 and ix-tokens-portal-look-v1.0.3.css (all three loaded by manifests/ipp.json). Mockup: canvas "One look", page S3 IPP shell, ruled by Jeff 25 Nov (red rail A, kind colours A, Refresh A, build yes).
+   Everything new is the "v1.21" block at the END of this file; the rules above it are v1.20 unchanged and the block outranks them where they meet. Tokens only: no colour or font size typed in the new block.
+   1. SALMON BECOMES THE PORTAL RED on the whole IPP page (ruling 1): --ix-salmon and its family are re-pointed to --ix-danger and its family on :root. This file loads only on the PUBLICATION PLAN Template, so T-A is not touched. Every IPP tab that used salmon (clone items, "needs you" marks) is now red.
+   2. THE SHEET AND CROWN in Portal type and colour: square corners, the Portal page ground, a white crown, "PubPlan" in Josefin capitals, Close plan a square ink button. The gold ground stays (gold ground vs gold editing: weighed, no change).
+   3. THE INK RAIL stays ink, with the white spine on the open tab (coral is T-A's light-rail marker and stays off it). Plan name in Newsreader 32; the title line and the id labels in Josefin capitals; ids in Sen with even-width digits (DM Mono is gone). Dots: --ix-rail-ok green, --ix-rail-bad red, gold for unsaved; the clone ring a hollow --ix-rail-bad ring. The send line and Open newsletter are white (they were gold, and read as edits beside the gold dots). The clone block is the Portal red.
+   4. THE SENT RAIL keeps its slate (--ix-sent). It read --ix-text-mid, which the Portal tokens make a near-ink grey.
+   5. THE TAB HEADER is the shared title row (ix-header v1.1.0, .ix-tr-wrap) inside .ipp-hd, with the tab's one line under it and the warnings list under the row. Styles that ipp-shell's JS used to inject (#ipp-hd-css, #ipp-sent-styles, the save blur) now live here; v1.53 injects none.
+   6. THE SAVE BLUR is IxSave.blur's layer (ix-header-v1.1.0.css §S). .ipp-saveblur stays only as the fallback when ix-header is missing: the same blur, no tint. */
+/* v1.20 (15 Nov 2026, Legacy Sunset S2): the Planner New / Legacy switch rules (.ipp-planner-toggle, its bar and crown placements) are removed with the legacy planner. Goes with ipp-shell-v1.49.js. Nothing else changed. */
+/* v1.19 (20 Oct 2026, 106 Gap Interview S7): the release lock. [data-ipp-root].ipp-released: the four editing canvases (inert, set by the shell) dim and show a lock strip at the top (HC-P-SH26-2 words); the shared tray and Layout's tray hide; a locked rail button shows a lock in place of its dot (.ipp-sw-dot.is-lock). Goes with ipp-shell-v1.26.js. */
+/* v1.18 (20 Oct 2026, 106 Gap Interview S5): rail dot gold state (.ipp-sw-dot.is-hold) = the tab has unsaved changes. Goes with ipp-shell-v1.25.js. */
+/* v1.17 (20 Oct 2026, 106 Gap Interview S4): rail dots (.ipp-sw-dot) at the right end of every rail button; green = is-ok, salmon = is-bad, grey = nothing to say. The rail buttons become flex rows so the dot sits at the end. Pairs ipp-shell-v1.21.js. */
+/* v1.16 (19 Oct 2026): .ipp-id-send, the send time under the publication date in the left panel. */
+/* ============================================================
+   ipp-shell-v1.15.css — Standalone IPP shell styles
+   CHANGELOG
+     v1.15 (106 Gap Interview S1, 17 Oct 2026) — ONE FLAT RAIL
+       Pairs ipp-shell-v1.17.js. The v1.13 block (.ipp-sw-group heading
+       and button.ipp-sw-sub rows) is removed: the rail is five plain
+       42px rows again — Editorial Picker, Revenue Picker, Layout,
+       Publish, Distribution. Nothing else changed.
+     v1.14 (IPP Build S17, 15 Oct 2026) — "Close without saving" is red
+       (--ix-danger), so the crown's second click reads as the one that
+       throws edits away. One rule changed; pairs ipp-shell-v1.16.js.
+     v1.13 (IPP Build S16 · Catalog S2, 13 Oct 2026) — PICKER › EDITORIAL, REVENUE
+       Pairs ipp-shell-v1.16.js. One block appended at the end; nothing
+       above it changed. Jeff's menu ruling (option A, with his sizes):
+       - .ipp-sw-group "Picker" is a heading row, the same 42px as the
+         other rows, white, not a button.
+       - button.ipp-sw-sub (Editorial, Revenue): 13px, 2px smaller than
+         the 15px rows; 36px tall; indented 30px with a thin tree line;
+         2px under the heading and between the two (the rows elsewhere
+         keep the 4px gap, so the gap before Layout is unchanged).
+       - Ink (.ipp-sheet) and teal (.ipp-b) colours both covered.
+     v1.12 (Controls parity, 12 Oct 2026) — EASE IN
+       Jeff, on v1.11 live: the mockup is gone, but the IPP appearing over
+       the title page is abrupt. The sheet and its gold ground now fade in
+       over 150ms once the shell has framed them. Off for anyone whose
+       system asks for reduced motion. CSS only; pairs ipp-shell-v1.15.js
+       unchanged.
+     v1.11 (Controls parity, 12 Oct 2026) — NO MOCKUP FLASH ON LOAD
+       Jeff: on reload the old placeholder IPP (WLN-114 and other typed
+       mockup text in the Designer markup) shows for an instant. Cause:
+       the browser paints the page's own markup before ipp-shell's script
+       arrives and replaces it (v1.5 already overwrites that text, but
+       only once it runs). Fix: the IPP root stays invisible until the
+       shell has framed it (it adds .ipp-b in frameB, before anything is
+       shown). If the shell never loads, the IPP stays hidden rather than
+       showing fake content. Legacy mode is unchanged (the shell hides
+       the root itself). CSS only; pairs ipp-shell-v1.15.js unchanged.
+     v1.10 (IPP Build S8, 11 Oct 2026) — full ids on the rail
+       The Newsletter and Plan ids were cut off with an ellipsis (the
+       label column left the id ~160px; a 24-character id at 12px needs
+       ~173px). Each id now sits on its own line under its label, at
+       11px, full width of the rail, never truncated. One click still
+       selects the whole id (user-select:all) for copying. CSS only;
+       pairs ipp-shell-v1.15.js unchanged.
+     v1.9 (IPP Build S7, 10 Oct 2026) — the plan's ids on the rail
+       .ipp-b-ids under the plan name: labels and ids in DM Mono on the
+       ink rail (#9AA5B8 labels 5.8:1, #C3CAD6 ids 8.8:1). Pairs
+       ipp-shell-v1.14.js.
+     v1.8 (IPP Build S7, 10 Oct 2026) — GOLD GROUND
+       Ruled (Jeff, option 2 of ipp-ground-options-v0_1): the ground
+       around the sheet is solid --ix-gold, so the IPP reads as a special
+       page. Was flat --ix-cream-deep. Sheet, crown and ink rail unchanged.
+       Gold is also the "edited, waiting for Save" colour; those are thin
+       borders on white tiles inside the sheet, far from the frame, so
+       the two do not compete. Pairs ipp-shell-v1.13.js.
+     v1.7 (from v1.6, IPP Build S7 · surface A3 on flat grey). Pairs
+       ipp-shell-v1.12.js. Everything new is in the v1.7 block at the end,
+       scoped to [data-ipp-root].ipp-sheet, which the JS sets.
+       - Ground: flat --ix-cream-deep behind the sheet; nothing of the
+         page beneath shows through.
+       - Sheet: inset 22px top/bottom, 56px left/right (12px under
+         1100px wide), 14px corners, one soft shadow and a hairline edge.
+       - Crown: 46px, --ix-cream, hairline under it. "PubPlan" in DM Mono
+         capitals --ix-text-mid (5.65:1); title · plan · date in DM Sans
+         600 --ix-text-dark (13.8:1); Close plan an ink pill, white text
+         (14.5:1). The unsaved-edits question replaces the right-hand
+         tools in place.
+       - Rail: ink #1E2A3A (--ix-text-dark). Text #C3CAD6 (8.8:1), open
+         tab #2A3A52 with a 3px white spine (11.5:1). Logo strip and
+         Close strip gone; no old top bar row.
+     v1.6 (from v1.5, IPP Build S6 · layout B "Anchor"). Pairs
+       ipp-shell-v1.11.js. Everything new is in the v1.6 block at the
+       end, scoped to [data-ipp-root].ipp-b, which the JS sets.
+       - Page: --ix-cream-deep, no colour washes.
+       - Left rail: --ix-rail (#1A3A3A), full height, 290px. Logo strip
+         at the top (the logo drawn white), Close Plan strip at the
+         bottom. Title line in DM Mono capitals --ix-rail-text (6.8:1),
+         plan name in Fraunces white (12.3:1), date --ix-rail-text.
+       - Tabs: a vertical list, 42px rows (UX-030). The open tab sits on
+         --ix-rail-lift with a 3px --ix-gold-bright spine, as on the T-A
+         rail.
+       - Top bar: 64px, over the working area only, --ix-cream. Title
+         name left, Planner switch right. No badge.
+       - Readiness and Send cards hidden; an empty right rail takes no
+         space (browsers without :has show an empty strip, nothing worse).
+       - Save bar starts at the rail's edge.
+     v1.5 (from v1.4, IA54): the view switcher holds four buttons
+       (Picker, Layout, Publish, Revenue). Pairs ipp-shell-v1.9.js.
+       Nothing else changed.
+     v1.4 (from v1.3, IPP Build S2):
+       - FIX: the white box over the top right of the header (reported
+         for months). The header's right-hand group carried the class
+         "right", a plain word the site's own Webflow stylesheet also
+         styles, so a site rule painted that group white and oversized.
+         Probe on WLN-998: the topmost element at the box was
+         div.ipp-hside.right itself.
+         The group now uses .ipp-hside--right (prefixed, so nothing
+         outside the IPP can match it). The page embed changes one
+         class: class="ipp-hside right" -> class="ipp-hside ipp-hside--right".
+         The old .ipp-hside.right rule stays until the embed is changed
+         everywhere, so the button never jumps left in between.
+       - Rule kept from this: no IPP markup uses an unprefixed class.
+     v1.1 (from v1.0):
+       - FIX: thin white bleed at top-right of the workspace.
+         Hardened .ipp-fullscreen to width/height:100vw/vh + overflow
+         hidden, and .ipp-hchrome to width:100% + box-sizing:border-box
+         so the header band fills the viewport edge-to-edge after the
+         shell reparents to <body>.
+     v1.0: initial shell styles — 3-col grid (rail/canvas/right-rail),
+       Treatment A header, fullscreen overlay, savebar, toast, tokens.
+   ============================================================ */
+[data-ipp-root]{
+  /* v33 tokens, scoped to the IPP root so they can't leak into
+     or collide with the live tile UI's globals. */
+  --ipp-blue:#5b7fff; --ipp-blue-deep:#4060dd; --ipp-blue-light:#8ba3ff;
+  --ipp-blue-ghost:rgba(91,127,255,.06); --ipp-blue-glow:rgba(91,127,255,.12); --ipp-blue-shadow:rgba(91,127,255,.20);
+  --ipp-gold:#C4A35A; --ipp-gold-warm:#e8c172; --ipp-gold-deep:#9D8341; --ipp-gold-glow:rgba(196,163,90,.12); --ipp-gold-shadow:rgba(196,163,90,.20);
+  --ipp-cream:#FAF9F5; --ipp-cream-warm:#f5f0e4; --ipp-cream-deep:#ebe5d4;
+  --ipp-text-dark:#1e2a3a; --ipp-text-mid:#4a5568; --ipp-text-light:#8a8e9a;
+  --ipp-border:#e7e3d6; --ipp-border-input:#ddd9c8;
+  --ipp-ok:#2e8b57; --ipp-warn:#c47a1c; --ipp-err:#c1452f;
+  --ipp-r:14px; --ipp-rs:10px;
+  --ipp-shadow-card:0 1px 2px rgba(30,42,58,.04), 0 8px 28px -14px rgba(30,42,58,.22);
+  --ipp-shadow-pop:0 18px 48px -14px rgba(30,42,58,.32);
+  --ipp-font-display:'Fraunces',Georgia,serif;
+  --ipp-font-body:'DM Sans',system-ui,-apple-system,sans-serif;
+
+  display:block; font-family:var(--ipp-font-body); color:var(--ipp-text-dark);
+  font-size:14px; position:relative;
+}
+[data-ipp-root] *{box-sizing:border-box}
+
+/* ── fixed-height workspace: header band + view band + savebar band ── */
+[data-ipp-root].ipp-fullscreen{position:fixed;inset:0;width:100vw;height:100vh;z-index:9000;background:var(--ipp-cream);overflow:hidden;
+  background-image:radial-gradient(900px 520px at 88% -8%,rgba(91,127,255,.10),transparent 60%),
+    radial-gradient(720px 480px at -6% 108%,rgba(196,163,90,.12),transparent 60%);overflow:hidden}
+
+/* ── header (Treatment A) ── */
+.ipp-hchrome{position:absolute;top:0;left:0;right:0;width:100%;height:96px;z-index:10;box-sizing:border-box;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--ipp-border)}
+.ipp-hrow{display:flex;align-items:center;height:96px;padding:0 24px;gap:14px}
+.ipp-hside{flex:1 1 0;display:flex;align-items:center;gap:10px;min-width:0}
+.ipp-hside.right{justify-content:flex-end}   /* until the embed uses .ipp-hside--right */
+.ipp-hside.ipp-hside--right{justify-content:flex-end}
+.ipp-hcenter{flex:0 0 auto}
+.ipp-logo{height:26px;width:auto;display:block}
+.ipp-title-static{display:inline-flex;align-items:center;gap:14px;padding:18px;line-height:1}
+.ipp-title-badge{width:46px;height:46px;border-radius:50%;background:var(--ipp-cream-warm);
+  border:1.5px solid var(--ipp-border);display:grid;place-items:center;
+  font:600 22px var(--ipp-font-display);color:var(--ipp-text-dark);flex:none}
+.ipp-title-name{font:600 30px var(--ipp-font-display);letter-spacing:-.012em;color:var(--ipp-text-dark);line-height:1}
+.ipp-cpr{font-family:var(--ipp-font-body);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:9px;
+  transition:.16s;line-height:1;border-radius:var(--ipp-rs);white-space:nowrap;background:var(--ipp-cream);
+  border:1.5px solid var(--ipp-blue);color:var(--ipp-blue-deep);font-size:13.5px;padding:11px 18px}
+.ipp-cpr svg{flex:none}
+.ipp-cpr:hover{background:#fff;border-color:var(--ipp-blue-deep);box-shadow:0 4px 14px -6px var(--ipp-blue-shadow);transform:translateY(-1px)}
+
+/* ── views ── */
+.ipp-view{position:absolute;inset:96px 0 56px 0;display:none;z-index:1}
+.ipp-view.on{display:block}
+.ipp-nl{height:100%;display:grid;grid-template-columns:320px 1fr 248px;gap:0}
+
+/* ── left rail (switcher + view content) ── */
+.ipp-rail{height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;padding:18px;
+  border-right:1px solid var(--ipp-border);background:rgba(255,255,255,.5);
+  display:flex;flex-direction:column;gap:14px;
+  scrollbar-width:thin;scrollbar-color:var(--ipp-border-input) transparent}
+.ipp-rail::-webkit-scrollbar{width:8px}
+.ipp-rail::-webkit-scrollbar-thumb{background:var(--ipp-border-input);border-radius:4px;border:2px solid #fff}
+.ipp-card{flex:0 0 auto;background:#fff;border:1px solid var(--ipp-border);border-radius:var(--ipp-r);
+  box-shadow:var(--ipp-shadow-card);padding:16px}
+
+/* ── view switcher (v1.5: four views) ── */
+.ipp-switcher{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--ipp-cream);
+  border:1px solid var(--ipp-border);border-radius:999px;padding:2px;width:100%;margin-bottom:14px}
+.ipp-switcher button{font-family:var(--ipp-font-body);font-weight:600;font-size:11px;letter-spacing:.02em;
+  color:var(--ipp-text-mid);background:transparent;border:none;cursor:pointer;padding:7px 4px;
+  border-radius:999px;transition:.15s;white-space:nowrap;text-align:center}
+.ipp-switcher button:hover{color:var(--ipp-blue)}
+.ipp-switcher button.on{background:linear-gradient(135deg,var(--ipp-blue),var(--ipp-blue-deep));color:#fff;
+  box-shadow:0 2px 8px var(--ipp-blue-shadow)}
+
+/* ── issue identity ── */
+.ipp-id-hero{padding:2px 2px 14px;border-bottom:1px solid var(--ipp-border);margin-bottom:6px}
+.ipp-id-issue{font:700 28px var(--ipp-font-display);letter-spacing:-.01em;line-height:1}
+.ipp-id-issue .pfx{font:600 12px var(--ipp-font-body);color:var(--ipp-text-light);margin-right:6px}
+.ipp-id-issue .ed{color:var(--ipp-blue-deep)}
+.ipp-id-date{font:500 12px var(--ipp-font-body);color:var(--ipp-text-mid);margin-top:5px}
+
+/* ── canvas ── */
+/* ── right rail (Readiness / Send) — v33 third column ── */
+.ipp-rail-right{height:100%;min-height:0;overflow:hidden;padding:18px;
+  border-left:1px solid var(--ipp-border);background:rgba(255,255,255,.5);
+  display:flex;flex-direction:column;gap:14px}
+.ipp-rail-right .ipp-card{display:flex;flex-direction:column}
+.ipp-rail-right .ipp-card.readiness{flex:1;min-height:0;overflow:auto}
+.ipp-rail-right .ipp-card.send{flex:0 0 auto}
+.ipp-rail-right h4{font:700 10px var(--ipp-font-body);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ipp-text-light);margin:0 0 10px}
+.ipp-ready-num{font-family:var(--ipp-font-display);font-size:28px;font-weight:600;line-height:1}
+.ipp-ready-num .muted{font-size:18px;font-weight:400;color:var(--ipp-text-light)}
+.ipp-progbar{height:6px;background:var(--ipp-cream-deep);border-radius:3px;overflow:hidden;margin-top:6px}
+.ipp-progbar i{display:block;height:100%;background:linear-gradient(90deg,var(--ipp-blue),var(--ipp-blue-light));border-radius:3px}
+.ipp-check{display:flex;flex-direction:column;gap:7px;font-size:12.5px;margin-top:14px}
+.ipp-check .row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dashed var(--ipp-border)}
+.ipp-check .row:last-child{border:none}
+.ipp-check .row .dot{width:7px;height:7px;border-radius:50%;flex:none}
+.ipp-check .row b{font-weight:700;color:var(--ipp-text-dark)}
+
+.ipp-canvas{height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;padding:26px 30px;
+  display:flex;flex-direction:column;gap:14px;
+  scrollbar-width:thin;scrollbar-color:var(--ipp-border-input) transparent}
+.ipp-canvas::-webkit-scrollbar{width:8px}
+.ipp-canvas::-webkit-scrollbar-thumb{background:var(--ipp-border-input);border-radius:4px;border:2px solid #fff}
+
+/* placeholder (until each view's build lands) */
+.ipp-ph{height:100%;min-height:340px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;border:2px dashed var(--ipp-border);border-radius:18px;background:rgba(255,255,255,.4)}
+.ipp-ph .pic{width:54px;height:54px;border-radius:14px;background:var(--ipp-blue-ghost);
+  border:1px solid var(--ipp-blue-light);display:grid;place-items:center;color:var(--ipp-blue);margin-bottom:16px}
+.ipp-ph h2{font:600 22px var(--ipp-font-display);color:var(--ipp-text-dark);margin:0 0 6px}
+.ipp-ph p{font:400 13.5px var(--ipp-font-body);color:var(--ipp-text-mid);margin:0;max-width:420px;line-height:1.55}
+.ipp-ph .chunk{font:700 11px var(--ipp-font-body);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ipp-blue-deep);background:var(--ipp-blue-ghost);border:1px solid var(--ipp-blue-light);
+  border-radius:999px;padding:4px 12px;margin-top:16px}
+
+/* ── save bar ── */
+.ipp-savebar{position:absolute;left:0;right:0;bottom:0;height:56px;z-index:20;background:#fff;
+  border-top:1px solid var(--ipp-border);display:flex;align-items:center;gap:18px;padding:0 22px;
+  box-shadow:0 -6px 22px -10px rgba(30,42,58,.18)}
+.ipp-savebar .dot{width:8px;height:8px;border-radius:50%;background:var(--ipp-text-light)}
+.ipp-savebar.saving .dot{background:var(--ipp-gold);box-shadow:0 0 0 4px var(--ipp-gold-shadow)}
+.ipp-savebar .stat{font-size:13px;color:var(--ipp-text-mid)}
+
+/* ── toast ── */
+.ipp-toast{position:fixed;bottom:72px;left:50%;transform:translate(-50%,16px);opacity:0;transition:.25s;
+  background:var(--ipp-text-dark);color:#fff;font:600 12.5px var(--ipp-font-body);padding:10px 16px;
+  border-radius:10px;box-shadow:var(--ipp-shadow-pop);z-index:9999;max-width:360px}
+.ipp-toast b{color:var(--ipp-gold-warm)}
+.ipp-toast.err{background:var(--ipp-err)} .ipp-toast.err b{color:#fff;text-decoration:underline}
+.ipp-toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ════════════════════════════════════════════════════════════
+   v1.6 · layout B "Anchor" (the JS adds .ipp-b to the root)
+   Colours are platform tokens with their values as fallbacks.
+   ════════════════════════════════════════════════════════════ */
+[data-ipp-root].ipp-b{--ipp-b-rail:290px;--ipp-b-bar:64px;--ipp-b-save:56px}
+[data-ipp-root].ipp-b.ipp-fullscreen{background:var(--ix-cream-deep,#F1EDE2);background-image:none}
+
+/* top bar, over the working area only */
+[data-ipp-root].ipp-b .ipp-hchrome{left:var(--ipp-b-rail);right:0;width:auto;height:var(--ipp-b-bar);
+  background:var(--ix-cream,#FAF9F5);backdrop-filter:none;-webkit-backdrop-filter:none;border-bottom:1px solid var(--ix-border,#E4E0D4)}
+[data-ipp-root].ipp-b .ipp-hrow{height:var(--ipp-b-bar);padding:0 28px;gap:16px}
+[data-ipp-root].ipp-b .ipp-hside{flex:0 0 auto;min-width:0}
+[data-ipp-root].ipp-b .ipp-hcenter{flex:1 1 auto;min-width:0}
+[data-ipp-root].ipp-b .ipp-title-static{padding:0;gap:0;max-width:100%}
+[data-ipp-root].ipp-b .ipp-title-badge{display:none}
+[data-ipp-root].ipp-b .ipp-title-name{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* the grid: rail full height; bar, work and save bar on the right */
+[data-ipp-root].ipp-b .ipp-view{inset:0}
+[data-ipp-root].ipp-b .ipp-nl{grid-template-columns:var(--ipp-b-rail) minmax(0,1fr) auto;
+  grid-template-rows:var(--ipp-b-bar) minmax(0,1fr) var(--ipp-b-save)}
+[data-ipp-root].ipp-b .ipp-rail{grid-column:1;grid-row:1 / 4;background:var(--ix-rail,#1A3A3A);border-right:0;
+  padding:80px 22px 92px;gap:18px;color:var(--ix-rail-text,#B9C2C2);scrollbar-color:var(--ix-rail-lift,#24504F) transparent}
+[data-ipp-root].ipp-b .ipp-rail::-webkit-scrollbar-thumb{background:var(--ix-rail-lift,#24504F);border-color:var(--ix-rail,#1A3A3A)}
+[data-ipp-root].ipp-b .ipp-canvas{grid-column:2;grid-row:2;padding:24px 28px;gap:20px}
+[data-ipp-root].ipp-b .ipp-rail-right{grid-column:3;grid-row:2;background:transparent;border-left:0;padding:24px 28px 24px 0}
+[data-ipp-root].ipp-b .ipp-rail-right .ipp-card.readiness,
+[data-ipp-root].ipp-b .ipp-rail-right .ipp-card.send{display:none!important}
+[data-ipp-root].ipp-b .ipp-rail-right:not(:has(.ipp-card:not(.readiness):not(.send))):not(:has(.ipp-al-strip)){display:none}
+[data-ipp-root].ipp-b .ipp-savebar{left:var(--ipp-b-rail)}
+
+/* logo and Close Plan strips over the rail */
+[data-ipp-root].ipp-b .ipp-b-brand,
+[data-ipp-root].ipp-b .ipp-b-foot{position:absolute;left:0;width:var(--ipp-b-rail);z-index:12;box-sizing:border-box;
+  background:var(--ix-rail,#1A3A3A);display:flex;padding:0 22px}
+[data-ipp-root].ipp-b .ipp-b-brand{top:0;height:68px;align-items:center}
+[data-ipp-root].ipp-b .ipp-b-brand .ipp-logo{height:22px;width:auto;display:block;filter:brightness(0) invert(1)}
+[data-ipp-root].ipp-b .ipp-b-brand a{display:block;line-height:0}
+[data-ipp-root].ipp-b .ipp-b-foot{bottom:0;height:84px;align-items:center}
+[data-ipp-root].ipp-b .ipp-b-foot .ipp-cpr{width:100%;justify-content:center;height:44px;padding:0 14px;
+  background:transparent;border:1px solid #3E6463;color:#fff;font-size:14px}
+[data-ipp-root].ipp-b .ipp-b-foot .ipp-cpr:hover{background:var(--ix-rail-lift,#24504F);border-color:#5A7F7E;box-shadow:none;transform:none}
+[data-ipp-root].ipp-b .ipp-b-foot .ipp-cpr svg{stroke:currentColor}
+
+/* rail head: title line, plan, date, tabs */
+[data-ipp-root].ipp-b .ipp-b-head{display:flex;flex-direction:column;flex:0 0 auto}
+[data-ipp-root].ipp-b .ipp-b-pub{font:500 11px var(--ix-font-mono,'DM Mono',ui-monospace,monospace);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ix-rail-text,#B9C2C2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:14px}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-id-hero{border:0;padding:0;margin:6px 0 0}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-id-issue{font:600 34px var(--ipp-font-display);color:#fff;letter-spacing:-.01em;line-height:1.05}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-id-issue .pfx,
+[data-ipp-root].ipp-b .ipp-b-head .ipp-id-issue .ed{color:inherit}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-id-date{font:500 14px var(--ipp-font-body);color:var(--ix-rail-text,#B9C2C2);margin-top:4px}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-id-send{font:600 13px var(--ipp-font-body);color:var(--ix-gold-bright,#E8C172);margin-top:6px}   /* v1.16 */
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher{display:flex;flex-direction:column;gap:4px;width:100%;margin:24px 0 0;
+  padding:0;background:none;border:0;border-radius:0}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button{box-sizing:border-box;height:42px;padding:0 14px;text-align:left;
+  border-radius:9px;font:500 15px var(--ipp-font-body);letter-spacing:0;color:var(--ix-rail-text,#B9C2C2);background:none;box-shadow:none}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button:hover{color:#fff;background:rgba(255,255,255,.05)}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button.on{background:var(--ix-rail-lift,#24504F);color:#fff;font-weight:600;
+  box-shadow:inset 3px 0 0 var(--ix-gold-bright,#E8C172)}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+/* v1.17: one dot per tab, painted by the view's module (IPP.dot) */
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button{display:flex;align-items:center;gap:10px}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button .ipp-sw-dot{flex:none;margin-left:auto;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.22)}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button .ipp-sw-dot.is-ok{background:var(--ix-ok,#2E8B57)}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button .ipp-sw-dot.is-bad{background:var(--ix-salmon,#EC7259)}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button .ipp-sw-dot.is-hold{background:var(--ix-gold,#C9A24E)}   /* v1.18 */
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button.on .ipp-sw-dot{box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button.ipp-pk-tab .ipp-pk-tabn{margin-left:auto}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button.ipp-pk-tab .ipp-sw-dot{margin-left:0}
+
+/* ════════════════════════════════════════════════════════════
+   v1.7 · surface A3 (the JS adds .ipp-sheet to the root)
+   ════════════════════════════════════════════════════════════ */
+.ipp-sheet-ground{position:fixed;inset:0;z-index:8999;background:var(--ix-gold,#C4A35A)}   /* v1.8 gold ground (was cream-deep) */
+[data-ipp-root].ipp-sheet{--ipp-crown:46px;--ipp-ink:var(--ix-text-dark,#1E2A3A);--ipp-ink-lift:#2A3A52;--ipp-ink-text:#C3CAD6;
+  --ipp-b-bar:0px}
+[data-ipp-root].ipp-sheet.ipp-fullscreen{inset:22px 56px;width:auto;height:auto;border-radius:14px;
+  background:var(--ix-cream-deep,#F1EDE2);background-image:none;
+  box-shadow:0 30px 70px -20px rgba(30,42,58,.38),0 0 0 1px rgba(30,42,58,.10)}
+@media (max-width:1100px){[data-ipp-root].ipp-sheet.ipp-fullscreen{inset:12px}}
+
+/* crown */
+[data-ipp-root].ipp-sheet .ipp-crown{position:absolute;top:0;left:0;right:0;height:var(--ipp-crown);z-index:15;
+  display:flex;align-items:center;gap:12px;padding:0 10px 0 20px;box-sizing:border-box;
+  background:var(--ix-cream,#FAF9F5);border-bottom:1px solid var(--ix-border,#E4E0D4)}
+[data-ipp-root].ipp-sheet .ipp-crown-k{flex:none;font:500 11px var(--ix-font-mono,'DM Mono',ui-monospace,monospace);
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ix-text-mid,#5A6478)}
+[data-ipp-root].ipp-sheet .ipp-crown-p{min-width:0;display:flex;align-items:baseline;gap:8px;white-space:nowrap;overflow:hidden;
+  font:600 15px var(--ipp-font-body);color:var(--ipp-ink)}
+[data-ipp-root].ipp-sheet .ipp-crown-p > span{overflow:hidden;text-overflow:ellipsis}
+[data-ipp-root].ipp-sheet .ipp-crown-sep{color:var(--ix-text-mid,#5A6478);font-weight:400;flex:none}
+[data-ipp-root].ipp-sheet .ipp-crown-t:empty + .ipp-crown-sep{display:none}
+[data-ipp-root].ipp-sheet .ipp-crown-sp{flex:1}
+[data-ipp-root].ipp-sheet .ipp-crown-tools,
+[data-ipp-root].ipp-sheet .ipp-crown-ask{flex:none;display:flex;align-items:center;gap:10px}
+[data-ipp-root].ipp-sheet .ipp-crown-tools[hidden],
+[data-ipp-root].ipp-sheet .ipp-crown-ask[hidden]{display:none}
+[data-ipp-root].ipp-sheet .ipp-crown-esc{font:500 10px var(--ix-font-mono,'DM Mono',ui-monospace,monospace);
+  color:var(--ix-text-mid,#5A6478);background:var(--ix-cream-deep,#F1EDE2);border-radius:4px;padding:3px 6px;line-height:1}
+[data-ipp-root].ipp-sheet .ipp-crown .ipp-cpr{height:32px;padding:0 16px;gap:8px;border:0;border-radius:999px;
+  background:var(--ipp-ink);color:#fff;font:600 13.5px var(--ipp-font-body);box-shadow:none;transform:none}
+[data-ipp-root].ipp-sheet .ipp-crown .ipp-cpr:hover{background:#2E3E56;box-shadow:none;transform:none}
+[data-ipp-root].ipp-sheet .ipp-crown .ipp-cpr:focus-visible,
+[data-ipp-root].ipp-sheet .ipp-crown-ask button:focus-visible{outline:2px solid var(--ipp-ink);outline-offset:2px}
+[data-ipp-root].ipp-sheet .ipp-crown-ask-n{font:600 13px var(--ipp-font-body);color:var(--ipp-ink)}
+[data-ipp-root].ipp-sheet .ipp-crown-ask button{height:32px;padding:0 14px;border-radius:999px;cursor:pointer;
+  font:600 13px var(--ipp-font-body)}
+[data-ipp-root].ipp-sheet .ipp-crown-stay{background:#fff;color:var(--ipp-ink);border:1px solid var(--ix-border,#E4E0D4)}
+[data-ipp-root].ipp-sheet .ipp-crown-go{background:var(--ix-danger,#B5473C);color:#fff;border:0}   /* v1.14: red, the destructive click */
+/* old chrome off: top bar, logo and Close strips */
+[data-ipp-root].ipp-sheet .ipp-hchrome,
+[data-ipp-root].ipp-sheet .ipp-b-brand,
+[data-ipp-root].ipp-sheet .ipp-b-foot{display:none!important}
+
+/* views sit under the crown; no bar row */
+[data-ipp-root].ipp-sheet .ipp-view{inset:var(--ipp-crown) 0 0 0}
+[data-ipp-root].ipp-sheet .ipp-savebar{left:var(--ipp-b-rail)}
+
+/* ink rail */
+[data-ipp-root].ipp-sheet .ipp-rail{background:var(--ipp-ink);color:var(--ipp-ink-text);padding:22px 22px 22px;
+  scrollbar-color:var(--ipp-ink-lift) transparent}
+[data-ipp-root].ipp-sheet .ipp-rail::-webkit-scrollbar-thumb{background:var(--ipp-ink-lift);border-color:var(--ipp-ink)}
+[data-ipp-root].ipp-sheet .ipp-b-pub,
+[data-ipp-root].ipp-sheet .ipp-b-head .ipp-id-date{color:var(--ipp-ink-text)}
+[data-ipp-root].ipp-sheet .ipp-b-head .ipp-switcher button{color:var(--ipp-ink-text)}
+[data-ipp-root].ipp-sheet .ipp-b-head .ipp-switcher button:hover{color:#fff;background:rgba(255,255,255,.05)}
+[data-ipp-root].ipp-sheet .ipp-b-head .ipp-switcher button.on{background:var(--ipp-ink-lift);color:#fff;box-shadow:inset 3px 0 0 #fff}
+
+/* v1.9 · the plan's ids under the plan name (ipp-shell-v1.14.js) */
+[data-ipp-root].ipp-sheet .ipp-b-ids{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:14px 0 18px;padding:0}
+[data-ipp-root].ipp-sheet .ipp-b-ids dt{margin:0;font:500 10px 'DM Mono',ui-monospace,monospace;letter-spacing:.12em;
+  text-transform:uppercase;color:#9AA5B8;line-height:18px}
+[data-ipp-root].ipp-sheet .ipp-b-ids dd{margin:0;font:400 12px 'DM Mono',ui-monospace,monospace;color:#C3CAD6;line-height:18px;
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:all}
+
+/* v1.10 · full ids, each on its own line under its label */
+[data-ipp-root].ipp-sheet .ipp-b-ids{grid-template-columns:1fr;gap:0}
+[data-ipp-root].ipp-sheet .ipp-b-ids dt{line-height:16px}
+[data-ipp-root].ipp-sheet .ipp-b-ids dt ~ dt{margin-top:8px}
+[data-ipp-root].ipp-sheet .ipp-b-ids dd{font-size:11px;line-height:17px;overflow:visible;text-overflow:clip;
+  white-space:nowrap;overflow-wrap:normal;cursor:text;border-radius:3px}
+[data-ipp-root].ipp-sheet .ipp-b-ids dd:not(.is-none):hover{background:rgba(255,255,255,.06);color:#fff}
+[data-ipp-root].ipp-sheet .ipp-b-ids dd::selection{background:#C4A35A;color:#1A2333}
+[data-ipp-root].ipp-sheet .ipp-b-ids dd.is-none{color:#9AA5B8;font-style:italic;user-select:auto}
+
+/* v1.11 — hidden until the shell has framed it (no mockup flash) */
+[data-ipp-root]:not(.ipp-b){visibility:hidden !important}
+
+/* v1.12 — ease in, sheet and ground together */
+@keyframes ippFadeIn{from{opacity:0}to{opacity:1}}
+[data-ipp-root].ipp-b,.ipp-sheet-ground{animation:ippFadeIn .15s ease-out both}
+@media (prefers-reduced-motion:reduce){[data-ipp-root].ipp-b,.ipp-sheet-ground{animation:none}}
+
+.ipp-id-send{font:600 12px var(--ipp-font-body);color:var(--ix-gold,#C4A35A);margin-top:4px}   /* v1.16: plain shell */
+
+/* ── v1.19 · the release lock ── */
+[data-ipp-root].ipp-released .ipp-savebar,[data-ipp-root].ipp-released .ipp-ly-bar{display:none !important}
+[data-ipp-root].ipp-released .ipp-view[data-view="picker"] .ipp-canvas>*,[data-ipp-root].ipp-released .ipp-view[data-view="revenue"] .ipp-canvas>*,[data-ipp-root].ipp-released .ipp-view[data-view="layout"] .ipp-canvas>*,[data-ipp-root].ipp-released .ipp-view[data-view="words"] .ipp-canvas>*{opacity:.68;filter:saturate(.75)}
+[data-ipp-root].ipp-released .ipp-view[data-view="picker"] .ipp-canvas,[data-ipp-root].ipp-released .ipp-view[data-view="revenue"] .ipp-canvas,[data-ipp-root].ipp-released .ipp-view[data-view="layout"] .ipp-canvas,[data-ipp-root].ipp-released .ipp-view[data-view="words"] .ipp-canvas{padding-top:62px}
+[data-ipp-root].ipp-released .ipp-view[data-view="picker"]::before,[data-ipp-root].ipp-released .ipp-view[data-view="revenue"]::before,[data-ipp-root].ipp-released .ipp-view[data-view="layout"]::before,[data-ipp-root].ipp-released .ipp-view[data-view="words"]::before{content:"Released \00b7\00a0locked. Unlock on Compile to edit.";position:absolute;top:0;left:0;right:0;z-index:50;box-sizing:border-box;height:36px;padding:0 28px;line-height:36px;background:var(--ix-ok,#1F7A5C);color:#fff;font:600 13px/36px var(--ipp-font-body,'DM Sans',system-ui,sans-serif);white-space:nowrap;pointer-events:none}
+[data-ipp-root].ipp-b.ipp-released .ipp-view[data-view="picker"]::before,[data-ipp-root].ipp-b.ipp-released .ipp-view[data-view="revenue"]::before,[data-ipp-root].ipp-b.ipp-released .ipp-view[data-view="layout"]::before,[data-ipp-root].ipp-b.ipp-released .ipp-view[data-view="words"]::before{left:var(--ipp-b-rail,290px);top:var(--ipp-b-bar,0px)}
+[data-ipp-root].ipp-b.ipp-released .ipp-view[data-view="picker"] .ipp-canvas,[data-ipp-root].ipp-b.ipp-released .ipp-view[data-view="revenue"] .ipp-canvas,[data-ipp-root].ipp-b.ipp-released .ipp-view[data-view="layout"] .ipp-canvas,[data-ipp-root].ipp-b.ipp-released .ipp-view[data-view="words"] .ipp-canvas{padding-top:60px}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button.is-locked{color:rgba(255,255,255,.62)}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button .ipp-sw-dot.is-lock{width:12px;height:12px;border-radius:0;background:transparent url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23CFEAD9' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'><rect x='5' y='11' width='14' height='10' rx='2'/><path d='M8 11V8a4 4 0 0 1 8 0v3'/></svg>") center/12px 12px no-repeat}
+[data-ipp-root].ipp-b .ipp-b-head .ipp-switcher button.on .ipp-sw-dot.is-lock{box-shadow:none}
+
+/* ════════════════════════════════════════════════════════════
+   v1.21 · THE PORTAL LOOK (TA Reskin S3). Tokens only.
+   P = [data-ipp-root].ipp-b.ipp-sheet, the sheet the JS frames.
+   ════════════════════════════════════════════════════════════ */
+
+/* 1 · salmon is the Portal red on this page (ruling 1) */
+:root{
+  --ix-salmon:var(--ix-danger);
+  --ix-salmon-deep:var(--ix-danger-deep);
+  --ix-salmon-press:var(--ix-danger-deep);
+  --ix-salmon-ink:var(--ix-danger);
+  --ix-salmon-soft:var(--ix-danger-pale);
+  --ix-salmon-ghost:var(--ix-danger-ghost);
+}
+
+/* the shell's own variables read the Portal tokens */
+[data-ipp-root].ipp-b.ipp-sheet{
+  --ipp-font-display:var(--ix-font-display);
+  --ipp-font-body:var(--ix-font-body);
+  --ipp-text-dark:var(--ix-text-dark);
+  --ipp-text-mid:var(--ix-text-mid);
+  --ipp-text-light:var(--ix-text-light);
+  --ipp-border:var(--ix-border);
+  --ipp-border-input:var(--ix-border-input);
+  --ipp-cream:var(--ix-cream);
+  --ipp-cream-deep:var(--ix-cream-deep);
+  --ipp-r:var(--ix-radius);
+  --ipp-rs:var(--ix-radius-sm);
+  --ipp-ink:var(--ix-text-dark);
+  --ipp-ink-lift:var(--ix-ink-lift);
+  --ipp-ink-text:var(--ix-ink-text);
+  font-family:var(--ix-font-body);
+  color:var(--ix-text-dark);
+}
+
+/* 2 · the sheet and the crown */
+.ipp-sheet-ground{background:var(--ix-gold)}
+[data-ipp-root].ipp-b.ipp-sheet.ipp-fullscreen{border-radius:var(--ix-radius);background:var(--ix-cream)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-crown{background:var(--ix-white);border-bottom:1px solid var(--ix-border)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-crown-k{font-family:var(--ix-font-caps);font-weight:600;font-size:var(--ix-fs-label);
+  letter-spacing:1.6px;line-height:1;padding-top:2px;color:var(--ix-text-light)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-crown-p{font-family:var(--ix-font-body);font-weight:600;font-size:var(--ix-fs-15);color:var(--ix-text-dark)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-crown-sep{color:var(--ix-text-light)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-crown .ipp-cpr{border-radius:var(--ix-radius-sm);background:var(--ix-text-dark);color:var(--ix-white);
+  font-family:var(--ix-font-body);font-size:var(--ix-fs-13-5)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-crown .ipp-cpr:hover{background:var(--ix-teal-deep)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-crown .ipp-cpr:focus-visible,
+[data-ipp-root].ipp-b.ipp-sheet .ipp-crown-ask button:focus-visible{outline:2px solid var(--ix-text-dark)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-crown-ask-n{font-family:var(--ix-font-body);font-size:var(--ix-fs-body);color:var(--ix-text-dark)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-crown-ask button{border-radius:var(--ix-radius-sm);font-family:var(--ix-font-body);font-size:var(--ix-fs-body)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-crown-stay{background:var(--ix-white);color:var(--ix-text-dark);border:1px solid var(--ix-border)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-crown-go{background:var(--ix-danger);color:var(--ix-white)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-crown-go:hover{background:var(--ix-danger-deep)}
+
+/* 3 · the ink rail */
+[data-ipp-root].ipp-b.ipp-sheet .ipp-rail:not(.ipp-rail-right){background:var(--ipp-ink);color:var(--ipp-ink-text)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-pub{font-family:var(--ix-font-caps);font-weight:600;font-size:var(--ix-fs-label);
+  letter-spacing:1.6px;line-height:14px;color:var(--ipp-ink-text)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-id-issue{font-family:var(--ix-font-display);font-weight:400;font-size:var(--ix-fs-32);
+  line-height:1.05;color:var(--ix-white)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-id-issue .pfx{font-family:var(--ix-font-body)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-id-date{font-family:var(--ix-font-body);font-weight:400;font-size:var(--ix-fs-14);color:var(--ipp-ink-text)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-id-send{font-family:var(--ix-font-body);font-size:var(--ix-fs-13);color:var(--ix-white)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-open{font-family:var(--ix-font-body);font-size:var(--ix-fs-12);color:var(--ix-white);
+  border-bottom:0;text-decoration:underline;text-underline-offset:3px}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-open:hover{color:var(--ix-white)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-open:focus-visible{outline:2px solid var(--ix-white)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-open.is-off{color:var(--ix-ink-label);text-decoration:none}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button{border-radius:var(--ix-radius-sm);font-family:var(--ix-font-body);
+  font-size:var(--ix-fs-15);color:var(--ipp-ink-text)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button:hover{color:var(--ix-white);background:var(--ix-ink-hover)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button.on{background:var(--ipp-ink-lift);color:var(--ix-white);box-shadow:inset 3px 0 0 var(--ix-white)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button:focus-visible{outline:2px solid var(--ix-white)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button .ipp-sw-dot{background:var(--ix-ink-dot)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button .ipp-sw-dot.is-ok{background:var(--ix-rail-ok)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button .ipp-sw-dot.is-bad{background:var(--ix-rail-bad)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button .ipp-sw-dot.is-hold{background:var(--ix-gold)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button .ipp-sw-dot.is-lock{background-color:transparent}
+/* the clone ring: hollow red, always around a dot (ruled 31 Oct and 1 Nov) */
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button .ipp-sw-dot.is-clone{outline:2px solid var(--ix-rail-bad);outline-offset:2px}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-head .ipp-switcher button.on .ipp-sw-dot.is-clone{box-shadow:none}
+/* the ids at the foot */
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-idsfoot{margin-top:auto;flex:0 0 auto;padding-top:16px;border-top:1px solid var(--ix-ink-rule)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-idsfoot .ipp-b-ids{margin:0}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-ids dt{font-family:var(--ix-font-caps);font-weight:600;font-size:var(--ix-fs-tiny);
+  letter-spacing:1.4px;color:var(--ix-ink-label)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-ids dd{font-family:var(--ix-font-body);font-size:var(--ix-fs-11);
+  font-variant-numeric:tabular-nums;letter-spacing:.2px;color:var(--ipp-ink-text)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-ids dd:not(.is-none):hover{background:var(--ix-ink-hover);color:var(--ix-white)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-ids dd::selection{background:var(--ix-gold);color:var(--ix-text-dark)}
+[data-ipp-root].ipp-b.ipp-sheet .ipp-b-ids dd.is-none{color:var(--ix-ink-label)}
+/* the plan block while a clone is not finished: the Portal red (was salmon ink) */
+[data-ipp-root] .ipp-b-plan{display:flex;flex-direction:column;border-radius:var(--ix-radius-sm)}
+[data-ipp-root] .ipp-b-plan.is-clone{background:var(--ix-danger);padding:14px 14px 12px;margin:-14px -14px 0}
+[data-ipp-root] .ipp-b-plan.is-clone,[data-ipp-root] .ipp-b-plan.is-clone *{color:var(--ix-white)!important}
+[data-ipp-root] .ipp-b-cl{display:none;margin-top:12px;padding-top:10px;border-top:1px solid var(--ix-ink-rule);
+  font-family:var(--ix-font-body);font-weight:500;font-size:var(--ix-fs-13);line-height:1.45}
+[data-ipp-root] .ipp-b-plan.is-clone .ipp-b-cl{display:block}
+[data-ipp-root] .ipp-b-cl b{font-weight:700;display:block}
+[data-ipp-root] .ipp-b-cl button{background:none;border:0;padding:0;font-family:var(--ix-font-body);font-weight:700;
+  font-size:var(--ix-fs-13);text-decoration:underline;cursor:pointer}
+[data-ipp-root] .ipp-b-cl button:focus-visible{outline:2px solid var(--ix-white);outline-offset:2px}
+[data-ipp-root] .ipp-b-open{display:inline-flex;align-items:center;gap:6px;margin:14px 0 4px;align-self:flex-start;cursor:pointer;padding-bottom:1px}
+[data-ipp-root] .ipp-b-open.is-off{cursor:default;pointer-events:none}
+
+/* 4 · a sent plan: the whole rail slate (ruled 1 Nov) */
+[data-ipp-root].ipp-sent .ipp-rail:not(.ipp-rail-right){--ipp-ink:var(--ix-sent);--ipp-ink-lift:var(--ix-sent-lift);--ipp-ink-text:var(--ix-sent-text);
+  background:var(--ix-sent)}
+[data-ipp-root].ipp-sent .ipp-rail:not(.ipp-rail-right) *:not(.ipp-sw-dot){color:var(--ix-sent-text)!important}
+[data-ipp-root].ipp-sent .ipp-rail:not(.ipp-rail-right) .ipp-id-issue,
+[data-ipp-root].ipp-sent .ipp-rail:not(.ipp-rail-right) .ipp-id-issue *,
+[data-ipp-root].ipp-sent .ipp-rail:not(.ipp-rail-right) .ipp-switcher button.on,
+[data-ipp-root].ipp-sent .ipp-rail:not(.ipp-rail-right) label,
+[data-ipp-root].ipp-sent .ipp-rail:not(.ipp-rail-right) label *{color:var(--ix-white)!important}
+[data-ipp-root].ipp-sent .ipp-rail:not(.ipp-rail-right) .ipp-switcher button.on{background:var(--ix-sent-lift)!important}
+
+/* 5 · the tab header: the shared title row in the grid's top cell */
+[data-ipp-root].ipp-sheet .ipp-view>.ipp-nl{grid-template-rows:auto minmax(0,1fr) var(--ipp-b-save)}
+[data-ipp-root] .ipp-hd{grid-column:2 / -1;grid-row:1;position:relative;display:block;padding:14px 28px 0;min-width:0}
+[data-ipp-root] .ipp-hd .ix-tr-wrap{margin:0}
+[data-ipp-root] .ipp-hd .ix-tr-wrap .ix-tr{margin:0}
+[data-ipp-root] .ipp-hd-sub{margin:6px 0 0;font-family:var(--ix-font-body);font-weight:400;font-size:var(--ix-fs-body);line-height:1.45;
+  color:var(--ix-text-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+[data-ipp-root] .ipp-hd-sub[hidden]{display:none}
+[data-ipp-root].ipp-sheet .ipp-view>.ipp-nl>.ipp-canvas{padding-top:14px}
+[data-ipp-root].ipp-sheet .ipp-view>.ipp-nl>.ipp-rail-right{padding-top:14px}
+/* the status beside the title: a dot and words, coloured by tone */
+[data-ipp-root] .ipp-hd .ipp-hd-st{display:inline-flex;align-items:center;gap:8px;font-family:var(--ix-font-body);font-weight:600;
+  font-size:var(--ix-fs-body);white-space:nowrap}
+[data-ipp-root] .ipp-hd .ipp-hd-st::before{content:"";flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:currentColor}
+[data-ipp-root] .ipp-hd .ipp-hd-st.is-bad{color:var(--ix-danger)}
+[data-ipp-root] .ipp-hd .ipp-hd-st.is-ok,
+[data-ipp-root] .ipp-hd .ipp-hd-st.is-lock{color:var(--ix-ok)}
+[data-ipp-root] .ipp-hd .ipp-hd-st.is-plain{color:var(--ix-text-light)}
+[data-ipp-root] .ipp-hd .ipp-hd-st.is-plain::before{display:none}
+/* the warnings status: red; a quiet grey when every note is dismissed (it still opens the list) */
+[data-ipp-root] .ipp-hd .ix-tr-wrap .ix-tr .ix-tr-warn[data-tone="plain"]{color:var(--ix-text-light)!important;font-weight:400!important}
+[data-ipp-root] .ipp-hd .ix-tr-wrap .ix-tr .ix-tr-warn:focus-visible,
+[data-ipp-root] .ipp-hd .ix-tr-wrap .ix-tr .ix-tr-link:focus-visible{outline:2px solid var(--ix-blue);outline-offset:2px}
+/* Refresh waits while the tab has your own unsaved edits (ruling 3) */
+[data-ipp-root] .ipp-hd .ipp-hd-rfnote{font-family:var(--ix-font-body);font-size:var(--ix-fs-small);color:var(--ix-text-light);white-space:nowrap;
+  height:var(--ix-ctl-h);display:inline-flex;align-items:center}
+[data-ipp-root] .ipp-hd .ipp-hd-rfnote[hidden]{display:none}
+[data-ipp-root] .ipp-hd .ix-tr-refresh.ix-tr-refresh:disabled:not(.is-busy){color:var(--ix-text-light)!important;background:var(--ix-cream-deep)!important;cursor:not-allowed}
+/* the warnings list, under the row at the right */
+[data-ipp-root] .ipp-hd-pop{position:absolute;right:28px;top:78px;z-index:40;width:min(560px,70vw);max-height:60vh;overflow:auto;
+  background:var(--ix-white);border:1px solid var(--ix-border);border-radius:var(--ix-radius);box-shadow:var(--ix-shadow-lg);padding:12px 14px;text-align:left}
+[data-ipp-root] .ipp-hd-pop[hidden]{display:none}
+[data-ipp-root] .ipp-hd-pop-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 8px}
+[data-ipp-root] .ipp-hd-pop-h{font-family:var(--ix-font-caps);font-weight:600;font-size:var(--ix-fs-label);letter-spacing:1.4px;
+  text-transform:uppercase;color:var(--ix-text-light)}
+[data-ipp-root] .ipp-hd-pop ul{list-style:none;margin:0;padding:0}
+[data-ipp-root] .ipp-hd-pop li{display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--ix-border-soft);
+  font-family:var(--ix-font-body);font-size:var(--ix-fs-body);line-height:1.45;color:var(--ix-text-dark)}
+[data-ipp-root] .ipp-hd-pop li:first-child{border-top:0}
+[data-ipp-root] .ipp-hd-pop li span{flex:1;min-width:0;overflow-wrap:anywhere}
+[data-ipp-root] .ipp-hd-pop li.is-dis span{color:var(--ix-text-light)}
+[data-ipp-root] .ipp-hd-pop .ipp-hd-lk{flex:none;background:none;border:0;padding:0;font-family:var(--ix-font-body);font-weight:600;
+  font-size:var(--ix-fs-small);color:var(--ix-blue-deep);text-decoration:underline;cursor:pointer;white-space:nowrap}
+[data-ipp-root] .ipp-hd-pop .ipp-hd-lk:hover{color:var(--ix-text-dark)}
+[data-ipp-root] .ipp-hd-pop .ipp-hd-dis{margin-top:10px;padding-top:8px;border-top:1px solid var(--ix-border)}
+[data-ipp-root] .ipp-hd-pop .ipp-hd-none{font-family:var(--ix-font-body);font-size:var(--ix-fs-body);color:var(--ix-text-light);padding:4px 0}
+/* a released plan: the header says it; the old strip over the canvas stays off */
+[data-ipp-root].ipp-released .ipp-view::before{display:none!important}
+[data-ipp-root].ipp-released .ipp-view .ipp-canvas{padding-top:14px!important}
+/* the shared tray shows only on a tray view (v1.32) */
+[data-ipp-root]:not(.ipp-tray-on) .ipp-savebar:not(.ipp-ly-bar){display:none!important}
+
+/* 6 · the save blur's fallback (used only when IxSave is missing): the same clear blur as ix-header §S */
+.ipp-saveblur{position:fixed;inset:0;z-index:99000;display:none;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);cursor:progress}
+.ipp-saveblur.is-on{display:block}
+
+/* toasts in the Portal look */
+.ipp-toast{background:var(--ix-text-dark);color:var(--ix-white);font-family:var(--ix-font-body);font-size:var(--ix-fs-12-5);border-radius:var(--ix-radius)}
+.ipp-toast b{color:var(--ix-gold)}
+.ipp-toast.err{background:var(--ix-danger)}
