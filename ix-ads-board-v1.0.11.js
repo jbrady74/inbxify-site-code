@@ -1,7 +1,22 @@
-// ix-ads-board-v1.0.10.js
+// ix-ads-board-v1.0.11.js
 // ============================================================
 // INBXIFY · ix-ads-board · the Ads board, shared by the Publisher Portal and the T-A Ads tab
 //
+// v1.0.11 (25 Nov 2026, Ad Maker Build S4) — THE INBXIFY SIDE IN FIVE STAGES, IN THE ORDER OF THE WORK.
+//   Ruling (Jeff, 25 Nov, by voice): the page reads like a document's status, not two boxes. Stages, top to bottom:
+//     1 Not started                  publisher requests, sold shapes with nothing running
+//     2 In progress                  designs in Canva not yet saved (the host's slot: ta-admaker's Drafts in Canva),
+//                                    saved ads not sent for approval
+//     3 With the publisher, waiting  an approval email out; the advertiser looking at it; the advertiser has answered
+//                                    and the publisher decides
+//     4 From the publisher, to do    sent back with changes asked for (the note carries the advertiser's words too:
+//                                    ix-sales v1.3.18)
+//     5 Resolved                     approved in the last {linkDays} days: made current, or approved and held
+//   then the Client list. A send-back never goes back to Not started.
+//   · Host hooks (inbxify side): O.slot(stage) → a DOM node placed at the top of that stage's box after each render;
+//     O.slotCount(stage) → how many rows it holds (added to the box's count). API rerender() redraws without a read.
+//   · The Portal side is unchanged (Needs action / Waiting).
+//   HARDCODING: HC-P-AMB1-2 gains W.ix.board.stage, W.ix.board.none*, W.ix.board.done*.
 // v1.0.10 (25 Nov 2026, Ad Maker Build S4) — A PENDING AD WITH NO APPROVAL EMAIL OUT IS NOT WITH THE PUBLISHER.
 //   Ruling (Jeff, 25 Nov, after Test 2: "needs to move back to make, not sent… why would it stay in a state it is not?").
 //   · On load, a version ix-sales calls 'needs' (Pending) with no open approval email (v.sent empty: never sent, taken
@@ -140,7 +155,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.10', CSS_VERSION = '1.0.10', FILE = 'ix-ads-board-v' + VERSION + '.js';
+  var VERSION = '1.0.11', CSS_VERSION = '1.0.11', FILE = 'ix-ads-board-v' + VERSION + '.js';
   var SH = ['banner', 'sidebar', 'splash', 'text'];                        // HC-P-PP8-8
   var SHN = { banner: 'Banner', sidebar: 'Sidebar', splash: 'Splash', text: 'Text ad' };
   var W = {                                                              // HC-P-PP8-7
@@ -214,7 +229,10 @@
       board: { action: 'To make', waiting: 'With the publisher or advertiser', noneAction: 'Nothing to make.', noneWaiting: 'Nothing is out with the publisher or an advertiser.',
                pub: 'Publisher:', adv: 'Advertiser:',
                back: 'New {shape} · sent back by the publisher', req: 'New {shape} · the publisher asked for it', gap: '{Shape} · sold, nothing running',
-               needs: 'Approving the new {shape}', answered: 'Advertiser answered on the {shape}', advIn: 'Reviewing the new {shape}', unsent: 'New {shape} · not sent for approval' },
+               needs: 'Approving the new {shape}', answered: 'Advertiser answered on the {shape}', advIn: 'Reviewing the new {shape}', unsent: 'New {shape} · not sent for approval',
+               stage: { 'new': 'Not started', wip: 'In progress', wait: 'With the publisher, waiting', todo: 'From the publisher, to do', done: 'Resolved' },   // v1.0.11
+               none: { 'new': 'Nothing waiting to be started.', wip: 'Nothing in progress.', wait: 'Nothing is out with the publisher or an advertiser.', todo: 'Nothing has come back from the publisher.', done: 'Nothing approved in the last {n} days.' },
+               doneSub: 'last {n} days', doneCur: '{Shape} approved \u00b7 running now', doneHold: '{Shape} approved \u00b7 on hold' },
       act: { edit: 'Edit in Ad Maker', open: 'Open in Ad Maker', make: 'Make {shape}', approve: 'Approve & make current', makeCurrent: 'Make current', coming: 'Tool coming', send: 'Send for approval', sendAgain: 'Send again', hold: 'Approve & hold', reqDone: 'Mark this request done', sendRow: 'Send for approval' },
         reqDone: { going: 'Closing the request', done: 'Request closed: {shape} for {name}.', fail: 'The request was not closed: {msg}' },
         del: { link: 'Delete this ad', ask: 'Delete this ad for good?', what: 'The ad comes off the site. Any approval link for it stops working.', never: 'This cannot be undone.', go: 'Delete for good', going: 'Deleting\u2026', cancel: 'cancel',
@@ -322,6 +340,14 @@
     }
     function covRow(c) { return '<span class="ps-ad-cov">' + SH.map(function (sh) { return covMark(c, sh); }).join('') + '</span>'; }
     function covHead() { return '<span class="ps-ad-covh">' + SH.map(function (sh) { return '<span title="' + esc(SHN[sh]) + '">' + esc({ banner: 'B', sidebar: 'S', splash: 'Sp', text: 'T' }[sh] || SHN[sh].charAt(0)) + '</span>'; }).join('') + '</span>'; }
+    function doneOf(c) {   // v1.0.11 · approved in the last linkDays days (inbxify side, Resolved)
+      var out = [], Bd = B(), since = Date.now() - (S.linkDays || 14) * 864e5;
+      SH.forEach(function (sh) { vOf(c, sh).forEach(function (v) {
+        var d = v.decided || {}; if ((v.state !== 'current' && v.state !== 'ready') || !d.at || new Date(d.at).getTime() < since) return;
+        out.push({ who: 'done', words: fill(v.state === 'current' ? Bd.doneCur : Bd.doneHold, { Shape: SHN[sh] }), at: d.at, tab: v.state === 'current' ? 'current' : 'process', sh: sh, kind: 'done', v: v }); }); });
+      return out;
+    }
+    function stageOf(it) { return it.kind === 'done' ? 'done' : it.kind === 'back' ? 'todo' : it.kind === 'unsent' ? 'wip' : (it.who === 'you' || it.who === 'adv') ? 'wait' : 'new'; }   // v1.0.11
     function itemsOf(c) {   // every thing in motion for one customer: { who: you|ix|adv, words, at, tab, sh, kind, v }
       var out = [], Bd = B();
       SH.forEach(function (sh) {
@@ -367,9 +393,21 @@
     function boardRow(c, it, n) {
       var a = ixActionFor(c, it);
       return '<div class="ps-ad-brow' + (a ? ' has-act' : '') + '" data-go="' + esc(c.id + '|' + it.tab) + '" role="button" tabindex="0"><span class="tx"><span class="cn">' + esc(c.name) + '</span><span class="l2">' + stepHTML(it) +
-        (n > 1 ? '<span class="wh">· ' + esc(fill(B().count, { n: n })) + '</span>' : '') + (it.at ? '<span class="wh">· ' + esc(fill(W.board.since, { on: day(it.at) })) + '</span>' : '') + '</span></span>' + (a ? '<span class="act">' + actBtn(a, c, 'ix-btn--primary') + '</span>' : '') + covRow(c) + '<span class="chv">' + CHEV + '</span></div>';
+        (n > 1 ? '<span class="wh">· ' + esc(fill(B().count, { n: n })) + '</span>' : '') + (it.at ? '<span class="wh">· ' + esc(it.kind === 'done' ? day(it.at) : fill(W.board.since, { on: day(it.at) })) + '</span>' : '') + '</span></span>' + (a ? '<span class="act">' + actBtn(a, c, 'ix-btn--primary') + '</span>' : '') + covRow(c) + '<span class="chv">' + CHEV + '</span></div>';
+    }
+    function renderStages() {   // v1.0.11 · the inbxify side, five stages in the order of the work
+      var Bd = B(), by = { 'new': [], wip: [], wait: [], todo: [], done: [] }, n = S.linkDays || 14;
+      S.customers.forEach(function (c) { itemsOf(c).concat(doneOf(c)).forEach(function (it) { by[stageOf(it)].push({ c: c, it: it }); }); });
+      var byAt = function (a, b) { return String(a.it.at || '9').localeCompare(String(b.it.at || '9')); }, latest = function (a, b) { return String(b.it.at || '').localeCompare(String(a.it.at || '')); };
+      var fold = function (list) { var seen = {}, out = []; list.forEach(function (x) { var k = x.c.id + '|' + x.it.tab + '|' + stepHTML(x.it); if (seen[k]) seen[k].n++; else { seen[k] = { c: x.c, it: x.it, n: 1 }; out.push(seen[k]); } }); return out; };
+      return '<div class="ps-ad-stages">' + ['new', 'wip', 'wait', 'todo', 'done'].map(function (st) {
+        var list = fold(by[st].sort(st === 'done' ? latest : byAt)), extra = O.slotCount ? (+O.slotCount(st) || 0) : 0, count = list.length + extra;
+        return '<section class="ps-ad-box st-' + st + '"><div class="bh"><b>' + esc(Bd.stage[st]) + '</b><span class="n">' + count + '</span>' + (st === 'done' ? '<span class="sub">' + esc(fill(Bd.doneSub, { n: n })) + '</span>' : '') + '<span class="sp"></span>' + covHead() + '<span class="chvsp"></span></div>' +
+          '<div class="bb">' + (O.slot ? '<div class="ps-ad-slot" data-slot="' + st + '"></div>' : '') + (list.length ? list.map(function (x) { return boardRow(x.c, x.it, x.n); }).join('') : extra ? '' : '<div class="none">' + esc(fill(Bd.none[st], { n: n })) + '</div>') + '</div></section>';
+      }).join('') + '</div>';
     }
     function renderBoard() {
+      if (IX) return renderStages();   // v1.0.11
       var act = [], wait = [], Bd = B();
       S.customers.forEach(function (c) { itemsOf(c).forEach(function (it) { ((IX ? it.who === 'ix' : it.who === 'you') ? act : wait).push({ c: c, it: it }); }); });
       var byAt = function (a, b) { return String(a.it.at || '9').localeCompare(String(b.it.at || '9')); };
@@ -627,6 +665,7 @@
       else h += (IX && S.gone && S.open !== S.gone.cust ? goneHTML() : '') + renderBoard() + renderList();
       h += renderMail() + '<div id="ps-ad-savewrap">' + renderSave() + '</div>' + renderReq() + '</div>';
       el.innerHTML = h;
+      if (IX && O.slot) el.querySelectorAll('[data-slot]').forEach(function (sl) { var node = O.slot(sl.getAttribute('data-slot')); if (node) sl.appendChild(node); });   // v1.0.11
       if (keep) { var q = el.querySelector('#ps-ad-q'); if (q) { q.focus(); try { q.setSelectionRange(keep.s, keep.e); } catch (e) {} } }
       window.scrollTo(0, y);
       if (S.scrollTo) {
@@ -863,6 +902,7 @@
     return {
       refresh: function () { return load().then(render); },
       state: function () { return S; },
+      rerender: function () { if (S.loaded) render(); },   // v1.0.11
       findRequest: function (id) {   // v1.0.9
         for (var i = 0; i < S.customers.length; i++) { var c = S.customers[i];
           for (var j = 0; j < SH.length; j++) { var q = reqsOf(c, SH[j]).find(function (x) { return x.id === id; }); if (q) return { customer: c, shape: SH[j], request: q }; } }

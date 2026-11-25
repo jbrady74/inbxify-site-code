@@ -1,6 +1,13 @@
-/* ta-admaker-v4.12.1.js
+/* ta-admaker-v4.12.2.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.2 (25 Nov 2026, Ad Maker Build S4) — DRAFTS IN CANVA MOVE INTO THE BOARD'S "IN PROGRESS" STAGE. JS and CSS v4.12.2.
+     Ruling (Jeff, 25 Nov, by voice): the All ads page reads in the order of the work (ix-ads-board v1.0.11's five stages).
+     · The Drafts in Canva block no longer sits above the board: it is the board's In progress slot (O.slot), headed
+       "In Canva · not saved to the site yet", above the saved-but-not-sent rows; its rows and buttons are unchanged.
+       With no drafts it shows nothing and the stage counts only the board's rows (O.slotCount).
+     · NEEDS: ix-ads-board v1.0.11, ix-sales v1.3.18 (the send-back note carries the advertiser's words).
 
    v4.12.1 (25 Nov 2026, Ad Maker Build S4) — SAVE NEVER WAITS SILENTLY FOR "WHERE A CLICK GOES". JS and CSS v4.12.1.
      Test 1 (25 Nov): Save on Check stayed grey until a click was picked, and nothing in view said so. Ruling (Jeff, option
@@ -959,8 +966,8 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.1', CSS_FILE = 'ta-admaker-v4.12.1.css';
-  var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.17 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
+  var VERSION = '4.12.2', CSS_FILE = 'ta-admaker-v4.12.2.css';
+  var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.18 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
   var ADVICE_BIGGER = 1.25;   // HC-P-SSB8-25
@@ -5209,7 +5216,7 @@
       el.innerHTML = h; return;
     }
     h += '<div class="ix-tabs-l1 ta-ads-strip" role="tablist">' + ADS_TABS.map(function (t) { return '<button type="button" role="tab" class="ix-tab-l1' + (A.tab === t[0] ? ' is-active' : '') + (t[2] ? '' : ' idea') + '" aria-selected="' + (A.tab === t[0]) + '" data-ads="tab" data-v="' + t[0] + '">' + esc(t[1]) + (t[2] ? '' : '<i title="' + ADS_W.idea + '"></i>') + '</button>'; }).join('') + '</div>';
-    h += '<div class="ta-ads-pane" data-pane="all"' + (A.tab === 'all' ? '' : ' hidden') + '><div id="ta-ads-drafts"></div><div id="ta-ads-board"></div></div>';   // v4.11.3: Drafts in Canva above the board
+    h += '<div class="ta-ads-pane" data-pane="all"' + (A.tab === 'all' ? '' : ' hidden') + '><div id="ta-ads-board"></div></div>';   // v4.12.2: Drafts in Canva live in the board's In progress stage
     h += '<div class="ta-ads-pane" data-pane="maker"' + (A.tab === 'maker' ? '' : ' hidden') + '><div id="' + MOUNT_ID + '"></div></div>';
     h += '<div class="ta-ads-pane" data-pane="form"' + (A.tab === 'form' ? '' : ' hidden') + '><div class="ta-ads-form"><p>' + ADS_W.formLine + '</p>' + (window.InbxASF && InbxASF.open ? '<button type="button" class="ix-btn ix-btn--primary" data-ads="form">' + ADS_W.formBtn + '</button>' : '<div class="am-err">' + ADS_W.formMissing + '</div>') + '</div></div>';
     Object.keys(ADS_IDEAS).forEach(function (k) { var I = ADS_IDEAS[k];
@@ -5246,7 +5253,8 @@
     if (!pub.id) { host.innerHTML = '<div class="am-err">This page names no publisher (TA_CONFIG.publisherId or #title-admin-id data-pub), so the ads cannot be read.</div>'; return; }
     A.board = IxAdsBoard.mount(host, { side: 'inbxify', title: '', api: adsApi, publisher: pub, who: { staff: true, email: '', name: '' }, info: null,
       onLoad: function (custs, ans) { adsBrand(custs); if (ans) { A.contact = ans.contact || null; A.you = ans.you || null; A.linkDays = ans.linkDays || 14; } adsDraftsLoad(custs); adsDeepReq(); },
-      onAction: function (a) { adsAction(a); }, designUrl: adsDesignUrl, onDeleted: adsDeleted });   // v4.11.7
+      onAction: function (a) { adsAction(a); }, designUrl: adsDesignUrl, onDeleted: adsDeleted,   // v4.11.7
+      slot: function (st) { return st === 'wip' ? adsDraftsNode() : null; }, slotCount: function (st) { return st === 'wip' && A.drafts.list ? A.drafts.list.length : 0; } });   // v4.12.2
   }
   function adsDeepReq() {   // v4.12.0 · Quill's ?admaker=open&request=<id>: once, after the board's first read
     var id = A.deepReq; if (!id || !A.board || !A.board.findRequest) return; A.deepReq = '';
@@ -5298,7 +5306,7 @@
   // ── v4.11.3 · DRAFTS IN CANVA: designs kept in Canva and not saved to the site, per customer (ix-canva GET /drafts) ──
   var CANVA_DESIGN_URL = 'https://www.canva.com/design/{id}/edit';   // HC-P-AMS3-8 · Canva's own address for a design (v4.11.6)
   var DRAFT_WORDS = {   // HC-P-AMS3-6
-    head: 'Drafts in Canva', sub: 'Kept in Canva, not saved to the site', none: 'No drafts in Canva.', loading: 'Reading the drafts from Canva…',
+    head: 'In Canva', sub: 'not saved to the site yet', none: 'No drafts in Canva.', loading: 'Reading the drafts from Canva…',
     edit: 'Edit in Canva', check: 'Check and save', remove: 'Remove from list', removeAsk: 'Take it off this list?', yes: 'Yes, remove', yesNote: 'the design stays in Canva', del: 'Remove and delete in Canva', delNote: 'opens the design; use File > Move to trash', no: 'cancel',
     removed: 'Taken off the list. The design is still in Canva.', removedDel: 'Taken off the list. The design is open in Canva: use File > Move to trash to delete it.', blocked: 'The browser blocked the Canva tab. The row is still on the list.',
     noPic: 'No picture from Canva', noPicYet: 'Canva has no picture of it yet', worked: 'Worked on {on}', notBack: 'not brought back yet', back: 'brought back {on}', copy: 'A copy of an approved ad', noShape: 'Shape not recorded'
@@ -5337,9 +5345,12 @@
       D.list = list; D.loading = false; adsDraftsRender();
     }).catch(function (e) { D.loading = false; D.err = (e && e.message) || String(e); adsDraftsRender(); });
   }
+  function adsDraftsNode() { if (!A.draftsEl) { A.draftsEl = document.createElement('div'); A.draftsEl.id = 'ta-ads-drafts'; } return A.draftsEl; }   // v4.12.2: kept across board renders
   function adsDraftsRender() {
-    var host = document.getElementById('ta-ads-drafts'); if (!host) return;
+    var host = adsDraftsNode();
     var D = A.drafts, DW = DRAFT_WORDS, n = D.list ? D.list.length : 0;
+    if (n !== A.draftsN) { A.draftsN = n; if (A.board && A.board.rerender) setTimeout(function () { A.board.rerender(); }, 0); }   // the stage's count
+    if (!D.err && (!D.list || !n)) { host.innerHTML = ''; return; }   // nothing in Canva: the stage shows only its own rows
     var h = '<div class="ta-ads-dr"><div class="ta-ads-drh"><h3>' + DW.head + '</h3>' + (D.list ? '<span class="n">' + n + '</span>' : '') + '<span class="s">' + DW.sub + '</span></div>';
     if (D.err) h += '<div class="am-err">' + esc(D.err) + '</div>';
     else if (!D.list) h += '<div class="ta-ads-drnone">' + (D.loading ? DW.loading : '') + '</div>';
