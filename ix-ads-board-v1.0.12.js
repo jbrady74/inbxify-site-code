@@ -1,7 +1,12 @@
-// ix-ads-board-v1.0.11.js
+// ix-ads-board-v1.0.12.js
 // ============================================================
 // INBXIFY · ix-ads-board · the Ads board, shared by the Publisher Portal and the T-A Ads tab
 //
+// v1.0.12 (25 Nov 2026, Ad Maker Build S4) — THE COVERAGE MARKS SHOW ON THE T-A PAGE. JS only; CSS stays v1.0.11.
+//   Found 25 Nov (Test 4): on the T-A page the B · S · Sp · T column showed dashes and blanks only. The green "running"
+//   dot was painted white by title-admin-page-design's background wildcard (section.publisher-wrapper *, !important),
+//   because the board's root did not carry `ix-own` (that file's standing rule: every JS-rendered T-A surface puts
+//   ix-own on its root). The root now does, on both sides (the Portal has no wildcard; no change there).
 // v1.0.11 (25 Nov 2026, Ad Maker Build S4) — THE INBXIFY SIDE IN FIVE STAGES, IN THE ORDER OF THE WORK.
 //   Ruling (Jeff, 25 Nov, by voice): the page reads like a document's status, not two boxes. Stages, top to bottom:
 //     1 Not started                  publisher requests, sold shapes with nothing running
@@ -155,7 +160,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.11', CSS_VERSION = '1.0.11', FILE = 'ix-ads-board-v' + VERSION + '.js';
+  var VERSION = '1.0.12', CSS_VERSION = '1.0.11', FILE = 'ix-ads-board-v' + VERSION + '.js';
   var SH = ['banner', 'sidebar', 'splash', 'text'];                        // HC-P-PP8-8
   var SHN = { banner: 'Banner', sidebar: 'Sidebar', splash: 'Splash', text: 'Text ad' };
   var W = {                                                              // HC-P-PP8-7
@@ -659,7 +664,7 @@
     }
     function render() {
       var y = window.scrollY, act = document.activeElement, keep = act && act.id === 'ps-ad-q' ? { s: act.selectionStart, e: act.selectionEnd } : null;
-      var h = '<div class="ps-ad ix-ab side-' + side + '">' + (O.title === '' ? '' : '<div class="ps-titlerow"><h1>' + esc(O.title || W.title) + '</h1>' + infoHTML() + '<div class="sp"></div></div>');
+      var h = '<div class="ps-ad ix-ab ix-own side-' + side + '">' + (O.title === '' ? '' : '<div class="ps-titlerow"><h1>' + esc(O.title || W.title) + '</h1>' + infoHTML() + '<div class="sp"></div></div>');
       if (!S.loaded) h += ctx.placeholder ? '<div class="ps-ad-tbl"><table style="width:100%"><tbody>' + ctx.placeholder(5, 6) + '</tbody></table></div>' : '<div class="ps-ad-empty">' + esc(W.api.ads) + '…</div>';
       else if (S.loadErr) h += '<div class="ps-err" role="alert">' + esc(fill(W.loadFail, { msg: S.loadErr })) + '</div>';
       else h += (IX && S.gone && S.open !== S.gone.cust ? goneHTML() : '') + renderBoard() + renderList();
