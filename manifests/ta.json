@@ -11,7 +11,7 @@
     { "js": "https://cdn.jsdelivr.net/npm/flatpickr" },
     { "js": "https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js" },
     "ix-tokens-v1.0.5.css",
-    "ix-tokens-portal-look-v1.0.2.css",
+    "ix-tokens-portal-look-v1.0.3.css",
     "ix-info-v1.0.0.css",
     "ix-header-v1.1.0.css",
     "ix-buttons-v1.0.7.css",
