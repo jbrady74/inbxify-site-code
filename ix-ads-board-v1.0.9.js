@@ -1,7 +1,27 @@
-// ix-ads-board-v1.0.8.js
+// ix-ads-board-v1.0.9.js
 // ============================================================
 // INBXIFY · ix-ads-board · the Ads board, shared by the Publisher Portal and the T-A Ads tab
 //
+// v1.0.9 (25 Nov 2026, Ad Maker Build S4) — TAKE BACK AN APPROVAL EMAIL, KEEP THE AD. JS and CSS v1.0.9. inbxify side only.
+//   Ruling (Jeff, 24 Nov, S4 B1; wording 25 Nov: "use a clearer question"): an action that stops an approval link but
+//   keeps the ad, asked first.
+//   · A card with an approval email out has a small "Take back this email" link on the left of the line that holds
+//     "Delete this ad" (same line, so the card does not grow).
+//   · It opens a box in the card: "Take back the approval email to <name>?", what happens (the link stops, the page
+//     says it is closed, the ad stays pending, a new email can be sent any time), and, when it applies, that two
+//     emails are open and both stop, or that the email also carries other ads and stops for them too.
+//     Buttons: Take back the email, keep it.
+//   · Take back the email calls ix-sales v1.3.17 POST /ads/approval/withdraw { publisher, adId } at once (not staged
+//     for Save), reloads, and the card then says "Approval email taken back. Its link is closed." where the link was.
+//   HARDCODING: HC-P-AMB1-2 gains W.ix.tb.
+//   AD REQUESTS (same version, found 24 Nov: nothing closed a request, so it stayed on To make and in Quill's count):
+//   · A "To make" row for a request carries the request: onAction gets { kind:'make', …, request } (the oldest open one),
+//     so the host can close it when the ad is saved.
+//   · A request for a shape Ad Maker cannot make yet (splash, text ad) gets "Mark this request done" in place of the
+//     greyed "Tool coming" (ruling of 10 Nov, Publisher Portal S9): ix-sales POST /ads/request/<id>/done at once,
+//     then the board reloads and the row is gone.
+//   · New API: findRequest(id) → { customer, shape, request } from the loaded board, or null (Quill's link, v4.12.0).
+//   HARDCODING: HC-P-AMB1-2 gains W.ix.act.reqDone, W.ix.reqDone.
 // v1.0.8 (23 Nov 2026, Ad Maker Build S3): the deleted notice also counts the picture files ix-sales v1.3.13 removed
 //   from Uploadcare (deleted.files). CSS v1.0.8 is a version only. HARDCODING: HC-P-AMB1-2 gains W.ix.del.withFiles*.
 // v1.0.7 (23 Nov 2026, Ad Maker Build S3) — THE DELETED NOTICE SITS WHERE THE WORK IS. JS and CSS v1.0.7.
@@ -108,7 +128,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.8', CSS_VERSION = '1.0.8', FILE = 'ix-ads-board-v' + VERSION + '.js';
+  var VERSION = '1.0.9', CSS_VERSION = '1.0.9', FILE = 'ix-ads-board-v' + VERSION + '.js';
   var SH = ['banner', 'sidebar', 'splash', 'text'];                        // HC-P-PP8-8
   var SHN = { banner: 'Banner', sidebar: 'Sidebar', splash: 'Splash', text: 'Text ad' };
   var W = {                                                              // HC-P-PP8-7
@@ -183,9 +203,14 @@
                pub: 'Publisher:', adv: 'Advertiser:',
                back: 'New {shape} · sent back by the publisher', req: 'New {shape} · the publisher asked for it', gap: '{Shape} · sold, nothing running',
                needs: 'Approving the new {shape}', answered: 'Advertiser answered on the {shape}', advIn: 'Reviewing the new {shape}' },
-      act: { edit: 'Edit in Ad Maker', open: 'Open in Ad Maker', make: 'Make {shape}', approve: 'Approve & make current', makeCurrent: 'Make current', coming: 'Tool coming', send: 'Send for approval', sendAgain: 'Send again', hold: 'Approve & hold' },
+      act: { edit: 'Edit in Ad Maker', open: 'Open in Ad Maker', make: 'Make {shape}', approve: 'Approve & make current', makeCurrent: 'Make current', coming: 'Tool coming', send: 'Send for approval', sendAgain: 'Send again', hold: 'Approve & hold', reqDone: 'Mark this request done' },
+        reqDone: { going: 'Closing the request', done: 'Request closed: {shape} for {name}.', fail: 'The request was not closed: {msg}' },
         del: { link: 'Delete this ad', ask: 'Delete this ad for good?', what: 'The ad comes off the site. Any approval link for it stops working.', never: 'This cannot be undone.', go: 'Delete for good', going: 'Deleting\u2026', cancel: 'cancel',
           done: 'Deleted: {name}', withHead: 'Deleted with it:', withAd: 'the ADS row', withMedia1: '1 MEDIA row (the one holding its picture)', withMediaN: '{n} MEDIA rows (the ones holding its pictures)', withMedia0: 'no MEDIA row (none held its picture)', withFiles1: 'its picture file on Uploadcare', withFilesN: '{n} picture files on Uploadcare', withLinks1: '1 open link stopped', withLinksN: '{n} open links stopped', pic: 'picture file', left: 'Left for you to do:', canva: 'Open the design in Canva and move it to trash (File > Move to trash).', close: 'close', fail: 'Not deleted: {msg}', deleting: 'Deleting the ad' },
+        tb: { link: 'Take back this email', ask: 'Take back the approval email to {to}?', what: 'The link in it stops working. If it is opened, the page says the link is closed. The ad stays pending, and you can send a new email at any time.',
+          two: '{n} approval emails for this ad are open. All of them stop.', others1: 'That email also carries 1 other ad. Its link stops for that ad too.', othersN: 'That email also carries {n} other ads. Its link stops for them too.',
+          others1Pl: 'Those emails also carry 1 other ad. Their links stop for that ad too.', othersNPl: 'Those emails also carry {n} other ads. Their links stop for them too.', goPl: 'Take back the emails',
+          go: 'Take back the email', going: 'Taking back\u2026', keep: 'keep it', done: 'Approval email taken back. Its link is closed.', fail: 'Not taken back: {msg}', label: 'Taking back the approval email' },
         send: { head: 'Send for approval', headAgain: 'Send again', again: '{name} already has a link from {on}. That link keeps working; this sends a new one.', to: 'Send to', test: '(test)', testNote: 'the same email, sent to you', noPub: 'The PUBLISHERS record has no Contact Name or Business Email, so only a test can be sent.',
           subject: 'Subject', message: 'Message', added: 'Added under your message: the {shape}, a \u201c{button}\u201d button, and \u201c{until}\u201d', go: 'Send email', going: 'Sending\u2026', loading: 'Reading the email\u2026', cancel: 'cancel',
           done: 'Approval email sent to {to}.', doneTest: 'Test approval email sent to {to}.', fail: 'The email was not sent: {msg}', need: 'The subject and the message cannot be empty.' },
@@ -313,12 +338,14 @@
       if (!IX || it.who !== 'ix') return null;
       var tool = it.sh === 'banner' || it.sh === 'sidebar';
       if (it.kind === 'back') return { kind: 'open', label: W.ix.act.open, sh: it.sh, v: it.v, coming: false };
-      if (it.kind === 'gap' || it.kind === 'req') return { kind: 'make', label: tool ? fill(W.ix.act.make, { shape: SHN[it.sh].toLowerCase() }) : W.ix.act.coming, sh: it.sh, v: null, coming: !tool };
+      if (it.kind === 'req' && !tool) return { kind: 'reqdone', label: W.ix.act.reqDone, sh: it.sh, v: null, req: it.req, coming: false };   // v1.0.9
+      if (it.kind === 'gap' || it.kind === 'req') return { kind: 'make', label: tool ? fill(W.ix.act.make, { shape: SHN[it.sh].toLowerCase() }) : W.ix.act.coming, sh: it.sh, v: null, req: it.req || null, coming: !tool };
       return null;
     }
     function actBtn(a, c, kind2) {
       if (!a) return '';
-      return '<button type="button" class="ix-btn ' + (kind2 || 'ix-btn--secondary') + ' ps-ad-sm" data-ix="' + esc(a.kind + '|' + c.id + '|' + a.sh + '|' + (a.v ? a.v.id : '')) + '"' + (a.coming ? ' disabled title="' + esc(W.ix.act.coming) + '"' : '') + '>' + esc(a.label) + '</button>';
+      if (a.kind === 'reqdone') return '<button type="button" class="ix-btn ix-btn--secondary ps-ad-sm" data-reqdone="' + esc(c.id + '|' + a.sh + '|' + a.req.id) + '">' + esc(a.label) + '</button>';   // v1.0.9
+      return '<button type="button" class="ix-btn ' + (kind2 || 'ix-btn--secondary') + ' ps-ad-sm" data-ix="' + esc(a.kind + '|' + c.id + '|' + a.sh + '|' + (a.v ? a.v.id : '') + '|' + (a.req ? a.req.id : '')) + '"' + (a.coming ? ' disabled title="' + esc(W.ix.act.coming) + '"' : '') + '>' + esc(a.label) + '</button>';
     }
     function boardRow(c, it, n) {
       var a = ixActionFor(c, it);
@@ -402,9 +429,35 @@
     // ── v1.0.6 · Delete this ad, inside the card (inbxify side) ──
     function delHTML(v) {
       var X = W.ix.del, Dl = S.del && S.del.id === v.id ? S.del : null;
-      if (!Dl) return '<div class="ps-ad-delrow"><button type="button" class="ps-ad-cancel" data-del="' + esc(v.id) + '">' + esc(X.link) + '</button></div>';
+      if (S.tb && S.tb.id === v.id) return tbHTML(v);   // v1.0.9
+      if (!Dl) return '<div class="ps-ad-delrow">' + (v.sent ? '<button type="button" class="ps-ad-cancel tb" data-tb="' + esc(v.id) + '">' + esc(W.ix.tb.link) + '</button>' : S.took[v.id] ? '<span class="tbdone">' + esc(W.ix.tb.done) + '</span>' : '<span></span>') +
+        '<button type="button" class="ps-ad-cancel" data-del="' + esc(v.id) + '">' + esc(X.link) + '</button></div>';
       return '<div class="ps-ad-delbox" role="alertdialog"><b>' + esc(X.ask) + '</b><div>' + esc(X.what) + '</div><div class="never">' + esc(X.never) + '</div>' + (Dl.err ? '<div class="ps-ad-need">' + esc(Dl.err) + '</div>' : '') +
         '<div class="dba"><button type="button" class="ix-btn ix-btn--danger" data-delgo="1"' + (Dl.busy ? ' disabled' : '') + '>' + esc(Dl.busy ? X.going : X.go) + '</button><button type="button" class="ps-ad-cancel" data-delcancel="1">' + esc(X.cancel) + '</button></div></div>';
+    }
+    // ── v1.0.9 · Take back this email, inside the card (inbxify side) ──
+    function tbHTML(v) {
+      var X = W.ix.tb, T = S.tb, sn = v.sent || {}, to = sn.test ? sn.to : (sn.toName || sn.to), n = Number(sn.otherAds) || 0, l = Number(sn.links) || 1;
+      var extra = (l > 1 ? '<div>' + esc(fill(X.two, { n: l })) + '</div>' : '') + (n ? '<div>' + esc(n === 1 ? (l > 1 ? X.others1Pl : X.others1) : fill(l > 1 ? X.othersNPl : X.othersN, { n: n })) + '</div>' : '');
+      return '<div class="ps-ad-tbbox" role="alertdialog"><b>' + esc(fill(X.ask, { to: to || '' })) + '</b><div>' + esc(X.what) + '</div>' + extra + (T.err ? '<div class="ps-ad-need">' + esc(T.err) + '</div>' : '') +
+        '<div class="dba"><button type="button" class="ix-btn ix-btn--secondary" data-tbgo="1"' + (T.busy ? ' disabled' : '') + '>' + esc(T.busy ? X.going : l > 1 ? X.goPl : X.go) + '</button><button type="button" class="ps-ad-cancel" data-tbkeep="1">' + esc(X.keep) + '</button></div></div>';
+    }
+    async function goTakeBack() {
+      var T = S.tb, f = T && findV(T.id); if (!T || !f || T.busy) return;
+      T.busy = true; T.err = ''; render();
+      var r = await ctx.api('/ads/approval/withdraw', { method: 'POST', body: { publisher: ctx.publisher.id, adId: T.id }, label: W.ix.tb.label });
+      if (!r.ok || !r.json || !r.json.ok) { T.busy = false; T.err = fill(W.ix.tb.fail, { msg: (r.json && r.json.error) || ('HTTP ' + r.status) }); render(); return; }
+      S.took[T.id] = true; (r.json.otherAds || []).forEach(function (o) { if (o && o.adId) S.took[o.adId] = true; });
+      S.tb = null; if (S.send && S.send.id === T.id) S.send = null;
+      await load(); render();
+    }
+    async function reqDone(key, btn) {   // v1.0.9 · a request for a shape Ad Maker cannot make: inbxify closes it by hand
+      var p = key.split('|'), c = cust(p[0]); if (!c) return;
+      if (btn) { btn.disabled = true; btn.textContent = W.ix.reqDone.going + '\u2026'; }
+      var r = await ctx.api('/ads/request/' + encodeURIComponent(p[2]) + '/done', { method: 'POST', body: {}, label: W.ix.reqDone.going });
+      if (!r.ok || !r.json || !r.json.ok) { toast(fill(W.ix.reqDone.fail, { msg: (r.json && r.json.error) || ('HTTP ' + r.status) }), 'error', 'reqdone'); await load(); render(); return; }
+      await load(); render();
+      toast(fill(W.ix.reqDone.done, { shape: SHN[p[1]], name: c.name }), 'ok', 'reqdone');
     }
     async function goDelete() {
       var Dl = S.del, f = Dl && findV(Dl.id); if (!Dl || !f || Dl.busy) return;
@@ -462,7 +515,7 @@
       if (B.subject !== B.std.subject) body.subject = B.subject; if (B.message !== B.std.message) body.message = B.message;
       var r = await ctx.api('/ads/send-approval', { method: 'POST', body: body, label: W.ix.send.going });
       if (!r.ok || !r.json || !r.json.mailId) { B.busy = false; B.err = fill(W.ix.send.fail, { msg: (r.json && r.json.error) || ('HTTP ' + r.status) }); render(); return; }
-      S.send = null; toast(fill(r.json.test ? W.ix.send.doneTest : W.ix.send.done, { to: r.json.test ? r.json.sentTo : (r.json.sentToName || r.json.sentTo) }), 'ok', 'send');
+      delete S.took[B.id]; S.send = null; toast(fill(r.json.test ? W.ix.send.doneTest : W.ix.send.done, { to: r.json.test ? r.json.sentTo : (r.json.sentToName || r.json.sentTo) }), 'ok', 'send');
       await load(); render();
     }
     function vCard(c, sh, v, opts) {
@@ -722,15 +775,20 @@
         var d = t.dataset;
         if (d.send) { if (S.send && S.send.id === d.send) { S.send = null; render(); } else openSend(d.send); return; }   // v1.0.4
         if (d.sendcancel) { S.send = null; render(); return; }
-        if (d.del) { S.del = { id: d.del, busy: false, err: '' }; render(); return; }   // v1.0.6
+        if (d.del) { S.del = { id: d.del, busy: false, err: '' }; S.tb = null; render(); return; }   // v1.0.6
         if (d.delcancel) { S.del = null; render(); return; }
+        if (d.tb) { S.tb = { id: d.tb, busy: false, err: '' }; S.del = null; render(); return; }   // v1.0.9
+        if (d.tbkeep) { S.tb = null; render(); return; }
+        if (d.tbgo) { goTakeBack(); return; }
+        if (d.reqdone) { e.stopPropagation(); reqDone(d.reqdone, t); return; }   // v1.0.9
         if (d.delgo) { goDelete(); return; }
         if (d.goneclose) { S.gone = null; render(); return; }
         if (d.sendgo) { goSend(); return; }
         if (d.ix) {   // inbxify side: hand the action to the host (Ad Maker)
           var ix = d.ix.split('|'), c0 = cust(ix[1]); if (!c0 || !O.onAction) return;
           var v0 = ix[3] ? (vOf(c0, ix[2]).find(function (x) { return x.id === ix[3]; }) || null) : null;
-          O.onAction({ kind: ix[0], customer: c0, shape: ix[2], version: v0 }); return;
+          var q0 = ix[4] ? (reqsOf(c0, ix[2]).find(function (x) { return x.id === ix[4]; }) || null) : null;   // v1.0.9
+          O.onAction({ kind: ix[0], customer: c0, shape: ix[2], version: v0, request: q0 }); return;
         }
         if (d.reqopen) { openReq(d.reqopen); return; }
         if (d.reqcancel) { closeReq(); return; }
@@ -779,12 +837,17 @@
     // ── mount ──
     var deep = O.deepCustomer || '';
     S = { customers: [], loaded: false, loadErr: '', q: '', open: null, view: {}, staged: {}, saving: null, mail: [], tab: {}, linkDays: 14, staleMonths: 6,
-          req: null, wd: null, flash: {}, deep: /^[0-9a-f]{24}$/.test(deep) ? deep : null };
+          req: null, wd: null, tb: null, took: {}, flash: {}, deep: /^[0-9a-f]{24}$/.test(deep) ? deep : null };
     wire(); render();
     load().then(render);
     return {
       refresh: function () { return load().then(render); },
       state: function () { return S; },
+      findRequest: function (id) {   // v1.0.9
+        for (var i = 0; i < S.customers.length; i++) { var c = S.customers[i];
+          for (var j = 0; j < SH.length; j++) { var q = reqsOf(c, SH[j]).find(function (x) { return x.id === id; }); if (q) return { customer: c, shape: SH[j], request: q }; } }
+        return null;
+      },
       open: function (cid, tab) { S.open = cid; if (tab) S.tab[cid] = tab; S.scrollTo = cid; render(); },
       destroy: function () { handlers.forEach(function (h) { h[0].removeEventListener(h[1], h[2]); }); handlers = []; el.innerHTML = ''; }
     };

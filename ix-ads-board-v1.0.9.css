@@ -1,6 +1,8 @@
-/* ix-ads-board-v1.0.8.css */
+/* ix-ads-board-v1.0.9.css */
 /* ============================================================
    INBXIFY · ix-ads-board · the Ads board shared by the Publisher Portal and the T-A Ads tab
+   v1.0.9 (25 Nov 2026, Ad Maker Build S4): the line under a card holds Take back this email (left) and Delete this ad (right);
+   .ps-ad-tbbox is the take-back question, an ink border (not red: nothing is deleted). Companion JS ix-ads-board-v1.0.9.js.
    v1.0.1 (18 Nov 2026): tokens only — every colour and font size reads ix-tokens v1.0.5 (--ps-*, --ix-fs-*); no other change.
    v1.0.0 (18 Nov 2026, Ad Maker Build S1) — LIFTED FROM ps-ads-v1.0.12.css, unchanged for the Portal.
    Every class keeps its ps-ad- name. New here:
@@ -347,7 +349,12 @@ textarea.ps-ad-sendin{min-height:128px;resize:vertical}
 .side-inbxify .ps-ad-grid>.ps-ad-shp>.ps-ad-meta+.ps-ad-acts,.side-inbxify .ps-ad-grid>.ps-ad-shp>.ps-ad-meta+.ps-ad-staged{padding-top:12px}
 
 /* ════ v1.0.6 (23 Nov 2026, Ad Maker Build S3) · DELETE THIS AD (inbxify side) ════ */
-.ps-ad-delrow{margin-top:8px;text-align:right}
+.ps-ad-delrow{margin-top:8px;display:flex;justify-content:space-between;align-items:baseline;gap:12px}   /* v1.0.9: Take back on the left, Delete on the right */
+.ps-ad-delrow .ps-ad-cancel.tb{color:var(--ps-ink)}
+.ps-ad-delrow .tbdone{font-size:var(--ix-fs-12);color:var(--ps-muted)}
+.ps-ad-tbbox{margin-top:10px;padding:12px 14px;border:1.5px solid var(--ps-ink);border-radius:3px;background:var(--ps-paper);display:flex;flex-direction:column;gap:6px;font-size:var(--ix-fs-13);color:var(--ps-ink)}
+.ps-ad-tbbox b{font-size:var(--ix-fs-14)}
+.ps-ad-tbbox .dba{display:flex;align-items:center;gap:14px;margin-top:4px}
 .ps-ad-delrow .ps-ad-cancel{color:var(--ps-red-deep)}
 .ps-ad-delbox{margin-top:10px;padding:12px 14px;border:1.5px solid var(--ps-red-deep);border-radius:3px;background:var(--ps-paper);display:flex;flex-direction:column;gap:6px;font-size:var(--ix-fs-13);color:var(--ps-ink)}
 .ps-ad-delbox b{font-size:var(--ix-fs-14)}
