@@ -1,7 +1,19 @@
-// ix-ads-board-v1.0.9.js
+// ix-ads-board-v1.0.10.js
 // ============================================================
 // INBXIFY · ix-ads-board · the Ads board, shared by the Publisher Portal and the T-A Ads tab
 //
+// v1.0.10 (25 Nov 2026, Ad Maker Build S4) — A PENDING AD WITH NO APPROVAL EMAIL OUT IS NOT WITH THE PUBLISHER.
+//   Ruling (Jeff, 25 Nov, after Test 2: "needs to move back to make, not sent… why would it stay in a state it is not?").
+//   · On load, a version ix-sales calls 'needs' (Pending) with no open approval email (v.sent empty: never sent, taken
+//     back, or the link ran out) becomes state 'unsent'. Both sides read it:
+//     inbxify side: under To make, "New {shape} · not sent for approval", button Send for approval (opens the customer's
+//       Pending versions with the send box); the card's pill "Not sent", its line "Pending · no approval email out.",
+//       its buttons as before (Approve & make current, Approve & hold, Send for approval, Edit in Ad Maker).
+//     Portal side: the publisher is not asked: "inbxify: New {shape} · being prepared" under Waiting, pill With inbxify,
+//       no approve buttons, line "inbxify is still preparing this one. Nothing is needed from you yet."
+//   · The line after a take-back is shorter ("Email taken back · link closed") and the line's links never wrap.
+//   HARDCODING: HC-P-AMB1-2 gains W.ix.board.unsent, W.ix.meta.unsent, W.ix.badge.unsent, W.ix.act.sendRow,
+//   W.board.unsent, W.meta.unsent.
 // v1.0.9 (25 Nov 2026, Ad Maker Build S4) — TAKE BACK AN APPROVAL EMAIL, KEEP THE AD. JS and CSS v1.0.9. inbxify side only.
 //   Ruling (Jeff, 24 Nov, S4 B1; wording 25 Nov: "use a clearer question"): an action that stops an approval link but
 //   keeps the ad, asked first.
@@ -128,7 +140,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.9', CSS_VERSION = '1.0.9', FILE = 'ix-ads-board-v' + VERSION + '.js';
+  var VERSION = '1.0.10', CSS_VERSION = '1.0.10', FILE = 'ix-ads-board-v' + VERSION + '.js';
   var SH = ['banner', 'sidebar', 'splash', 'text'];                        // HC-P-PP8-8
   var SHN = { banner: 'Banner', sidebar: 'Sidebar', splash: 'Splash', text: 'Text ad' };
   var W = {                                                              // HC-P-PP8-7
@@ -140,7 +152,7 @@
     emptyAll: 'No customers yet. A customer shows here once one of your titles, ads or sales records names it.',
     emptyQ: 'No customer matches that name.',
     badge: { you: 'Needs you', adv: 'With advertiser', ix: 'With inbxify', ok: 'This one is live', ready: 'Approved, ready to run', earlier: 'Earlier' },
-    meta: {
+    meta: { unsent: 'inbxify is still preparing this one. Nothing is needed from you yet.',
       currentBy: 'Approved by {by}, {on}.', byInbxify: 'inbxify for {by}', runningSince: 'Running since {on}.', runningUnknown: 'Running since before the portal kept dates.',
       needs: 'New version, waiting for your OK.', needsMade: 'Made {on}.',
       answered: '{who} answered on {on}: {answer}{more} It runs once you approve it.',
@@ -178,7 +190,7 @@
       action: 'Needs action', waiting: 'Waiting', list: 'Client list', since: 'since {on}', more: ' · +{n} more',
       noneAction: 'Nothing needs you.', noneWaiting: 'Nothing is waiting.', ix: 'inbxify:', adv: 'Advertiser:',
       needs: 'Approve the new {shape}', answered: 'Advertiser answered on the {shape}', back: 'New {shape} · you sent it back',
-      advIn: 'Reviewing the new {shape}', req: 'New {shape} · you asked for it', gap: '{Shape} · sold, none yet',
+      advIn: 'Reviewing the new {shape}', req: 'New {shape} · you asked for it', gap: '{Shape} · sold, none yet', unsent: 'New {shape} · being prepared',
       cols: { customer: 'Customer', next: 'Next step', since: 'Since' },
       cov: { live: 'Running', gap: 'Sold, nothing running', no: 'Not sold' }
     },
@@ -202,22 +214,22 @@
       board: { action: 'To make', waiting: 'With the publisher or advertiser', noneAction: 'Nothing to make.', noneWaiting: 'Nothing is out with the publisher or an advertiser.',
                pub: 'Publisher:', adv: 'Advertiser:',
                back: 'New {shape} · sent back by the publisher', req: 'New {shape} · the publisher asked for it', gap: '{Shape} · sold, nothing running',
-               needs: 'Approving the new {shape}', answered: 'Advertiser answered on the {shape}', advIn: 'Reviewing the new {shape}' },
-      act: { edit: 'Edit in Ad Maker', open: 'Open in Ad Maker', make: 'Make {shape}', approve: 'Approve & make current', makeCurrent: 'Make current', coming: 'Tool coming', send: 'Send for approval', sendAgain: 'Send again', hold: 'Approve & hold', reqDone: 'Mark this request done' },
+               needs: 'Approving the new {shape}', answered: 'Advertiser answered on the {shape}', advIn: 'Reviewing the new {shape}', unsent: 'New {shape} · not sent for approval' },
+      act: { edit: 'Edit in Ad Maker', open: 'Open in Ad Maker', make: 'Make {shape}', approve: 'Approve & make current', makeCurrent: 'Make current', coming: 'Tool coming', send: 'Send for approval', sendAgain: 'Send again', hold: 'Approve & hold', reqDone: 'Mark this request done', sendRow: 'Send for approval' },
         reqDone: { going: 'Closing the request', done: 'Request closed: {shape} for {name}.', fail: 'The request was not closed: {msg}' },
         del: { link: 'Delete this ad', ask: 'Delete this ad for good?', what: 'The ad comes off the site. Any approval link for it stops working.', never: 'This cannot be undone.', go: 'Delete for good', going: 'Deleting\u2026', cancel: 'cancel',
           done: 'Deleted: {name}', withHead: 'Deleted with it:', withAd: 'the ADS row', withMedia1: '1 MEDIA row (the one holding its picture)', withMediaN: '{n} MEDIA rows (the ones holding its pictures)', withMedia0: 'no MEDIA row (none held its picture)', withFiles1: 'its picture file on Uploadcare', withFilesN: '{n} picture files on Uploadcare', withLinks1: '1 open link stopped', withLinksN: '{n} open links stopped', pic: 'picture file', left: 'Left for you to do:', canva: 'Open the design in Canva and move it to trash (File > Move to trash).', close: 'close', fail: 'Not deleted: {msg}', deleting: 'Deleting the ad' },
         tb: { link: 'Take back this email', ask: 'Take back the approval email to {to}?', what: 'The link in it stops working. If it is opened, the page says the link is closed. The ad stays pending, and you can send a new email at any time.',
           two: '{n} approval emails for this ad are open. All of them stop.', others1: 'That email also carries 1 other ad. Its link stops for that ad too.', othersN: 'That email also carries {n} other ads. Its link stops for them too.',
           others1Pl: 'Those emails also carry 1 other ad. Their links stop for that ad too.', othersNPl: 'Those emails also carry {n} other ads. Their links stop for them too.', goPl: 'Take back the emails',
-          go: 'Take back the email', going: 'Taking back\u2026', keep: 'keep it', done: 'Approval email taken back. Its link is closed.', fail: 'Not taken back: {msg}', label: 'Taking back the approval email' },
+          go: 'Take back the email', going: 'Taking back\u2026', keep: 'keep it', done: 'Email taken back \u00b7 link closed', fail: 'Not taken back: {msg}', label: 'Taking back the approval email' },
         send: { head: 'Send for approval', headAgain: 'Send again', again: '{name} already has a link from {on}. That link keeps working; this sends a new one.', to: 'Send to', test: '(test)', testNote: 'the same email, sent to you', noPub: 'The PUBLISHERS record has no Contact Name or Business Email, so only a test can be sent.',
           subject: 'Subject', message: 'Message', added: 'Added under your message: the {shape}, a \u201c{button}\u201d button, and \u201c{until}\u201d', go: 'Send email', going: 'Sending\u2026', loading: 'Reading the email\u2026', cancel: 'cancel',
           done: 'Approval email sent to {to}.', doneTest: 'Test approval email sent to {to}.', fail: 'The email was not sent: {msg}', need: 'The subject and the message cannot be empty.' },
       meta: { sent: 'Approval email sent to {to} on {on}.', sentTest: 'Test approval email sent to {to} on {on}.', sentUnopened: 'Link not opened yet.', sentOpened: 'Link opened {on}.', sentUntil: 'Good until {until}.',
-              needs: 'Pending with the publisher since {on}.', answered: 'The advertiser answered on {on}; the publisher decides.', adv: 'Out with the advertiser.', back: 'Sent back by the publisher, {on}: {note}' },
+              unsent: 'Pending · no approval email out.', needs: 'Pending with the publisher since {on}.', answered: 'The advertiser answered on {on}; the publisher decides.', adv: 'Out with the advertiser.', back: 'Sent back by the publisher, {on}: {note}' },
       tip: { you: 'With the publisher: waiting for their OK', adv: 'Waiting on the advertiser', ix: 'To make: inbxify’s move' },
-      badge: { you: 'With publisher', adv: 'With advertiser', ix: 'To make' },
+      badge: { you: 'With publisher', adv: 'With advertiser', ix: 'To make', unsent: 'Not sent' },
       save: { steps: ['Checking your login', 'Saving the approvals', 'Pointing the site at the new ads', 'Confirming each one was written'] }
     }
   };
@@ -243,12 +255,12 @@
     function vOf(c, sh) { return c.shapes[sh].versions; }
     function curOf(c, sh) { var id = c.shapes[sh].current; return vOf(c, sh).find(function (v) { return v.id === id; }) || null; }
     function findV(id) { for (var i = 0; i < S.customers.length; i++) { var c = S.customers[i]; for (var j = 0; j < SH.length; j++) { var v = vOf(c, SH[j]).find(function (x) { return x.id === id; }); if (v) return { v: v, c: c, sh: SH[j] }; } } return null; }
-    function vOwn(v) { return ({ needs: 'you', answered: 'you', adv: 'adv', back: 'ix' })[v.state] || null; }
+    function vOwn(v) { return ({ needs: 'you', answered: 'you', adv: 'adv', back: 'ix', unsent: 'ix' })[v.state] || null; }   // v1.0.10: unsent
     function owners(c, sh, forCell) {
       var vs = vOf(c, sh), o = [];
       var has = function (st) { return vs.some(function (v) { return v.state === st; }); };
       if (has('needs') || has('answered')) o.push('you');
-      if (has('back') || (!forCell && reqsOf(c, sh).length) || (!curOf(c, sh) && c.shapes[sh].sold && !has('needs') && !has('answered') && !has('adv'))) o.push('ix');
+      if (has('back') || has('unsent') || (!forCell && reqsOf(c, sh).length) || (!curOf(c, sh) && c.shapes[sh].sold && !has('needs') && !has('answered') && !has('adv'))) o.push('ix');
       if (has('adv')) o.push('adv');
       if (o.length) return o;
       return [curOf(c, sh) ? 'ok' : 'dash'];
@@ -258,7 +270,7 @@
     function viewing(c, sh) {
       var id = S.view[c.id + '|' + sh], v = id && vOf(c, sh).find(function (x) { return x.id === id; });
       if (v) return v;
-      var vs = vOf(c, sh), order = ['needs', 'answered', 'adv', 'back', 'ready'];
+      var vs = vOf(c, sh), order = ['needs', 'answered', 'adv', 'back', 'unsent', 'ready'];
       if (curOf(c, sh)) return curOf(c, sh);
       for (var i = 0; i < order.length; i++) { var f = vs.find(function (x) { return x.state === order[i]; }); if (f) return f; }
       return vs[0] || null;
@@ -275,6 +287,7 @@
         var b0 = v.sentBack || {};
         var s0 = v.sent ? fill(v.sent.test ? W.ix.meta.sentTest : W.ix.meta.sent, { to: esc(v.sent.test ? v.sent.to : (v.sent.toName || v.sent.to)), on: day(v.sent.sentAt) }) + ' ' + (v.sent.openedAt ? fill(W.ix.meta.sentOpened, { on: day(v.sent.openedAt) }) : W.ix.meta.sentUnopened) + ' ' + fill(W.ix.meta.sentUntil, { until: day(v.sent.until) }) : '';   // v1.0.2
         if (v.sent && (v.state === 'needs' || v.state === 'answered' || v.state === 'adv')) { var p0 = s0.indexOf('. ') + 1; return '<b>' + s0.slice(0, p0) + '</b>' + s0.slice(p0); }   // v1.0.4
+        if (v.state === 'unsent') return W.ix.meta.unsent;   // v1.0.10
         if (v.state === 'needs') return fill(W.ix.meta.needs, { on: day(v.createdOn) });
         if (v.state === 'answered') return fill(W.ix.meta.answered, { on: day(L.answeredAt) }) + (L.answer === 'change' && (L.change || L.like) ? ' <q>' + esc(L.change || L.like) + '</q>' : '');
         if (v.state === 'adv') return W.ix.meta.adv;
@@ -282,6 +295,7 @@
       }
       switch (v.state) {
         case 'current': return [v.ranFrom ? fill(M.runningSince, { on: day(v.ranFrom) }) : M.runningUnknown, d.at ? fill(M.currentBy, { by: byWho(d), on: day(d.at) }) : ''].filter(Boolean).join(' ');
+        case 'unsent': return M.unsent;   // v1.0.10
         case 'needs': return M.needs + (v.createdOn ? ' ' + fill(M.needsMade, { on: day(v.createdOn) }) : '');
         case 'answered': return fill(M.answered, { who: esc(L.answeredBy || 'The advertiser'), on: day(L.answeredAt), answer: L.answer === 'approve' ? M.ansOk : M.ansChange,
           more: L.answer === 'change' ? ' <q>' + esc([L.like && ('Likes: ' + L.like), L.change && ('Change: ' + L.change)].filter(Boolean).join(' ')) + '</q>' : '' });
@@ -318,9 +332,10 @@
           else if (v.state === 'answered') out.push({ who: 'you', words: fill(Bd.answered, { shape: low }), at: L.answeredAt || v.createdOn, tab: 'process', sh: sh, kind: 'answered', v: v });
           else if (v.state === 'back') out.push({ who: 'ix', words: fill(Bd.back, { shape: low }), at: sb.at || v.createdOn, tab: 'process', sh: sh, kind: 'back', v: v });
           else if (v.state === 'adv') out.push({ who: 'adv', words: fill(Bd.advIn, { shape: low }), at: L.sentAt || v.createdOn, tab: 'process', sh: sh, kind: 'adv', v: v });
+          else if (v.state === 'unsent') out.push({ who: 'ix', words: fill(Bd.unsent, { shape: low }), at: v.createdOn, tab: 'process', sh: sh, kind: 'unsent', v: v });   // v1.0.10
         });
         reqsOf(c, sh).forEach(function (r) { out.push({ who: 'ix', words: fill(Bd.req, { shape: low }), at: r.askedAt, tab: 'current', sh: sh, kind: 'req', req: r }); });
-        var inPlay = vOf(c, sh).some(function (v) { return ['needs', 'answered', 'back', 'adv'].indexOf(v.state) > -1; });
+        var inPlay = vOf(c, sh).some(function (v) { return ['needs', 'answered', 'back', 'adv', 'unsent'].indexOf(v.state) > -1; });
         if (c.shapes[sh].sold && !curOf(c, sh) && !inPlay && !reqsOf(c, sh).length) out.push({ who: 'ix', words: fill(Bd.gap, { Shape: cap }), at: null, tab: 'current', sh: sh, kind: 'gap' });
       });
       var rank = IX ? { ix: 0, you: 1, adv: 1 } : { you: 0, adv: 1, ix: 1 };
@@ -338,12 +353,14 @@
       if (!IX || it.who !== 'ix') return null;
       var tool = it.sh === 'banner' || it.sh === 'sidebar';
       if (it.kind === 'back') return { kind: 'open', label: W.ix.act.open, sh: it.sh, v: it.v, coming: false };
+      if (it.kind === 'unsent') return { kind: 'sendrow', label: W.ix.act.sendRow, sh: it.sh, v: it.v, coming: !tool };   // v1.0.10
       if (it.kind === 'req' && !tool) return { kind: 'reqdone', label: W.ix.act.reqDone, sh: it.sh, v: null, req: it.req, coming: false };   // v1.0.9
       if (it.kind === 'gap' || it.kind === 'req') return { kind: 'make', label: tool ? fill(W.ix.act.make, { shape: SHN[it.sh].toLowerCase() }) : W.ix.act.coming, sh: it.sh, v: null, req: it.req || null, coming: !tool };
       return null;
     }
     function actBtn(a, c, kind2) {
       if (!a) return '';
+      if (a.kind === 'sendrow') return '<button type="button" class="ix-btn ix-btn--primary ps-ad-sm" data-sendrow="' + esc(c.id + '|' + a.v.id) + '"' + (a.coming ? ' disabled' : '') + '>' + esc(a.label) + '</button>';   // v1.0.10
       if (a.kind === 'reqdone') return '<button type="button" class="ix-btn ix-btn--secondary ps-ad-sm" data-reqdone="' + esc(c.id + '|' + a.sh + '|' + a.req.id) + '">' + esc(a.label) + '</button>';   // v1.0.9
       return '<button type="button" class="ix-btn ' + (kind2 || 'ix-btn--secondary') + ' ps-ad-sm" data-ix="' + esc(a.kind + '|' + c.id + '|' + a.sh + '|' + (a.v ? a.v.id : '') + '|' + (a.req ? a.req.id : '')) + '"' + (a.coming ? ' disabled title="' + esc(W.ix.act.coming) + '"' : '') + '>' + esc(a.label) + '</button>';
     }
@@ -395,16 +412,17 @@
     function badge(o) {
       var BW = IX ? Object.assign({}, W.badge, W.ix.badge) : W.badge;
       if (o === 'ok') return '<span class="ps-ad-badge b-ok" title="' + esc(BW.ok) + '">' + mark('ok') + '<span class="bl">' + esc(BW.ok) + '</span></span>';
+      if (o === 'unsent') return '<span class="ps-ad-badge b-ix" title="' + esc(BW.unsent) + '"><span class="bl">' + esc(BW.unsent) + '</span></span>';   // v1.0.10
       if (o === 'you' || o === 'adv' || o === 'ix') return '<span class="ps-ad-badge b-' + o + '" title="' + esc(BW[o]) + '"><span class="bl">' + esc(BW[o]) + '</span></span>';
       return '<span class="ps-ad-badge b-plain" title="' + esc(BW[o] || o) + '"><span class="bl">' + esc(BW[o] || o) + '</span></span>';
     }
-    function vBadge(v) { return v.state === 'current' ? badge('ok') : vOwn(v) ? badge(vOwn(v)) : badge(v.state === 'ready' ? 'ready' : 'earlier'); }
+    function vBadge(v) { return v.state === 'current' ? badge('ok') : IX && v.state === 'unsent' ? badge('unsent') : vOwn(v) ? badge(vOwn(v)) : badge(v.state === 'ready' ? 'ready' : 'earlier'); }   // v1.0.10: Not sent
     function cardActs(c, sh, v) {   // the buttons on a version card, by side
       var h = '';
       if (IX) {
         var tool = sh === 'banner' || sh === 'sidebar';
         if (v.state === 'current') h += actBtn({ kind: 'edit', label: W.ix.act.edit, sh: sh, v: v, coming: !tool }, c);
-        else if (v.state === 'needs' || v.state === 'answered' || v.state === 'adv') {   // v1.0.4: both approvals and Send for approval live on the card
+        else if (v.state === 'needs' || v.state === 'unsent' || v.state === 'answered' || v.state === 'adv') {   // v1.0.4: both approvals and Send for approval live on the card (v1.0.10: unsent too)
           var sending = S.send && S.send.id === v.id;
           h += '<button type="button" class="ix-btn ix-btn--primary" data-act="current|' + esc(v.id) + '">' + esc(W.ix.act.approve) + '</button><button type="button" class="ix-btn ix-btn--primary" data-act="hold|' + esc(v.id) + '">' + esc(W.ix.act.hold) + '</button>' +
             (!tool ? '' : '<button type="button" class="ix-btn ix-btn--secondary' + (sending ? ' ps-ad-btnon' : '') + '" data-send="' + esc(v.id) + '">' + esc(v.sent ? W.ix.act.sendAgain : W.ix.act.send) + '</button>') + actBtn({ kind: 'edit', label: W.ix.act.edit, sh: sh, v: v, coming: !tool }, c);
@@ -565,7 +583,7 @@
     }
     function renderCols(c) {
       var all = []; SH.forEach(function (sh) { vOf(c, sh).forEach(function (v) { all.push({ v: v, sh: sh }); }); });
-      var pend = all.filter(function (x) { return ['needs', 'answered', 'adv', 'back'].indexOf(x.v.state) > -1; });
+      var pend = all.filter(function (x) { return ['needs', 'unsent', 'answered', 'adv', 'back'].indexOf(x.v.state) > -1; });
       var hot = pend.some(function (x) { return IX ? x.v.state === 'back' : (x.v.state === 'needs' || x.v.state === 'answered'); });
       var ready = all.filter(function (x) { return x.v.state === 'ready'; }), old = all.filter(function (x) { return x.v.state === 'earlier'; });
       var tab = S.tab[c.id] || (pend.length ? 'process' : 'current');
@@ -629,6 +647,7 @@
       var r = await ctx.api('/ads?publisher=' + encodeURIComponent(ctx.publisher.id), { label: W.api.ads });
       if (!r.ok) { S.loaded = true; S.loadErr = (r.json && r.json.error) || ('HTTP ' + r.status); return; }
       S.customers = r.json.customers || []; S.linkDays = r.json.linkDays || 14; S.staleMonths = r.json.staleMonths || 6;
+      S.customers.forEach(function (c) { Object.keys(c.shapes || {}).forEach(function (k) { (c.shapes[k].versions || []).forEach(function (v) { if (v.state === 'needs' && !v.sent) v.state = 'unsent'; }); }); });   // v1.0.10
       if (Array.isArray(r.json.shapes) && r.json.shapes.length) { SH = r.json.shapes.map(function (s) { return s.key; }); r.json.shapes.forEach(function (s) { SHN[s.key] = s.label; }); }
       S.loaded = true; S.loadErr = '';
       if (S.deep && S.customers.some(function (c) { return c.id === S.deep; })) { S.open = S.deep; S.tab[S.deep] = 'current'; S.scrollTo = S.deep; S.deep = null; }
@@ -781,6 +800,7 @@
         if (d.tbkeep) { S.tb = null; render(); return; }
         if (d.tbgo) { goTakeBack(); return; }
         if (d.reqdone) { e.stopPropagation(); reqDone(d.reqdone, t); return; }   // v1.0.9
+        if (d.sendrow) { var sr = d.sendrow.split('|'); S.open = sr[0]; S.tab[sr[0]] = 'process'; S.scrollTo = sr[0]; openSend(sr[1]); return; }   // v1.0.10
         if (d.delgo) { goDelete(); return; }
         if (d.goneclose) { S.gone = null; render(); return; }
         if (d.sendgo) { goSend(); return; }

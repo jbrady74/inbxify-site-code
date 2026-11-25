@@ -1,5 +1,6 @@
-/* ta-admaker-v4.12.0.css
-   INBXIFY · AD MAKER and the T-A ADS TAB · companion to ta-admaker-v4.12.0.js
+/* ta-admaker-v4.12.1.css
+   INBXIFY · AD MAKER and the T-A ADS TAB · companion to ta-admaker-v4.12.1.js
+   v4.12.1 (25 Nov 2026): Where a click goes outlined in red after Save is pressed without it (.am-click.nudge). Appended at the end.
    v4.12.0 (25 Nov 2026, Ad Maker Build S4): a job opened from a publisher's request has a blue tab (.am-tab.req). Appended at the end.
    v4.11.4 (19 Nov 2026): the Drafts in Canva row has five columns (the Canva name went), and a small line for a missing picture.
    v4.11.3 (18 Nov 2026, Ad Maker Build S3): the What happens card and Send to on Check, the send-back note on the Canva screen, and
@@ -1143,3 +1144,7 @@ textarea.am-mailin, section.publisher-wrapper textarea.am-mailin { min-height: 1
 /* ════ v4.12.0 (25 Nov 2026) · a job opened from a publisher's request: blue tab (ruling of 10 Nov) ════ */
 .am-tab.req, section.publisher-wrapper .am-tab.req { background: var(--ix-blue-ghost) !important; border-color: var(--ix-blue-light); }
 .am-tab.req.on, section.publisher-wrapper .am-tab.req.on { background: var(--ix-white) !important; box-shadow: inset 0 3px 0 var(--ix-blue); }
+
+/* ════ v4.12.1 (25 Nov 2026) · Save pressed with no click picked ════ */
+.am-click.nudge, section.publisher-wrapper .am-click.nudge { border: 2px solid var(--ps-red-deep) !important; }
+.am-bad { color: var(--ps-red-deep); }
