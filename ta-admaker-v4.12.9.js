@@ -1,6 +1,16 @@
-/* ta-admaker-v4.12.8.js
+/* ta-admaker-v4.12.9.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.9 (26 Nov 2026, Ad Maker Build S4) — AD MAKER STAYS CLICKABLE AFTER "+ NEW AD"; THE AD MAKER TILE STARTS AN AD.
+     JS only; CSS v4.12.4.
+     1 Jeff, 26 Nov: after "+ New ad" (the tile page) and back, nothing in Ad Maker answered a click, "+ New ad" in its
+       job list included. The tile page replaced the whole Ads tab, the Ad Maker's own element went with it, and the
+       empty one made on the way back had no click handlers (mount() bound them once, to the first element only).
+       Now the Ad Maker's element is kept across the tile page (A.makerEl), and mount() binds its handlers to whatever
+       element it finds that has none yet (bindMount).
+     2 The "Ad Maker" tile on the "+ New ad" page opened the Ad Maker tab and stopped there, which looked like going
+       back. It now opens the tab with a new ad started (Start: choose the customer).
 
    v4.12.8 (26 Nov 2026, Ad Maker Build S4) — A FAILED SAVE CAN BE FIXED OR CANCELLED; PICTURES READ FROM img-main FIRST.
      JS only; CSS v4.12.4.
@@ -1007,7 +1017,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.8', CSS_FILE = 'ta-admaker-v4.12.4.css';
+  var VERSION = '4.12.9', CSS_FILE = 'ta-admaker-v4.12.4.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.19 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -5285,6 +5295,7 @@
       h += (row ? '' : '<a href="#" class="ta-ads-back" data-ads="tabs">‹ ' + ADS_W.allAds + '</a><h3 class="ta-ads-h3">New ad</h3>') + '<div class="ta-ads-sub">Pick how to start. Two work today; four are ideas.</div><div class="ta-ads-tiles">' + ADS_TILES.map(function (t) {
         return '<button type="button" class="ta-ads-tile' + (t.works ? '' : ' idea') + '" data-ads="tab" data-v="' + t.k + '"><span class="ic">' + ADS_ICONS[t.icon] + '</span><b>' + esc(t.t) + '</b><small>' + esc(t.s) + '</small><em>' + (t.works ? ADS_W.works : ADS_W.idea) + '</em></button>';
       }).join('') + '</div></div>';
+      A.makerEl = document.getElementById(MOUNT_ID) || A.makerEl;   // v4.12.9: kept for the way back
       el.innerHTML = h; return;
     }
     h += '<div class="ix-tabs-l1 ta-ads-strip" role="tablist">' + ADS_TABS.map(function (t) { return '<button type="button" role="tab" class="ix-tab-l1' + (A.tab === t[0] ? ' is-active' : '') + (t[2] ? '' : ' idea') + '" aria-selected="' + (A.tab === t[0]) + '" data-ads="tab" data-v="' + t[0] + '">' + esc(t[1]) + (t[2] ? '' : '<i title="' + ADS_W.idea + '"></i>') + '</button>'; }).join('') + '</div>';
@@ -5296,7 +5307,7 @@
       h += '<div class="ta-ads-pane" data-pane="' + k + '"' + (A.tab === k ? '' : ' hidden') + '><div class="ta-ads-idea"><div class="ta-ads-ideah"><h3>' + esc(I.t) + '</h3><span class="ta-ads-pill">' + ADS_W.notBuilt + '</span></div>' +
         '<h4>' + ADS_W.purpose + '</h4><p>' + esc(I.p) + '</p><h4>' + ADS_W.decided + '</h4><ul>' + I.d.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><h4>' + ADS_W.open + '</h4><ul>' + I.o.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div></div>'; });
     h += '</div>';
-    var keepMaker = document.getElementById(MOUNT_ID);   // the Ad Maker's DOM survives a tab switch (its jobs live in JOBS; the mount is recreated by mount())
+    var keepMaker = document.getElementById(MOUNT_ID) || A.makerEl; A.makerEl = null;   // v4.12.9: or the one kept across the tile page   // the Ad Maker's DOM survives a tab switch (its jobs live in JOBS; the mount is recreated by mount())
     el.innerHTML = h;
     if (keepMaker && keepMaker.childNodes.length) { var slot = document.getElementById(MOUNT_ID); if (slot) slot.replaceWith(keepMaker); }
     adsShowTab();
@@ -5461,7 +5472,9 @@
     var k = t.getAttribute('data-ads'); e.preventDefault();
     if (k === 'new') { A.page = 'new'; adsRender(); return; }
     if (k === 'tabs') { A.page = 'tabs'; adsRender(); return; }
-    if (k === 'tab') { A.tab = t.getAttribute('data-v'); A.page = 'tabs'; adsRender(); return; }
+    if (k === 'tab') { var fromNew = A.page === 'new'; A.tab = t.getAttribute('data-v'); A.page = 'tabs'; adsRender();
+      if (fromNew && A.tab === 'maker') setTimeout(function () { if (mount()) openJob({ id: 'new-' + (++newN), custId: '' }); }, 0);   // v4.12.9: the Ad Maker tile starts an ad
+      return; }
     if (k === 'drEdit' || k === 'drCheck') { adsDraftOpen(t.getAttribute('data-v'), k === 'drCheck' ? 'check' : 'edit'); return; }   // v4.11.3
     if (k === 'drRemove') { A.drafts.ask = t.getAttribute('data-v'); adsDraftsRender(); return; }
     if (k === 'drRemoveNo') { A.drafts.ask = ''; adsDraftsRender(); return; }
@@ -6009,24 +6022,27 @@
   }
 
   var mounted = false;
+  function bindMount(m) {   // v4.12.9: the click, typing and key handlers, once per element
+    if (!m || m.__amBound) return; m.__amBound = true;
+    m.addEventListener('click', onClick); m.addEventListener('input', onInput); m.addEventListener('change', onChange);
+    m.addEventListener('keydown', function (ev) {  // v4.7.0: arrow keys step a typed box, 1 or 10 with Shift
+      var t = ev.target; if (!t || !t.matches || !t.matches('input[data-tbin]') || (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown')) return;
+      var n = parseFloat(t.value); if (!isFinite(n)) return; ev.preventDefault(); var st = (ev.shiftKey ? 10 : 1) * (ev.key === 'ArrowUp' ? 1 : -1), op = t.getAttribute('data-tbin');
+      if (op === 'lh') st = st / 20; t.value = Math.round((n + st) * 100) / 100; tbApply(op, t.value);
+    });
+  }
   function mount() {
     var m = document.getElementById(MOUNT_ID), panel = m ? null : document.querySelector(PANEL);   // v4.11.0: the Ads tab makes the mount itself; the Studio panel is the fallback
     if (!m && !panel) { log('no Ad Maker mount yet'); return false; }
     if (!m) { m = document.createElement('div'); m.id = MOUNT_ID; panel.innerHTML = ''; panel.appendChild(m); }
-    if (mounted && !m.childNodes.length) { render(); }   // the Ads tab redrew around an empty mount
-    if (mounted) return true;
+    if (mounted) { bindMount(m); if (!m.childNodes.length) render(); return true; }   // v4.12.9: a new element gets the handlers too
     mounted = true;
     var miss = [];
     if (!window.IxAdLayouts) miss.push('ix-ad-layouts');
     try { IxAdLayouts.shapes(); } catch (e) { miss.push(e.message); }
     readCustomers();
     try { if (A.board && A.board.state) adsBrand((A.board.state() || {}).customers); } catch (e) { log('adsBrand', e); }   // v4.11.3: readCustomers rebuilt the list; the board's other customers join it again
-    m.addEventListener('click', onClick); m.addEventListener('input', onInput); m.addEventListener('change', onChange);
-    m.addEventListener('keydown', function (ev) {   // v4.7.0: arrow keys step a typed box, 1 or 10 with Shift
-      var t = ev.target; if (!t || !t.matches || !t.matches('input[data-tbin]') || (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown')) return;
-      var n = parseFloat(t.value); if (!isFinite(n)) return; ev.preventDefault(); var st = (ev.shiftKey ? 10 : 1) * (ev.key === 'ArrowUp' ? 1 : -1), op = t.getAttribute('data-tbin');
-      if (op === 'lh') st = st / 20; t.value = Math.round((n + st) * 100) / 100; tbApply(op, t.value);
-    });
+    bindMount(m);
     document.addEventListener('paste', takePaste);   // v2.3.0: a screenshot pasted anywhere while the Paste tile is picked
     document.addEventListener('paste', function (e) {   // v4.8.0: a picture pasted while the canvas is open goes on the ad
       if (S.screen !== 'finetune' || !S.ed) { return; } var fx = forward(); if (!fx || !fx.sr.magic) return;
