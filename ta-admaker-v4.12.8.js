@@ -1,6 +1,17 @@
-/* ta-admaker-v4.12.7.js
+/* ta-admaker-v4.12.8.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.8 (26 Nov 2026, Ad Maker Build S4) — A FAILED SAVE CAN BE FIXED OR CANCELLED; PICTURES READ FROM img-main FIRST.
+     JS only; CSS v4.12.4.
+     1 Jeff, 26 Nov: after a failed save there was no way back, only "Back to All ads". The bar now has "Back to Final
+       check" (the screen before Save, nothing lost, so the link or anything else can be fixed and Save pressed again)
+       and a small "Cancel this ad" link (closes the job, back to the Task list). The bar says "Stopped at the red step"
+       and no longer claims nothing was written (Scenario 104 can create the row before a later module fails).
+       "Back to All ads" reads "Back to Task list" (the tab was renamed in v4.12.3).
+     2 Image Links S4d: ADS img-main is the one picture field. Every picture this page reads from an ADS row (versions,
+       Saved ads, the other shape on a fix, the save's own check) takes img-main first, then the old shape field.
+       The save's check accepts the picture in either field, compared by its Uploadcare file id (picOf, sameFile).
 
    v4.12.7 (26 Nov 2026, Ad Maker Build S4) — "CALL …" SAVES. JS only; CSS v4.12.4. Needs ix-perf v1.2.4.
      26 Nov: Save stopped at Scenario 104 module 201, "Invalid URL in parameter 'redirect-link'": Make takes only a
@@ -996,8 +1007,8 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.7', CSS_FILE = 'ta-admaker-v4.12.4.css';
-  var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.18 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
+  var VERSION = '4.12.8', CSS_FILE = 'ta-admaker-v4.12.4.css';
+  var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.19 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
   var ADVICE_BIGGER = 1.25;   // HC-P-SSB8-25
@@ -1031,6 +1042,17 @@
   var APPROVAL_WORDS = Object.assign({ pending: 'Pending', sentBack: 'Sent back', approved: 'Approved' }, CFG().adApprovalWords || {});   // HC-P-SSB5-7
   var SHAPE_SLUG = { banner: { link: 'banner-ad-link', approval: 'banner-approval' }, sidebar: { link: 'sidebar-ad-link', approval: 'sidebar-approval' },
                      splash: { link: 'splash-ad-link--get', approval: 'splash-approval' }, text: { link: 'short-text', approval: 'text-ad-approval' } };
+  function picOf(fd, sh) {   // v4.12.8: ADS img-main first (Image Links S4), then the shape's old field; a text ad's words as before
+    fd = fd || {}; var old = SHAPE_SLUG[sh] ? String(fd[SHAPE_SLUG[sh].link] || '').trim() : '';
+    if (sh === 'text') return old;
+    return String(fd['img-main'] || '').trim() || old;
+  }
+  function shapePic(fd, sh) {   // v4.12.8: the row's picture for this shape: its old field, or img-main when the row's Ad Type is this shape
+    fd = fd || {}; var old = String(fd[SHAPE_SLUG[sh].link] || '').trim(), t = adShapeOf(fd);
+    return t === sh ? picOf(fd, sh) : old;
+  }
+  function ucId(u) { var m = String(u || '').match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i); return m ? m[0].toLowerCase() : String(u || '').trim(); }
+  function sameFile(a, b) { return !!a && !!b && ucId(a) === ucId(b); }   // v4.12.8: the same Uploadcare file, however the link is written
   var SOURCE_MAX = 1600, READ_JPEG = 0.92;                             // HC-P-SSB5-10
   var SLOTS = [['headline', 'Headline'], ['headline2', 'Second headline'], ['supporting', 'Supporting line'], ['button', 'Button'], ['phone', 'Phone'], ['website', 'Website'], ['small_print', 'Small print'], ['business', 'Business name']];   // v2.7.0: + business
   var PIECES = [['logo', 'Logo'], ['headline', 'Headline'], ['supporting', 'Supporting line'], ['button', 'Button'], ['phone', 'Phone']];
@@ -1094,7 +1116,7 @@
     atLeastOne: 'Pick at least one banner or sidebar.', saves: 'Saves', editing: 'Editing', crop: 'Crop', dragPhoto: 'drag the photo', zoom: 'Zoom',
     resetCrop: 'Reset crop', separate: 'Separate the subject \u00b7 Coming', headline: 'Headline', sizes: 'Sizes', thisOnly: 'this shape only',
     checks: 'Checks', toSave: 'Save this one', saved: 'Saved', saving: 'Saving', keepOpen: 'Saving. Keep this tab open.',
-    savedMsg: 'Saved. The publisher can now review the shapes.', again: 'Back to All ads', pending: 'Pending',
+    savedMsg: 'Saved. The publisher can now review the shapes.', again: 'Back to Task list', pending: 'Pending',
     fixing: 'Fixing a sent-back shape', whatSave: 'What Save does', forRef: 'For reference: the',
     noteOnly: 'From a slot note', addInClients: 'Add the customer in CLIENTS', notInList: 'Not in the list?',
     sentNoNote: 'No note came with the send-back.', toolComing: 'are made in a tool that is coming soon. This item stays on the list until then, so nothing booked is missed.'
@@ -1419,7 +1441,7 @@
           var cid = adCustomerId(fd), c = custById(cid);
           out.push({ kind: 'sent', id: 'sent-' + it.id + '-' + sh, adId: it.id, title: c ? c.name : (fd.name || it.id), custId: cid, shape: sh, what: shapeLabel(sh),
                      q: String(fd['send-back-note'] || fd['feedback'] || '').trim() || W.sentNoNote, m: fd.name || '', when: it.lastUpdated || '',
-                     picture: fd[SHAPE_SLUG[sh].link] || '', recipe: fd['reformat-recipe'] || '', row: it, coming: false });
+                     picture: picOf(fd, sh), recipe: fd['reformat-recipe'] || '', row: it, coming: false });
         }
       });
     });
@@ -1430,7 +1452,7 @@
     if (!S.ads || !custId) return [];
     return S.ads.filter(function (it) { return adCustomerId(it.fieldData || {}) === custId && !(it.fieldData || {})['house-kind']; })
       .sort(function (a, b) { return String(b.createdOn || '').localeCompare(String(a.createdOn || '')); })
-      .map(function (it) { var fd = it.fieldData || {}; return { id: it.id, name: fd.name || it.id, banner: fd['banner-ad-link'] || '', sidebar: fd['sidebar-ad-link'] || '', splash: fd[SHAPE_SLUG.splash.link] || '', recipe: fd['reformat-recipe'] || '',
+      .map(function (it) { var fd = it.fieldData || {}; return { id: it.id, name: fd.name || it.id, banner: shapePic(fd, 'banner'), sidebar: shapePic(fd, 'sidebar'), splash: shapePic(fd, 'splash'), recipe: fd['reformat-recipe'] || '',
         bannerApproval: optName('banner-approval', fd['banner-approval']), sidebarApproval: optName('sidebar-approval', fd['sidebar-approval']), createdOn: it.createdOn || '' }; });
   }
   // "<Customer> · <Month Year>", then v2, v3 — counted against the rows that exist.
@@ -4565,6 +4587,9 @@
     return out;
   }
   // The ADS add-type option id for a shape, read live from the list's options (never typed here).
+  function adShapeOf(fd) {   // v4.12.8: the row's shape from its Ad Type label, '' when it says none
+    var t = String(optName('add-type', (fd || {})['add-type']) || ''); return /^banner/i.test(t) ? 'banner' : /^sidebar/i.test(t) ? 'sidebar' : /^splash/i.test(t) ? 'splash' : /^text/i.test(t) ? 'text' : '';
+  }
   function addTypeId(shape) { return optId('add-type', shape === 'banner' ? 'Banner Ad' : 'Sidebar Ad'); }
   function custWrites() {
     var c = cust(), fd = {}, what = [];
@@ -4641,12 +4666,12 @@
                 var e = r.j.fieldData || null, miss = [];
                 if (!e) throw new Error('Scenario 104 echoed no fieldData, so the row cannot be checked. Check Scenario 104\u2019s echo module.');
                 if (String(e['reformat-recipe'] || '').trim() !== recipe.trim()) miss.push('reformat-recipe');
-                if (!String(e[SHAPE_SLUG[sh].link] || '').trim()) miss.push(SHAPE_SLUG[sh].link);
+                if (!picOf(e, sh)) miss.push('img-main');
                 if (String(e[SHAPE_SLUG[sh].approval] || '') !== (sh === 'banner' ? pendB : pendS)) miss.push(SHAPE_SLUG[sh].approval);
                 if (String(e['add-type'] || '') !== addTypeId(sh)) miss.push('add-type');
                 if (miss.length) throw new Error('The row was created but Webflow did not keep ' + miss.join(', ') + '. Check Scenario 104\u2019s mapping for those fields.');
                 if (S.click && String(e['redirect-link'] || '').trim() !== S.click.url && !S.clickWarned) { S.clickWarned = true; toast('Saved, but the click link was not stored on the ADS row (redirect-link). Scenario 104 module 201 maps fields.redirectLink to Redirect Link - GO; check that mapping, or whether Webflow refused the link.', 'err'); }   // v4.6.2: told, not hidden
-                S.saving.rows.push({ name: name, id: r.j.adId || r.j.itemId || '', shape: sh, banner: sh === 'banner' ? e['banner-ad-link'] : '', sidebar: sh === 'sidebar' ? e['sidebar-ad-link'] : '' });
+                S.saving.rows.push({ name: name, id: r.j.adId || r.j.itemId || '', shape: sh, banner: sh === 'banner' ? picOf(e, 'banner') : '', sidebar: sh === 'sidebar' ? picOf(e, 'sidebar') : '' });
               }));
         });
       });
@@ -4706,7 +4731,7 @@
         : r.busy ? '<span class="am-note">' + esc(r.busy) + '</span>'
         : (r.approveErr ? '<span class="am-err inline">' + esc(r.approveErr) + '</span> ' : '') + '<button type="button" class="ix-btn ix-btn--secondary" data-act="approveRow" data-i="' + i + '" style="height:30px !important;padding:0 12px !important;font-size:12.5px !important;margin-top:6px">Approve &amp; make current</button> <button type="button" class="ix-btn ix-btn--secondary" data-act="approveRowHold" data-i="' + i + '" style="height:30px !important;padding:0 12px !important;font-size:12.5px !important;margin-top:6px">Approve &amp; hold</button> <span class="am-note">or leave it ' + APPROVAL_WORDS.pending + '; its card on All ads can send it for approval</span>') + '</div></div>'; }).join('') + '</div>';
     h += '</div>';
-    shell(h, barHTML(sv.done ? ((sv.outcome && ((sv.was && SAVE_WORDS.savedMsgSaved[sv.outcome]) || SAVE_WORDS.savedMsg[sv.outcome])) || W.savedMsg) : sv.err ? 'Stopped. Nothing after the failed step was written.' : W.keepOpen, (sv.done || sv.err) ? (sv.done && sv.outcome !== 'draft' && !sv.was ? btn('proofsPdf', 'Download the proofs PDF', 'secondary') + ' ' : '') + btn('again', W.again, 'secondary') + (sv.done && sv.outcome !== 'draft' && (S.shape === 'banner' || S.shape === 'sidebar') ? ' ' + btn('nextShape', 'Make the ' + (S.shape === 'banner' ? 'sidebar' : 'banner') + ' next', 'primary') : '') : ''), { right: null });
+    shell(h, barHTML(sv.done ? ((sv.outcome && ((sv.was && SAVE_WORDS.savedMsgSaved[sv.outcome]) || SAVE_WORDS.savedMsg[sv.outcome])) || W.savedMsg) : sv.err ? 'Stopped at the red step. Go back to fix it and Save again, or cancel this ad.' : W.keepOpen, (sv.done || sv.err) ? (sv.done && sv.outcome !== 'draft' && !sv.was ? btn('proofsPdf', 'Download the proofs PDF', 'secondary') + ' ' : '') + (sv.err && !sv.done ? '<a href="#" class="am-up" data-act="again" style="margin-right:14px">Cancel this ad</a>' + btn('saveBack', 'Back to Final check', 'primary') : btn('again', W.again, 'secondary')) + (sv.done && sv.outcome !== 'draft' && (S.shape === 'banner' || S.shape === 'sidebar') ? ' ' + btn('nextShape', 'Make the ' + (S.shape === 'banner' ? 'sidebar' : 'banner') + ' next', 'primary') : '') : ''), { right: null });
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -4719,7 +4744,7 @@
       var dz = canvaDesignOf(it.recipe);
       if (dz) { S.fix = null; S.shape = it.shape; canvaEditAgain({ id: it.adId, name: fd.name || '' }, { designId: dz, shape: it.shape }, { note: it.q }); return; }
     }
-    S.fix = { adId: it.adId, shape: it.shape, q: it.q, m: it.m, otherUrl: fd[SHAPE_SLUG[other].link] || '', otherApproval: optName(SHAPE_SLUG[other].approval, fd[SHAPE_SLUG[other].approval]), name: fd.name || '' };
+    S.fix = { adId: it.adId, shape: it.shape, q: it.q, m: it.m, otherUrl: picOf(fd, other), otherApproval: optName(SHAPE_SLUG[other].approval, fd[SHAPE_SLUG[other].approval]), name: fd.name || '' };
     if (!it.recipe) { toast('This version has no recipe (made before Ad Maker), so it cannot be rebuilt here. Start a new ad from a version instead.', 'err'); if (jobFor(it.id) === S) doClose(S); return; }
     var r; try { r = IxAdLayouts.recipe.parse(it.recipe); } catch (e) { toast('The recipe cannot be read: ' + e.message, 'err'); if (jobFor(it.id) === S) doClose(S); return; }
     if (r[it.shape] && r[it.shape].magic) { restoreKit(r, it.shape); return; }   // v4.10.0: a parts-kit ad comes back editable (Save writes a new version)
@@ -4755,7 +4780,7 @@
           fetchJson(cfg.makeStudio, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (res) {
             if (!res.ok || !res.j || res.j.ok !== true) throw new Error('Scenario G did not confirm the update.' + said(res));
             var e = res.j.fieldData || {}, miss = [];
-            if (String(e[SHAPE_SLUG[sh].link] || '') !== media.up.cdnUrl) miss.push(SHAPE_SLUG[sh].link);
+            if (!sameFile(picOf(e, sh), media.up.cdnUrl)) miss.push('img-main');
             if (String(e[SHAPE_SLUG[sh].approval] || '') !== pend) miss.push(SHAPE_SLUG[sh].approval);
             if (String(e['reformat-recipe'] || '').trim() !== recipe.trim()) miss.push('reformat-recipe');
             if (miss.length) throw new Error('Webflow did not keep ' + miss.join(', ') + '. Does Scenario G have the updateAd route?');
@@ -5084,7 +5109,7 @@
       if (!fromV && !addT) { toast('The ADS add-type field has no choice for ' + shapeLabel(sh) + ', so nothing was saved.', 'err'); return; }
     }
     var who = what === 'send' ? sendToWho() : null, toName = who ? (cv.to === 'test' ? who.testName : who.pubName) : '';
-    S.screen = 'save'; S.saving = { steps: [], rows: [], done: false, err: '', head: (ex ? SAVE_WORDS.head2Saved : SAVE_WORDS.head2)[what] + (sh === 'splash' ? ' (no approval field for splash)' : ''), outcome: what, was: !!ex }; render();
+    S.screen = 'save'; S.saving = { from: 'check', steps: [], rows: [], done: false, err: '', head: (ex ? SAVE_WORDS.head2Saved : SAVE_WORDS.head2)[what] + (sh === 'splash' ? ' (no approval field for splash)' : ''), outcome: what, was: !!ex }; render();
     var name = ex ? ex.name : fromV ? fromV.name : versionName(c, 1, sh), label = shapeLabel(sh) + ' · ' + name, up = null, mediaId = null, row = null;
     var designId = ex ? (ex.designId || '') : (cv.job ? cv.job.designId : ''), recipe = ex ? '' : canvaRecipe(cv), chain = Promise.resolve();
     function rowOf(id, link) { row = { name: name, id: id, shape: sh, noApproval: sh === 'splash', banner: sh === 'banner' ? link : '', sidebar: sh === 'sidebar' ? link : '', splash: sh === 'splash' ? link : '', designId: designId }; S.saving.rows.push(row); }
@@ -5102,7 +5127,7 @@
           fetchJson(cfg.makeStudio, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (res) {
             if (!res.ok || !res.j || res.j.ok !== true) throw new Error('Scenario G did not confirm the update.' + said(res));
             var e = res.j.fieldData || {}, miss = [];
-            if (String(e[SHAPE_SLUG[sh].link] || '') !== up.cdnUrl) miss.push(SHAPE_SLUG[sh].link);
+            if (!sameFile(picOf(e, sh), up.cdnUrl)) miss.push('img-main');
             if (String(e[SHAPE_SLUG[sh].approval] || '') !== pend) miss.push(SHAPE_SLUG[sh].approval);
             if (String(e['reformat-recipe'] || '').trim() !== recipe.trim()) miss.push('reformat-recipe');
             if (miss.length) throw new Error('Webflow did not keep ' + miss.join(', ') + '. Does Scenario G have the updateAd route?');
@@ -5121,11 +5146,11 @@
               var e = r.j.fieldData || null, miss = [], id = r.j.adId || r.j.itemId || '';
               if (!e) throw new Error('Scenario 104 echoed no fieldData, so the row cannot be checked.');
               if (String(e['reformat-recipe'] || '').trim() !== recipe.trim()) miss.push('reformat-recipe');
-              if (!String(e[SHAPE_SLUG[sh].link] || '').trim()) miss.push(SHAPE_SLUG[sh].link);
+              if (!picOf(e, sh)) miss.push('img-main');
               if (pend && String(e[SHAPE_SLUG[sh].approval] || '') !== pend) miss.push(SHAPE_SLUG[sh].approval);
               if (miss.length) throw new Error('The row was created but Webflow did not keep ' + miss.join(', ') + '. Check Scenario 104’s mapping for those fields.');
               if (!id && what !== 'plain') throw new Error('Scenario 104 created the row but answered no id, so it cannot be sent or approved from here. It is saved as ' + APPROVAL_WORDS.pending + '; use its card on All ads.');
-              rowOf(id, e[SHAPE_SLUG[sh].link]);
+              rowOf(id, picOf(e, sh));
             }));
       }).then(function () { var cw = custWrites(); if (cw.what.length) return run(step('Saving the ' + cw.what.join(', ') + ' to the customer', 'Scenario 114'), write114(cw.fd, 'save')); });
       if (designId) chain = chain.then(function () { return run(step(SAVE_WORDS.step.sent, 'ix-canva'), canvaMark(designId, 'sent', row.id, true)); });
@@ -5374,7 +5399,7 @@
   function adsCanvaVersions() {   // design id → { adId, shape, approved } for every ADS row on this page made in Canva
     var out = {};
     (S.ads || []).forEach(function (it) { var fd = it.fieldData || {}, rc = fd['reformat-recipe']; if (!isCanvaRecipe(rc)) return; var o = null; try { o = JSON.parse(rc); } catch (e) {} if (!o || !o.designId) return;
-      var sh = o.shape || (fd['sidebar-ad-link'] ? 'sidebar' : 'banner'), ap = SHAPE_SLUG[sh] ? optName(SHAPE_SLUG[sh].approval, fd[SHAPE_SLUG[sh].approval]) : '';
+      var sh = o.shape || adShapeOf(fd) || (fd['sidebar-ad-link'] ? 'sidebar' : 'banner'), ap = SHAPE_SLUG[sh] ? optName(SHAPE_SLUG[sh].approval, fd[SHAPE_SLUG[sh].approval]) : '';
       out[o.designId] = { adId: it.id, shape: sh, approved: approvedWord(ap) }; });
     return out;
   }
@@ -5772,6 +5797,7 @@
       case 'whatCancel': if (S.canva) { S.canva.what = null; S.canva.to = ''; render(); } break;
       case 'szCancel': each(function (x) { x.sr.sizes[t.getAttribute('data-k')] = 1; }); render(); break;
       case 'doSave': S.clickWarned = false; doSave(); break;
+      case 'saveBack': { var fromSv = S.saving && S.saving.from; S.saving = null; S.screen = fromSv || 'save'; render(); break; }   // v4.12.8: back to the screen before Save
       case 'cvTick': { var cvk = t.getAttribute('data-v'); canvaTicked(); S.canva.ticks[cvk] = !S.canva.ticks[cvk]; render(); } break;   // v4.11.0
       case 'cvCopy': { var ctx0 = canvaWordsText(); (navigator.clipboard ? navigator.clipboard.writeText(ctx0) : Promise.reject()).then(function () { toast(CANVA_WORDS.copied, 'ok'); }, function () { toast('Could not copy. Select the list and copy it by hand.', 'err'); }); } break;
       case 'cvGo': canvaGo(); break;
