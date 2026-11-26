@@ -1,10 +1,15 @@
-// ix-sales-v1.3.18.js
+// ix-sales-v1.3.19.js
 // INBXIFY · Cloudflare Worker · ix-sales
 // SALES RECORDS and OBLIGATIONS: the one place the rules live. The portal
 // (S2) and Studio (S3) both call this; the Revenue Picker (S4) and Scenario
 // 108 (S5) call it too. Scoping: Sales-Records-Obligations-Scoping-v0_7.md.
 // Since v1.3.0 also the portal's Ads tab and the advertiser review page.
 //
+// v1.3.19 (26 Nov 2026, Ad Maker Build S4) — AD PICTURES READ FROM ADS img-main FIRST (Image Links S4d).
+//   adPicture() (the approval email and the /review page) takes img-main, then the shape's old field. POST /ads/delete
+//   collects img-main with the old fields, so its picture file and MEDIA row are still found once the old fields go.
+//   The board's version pictures already come from ix-issue-data /customer-ads, which reads img-main first.
+//   No schema change. No new variable or binding.
 // v1.3.18 (25 Nov 2026, Ad Maker Build S4) — A SEND-BACK CARRIES THE ADVERTISER'S WORDS UNDER THE PUBLISHER'S NOTE.
 //   Ruling (Jeff, 25 Nov, by voice): when the advertiser has answered and the publisher sends the ad back, the note inbxify
 //   sees holds both, the publisher's note on top, so the publisher does not copy and paste.
@@ -423,7 +428,7 @@
 //           month falls back to the calendar month end.
 // ============================================================
 
-const VERSION = '1.3.18';
+const VERSION = '1.3.19';
 // v1.3.16 the obligations table sections, in order (HC-P-PP14-1)
 const SECTIONS = [{ key: 'needs', label: 'Needs you' }, { key: 'running', label: 'Running now' }, { key: 'later', label: 'Starting later' }, { key: 'ended', label: 'Ended' }];
 // v1.3.7 · CUSTOMERS slugs that make up a customer's brand record (HC-P-AMB1-1)
@@ -457,7 +462,7 @@ const JOIN = {
   plan: { ta: 'title-admin', date: 'publication-date', status: 'planning-status' },
   nl: { plan: 'publication-plan', ta: 'sector', volume: 'send-volume' },
   ad: { customer: 'associated-advertiser', titles: 'titles', type: 'add-type', status: 'status', isDefault: 'default-for-shape',
-        banner: 'banner-ad-link', sidebar: 'sidebar-ad-link', splash: 'splash-ad-link--get', companion: 'companion-sidebar' },
+        banner: 'banner-ad-link', sidebar: 'sidebar-ad-link', splash: 'splash-ad-link--get', companion: 'companion-sidebar', img: 'img-main' },   // v1.3.19: img (Image Links S4)
   product: { soldBy: 'sold-by', shape: 'slot-shape', titles: 'titles' },
   customer: { titles: 'associated-titles' },                            // v1.2.0, same slug ix-issue-data reads
 };
@@ -1582,7 +1587,7 @@ const APPROVAL_WORDS = {
 const MAIL_SUBJECT_MAX = 200, MAIL_MESSAGE_MAX = 4000;                    // HC-P-AMS3-2 · v1.3.10
 const MAIL_PROOF = 'ix-mail:';                                         // HC-P-AMS3-3 · the same prefix ix-members checks
 // the ADS picture link per shape is JOIN.ad's (banner, sidebar, splash); read off the row itself, so a version saved a second ago has its picture
-function adPicture(ad, shape) { const v = ad && JOIN.ad[shape] ? String(fd(ad)[JOIN.ad[shape]] || '').trim() : ''; return /^https?:\/\//.test(v) ? v : ''; }
+function adPicture(ad, shape) { if (!ad) return ''; const f = fd(ad), img = shape !== 'text' ? String(f[JOIN.ad.img] || '').trim() : '', v = img || (JOIN.ad[shape] ? String(f[JOIN.ad[shape]] || '').trim() : ''); return /^https?:\/\//.test(v) ? v : ''; }   // v1.3.19: img-main first
 const PUB_FIELDS = { person: 'Contact Name', email: 'Business Email', logo: 'Publisher Logo' };       // PUBLISHERS display names, slugs read from the schema
 
 function reviewCfg(run) { return Object.assign({}, REVIEW_DEFAULTS, (run.cfg.review && typeof run.cfg.review === 'object') ? run.cfg.review : {}); }
@@ -2087,7 +2092,7 @@ async function deleteAd(run, b) {                                     // v1.3.12
   const v = (await versionsFor(run, new Set([ctx.cust])))[ctx.cust] || {};
   const ran = Object.keys(v.versions || {}).some(k => (v.versions[k] || []).some(x => x.id === adId && x.runLog && (x.runLog.from || x.runLog.to)));
   if (ran) throw httpErr(409, 'The Run Log shows this ad has run. An ad that ran is kept.');
-  const pictures = [A.banner, A.sidebar, A.splash].map(k => { const x = f[k]; return String((x && x.url) || x || ''); }).filter(u => /^https?:/.test(u));
+  const pictures = [A.img, A.banner, A.sidebar, A.splash].map(k => { const x = f[k]; return String((x && x.url) || x || ''); }).filter(u => /^https?:/.test(u));
   const kept = [];
   // 1 · stop every link that is only about this ad
   let links = 0;
