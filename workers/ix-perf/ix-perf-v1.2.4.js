@@ -1,6 +1,13 @@
-// ix-perf-v1.2.3.js
+// ix-perf-v1.2.4.js
 // INBXIFY · Cloudflare Worker · ix-perf · the performance collector and its reads
 //
+// v1.2.4 (26 Nov 2026, Ad Maker Build S4) — GET /call/<number>: A PHONE NUMBER AS A WEB ADDRESS.
+//   Ad Maker's "Call …" choice for where a click goes was a tel: link, and Scenario 104 (Make's Webflow module) refuses
+//   anything but a web address in ADS redirect-link ("Invalid URL", 26 Nov). Ad Maker now stores
+//   https://localtap.link/call/+12015551234 and this route sends the reader on to tel:+12015551234 (302). Only a
+//   phone number is accepted: an optional "+" then 7 to 15 digits; anything else is 404. So it cannot be used to send
+//   anyone elsewhere. Being a web address, an email click on it is also counted by /r like any other ad link.
+//   HC-P-AMS4-4. No schema change. No new variable or binding. Every other route is unchanged.
 // v1.2.3 (24 Nov 2026, Performance Report S5) — EDITIONS: A SOURCE'S REPORT AND OUR COUNT SIDE BY SIDE, AND EVERY
 //   COUNTED ROW OF AN EDITION ON THE SCREEN (Jeff, 24 Nov: "have our counts side by side and persist alongside
 //   anything else"; and yes to closing the gaps so that Site plus Editions accounts for every row in Raw counts).
@@ -299,7 +306,7 @@
 //     HC-P-PR2-3 the default origins and zone; HC-P-PR2-4 the size limits and field lengths; HC-P-PR2-5 the
 //     one-minute status stamp.
 
-const VERSION = '1.2.3';
+const VERSION = '1.2.4';
 const DEF_SEEN = { ratio: 0.5, ms: 500 };                                   // HC-P-PR2-2
 const DEF_ORIGINS = ['https://inbxify.com', 'https://www.inbxify.com'];     // HC-P-PR2-3
 const DEF_TZ = 'America/New_York';                                          // HC-P-PR2-3
@@ -1436,6 +1443,11 @@ export default {
     if (url.pathname.indexOf('/r/') === 0 && (request.method === 'GET' || request.method === 'HEAD')) {         // v1.2.1
       const rm = R_PATH.exec(url.pathname);
       return rm ? clickRoute(rm, request, env, ctx) : plainPage(404, '<p>' + R_WORDS.gone + '</p>');
+    }
+    if (url.pathname.indexOf('/call/') === 0 && (request.method === 'GET' || request.method === 'HEAD')) {     // v1.2.4 · HC-P-AMS4-4
+      const num = decodeURIComponent(url.pathname.slice(6)).replace(/[\s().-]/g, '');
+      if (!/^\+?\d{7,15}$/.test(num)) return plainPage(404, '<p>This is not a phone number.</p>');
+      return new Response(null, { status: 302, headers: { Location: 'tel:' + num, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
     }
     if (url.pathname === '/o' && (request.method === 'GET' || request.method === 'HEAD')) {                    // v1.1.5
       if (request.method === 'GET') {       // a HEAD is a link checker, not an open
