@@ -1,6 +1,10 @@
-/* ta-admaker-v4.12.9.js
+/* ta-admaker-v4.12.10.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.10 (26 Nov 2026, Ad Maker Build S4) — WORDS: "ALL ADS" IS NOW "TASK LIST" EVERYWHERE ON SCREEN. JS only; CSS v4.12.4.
+     Test 8 (26 Nov) showed "its card on All ads can send it for approval" after a save; the tab was renamed in v4.12.3.
+     The four messages that still named it now say Task list.
 
    v4.12.9 (26 Nov 2026, Ad Maker Build S4) — AD MAKER STAYS CLICKABLE AFTER "+ NEW AD"; THE AD MAKER TILE STARTS AN AD.
      JS only; CSS v4.12.4.
@@ -1017,7 +1021,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.9', CSS_FILE = 'ta-admaker-v4.12.4.css';
+  var VERSION = '4.12.10', CSS_FILE = 'ta-admaker-v4.12.4.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.19 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -4739,7 +4743,7 @@
         : r.outcome === 'hold' ? '<span class="am-flag ok" style="background:#E6F2EC !important">' + esc(SW2.rowHold) + '</span>'
         : r.outcome === 'sent' ? '<span class="am-flag ok" style="background:#E6F2EC !important">' + esc(fillW(r.sentTest ? SW2.rowSentTest : SW2.rowSent, { to: r.sentTo, days: r.days || 14 })) + '</span>'
         : r.busy ? '<span class="am-note">' + esc(r.busy) + '</span>'
-        : (r.approveErr ? '<span class="am-err inline">' + esc(r.approveErr) + '</span> ' : '') + '<button type="button" class="ix-btn ix-btn--secondary" data-act="approveRow" data-i="' + i + '" style="height:30px !important;padding:0 12px !important;font-size:12.5px !important;margin-top:6px">Approve &amp; make current</button> <button type="button" class="ix-btn ix-btn--secondary" data-act="approveRowHold" data-i="' + i + '" style="height:30px !important;padding:0 12px !important;font-size:12.5px !important;margin-top:6px">Approve &amp; hold</button> <span class="am-note">or leave it ' + APPROVAL_WORDS.pending + '; its card on All ads can send it for approval</span>') + '</div></div>'; }).join('') + '</div>';
+        : (r.approveErr ? '<span class="am-err inline">' + esc(r.approveErr) + '</span> ' : '') + '<button type="button" class="ix-btn ix-btn--secondary" data-act="approveRow" data-i="' + i + '" style="height:30px !important;padding:0 12px !important;font-size:12.5px !important;margin-top:6px">Approve &amp; make current</button> <button type="button" class="ix-btn ix-btn--secondary" data-act="approveRowHold" data-i="' + i + '" style="height:30px !important;padding:0 12px !important;font-size:12.5px !important;margin-top:6px">Approve &amp; hold</button> <span class="am-note">or leave it ' + APPROVAL_WORDS.pending + '; its card on the Task list can send it for approval</span>') + '</div></div>'; }).join('') + '</div>';
     h += '</div>';
     shell(h, barHTML(sv.done ? ((sv.outcome && ((sv.was && SAVE_WORDS.savedMsgSaved[sv.outcome]) || SAVE_WORDS.savedMsg[sv.outcome])) || W.savedMsg) : sv.err ? 'Stopped at the red step. Go back to fix it and Save again, or cancel this ad.' : W.keepOpen, (sv.done || sv.err) ? (sv.done && sv.outcome !== 'draft' && !sv.was ? btn('proofsPdf', 'Download the proofs PDF', 'secondary') + ' ' : '') + (sv.err && !sv.done ? '<a href="#" class="am-up" data-act="again" style="margin-right:14px">Cancel this ad</a>' + btn('saveBack', 'Back to Final check', 'primary') : btn('again', W.again, 'secondary')) + (sv.done && sv.outcome !== 'draft' && (S.shape === 'banner' || S.shape === 'sidebar') ? ' ' + btn('nextShape', 'Make the ' + (S.shape === 'banner' ? 'sidebar' : 'banner') + ' next', 'primary') : '') : ''), { right: null });
   }
@@ -5020,7 +5024,7 @@
     head2: { draft: 'Kept as a draft in Canva', send: '1 version saved and sent for approval', current: '1 version saved, approved and made current', hold: '1 version saved, approved and held', plain: '1 version saved' },
     head2Saved: { send: 'Sent for approval', current: 'Approved and made current', hold: 'Approved and held', plain: 'Saved' },
     savedMsgSaved: { send: 'Sent. The decision comes back by email.', current: 'Approved and running.', hold: 'Approved. The current ad keeps running.' },
-    draftDone: 'The design is in Canva, in {customer}’s folder. It is listed under Drafts in Canva on All ads, with Edit in Canva and Check and save.',
+    draftDone: 'The design is in Canva, in {customer}’s folder. It is listed under Drafts in Canva on the Task list, with Edit in Canva and Check and save.',
     draftDoneFix: 'Your changes stay in Canva. The saved ad still shows its earlier picture until you save it here.',
     rowSent: 'Approval email sent to {to}. The link works for {days} days.', rowSentTest: 'Test approval email sent to {to}. Approving from it counts.',
     rowCurrent: 'Approved by inbxify for the publisher · the customer’s current {shape}', rowHold: 'Approved by inbxify for the publisher · held, not running',
@@ -5159,7 +5163,7 @@
               if (!picOf(e, sh)) miss.push('img-main');
               if (pend && String(e[SHAPE_SLUG[sh].approval] || '') !== pend) miss.push(SHAPE_SLUG[sh].approval);
               if (miss.length) throw new Error('The row was created but Webflow did not keep ' + miss.join(', ') + '. Check Scenario 104’s mapping for those fields.');
-              if (!id && what !== 'plain') throw new Error('Scenario 104 created the row but answered no id, so it cannot be sent or approved from here. It is saved as ' + APPROVAL_WORDS.pending + '; use its card on All ads.');
+              if (!id && what !== 'plain') throw new Error('Scenario 104 created the row but answered no id, so it cannot be sent or approved from here. It is saved as ' + APPROVAL_WORDS.pending + '; use its card on the Task list.');
               rowOf(id, picOf(e, sh));
             }));
       }).then(function () { var cw = custWrites(); if (cw.what.length) return run(step('Saving the ' + cw.what.join(', ') + ' to the customer', 'Scenario 114'), write114(cw.fd, 'save')); });
@@ -5172,7 +5176,7 @@
     });
     if (what === 'current' || what === 'hold') chain = chain.then(function () {
       return run(step(fillW(SAVE_WORDS.step[what], { shape: low }), 'ix-sales · Scenario G' + (what === 'current' ? ' · 114' : '')), salesCall('/ads/' + encodeURIComponent(row.id) + '/decide', { publisher: pub, shape: sh, action: what === 'current' ? 'approve-current' : 'approve-hold', as: 'inbxify' }, 'Approving ' + name))
-        .then(function (j) { if ((j.unconfirmed || []).length) throw new Error('ix-sales answered, but Webflow did not confirm ' + j.unconfirmed.join(', ') + '. Open the customer on All ads and check the ' + low + '.'); row.outcome = what; row.current = what === 'current'; })
+        .then(function (j) { if ((j.unconfirmed || []).length) throw new Error('ix-sales answered, but Webflow did not confirm ' + j.unconfirmed.join(', ') + '. Open the customer on the Task list and check the ' + low + '.'); row.outcome = what; row.current = what === 'current'; })
         .then(function () { if (designId) return run(step(SAVE_WORDS.step.approved, 'ix-canva'), canvaMark(designId, 'approved', row.id, true)); });
     });
     if (!fromV) chain = chain.then(function () {   // v4.12.0: the saved ad answers the publisher's open requests for this shape
