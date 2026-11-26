@@ -1,21 +1,18 @@
 // ix-issue-data-v1.0.214.js
-// v1.0.214 (26 Nov 2026, Sponsored Label S1): THE PAID LABEL, WORKED OUT IN ONE PLACE.
-//   Jeff's rulings, 25 and 26 Nov: a paid article reads "Sponsored by <customer>" ("Paid for by" goes) in the email,
-//   the web issue and on the article page. The words are set per PUBLISHER, not per title. A publisher that sets
-//   nothing gets the platform default. A franchise or block sponsor keeps "Presented by" (30 Oct): not touched here.
-//   1 · paidLabelOf(): PUBLISHERS settings-json "labels": { "sponsored": "<words>" } (stored the way siteAds is,
-//       Jeff 26 Nov), else the platform token label-sponsored from the title's token file chain (TITLES-ADMIN
-//       email-tokens-file, ix/email-tokens-v24 or later: "Sponsored by"). Answers { words, from }, from =
-//       publisher, platform or none. No words are typed in this file.
-//   2 · /assemble (and everything built on assembleIssue): both bodies' context gain labelSponsored (the words) and
-//       labelSponsoredFrom. newsletter-render v1.25.0 prints them as ctx.label-sponsored before the buyer's name.
-//       A problem (bad JSON, a token chain with no label) is a warning only when the issue holds a paid block.
-//   3 · /site?article=: a paid article's site.article.paid gains label and labelFrom, read the same way (the
-//       title's TITLES-ADMIN, its publisher). ix-article v1.0.19 prints "<label> <buyer>". A sponsored article is
-//       unchanged. Problems go to site.problems. The kept page copy refreshes when the page is next rebuilt.
-//   /health says 1.0.214. Nothing else changed.
-//   HARDCODING (provisional): HC-P-SL1-1 PAID_LABEL (the settings-json key "labels", the entry "sponsored" and
-//   the token name label-sponsored). Closes HC-P-PAE-1 (the words typed into 13 templates).
+// v1.0.214 (26 Nov 2026, Image Links S4d): ADS PICTURES ARE img-main ONLY; THE ONE-TIME ADS ROUTES ARE GONE.
+//   Jeff, 26 Nov: every ADS picture is in img-main (backfill report 26 Nov: nothing left to write), Ad Maker
+//   (ta-admaker v4.12.8, ix-sales v1.3.19) reads img-main, and the old picture fields are to be deleted.
+//   1 · adPicture(fd, shape) answers img-main when the row's Ad Type is that shape, is House Ad or cannot be
+//       told; else ''. There is no fallback to banner-ad-link, sidebar-ad-link or splash-ad-link--get.
+//       adMainPicture(fd) is img-main. shapeContent and shapeContentAny read every picture shape through it.
+//   2 · The splash takes up to two Splash house rows, oldest first, one picture each (img-main). The
+//       splash-ad-link-2---get second picture is gone (it is now its own row, WLN House · Splash 2).
+//   3 · /ads-image-backfill (report, ?do=rename, ?do=backfill), ADS_IMG_REPORT and ADS_RENAME are removed, with
+//       their helpers. JOIN.ad loses bannerLink, splashLink and splashLink2; SITE_ADS loses sidebarLink; the
+//       unused houseSplashOf() is removed. The settings check now asks only that ADS has img-main.
+//   CLEANUP_KEY and WEBFLOW_WRITE_TOKEN are no longer needed by any ADS route; delete them once this is live.
+//   HARDCODING: HC-P-IL4-1 and HC-P-IL4-3 deleted with their code; HC-P-IL4-2 closed (AD_PICTURE keeps img-main,
+//   add-type and the type labels to shapes, as HC-P-URL1-1). /health says 1.0.214.
 //
 // v1.0.213 header follows.
 // ix-issue-data-v1.0.213.js
@@ -1061,7 +1058,7 @@
 //         ads[]      { adId, adName, customerId, advertiser, banner, sidebar, sidebarAdId, link, placements }
 //                    one per ADS row placed in the issue (house ads left out). banner and sidebar are filled
 //                    only when ADS banner-approval / sidebar-approval reads Approved (ruled 3 Nov: no
-//                    temporary rule, no show-sidebar switch). The sidebar is the row's sidebar-ad-link, else
+//                    temporary rule, no show-sidebar switch). The sidebar is the row's img-main (Sidebar Ad), else
 //                    its companion-sidebar row's. category is the customer's CUSTOMERS `section` reference.
 //         lead       the adId of the first ad in issue order (HC-P-ROT-1), null when that is a house ad.
 //         sponsors   { <PRODUCT LIBRARY slug>: entry + { source, franchise, bandColor } }: an Active
@@ -4370,7 +4367,7 @@
 const ARTICLE_FORMATS = { 'standard': 'standard', 'photo-essay': 'photo-essay', 'video': 'video' };
 // v1.0.106: the photo essay treatment when the article names none. HC-P-CB-20.
 const DEFAULT_TREATMENT = 'polaroid';
-const VERSION = '1.0.214';   // v1.0.214 (paid label: PUBLISHERS settings-json labels.sponsored, else the platform token);   // v1.0.213 (ADS img-main first; one splash picture per row; rename and backfill);   // v1.0.212 (/ads-image-backfill, read-only report);   // v1.0.211 (our click links on /email-html);   // v1.0.210 (revenue-done; section.franchiseId);   // v1.0.208 (Compile hold and PF backfill read the home tables from D1);   // v1.0.207 (REAL ESTATE read img-main only; /re-image-backfill removed);   // v1.0.206 (REAL ESTATE img-main read first; /re-image-backfill);   // v1.0.205 (EVENTS read img-main only; /event-image-backfill removed);   // v1.0.204 (a franchise is named by its PRODUCT LIBRARY Name everywhere on the site);   // v1.0.203 (comments: the email-art pair with newsletter-render);   // v1.0.202 (EVENTS img-main; /event-image-backfill);   // v1.0.201 (main-image no longer read);   // v1.0.200 (PF Backfill reads the saved pages); v1.0.199   // v1.0.199 (the headshot is cut as a circle);   // v1.0.198 (/assemble on the read switch); v1.0.197   // v1.0.197 (published-version rule: dates first); v1.0.196   // v1.0.196 (site compare: each side, probe);    // v1.0.195 (public pages on the read switch: "site");   // v1.0.194 (/quill-status and /article-print on the read switch);   // v1.0.193 (franchise sponsor from ix-sales /sponsors: /site-ads and /site?franchise=);   // v1.0.192 (every picture handed out is sized where it is shown);   // v1.0.191 (/plans counts a clone's items as the IPP rail does);   // v1.0.190   // v1.0.190 (/links, /greeting-context, /release-check on the read switch);   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
+const VERSION = '1.0.214';   // v1.0.214 (ADS img-main only; one-time ADS routes gone);   // v1.0.213 (ADS img-main first; one splash picture per row; rename and backfill);   // v1.0.212 (/ads-image-backfill, read-only report);   // v1.0.211 (our click links on /email-html);   // v1.0.210 (revenue-done; section.franchiseId);   // v1.0.208 (Compile hold and PF backfill read the home tables from D1);   // v1.0.207 (REAL ESTATE read img-main only; /re-image-backfill removed);   // v1.0.206 (REAL ESTATE img-main read first; /re-image-backfill);   // v1.0.205 (EVENTS read img-main only; /event-image-backfill removed);   // v1.0.204 (a franchise is named by its PRODUCT LIBRARY Name everywhere on the site);   // v1.0.203 (comments: the email-art pair with newsletter-render);   // v1.0.202 (EVENTS img-main; /event-image-backfill);   // v1.0.201 (main-image no longer read);   // v1.0.200 (PF Backfill reads the saved pages); v1.0.199   // v1.0.199 (the headshot is cut as a circle);   // v1.0.198 (/assemble on the read switch); v1.0.197   // v1.0.197 (published-version rule: dates first); v1.0.196   // v1.0.196 (site compare: each side, probe);    // v1.0.195 (public pages on the read switch: "site");   // v1.0.194 (/quill-status and /article-print on the read switch);   // v1.0.193 (franchise sponsor from ix-sales /sponsors: /site-ads and /site?franchise=);   // v1.0.192 (every picture handed out is sized where it is shown);   // v1.0.191 (/plans counts a clone's items as the IPP rail does);   // v1.0.190   // v1.0.190 (/links, /greeting-context, /release-check on the read switch);   // v1.0.189 (/clone-rows on the read switch; compare covers it and reads sets as sets); v1.0.188 (open picture on /email-html);   // v1.0.187 (ad ids for the collector; sponsor link; RE tags; /site issue.id);   // v1.0.186 (/site-ads houses[]); v1.0.185 (franchises[]);   // v1.0.184 (contentHome.reads switch; one title per home read; /read-compare);   // v1.0.183 (lightBlock receives tagLink);   // v1.0.182 (no tracking tags on tel:, mailto: and other non-web links);   // v1.0.181 (blockFields names the greeting words)   // v1.0.180 (blockFields.designJson, allocFields, allocations[].version)   // v1.0.179 (blockFields names every field Layout writes)   // v1.0.177 (phone and email links count as working links on /links)   // v1.0.176 (D1 version on every NL-BLOCKS row of /plan-board)   // v1.0.175 (D1 copy for /plan-board and /plans; planner wait 20 s)   // v1.0.174 (article tile facts on /plan-board)   // v1.0.173 (paid from the article; pin in place)   // v1.0.172 (/customer-ads: staff login or key; customers=; archived=1; runLog); v1.0.171 (sent plans refuse at /release-check); v1.0.170 (IX_SERVICE_KEY, keyOk)   // v1.0.169 (planner reads wait 8 s at most; /plan-board NEWSLETTER from the plan);   // v1.0.168 (/release-check: plan's newsletter-item-id, no waits, 20 s budget; slot name);   // v1.0.167 (frames with a size; Wide; site cards from the Wide frame);   // v1.0.166 (positioned crops from MEDIA image-recipe; /media?photo=1);   // v1.0.165 (list design follows the count at read time);   // v1.0.164 (clone re-fits a list design to the kept count);   // v1.0.163 (nav never served from the page cache);   // v1.0.162 (/site sections[]; nav target sections);   // v1.0.161 (/archives articles[].expert);   // v1.0.160 (Find items carry title, text, business, hasLink);   // v1.0.159 (current rows carry title, text, link);   // v1.0.158 (/customer-ads returns the customer's switches);   // v1.0.157 (/current-ads-fill removed; /customer-ads without a customer gives the option lists);   // v1.0.156 (LBP Rich Text marks an LBP);   // v1.0.155 (fill dry run: inventory of every ad row's fields);   // v1.0.154 (email in-article ads read the current banner; LBP rows and Archived versions hold no shape; fill skip=);   // v1.0.153 (fill takes the newest live row of the shape; ADS status not read);   // v1.0.152 (ADS customer read as one id or the first of a list; fill report says why);   // v1.0.151 (current ad per shape on CUSTOMERS; /customer-ads; /current-ads-fill; site approval filter and companion chain retired);   // v1.0.150 (subscribe on /form; /site title.adminId and title.home);   // v1.0.149 (missed[] 4 to 6 weeks back);   // v1.0.148 (missed[] on /site?article=);   // v1.0.147 (/site title.favicon from TITLES);   // v1.0.146 (/archives sections[] with franchise pages; ad pictures sized; eyebrow optional);   // v1.0.145 (house button link and text as the email: house-button-link, else the token default);   // v1.0.144 (site banners only when Approved; no default-paid-ad fallback on the site);   // v1.0.143 (no competitor category on /site-ads or /site?article=);   // v1.0.142 (/site-ads, /site-ads-drop; customer ids on article sponsor and paid);   // v1.0.141 (byline switches on /assemble; business is the switch alone);   // v1.0.140 (/quill-status next);   // v1.0.139 (/quill-status);   // v1.0.138 (step labelled Release, release stamp only; /plans released);   // v1.0.137 (clone keeps the source's masthead-to-send gap);   // v1.0.136 (statusLabel, cloneOpen on /plans; PNAC no longer outranks the ticks; old "yes" is not a copied item);   // v1.0.135 (clone only from the first edition, compiled and current; /plans cloneFrom); v1.0.134 (clone only from a compiled issue; splash and sponsors always confirmed); v1.0.133 (publish.fields.clonePending; /assemble always fresh); v1.0.132 (clone copies everything, marks each copied item to confirm, copies the NEWSLETTER fields); v1.0.131 (franchise band fields on newsletter blocks); v1.0.129 (clean-up writes with its own temporary WEBFLOW_WRITE_TOKEN); v1.0.128 (clean-up alts: no file names, MEDIA found by photo, every alt listed); v1.0.127 (clean-up: report open, write behind CLEANUP_KEY); v1.0.126 (/image-fields-cleanup, one-time); v1.0.125 (/site?article= carries image); v1.0.124 (photo essay gallery sized: ASM.uc.gallery); v1.0.123 (article pictures sized at delivery: ucSized, ASM.uc.card, /article image); v1.0.122 (/changed: rebuild on publish); v1.0.121 (/warm reads every article of the title, offset); v1.0.120 (pages kept ready in KV, unversioned keys, one list read per run, /warm); v1.0.119 (Archives: one-day date run takes the date style); v1.0.118 (standing sponsor withdrawn: PRODUCT LIBRARY is shared across publishers); v1.0.117 (Week-of dates, weather from the send day, newsletter lookup kept, standing franchise sponsor);   // v1.0.116 (article franchise mascot, wordmark, band colour); v1.0.115 (franchise treatment 3: mascot, wordmark, band colour); v1.0.114 (franchise page v1.1: description, dek, year);   // v1.0.113 (byline switches: hide-writer-titles, show-business-in-byline);   // v1.0.112 (/site?franchise=, the franchise page);   // v1.0.111 (website slug contact-website on /directory);   // v1.0.110 (stale answers served while a rebuild runs);   // v1.0.109 (confirmed CUSTOMERS slugs on /directory);   // v1.0.108 (Page Header Font on /site);   // v1.0.107 (/directory);   // v1.0.106 (photo essay treatment);   // v1.0.105 (article format, paid, gallery);   // v1.0.104 (article byline);   // v1.0.103 (/site?article=<ARTICLES slug>);   // v1.0.102 (/site?issue=<NEWSLETTER slug>);   // v1.0.101 (nav {page:<collection>} links);   // v1.0.100   // v1.0.100 (/site, /form, Archives without current-issue articles);   // v1.0.99   // v1.0.99 (Archives: issue number from NEWSLETTER issue-no only);   // v1.0.98   // v1.0.98 (Archives: legacy-issue headlines; one current issue);   // v1.0.97   // v1.0.97 (Archives: date passed, not current; article edition falls back to associated-newsletter);   // v1.0.96   // v1.0.93 (asOf; 108 is the trigger);   // v1.0.92 (production rules: date passed; draft + live writes; /assemble pageFrame removed);   // v1.0.91 (older published issues count);   // v1.0.90 (test issues never count; /page-frame-backfill);   // v1.0.89 (/assemble pageFrame: issue date span, latest edition);   // v1.0.88 (real TITLES slugs for the three old colours; any CSS colour form on /splash);   // v1.0.87 (Title Design S1: context.title from TITLES, splash colours from TITLES);   // v1.0.86 (DESIGNS switch slug house-ad-2);   // v1.0.85 (/catalog house.why);   // v1.0.84 (house ads: kinds, versions, house designs, born-filled rows); v1.0.83 (lead photos whole, never cropped); v1.0.82 (lead item then rows: x_lead, photoLead, photoRow; plain teaser); v1.0.81 (Zillow default link for listings); v1.0.79 (hide-phase-tag clears the RE flag); v1.0.78 (/publish-state); v1.0.77 (fill-ins: article type and the one design; the Find's theme); v1.0.76 (sectors optional in the Setup step); v1.0.75 (Reserved Tiles: slot-note, holds, compile and write refusals, shelf usedArticleIds); v1.0.74 (word ranges on /plan-board, one table); v1.0.73 (/release-check: word ranges at the write, skip list); v1.0.72 (words in the compile basis);   // v1.0.71 (nlmeta gated except the stamp fields); v1.0.70 (/release-check reads a 124 batch); v1.0.69 (release lock: /release-check, plan.saved, publish.stamps); v1.0.68 (greeting-basis on the GR row; the content diff); v1.0.67 (greeting-done on the GR row; /greeting-context); v1.0.66 (slots[].updatedAt); v1.0.65 (sendAt on /plans); v1.0.64 (D15 designChoices full set; R13 Around Town refusal; customers[])
 // v1.0.170 — the X-IX-Key header against both secrets: IX_KEY (Make, 206) or IX_SERVICE_KEY (ix-content).
 function anyKey(env) { return !!(env.IX_KEY || env.IX_SERVICE_KEY); }
 function keyOk(env, request) {
@@ -4524,9 +4521,8 @@ const JOIN = {
              mainMediaId: 'main-image-media-id', ogLink: 'main-image-for-og', body: 'post-body', gallery: 'media-items' },   // v1.0.166
   re: { agent: 'listing-agent-customer', photo: 'img-main' },   // photo v1.0.33; img-main from v1.0.206, read through rePhotoOf()
   ad: { customer: 'associated-advertiser', type: 'add-type', status: 'status',
-        bannerLink: 'banner-ad-link', redirectLink: 'redirect-link',
-        houseKind: 'house-kind', titles: 'titles', splashLink: 'splash-ad-link--get',
-        splashLink2: 'splash-ad-link-2---get',   // v1.0.4
+        redirectLink: 'redirect-link',
+        houseKind: 'house-kind', titles: 'titles',   // v1.0.214: bannerLink, splashLink, splashLink2 gone (Image Links S4d)
         eyebrow: 'house-eyebrow', headline: 'house-headline', copy: 'house-copy',
         buttonText: 'house-button-text' },          // v1.0.84, the Revenue house cards
   splash: { logo: 'title-logo-url', paidAd: 'splash-ad-image', paidGo: 'splash-sponsor-go-url',
@@ -4617,7 +4613,6 @@ export default {
     if (url.pathname === '/changed') return changedRoute(env, ctx, url, request);   // v1.0.122, GET or POST, needs WARM_KEY
     if (url.pathname === '/site-ads-drop') return siteAdsDropRoute(env, request);   // v1.0.142, GET or POST, X-IX-Key
     if (url.pathname === '/customer-ads') return customerAdsRoute(env, ctx, url, request);       // v1.0.172: X-IX-Key, or an allowed origin with a staff login
-    if (url.pathname === '/ads-image-backfill') return adsImageReportRoute(env, ctx, url, request);   // v1.0.212, one-time, read-only (Image Links S4)
     if (request.method !== 'GET' && !(request.method === 'POST' && url.pathname === '/release-check')) return fail(405, 'Only GET is supported.');   // v1.0.70: POST on /release-check only
     if (url.pathname === '/splash') return splashRoute(env, ctx, url);       // v1.0.4, public
     if (url.pathname === '/archives') return archivesRoute(env, ctx, url);   // v1.0.94, public
@@ -6277,16 +6272,6 @@ async function publishBoardOf(run, sb, ta, weatherInPlan) {
 // v1.0.27 — the Splash tile: this plan's NEWSLETTER(s), what each shows
 // now, and the title's house splash. Never throws: a failure is
 // answered as error, so the banner slots still load.
-function houseSplashOf(ads, titleId, o) {   // v1.0.213: no longer read (houseSplashRows); kept for its callers' history
-  if (!o.houseKindSplash || !titleId) return null;
-  const J = JOIN.ad;
-  const houses = (ads || []).filter(a => {
-    const f = a.fieldData || {};
-    return !a.isDraft && !a.isArchived && f[J.houseKind] === o.houseKindSplash &&
-      refIds(f[J.titles]).includes(titleId) && String(f[J.splashLink] || '');
-  }).sort((a, b) => String(b.lastUpdated || '').localeCompare(String(a.lastUpdated || '')));
-  return houses.length ? houses[0] : null;
-}
 
 async function splashBoardOf(run, planId, ads, taId, plan) {
   const C = run.cfg.collections, o = run.cfg.options || {};
@@ -8922,7 +8907,6 @@ async function siteRoute(env, ctx, url) {
 //                bumping one generation number in IX_KV (SITE_ADS.genKey).
 const SITE_ADS = {
   approvedLabel: 'approved',                                                  // HC-P-SSA1-2 (compared lower case)
-  sidebarLink: 'sidebar-ad-link',                                             // companion and default-for-shape retired v1.0.151
   settingsField: 'settings-json', settingsKey: 'siteAds',                     // Tracker §SET
   settingsNeeded: ['railRotating', 'inlineAfter', 'inlineCap', 'listEvery', 'label'],   // eyebrow optional v1.0.146
   houseAdvertise: /advertis/i,                                                // HC-P-CBS9-4
@@ -8990,9 +8974,9 @@ async function siteAdsDropRoute(env, request) {
 //                (v1.0.153: ADS status is not read; it is empty on most rows).
 const CURRENT_ADS = {
   shapes: {
-    banner:  { pointer: 'current-banner-ad',  approval: 'banner-approval',  has: ['banner-ad-link'] },
-    sidebar: { pointer: 'current-sidebar-ad', approval: 'sidebar-approval', has: ['sidebar-ad-link'] },
-    splash:  { pointer: 'current-splash-ad',  approval: 'splash-approval',  has: ['splash-ad-link--get', 'splash-ad-link-2---get'] },
+    banner:  { pointer: 'current-banner-ad',  approval: 'banner-approval',  has: ['img-main'] },   // v1.0.214: picture shapes read
+    sidebar: { pointer: 'current-sidebar-ad', approval: 'sidebar-approval', has: ['img-main'] },   //   through adPicture(), which
+    splash:  { pointer: 'current-splash-ad',  approval: 'splash-approval',  has: ['img-main'] },   //   checks the Ad Type
     text:    { pointer: 'current-text-ad',    approval: 'text-ad-approval', has: ['short-text', 'short-title'] },
   },                                                                          // HC-P-SSA1-1
   approvedName: 'Approved',                                                   // HC-P-SSA1-2 (the option written at the cutoff)
@@ -9019,12 +9003,11 @@ function noteAdsSchema(schema) {
   const m = maps[JOIN.ad.status]; if (m) ADS_STATUS_MAP = m;
   const ty = maps[AD_PICTURE.type]; if (ty) ADS_TYPE_MAP = ty;                // v1.0.213
 }
-// v1.0.213 (Image Links S4) — one picture per ADS row, in img-main; the row's Ad Type says what it is.
-// HC-P-IL4-2. Until the old fields are deleted, a row without img-main is read from the old field of its shape.
+// v1.0.214 (Image Links S4d) — one picture per ADS row, in img-main; the row's Ad Type says what it is.
+// HC-P-IL4-2 is closed: the old picture fields are gone and nothing falls back to them.
 const AD_PICTURE = {
   img: 'img-main', type: 'add-type',
-  old: { banner: ['banner-ad-link'], sidebar: ['sidebar-ad-link'], splash: ['splash-ad-link--get'] },
-  splash2: 'splash-ad-link-2---get',
+  shapes: ['banner', 'sidebar', 'splash'],                                    // the shapes that are a picture
   shapeOfType: { 'banner ad': 'banner', 'sidebar ad': 'sidebar', 'splash ad': 'splash', 'text ad': 'text' },
 };
 let ADS_TYPE_MAP = null;   // set by noteAdsSchema; without it a row's shape cannot be told from its type
@@ -9035,46 +9018,31 @@ function adTypeShape(fd) {
   const label = String(ADS_TYPE_MAP[(fd || {})[AD_PICTURE.type]] || '').trim().toLowerCase();
   return AD_PICTURE.shapeOfType[label] || null;
 }
-// The stored picture of one shape on a row (as stored; callers size it where shown). img-main answers when the
-// row's type is that shape, is not one of the four (House Ad: its one picture is its splash), or cannot be told.
+// The row's picture for one shape (as stored; callers size it where shown): img-main when the row's type is
+// that shape, is not one of the four (House Ad: its one picture is its splash), or cannot be told; else ''.
 function adPicture(fd, shape) {
-  fd = fd || {};
-  const img = String(fd[AD_PICTURE.img] || '').trim();
-  if (img) { const ts = adTypeShape(fd); if (ts === undefined || ts === null || ts === shape) return img; }   // null: House Ad
-  for (const k of (AD_PICTURE.old[shape] || [])) { const v = String(fd[k] || '').trim(); if (v) return v; }
-  return '';
+  const img = String((fd || {})[AD_PICTURE.img] || '').trim();
+  if (!img) return '';
+  const ts = adTypeShape(fd);
+  return (ts === undefined || ts === null || ts === shape) ? img : '';
 }
 // The row's one picture, whatever its shape (thumbs, house splash).
-function adMainPicture(fd) {
-  fd = fd || {};
-  const img = String(fd[AD_PICTURE.img] || '').trim();
-  if (img) return img;
-  for (const sh of ['banner', 'sidebar', 'splash']) for (const k of AD_PICTURE.old[sh]) { const v = String(fd[k] || '').trim(); if (v) return v; }
-  return '';
-}
-// v1.0.213 · the title's Splash house rows, oldest first, at most two pictures in all. A row that still holds
-// splash-ad-link-2---get gives its second picture when there is room (until the backfill makes it a row).
+function adMainPicture(fd) { return String((fd || {})[AD_PICTURE.img] || '').trim(); }
+// The title's Splash house rows, oldest first, one picture each, at most two (v1.0.214: no second picture field).
 function houseSplashRows(ads, titleId, kindId) {
   if (!kindId || !titleId) return [];
-  const rows = (ads || []).filter(a => {
+  return (ads || []).filter(a => {
     const f = a.fieldData || {};
     return !a.isDraft && !a.isArchived && f[JOIN.ad.houseKind] === kindId &&
       refIds(f[JOIN.ad.titles]).includes(titleId) && !!adMainPicture(f);
-  }).sort((a, b) => String(a.createdOn || '').localeCompare(String(b.createdOn || '')));
-  const out = [];
-  rows.forEach(r => {
-    const f = r.fieldData || {};
-    if (out.length < 2) out.push({ row: r, picture: adMainPicture(f) });
-    const p2 = String(f[AD_PICTURE.splash2] || '').trim();
-    if (p2 && out.length < 2 && rows.length === 1) out.push({ row: r, picture: p2 });
-  });
-  return out;
+  }).sort((a, b) => String(a.createdOn || '').localeCompare(String(b.createdOn || '')))
+    .slice(0, 2).map(r => ({ row: r, picture: adMainPicture(r.fieldData || {}) }));
 }
 // The shape's content on an ADS row: the first filled field of that shape ('' when the row lacks it,
 // is an LBP, or is Archived).
 function shapeContent(fd, shape) {
   if (isLbpRow(fd) || isArchivedRow(fd)) return '';
-  if (AD_PICTURE.old[shape]) return adPicture(fd, shape);                     // v1.0.213: img-main first
+  if (AD_PICTURE.shapes.includes(shape)) return adPicture(fd, shape);         // v1.0.214: img-main only
   const fields = CURRENT_ADS.shapes[shape].has;
   for (const k of fields) { const v = String((fd || {})[k] || '').trim(); if (v) return v; }
   return '';
@@ -9082,7 +9050,7 @@ function shapeContent(fd, shape) {
 // v1.0.172 · the shape's content even on an Archived row (for /customer-ads?archived=1 only).
 function shapeContentAny(fd, shape) {
   if (isLbpRow(fd)) return '';
-  if (AD_PICTURE.old[shape]) return adPicture(fd, shape);                     // v1.0.213
+  if (AD_PICTURE.shapes.includes(shape)) return adPicture(fd, shape);         // v1.0.214
   for (const k of CURRENT_ADS.shapes[shape].has) { const v = String((fd || {})[k] || '').trim(); if (v) return v; }
   return '';
 }
@@ -9233,8 +9201,8 @@ async function buildSiteAds(run, key, env) {
   const maps = optionMaps(adSchema);
   noteAdsSchema(adSchema);                                 // v1.0.154
   const adFields = new Set(((adSchema && adSchema.fields) || []).map(f => f.slug));
-  if (!adFields.has(S.sidebarLink) && !adFields.has(AD_PICTURE.img))   // v1.0.213: img-main or the old field
-    problems.push('ADS has neither ' + AD_PICTURE.img + ' nor ' + S.sidebarLink + ', so no sidebar can show.');
+  if (!adFields.has(AD_PICTURE.img))   // v1.0.214: img-main only
+    problems.push('ADS has no field ' + AD_PICTURE.img + ', so no ad picture can show.');
   const custFields = new Set();
   custs.forEach(c => Object.keys(fdOf(c)).forEach(k => custFields.add(k)));
   if (custs.length && !custFields.has(CURRENT_ADS.shapes.banner.pointer) && !custFields.has(CURRENT_ADS.shapes.sidebar.pointer))
@@ -9762,22 +9730,6 @@ async function buildArticleSite(run, slug, env) {
   site.article = { slug, latest: page.latest, franchise: page.franchise, sponsor: page.sponsor, more: page.more, missed: page.missed || [], byline: page.byline,
                    format: page.format, formatFrom: page.formatFrom, paid: page.paid, gallery: page.gallery, treatment: page.treatment, warnings: page.warnings,
                    image: page.image };   // image v1.0.125   // byline v1.0.104; format, paid, gallery, warnings v1.0.105
-  if (page.paid) {                                        // v1.0.214: the paid label, as the email's
-    const problems = [];
-    let ta = null, pub = null;
-    const keep = run.live; run.live = false;
-    try {
-      const taId = site.title && site.title.adminId;
-      if (taId) { try { ta = await run.getItem('TITLES-ADMIN', C.titles, taId); } catch (e) { ta = null; } }
-      const pid = ta ? refId(fdOf(ta)[JOIN.title.publisher]) : null;
-      if (pid && /^[0-9a-f]{24}$/.test(C.publishers || '')) { try { pub = await run.getItem('PUBLISHERS', C.publishers, pid); } catch (e) { pub = null; } }
-    } finally { run.live = keep; }
-    if (!ta) problems.push('the title has no TITLES-ADMIN record, so the label cannot be read.');
-    else if (!pub) problems.push('TITLES-ADMIN "' + (fdOf(ta).name || '') + '" has no PUBLISHERS record; the platform label is used.');
-    const lab = ta ? await paidLabelOf(fdOf(pub), fdOf(ta)[JOIN.title.tokens], problems) : { words: '', from: 'none' };
-    site.article.paid = Object.assign({}, page.paid, { label: lab.words, labelFrom: lab.from });
-    problems.forEach(p => site.problems.push('Paid label: ' + p));
-  }
   return site;
 }
 
@@ -10127,48 +10079,6 @@ async function loadTokens(titleFile, problems, overrides) {
   };
   Object.keys(merged).forEach(k => { out[k] = walk(k, new Set([k])); });
   return out;
-}
-
-// v1.0.214 — the paid article's label (Sponsored Label S1). See the v1.0.214 header.
-const PAID_LABEL = { settingsField: 'settings-json', settingsKey: 'labels', entry: 'sponsored', token: 'label-sponsored' };   // HC-P-SL1-1
-async function paidLabelOf(pubFd, tokFile, problems) {
-  let words = '', from = 'none';
-  const raw = String((pubFd || {})[PAID_LABEL.settingsField] || '').trim();
-  if (raw) {
-    let j = null;
-    try { j = JSON.parse(raw); }
-    catch (e) { problems.push('PUBLISHERS ' + PAID_LABEL.settingsField + ' is not valid JSON, so the publisher\'s paid label is not read.'); }
-    const l = (j && typeof j === 'object') ? j[PAID_LABEL.settingsKey] : undefined;
-    if (l !== undefined && l !== null && (typeof l !== 'object' || Array.isArray(l))) {
-      problems.push('PUBLISHERS ' + PAID_LABEL.settingsField + ' "' + PAID_LABEL.settingsKey + '" is not an object, so the publisher\'s paid label is not read.');
-    } else if (l && l[PAID_LABEL.entry] !== undefined && l[PAID_LABEL.entry] !== null) {
-      if (typeof l[PAID_LABEL.entry] !== 'string') problems.push('PUBLISHERS ' + PAID_LABEL.settingsField + ' ' + PAID_LABEL.settingsKey + '.' + PAID_LABEL.entry + ' is not text, so it is not read.');
-      else { const w = l[PAID_LABEL.entry].replace(/\s+/g, ' ').trim(); if (w) { words = w; from = 'publisher'; } }
-    }
-  }
-  if (!words) {
-    const file = String(tokFile || '').trim();
-    if (!file) problems.push('TITLES-ADMIN ' + JOIN.title.tokens + ' is empty, so the platform paid label (' + PAID_LABEL.token + ') cannot be read.');
-    else {
-      const tok = await loadTokens(file, problems);
-      const w = String((tok && tok[PAID_LABEL.token]) || '').replace(/\s+/g, ' ').trim();
-      if (w) { words = w; from = 'platform'; }
-      else if (tok) problems.push('The token files from ' + file + ' have no ' + PAID_LABEL.token + ' (it needs a chain ending in ix/email-tokens-v24 or later).');
-    }
-  }
-  return { words, from };
-}
-
-// v1.0.214 — both bodies of /assemble carry the paid label in their context.
-async function paidLabelOnAssemble(run, data, out) {
-  const problems = [];
-  const c = (data && data.context) || {};
-  const lab = await paidLabelOf(fdOf(c.publisher), fdOf(c.title)[JOIN.title.tokens], problems);
-  [out && out.email, out && out.web].forEach(b => {
-    if (b && b.context) { b.context.labelSponsored = lab.words; b.context.labelSponsoredFrom = lab.from; }
-  });
-  const anyPaid = [out && out.email, out && out.web].some(b => b && Array.isArray(b.blocks) && b.blocks.some(x => x && x.x_isPaid));
-  if (anyPaid) problems.forEach(p => run.warn('Paid label: ' + p));
 }
 
 // v1.0.87 — the title's design values from its TITLES item, as typed.
@@ -12309,7 +12219,6 @@ async function assembleIssue(run, nlId, parentId) {
   const F = await assemblerFacts(run);
   const out = assemble(run, data, F);
   await wordmarkSizes(run, out);   // v1.0.131
-  await paidLabelOnAssemble(run, data, out);   // v1.0.214
   return { data, out };
 }
 
@@ -13174,442 +13083,3 @@ function json(obj, status) {
 }
 
 function fail(status, message) { return json({ ok: false, error: message }, status); }
-// ── v1.0.212 — GET /ads-image-backfill (Image Links S4) · the ADS picture report ─────────────
-// See the v1.0.212 header. Read-only; there is no write. A later version deletes the route.
-const ADS_IMG_REPORT = {                                                     // HC-P-IL4-1
-  types: { 'banner ad': 'banner', 'sidebar ad': 'sidebar', 'splash ad': 'splash', 'text ad': 'text' },   // add-type labels, lower case
-  pictures: { banner: ['banner-ad-link'], sidebar: ['sidebar-ad-link'], splash: ['splash-ad-link--get', 'splash-ad-link-2---get'] },
-  lbp: 'lbp-photo-link',
-  imgMain: 'img-main',
-  activeDays: 7,
-  media: { url: 'image-url', image: 'image' },
-};
-
-async function adsImageReportRoute(env, ctx, url, request) {
-  if (request.method !== 'GET') return fail(405, 'Use GET.');
-  const doWhat = url.searchParams.get('do');                                   // v1.0.213: rename, backfill
-  if (doWhat) return adsImageWorkRoute(env, ctx, url, request, doWhat);
-  if (url.searchParams.has('write')) return fail(400, 'This report writes nothing. Remove write= from the address.');
-  if (!env.WEBFLOW_TOKEN) return fail(500, 'WEBFLOW_TOKEN is not set on this Worker.');
-  const cfg = await loadConfig(env, true);
-  if (!cfg) return fail(500, 'IX_CONFIG is missing or is not valid JSON.');
-  const C = cfg.collections || {};
-  const missing = ['ads', 'customers', 'plan', 'blocks'].filter(k => !/^[0-9a-f]{24}$/.test(C[k] || ''));
-  if (missing.length) return fail(500, 'IX_CONFIG.collections is missing: ' + missing.join(', ') + '.');
-  const sw = await readSwitch(env, 'plan-board');
-  const run = new Run(env, ctx, cfg, true, readOpts(sw, {}));
-  run.live = false;                                                          // staged: what the CMS holds now
-  if (sw.why) run.warn(sw.why);
-  try {
-    const report = await adsImageReport(run, C);
-    return new Response(JSON.stringify(Object.assign({ ok: true, readOnly: true, version: VERSION }, report,
-      { meta: run.meta(report.counts.rows) }), null, 2), { status: 200,
-      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
-  } catch (e) {
-    return json({ ok: false, error: (e && e.message) || String(e), meta: run.meta(null) }, (e && e.status) || 502);
-  }
-}
-
-async function adsImageReport(run, C) {
-  const R = ADS_IMG_REPORT, A = JOIN.ad, B = JOIN.block;
-  const hasMedia = /^[0-9a-f]{24}$/.test(C.media || '');
-  const [ads, adSchema, customers, custSchema, plans, blocks, media] = await Promise.all([
-    run.listAll(C.ads), run.wf('/collections/' + C.ads), run.listAll(C.customers), run.wf('/collections/' + C.customers),
-    run.listAll(C.plan), homeOrList(run, 'nl_blocks', C.blocks, 'NL-BLOCKS', ''),
-    hasMedia ? run.listAll(C.media) : Promise.resolve([]),
-  ]);
-  noteAdsSchema(adSchema);
-  const maps = optionMaps(adSchema);
-  const fields = (adSchema && adSchema.fields) || [];
-  const fieldBy = new Map(fields.map(f => [f.slug, f]));
-  const fInfo = slug => { const f = fieldBy.get(slug); return f ? { slug, exists: true, type: f.type, name: f.displayName || '', required: !!f.isRequired, help: f.helpText || '' } : { slug, exists: false }; };
-  const str = v => t(v).trim();
-  const kindOf = v => { if (!v) return 'empty'; const b = ucBase(v); if (!b) return 'notUploadcare'; if (b === v) return 'clean'; return /\/-\//.test(v) ? 'sized' : 'fileName'; };
-  const uuidOf = v => { const b = ucBase(v); return b ? b.split('/')[3] : ''; };
-
-  // Names, pointers, placements.
-  const custName = new Map(customers.map(c => [c.id, str(fdOf(c).name) || c.id]));
-  const pointedBy = new Map();                                               // ADS id -> ['Customer · banner', ...]
-  customers.forEach(c => SHAPES.forEach(shape => {
-    const id = refId(fdOf(c)[CURRENT_ADS.shapes[shape].pointer]);
-    if (!id) return;
-    if (!pointedBy.has(id)) pointedBy.set(id, []);
-    pointedBy.get(id).push(custName.get(c.id) + ' · current ' + shape);
-  }));
-  const since = new Date(Date.now() - R.activeDays * 86400000).toISOString().slice(0, 10);
-  const recentPlan = new Map();
-  plans.forEach(p => { const d = String(fdOf(p)[JOIN.planBoard.date] || '').slice(0, 10); if (d && d >= since) recentPlan.set(p.id, (str(fdOf(p).name) || p.id) + ' (' + d + ')'); });
-  const placedIn = new Map();                                                // ADS id -> ['WLN-125A (2026-11-29) · asset-ad', ...]
-  blocks.forEach(b => {
-    const fd = fdOf(b), plan = recentPlan.get(refId(fd[B.plan]));
-    if (!plan) return;
-    [[B.ad, 'banner slot'], [B.sponsor, 'sponsor']].forEach(([k, what]) => refIds(fd[k]).forEach(id => {
-      if (!placedIn.has(id)) placedIn.set(id, new Set());
-      placedIn.get(id).add(plan + ' · ' + what);
-    }));
-  });
-
-  // MEDIA rows by Uploadcare file.
-  const mediaBy = new Map();
-  media.forEach(m => {
-    const fd = fdOf(m), label = (str(fd.name) || m.id) + ' [' + m.id + ']';
-    [str(fd[R.media.url]), imgUrl(fd[R.media.image])].forEach(v => {
-      const u = uuidOf(v); if (!u) return;
-      if (!mediaBy.has(u)) mediaBy.set(u, new Set());
-      mediaBy.get(u).add(label);
-    });
-  });
-
-  // Image fields on ADS (native Image / MultiImage), counted below.
-  const imageFields = fields.filter(f => f.type === 'Image' || f.type === 'MultiImage').map(f => f.slug);
-  const imageFill = {}; imageFields.forEach(s => { imageFill[s] = 0; });
-  const oldSlugs = [...R.pictures.banner, ...R.pictures.sidebar, ...R.pictures.splash];
-
-  const counts = { rows: 0, webflowArchived: 0, statusArchived: 0, drafts: 0, house: 0, lbp: 0, active: 0,
-                   byType: {}, noType: 0, imgMainFilled: 0, links: {} };
-  [...oldSlugs, R.lbp].forEach(s => { counts.links[s] = { clean: 0, sized: 0, fileName: 0, notUploadcare: 0, empty: 0 }; });
-  const lists = { noType: [], twoOrMorePictures: [], typeMismatch: [], splash2Values: [], lbpRows: [], houseRows: [],
-                  notUploadcare: [], imageFieldsFilled: [], noMediaRow: [], deleteReview: {} };
-  const rows = [];
-
-  ads.forEach(a => {
-    const fd = fdOf(a), name = str(fd.name) || a.id;
-    const cust = adCustomerOf(fd), customer = cust ? (custName.get(cust) || cust + ' (not found)') : '(no customer)';
-    const typeLabel = optName(maps, A.type, fd[A.type]);
-    const shape = R.types[String(typeLabel).trim().toLowerCase()] || null;
-    const house = optName(maps, A.houseKind, fd[A.houseKind]) || '';
-    const lbp = isLbpRow(fd);
-    const status = optName(maps, A.status, fd[A.status]) || '';
-    const activeWhy = [...(pointedBy.get(a.id) || []), ...((placedIn.get(a.id) && [...placedIn.get(a.id)]) || [])];
-    const pictures = {}, filledShapes = [];
-    oldSlugs.forEach(s => {
-      const v = str(fd[s]), k = kindOf(v);
-      counts.links[s][k]++;
-      if (v) pictures[s] = { kind: k, link: v };
-    });
-    const lbpLink = str(fd[R.lbp]); counts.links[R.lbp][kindOf(lbpLink)]++;
-    ['banner', 'sidebar', 'splash'].forEach(sh => { if (R.pictures[sh].some(s => pictures[s])) filledShapes.push(sh); });
-    const imgs = imageFields.filter(s => imgUrl(Array.isArray(fd[s]) ? fd[s][0] : fd[s]));
-    imgs.forEach(s => { imageFill[s]++; });
-    const imgMain = str(fd[R.imgMain]); if (imgMain) counts.imgMainFilled++;
-
-    // What img-main would get: the clean link of the field that matches the type.
-    let wouldGet = null, problem = null;
-    if (!lbp && shape && shape !== 'text') {
-      const src = R.pictures[shape].map(s => str(fd[s])).find(Boolean) || '';
-      if (!src) problem = typeLabel + ' with no ' + shape + ' picture';
-      else if (!ucBase(src)) problem = 'the ' + shape + ' picture is not an Uploadcare link';
-      else wouldGet = ucBase(src);
-    }
-    const mismatch = [];
-    if (!lbp && shape) {
-      filledShapes.filter(sh => sh !== shape).forEach(sh => mismatch.push('holds a ' + sh + ' picture'));
-      if (problem && /with no/.test(problem)) mismatch.push(problem);
-    }
-    const uuids = [...new Set(Object.values(pictures).map(p => uuidOf(p.link)).filter(Boolean))];
-    const mediaRows = {}; uuids.forEach(u => { mediaRows[u] = mediaBy.has(u) ? [...mediaBy.get(u)] : []; });
-
-    const row = { name, id: a.id, customer, active: activeWhy.length > 0, activeWhy, type: typeLabel || null, house: house || null,
-                  lbp, status: status || null, draft: !!a.isDraft, webflowArchived: !!a.isArchived, createdOn: a.createdOn || null,
-                  pictures, imageFields: imgs, imgMain: imgMain || null, imgMainWouldGet: wouldGet, problem, mismatch,
-                  mediaRows: hasMedia ? mediaRows : 'MEDIA not read (IX_CONFIG.collections.media is not set)' };
-    rows.push(row);
-
-    // Counts and lists.
-    const tag = customer + ' · ' + name + ' [' + a.id + ']' + (row.active ? ' · ACTIVE' : '');
-    counts.rows++; if (a.isArchived) counts.webflowArchived++; if (isArchivedRow(fd)) counts.statusArchived++; if (a.isDraft) counts.drafts++;
-    if (row.active) counts.active++;
-    if (house) { counts.house++; lists.houseRows.push(tag + ' · ' + house + ' · ' + (typeLabel || 'no type') + ' · pictures: ' + (filledShapes.join(', ') || 'none')); }
-    if (lbp) { counts.lbp++; lists.lbpRows.push(tag + ' · ' + (typeLabel || 'no type') + (lbpLink ? ' · lbp photo ' + kindOf(lbpLink) : ' · no lbp photo')); }
-    counts.byType[typeLabel || '(none)'] = (counts.byType[typeLabel || '(none)'] || 0) + 1;
-    if (!typeLabel) { counts.noType++; lists.noType.push(tag + ' · pictures: ' + (filledShapes.join(', ') || 'none') + (lbp ? ' · LBP' : '') + (house ? ' · house' : '')); }
-    if (filledShapes.length >= 2 || (pictures['splash-ad-link--get'] && pictures['splash-ad-link-2---get']))
-      lists.twoOrMorePictures.push(tag + ' · ' + Object.keys(pictures).join(', '));
-    if (mismatch.length) lists.typeMismatch.push(tag + ' · ' + typeLabel + ' · ' + mismatch.join('; '));
-    if (pictures['splash-ad-link-2---get']) lists.splash2Values.push(tag + ' · ' + pictures['splash-ad-link-2---get'].link);
-    Object.keys(pictures).forEach(s => { if (pictures[s].kind === 'notUploadcare') lists.notUploadcare.push(tag + ' · ' + s + ' · ' + pictures[s].link.slice(0, 120)); });
-    if (imgs.length) lists.imageFieldsFilled.push(tag + ' · ' + imgs.join(', '));
-    if (hasMedia) uuids.forEach(u => { if (!mediaBy.has(u)) lists.noMediaRow.push(tag + ' · file ' + u); });
-    if (!row.active && !house && !lbp) {
-      if (!lists.deleteReview[customer]) lists.deleteReview[customer] = [];
-      lists.deleteReview[customer].push(name + ' [' + a.id + '] · ' + (typeLabel || 'no type') + ' · ' + (filledShapes.join(', ') || (shape === 'text' ? 'text' : 'no picture')) + (row.createdOn ? ' · made ' + row.createdOn.slice(0, 10) : ''));
-    }
-  });
-
-  rows.sort((x, y) => (y.active - x.active) || x.customer.localeCompare(y.customer) || String(y.createdOn || '').localeCompare(String(x.createdOn || '')));
-  const typeField = fInfo(A.type);
-  if (typeField.exists) typeField.choices = Object.values(maps[A.type] || {});
-  return {
-    fields: {
-      adType: typeField,
-      imgMain: fInfo(R.imgMain),
-      oldPictureFields: [...oldSlugs, R.lbp].map(fInfo),
-      imageFields: imageFields.map(s => Object.assign(fInfo(s), { rowsFilled: imageFill[s] })),
-      everyPictureLikeField: fields.filter(x => /image|photo|img|picture|media|link/i.test(String(x.slug) + ' ' + String(x.displayName)))
-                                   .map(x => x.slug + ' · ' + x.type + ' · ' + (x.displayName || '')),
-    },
-    activeRule: 'A customer\'s current pointer names the row, or an NL-BLOCKS row of a plan dated ' + since + ' or later holds it.',
-    counts, lists, rows,
-  };
-}
-
-// ── v1.0.213 — /ads-image-backfill?do=rename | do=backfill (Image Links S4) ──────────────────────────
-// See the v1.0.213 header. Preview (dry run) without write=1; writes need X-Cleanup-Key and WEBFLOW_WRITE_TOKEN.
-const ADS_RENAME = { codes: { banner: 'BA', sidebar: 'SB', splash: 'SPL', text: 'TXA' }, sep: ' · ',   // HC-P-IL4-3
-                     timeZone: 'America/New_York' };
-
-async function adsImageWorkRoute(env, ctx, url, request, what) {
-  if (what !== 'rename' && what !== 'backfill') return fail(400, 'do= must be rename or backfill.');
-  if (!env.WEBFLOW_TOKEN) return fail(500, 'WEBFLOW_TOKEN is not set on this Worker.');
-  const write = url.searchParams.get('write') === '1';
-  if (write) {
-    const k = String(env.CLEANUP_KEY || '').trim();
-    if (!k) return fail(403, 'Writing is off: add the Worker variable CLEANUP_KEY first (delete it after the run).');
-    if (request.headers.get('X-Cleanup-Key') !== k) return fail(401, 'Missing or wrong X-Cleanup-Key header.');
-    if (!String(env.WEBFLOW_WRITE_TOKEN || '').trim()) return fail(403, 'Writing is off: add the Worker secret WEBFLOW_WRITE_TOKEN (a Webflow token with CMS write) first.');
-  }
-  const limRaw = url.searchParams.get('limit');
-  const limit = limRaw == null || limRaw === '' ? Infinity : Number(limRaw);
-  if (!(limit === Infinity || (Number.isInteger(limit) && limit >= 1))) return fail(400, 'limit must be a whole number, 1 or more.');
-  const cfg = await loadConfig(env, true);
-  if (!cfg) return fail(500, 'IX_CONFIG is missing or is not valid JSON.');
-  const C = cfg.collections || {};
-  const need = what === 'backfill' ? ['ads', 'customers', 'media'] : ['ads', 'customers'];
-  const missing = need.filter(k => !/^[0-9a-f]{24}$/.test(C[k] || ''));
-  if (missing.length) return fail(500, 'IX_CONFIG.collections is missing: ' + missing.join(', ') + '.');
-  const run = new Run(env, ctx, cfg, true);
-  try {
-    const plan = what === 'rename' ? await adsRenamePlan(run, C) : await adsBackfillPlan(run, C);
-    if (!write) return jsonPretty({ ok: true, dryRun: true, do: what, version: VERSION, report: plan.report, meta: run.meta(null) });
-    if (plan.block) return fail(409, plan.block);
-    const written = await adsWorkWrite(run, C, plan, limit);
-    return jsonPretty({ ok: written.unconfirmed === 0 && !written.errors.length, dryRun: false, do: what, version: VERSION,
-                        report: plan.report, written, meta: run.meta(null) });
-  } catch (e) {
-    return json({ ok: false, error: (e && e.message) || String(e), meta: run.meta(null) }, (e && e.status) || 502);
-  }
-}
-function jsonPretty(o) {
-  return new Response(JSON.stringify(o, null, 2), { status: 200,
-    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
-}
-
-// Draft and live lists of one collection (the live list is what Webflow has published).
-async function draftAndLive(run, coll) {
-  const keep = run.live;
-  run.live = false; const draft = await run.listAll(coll);
-  run.live = true; let live = [];
-  try { live = await run.listAll(coll); } finally { run.live = keep; }
-  return { draft, liveBy: new Map(live.map(i => [i.id, i])) };
-}
-
-// ── rename ──
-async function adsRenamePlan(run, C) {
-  const [{ draft, liveBy }, adSchema, customers] = await Promise.all([
-    draftAndLive(run, C.ads), run.wf('/collections/' + C.ads), run.listAll(C.customers)]);
-  noteAdsSchema(adSchema);
-  const maps = optionMaps(adSchema), A = JOIN.ad, R = ADS_RENAME;
-  const custName = new Map(customers.map(c => [c.id, String(fdOf(c).name || '').trim()]));
-  const monthOf = iso => { try { return new Date(iso).toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: R.timeZone }); } catch (e) { return ''; } };
-  const left = [], groups = new Map();
-  draft.forEach(a => {
-    const fd = fdOf(a), name = String(fd.name || '').trim();
-    if (optName(maps, A.houseKind, fd[A.houseKind])) return;                  // house ads keep their names (Jeff, 25 Nov)
-    if (isLbpRow(fd)) return;                                                 // LBPs keep theirs (they move to ARTICLES)
-    const cid = adCustomerOf(fd), cust = cid ? custName.get(cid) : '';
-    const shape = adTypeShape(fd), code = shape ? R.codes[shape] : '';
-    const month = monthOf(a.createdOn);
-    if (!cust || !code || !month) {
-      left.push(name + ' [' + a.id + '] · ' + (!cust ? 'no customer' : !code ? 'Ad Type is ' + (optName(maps, A.type, fd[A.type]) || 'empty') : 'no made date'));
-      return;
-    }
-    const key = cust + '|' + code + '|' + month;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push({ a, name, base: cust + R.sep + code + R.sep + month });
-  });
-  const items = [], same = [];
-  [...groups.values()].forEach(list => {
-    list.sort((x, y) => String(x.a.createdOn || '').localeCompare(String(y.a.createdOn || '')) || x.a.id.localeCompare(y.a.id));
-    list.forEach((x, i) => {
-      const to = x.base + (i ? ' v' + (i + 1) : '');
-      if (to === x.name) { same.push(to); return; }
-      items.push({ id: x.a.id, label: x.name, draft: { name: to }, live: liveBy.has(x.a.id) ? { name: to } : null, to });
-    });
-  });
-  items.sort((x, y) => x.to.localeCompare(y.to));
-  return { kind: 'rename', creates: [], items,
-           report: { rowsRead: draft.length, toRename: items.length, alreadyNamed: same.length,
-                     renames: items.map(x => x.label + '  →  ' + x.to), left, alreadyNamedList: same } };
-}
-
-// ── backfill ──
-async function adsBackfillPlan(run, C) {
-  const [{ draft, liveBy }, adSchema, customers, media, mediaSchema] = await Promise.all([
-    draftAndLive(run, C.ads), run.wf('/collections/' + C.ads), run.listAll(C.customers),
-    (async () => { const k = run.live; run.live = false; try { return await run.listAll(C.media); } finally { run.live = k; } })(),
-    run.wf('/collections/' + C.media)]);
-  noteAdsSchema(adSchema);
-  const A = JOIN.ad, P = AD_PICTURE, M = JOIN.media;
-  const maps = optionMaps(adSchema), mMaps = optionMaps(mediaSchema);
-  const adFields = new Map(((adSchema && adSchema.fields) || []).map(f => [f.slug, f]));
-  const mFields = ((mediaSchema && mediaSchema.fields) || []);
-  const custName = new Map(customers.map(c => [c.id, String(fdOf(c).name || '').trim()]));
-  const report = { rowsRead: draft.length, imgMainField: adFields.has(P.img), mediaItemsField: adFields.has('media-items'),
-                   imgMain: [], mediaLinked: [], mediaToMake: [], houseCustomerCleared: [], splashRowsToMake: [],
-                   left: [], notUploadcare: [], unchanged: 0 };
-  let block = null;
-  if (!report.imgMainField) block = 'ADS has no field with the slug ' + P.img + ' yet. Make it in Webflow first.';
-  if (!report.mediaItemsField) block = (block ? block + ' ' : '') + 'ADS has no field media-items.';
-  // MEDIA: the customer reference and the option ids, read from its schema (nothing typed in).
-  const mCust = mFields.find(f => (f.type === 'Reference' || f.type === 'MultiReference') &&
-                                   (f.validations || {}).collectionId === C.customers);
-  const optId = (slug, label) => { const m = mMaps[slug] || {}; return Object.keys(m).find(k => String(m[k]).trim().toLowerCase() === label.toLowerCase()) || null; };
-  const L = Object.assign({}, MEDIA_LABELS, run.cfg.mediaLabels || {});
-  const mType = optId(M.type, L.image), mStatus = optId(M.status, L.available);
-  if (!mCust) report.mediaNote = 'MEDIA has no reference to CUSTOMERS, so new MEDIA rows carry no customer.';
-  const mediaBy = new Map();
-  media.forEach(m => { const f = fdOf(m); [String(f[M.imageUrl] || ''), imgUrl(f[M.image])].forEach(v => {
-    const b = ucBase(v); const u = b ? b.split('/')[3] : ''; if (u && !mediaBy.has(u)) mediaBy.set(u, m.id); }); });
-  const custField = adFields.get(A.customer), custEmpty = custField && custField.type === 'MultiReference' ? [] : null;
-
-  const creates = [], made = new Map();   // uuid -> create entry (one MEDIA row per file)
-  const mediaFor = (link, who, shape, a, fd, cust) => {
-    const b = ucBase(link), u = b ? b.split('/')[3] : '';
-    if (!u) return null;
-    if (mediaBy.has(u)) return { id: mediaBy.get(u) };
-    if (made.has(u)) return { ref: made.get(u) };
-    const day = String(a.createdOn || '').slice(0, 10) || 'undated';
-    const stem = String(who || 'ad').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const fdm = { name: 'IMG___' + stem + '-' + shape + '-' + day, slug: ('img-' + stem + '-' + shape + '-' + u.slice(0, 8)).toLowerCase(),
-                  [M.imageUrl]: b };
-    if (mType) fdm[M.type] = mType;
-    if (mStatus) fdm[M.status] = mStatus;
-    const ta = refIds(fd[A.titles])[0]; if (ta) fdm[M.title] = ta;
-    const cid = cust; if (mCust && cid) fdm[mCust.slug] = mCust.type === 'MultiReference' ? [cid] : cid;
-    const c = { key: 'media:' + u, coll: C.media, fieldData: fdm, label: fdm.name, id: null };
-    made.set(u, c); creates.push(c); report.mediaToMake.push(fdm.name + ' · ' + b);
-    return { ref: c };
-  };
-
-  const items = [];
-  draft.forEach(a => {
-    const fd = fdOf(a), name = String(fd.name || '').trim(), tag = name + ' [' + a.id + ']';
-    if (isLbpRow(fd)) return;                                                  // S4 leaves LBPs alone
-    const house = !!optName(maps, A.houseKind, fd[A.houseKind]);
-    const houseKind = optName(maps, A.houseKind, fd[A.houseKind]) || '';
-    const shape = adTypeShape(fd);
-    const cid = adCustomerOf(fd), who = house ? name : ((cid && custName.get(cid)) || name);
-    let src = '', pshape = shape;
-    if (house) { src = String(fd[A.splashLink] || '').trim(); pshape = 'splash'; }
-    else if (shape && P.old[shape]) src = P.old[shape].map(k => String(fd[k] || '').trim()).find(Boolean) || '';
-    const cur = String(fd[P.img] || '').trim();
-    const out = {}, after = [];
-    if (src) {
-      const b = ucBase(src);
-      if (!b) report.notUploadcare.push(tag + ' · ' + src.slice(0, 120));
-      else {
-        if (cur !== b) { out[P.img] = b; report.imgMain.push(tag + ' · ' + b); }
-        const m = mediaFor(b, who, pshape, a, fd, house ? null : cid);
-        if (m) {
-          const have = refIds(fd['media-items']);
-          if (m.id && !have.includes(m.id)) { out['media-items'] = have.concat(m.id); report.mediaLinked.push(tag + ' · MEDIA ' + m.id); }
-          if (m.ref) { after.push(m.ref); report.mediaLinked.push(tag + ' · new MEDIA ' + m.ref.label); }
-        }
-      }
-    } else if (!cur && !house && shape !== 'text') report.left.push(tag + ' · no picture for its type (' + (optName(maps, A.type, fd[A.type]) || 'no type') + ')');
-    if (house && cid) { out[A.customer] = custEmpty; report.houseCustomerCleared.push(tag + ' · was ' + (custName.get(cid) || cid)); }
-    // The house splash's second picture becomes its own row (Jeff, 25 Nov).
-    const p2 = String(fd[A.splashLink2] || '').trim();
-    if (house && /splash/i.test(houseKind) && p2) {
-      const b2 = ucBase(p2);
-      const exists = draft.some(o => o.id !== a.id && String(fdOf(o)[P.img] || '').trim() === b2);
-      if (b2 && !exists) {
-        const fd2 = { name: name + ' 2', slug: String(fd.slug || a.id) + '-2', [P.img]: b2 };
-        [A.titles, A.houseKind, A.type, A.redirectLink].forEach(k => { if (fd[k] != null && fd[k] !== '') fd2[k] = fd[k]; });
-        const c2 = { key: 'ads:' + a.id + ':2', coll: C.ads, fieldData: fd2, label: fd2.name, id: null };
-        const m2 = mediaFor(b2, name + ' 2', 'splash', a, fd, null);
-        if (m2 && m2.id) fd2['media-items'] = [m2.id];
-        if (m2 && m2.ref) c2.mediaRef = m2.ref;
-        creates.push(c2); report.splashRowsToMake.push(fd2.name + ' · ' + b2);
-      } else if (b2 && exists) report.left.push(tag + ' · its second splash picture already has its own row');
-    }
-    if (!Object.keys(out).length && !after.length) { report.unchanged++; return; }
-    items.push({ id: a.id, label: tag, haveMedia: refIds(fd['media-items']), draft: out, live: liveBy.has(a.id) ? Object.assign({}, out) : null, after });
-  });
-  report.toWrite = items.length; report.toMake = creates.length;
-  return { kind: 'backfill', items, creates, report, block };
-}
-
-// ── writes (both kinds) ──
-async function wfSend(run, method, path, body) {
-  for (let attempt = 0; ; attempt++) {
-    const res = await run.slot(() => {
-      run.calls++;
-      return fetch(WF + path, { method, body: JSON.stringify(body), headers: {
-        Authorization: 'Bearer ' + String(run.env.WEBFLOW_WRITE_TOKEN || '').trim(), 'accept-version': '2.0.0', 'Content-Type': 'application/json' } });
-    });
-    if (res.ok) return res.json();
-    if ((res.status === 429 || res.status >= 500) && attempt < MAX_RETRIES) {
-      run.retries++;
-      const ra = Number(res.headers.get('Retry-After'));
-      await sleep(ra > 0 ? Math.min(ra, 60) * 1000 : 1000 * Math.pow(2, attempt));
-      continue;
-    }
-    const txt = await res.text().catch(() => '');
-    throw httpErr(502, 'Webflow HTTP ' + res.status + ' on ' + method + ' ' + path + (txt ? ' · ' + txt.slice(0, 300) : ''));
-  }
-}
-const sameVal = (a, b) => JSON.stringify(a == null ? '' : a) === JSON.stringify(b == null ? '' : b) ||
-                          (Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every(x => b.includes(x))) ||
-                          ((a == null || (Array.isArray(a) && !a.length)) && (b == null || b === '' || (Array.isArray(b) && !b.length)));
-
-async function adsWorkWrite(run, C, plan, limit) {
-  const items = plan.items.slice(0, limit === Infinity ? plan.items.length : limit);
-  const out = { rowsIncluded: items.length, made: 0, sent: 0, confirmed: 0, unconfirmed: 0, unconfirmedItems: [], errors: [], byJob: [] };
-  // 1 · new rows first (MEDIA, then ADS splash rows), made live; only those the included rows need.
-  const wanted = new Set();
-  items.forEach(x => (x.after || []).forEach(c => wanted.add(c)));
-  if (limit === Infinity) plan.creates.forEach(c => { wanted.add(c); if (c.mediaRef) wanted.add(c.mediaRef); });
-  const order = plan.creates.filter(c => wanted.has(c));
-  for (const c of order.sort((x, y) => (x.coll === C.media ? 0 : 1) - (y.coll === C.media ? 0 : 1))) {
-    if (c.mediaRef) { if (!c.mediaRef.id) { out.errors.push(c.label + ': its MEDIA row was not made, so the row was not made.'); continue; }
-                      c.fieldData['media-items'] = [c.mediaRef.id]; }
-    try {
-      const res = await wfSend(run, 'POST', '/collections/' + c.coll + '/items/live', { isArchived: false, isDraft: false, fieldData: c.fieldData });
-      const f = fdOf(res);
-      const good = res && res.id && Object.keys(c.fieldData).every(k => k === 'slug' || sameVal(f[k], c.fieldData[k]));
-      if (good) { c.id = res.id; out.made++; }
-      else { out.unconfirmed++; out.unconfirmedItems.push('made · ' + c.label + (res && res.id ? ' [' + res.id + '] (values not echoed)' : '')); if (res && res.id) c.id = res.id; }
-    } catch (e) { out.errors.push('make ' + c.label + ': ' + ((e && e.message) || e)); }
-  }
-  // 2 · the patches, draft then live, the new MEDIA ids added to media-items.
-  items.forEach(x => {
-    const ids = (x.after || []).map(c => c.id).filter(Boolean);
-    if (!ids.length) return;
-    ['draft', 'live'].forEach(v => {
-      if (!x[v]) return;
-      const base = Array.isArray(x[v]['media-items']) ? x[v]['media-items'] : null;
-      x[v]['media-items'] = (base || x.haveMedia || []).concat(ids.filter(i => !(base || []).includes(i)));
-    });
-  });
-  for (const version of ['draft', 'live']) {
-    const list = items.filter(x => x[version] && Object.keys(x[version]).length);
-    let sent = 0, ok = 0;
-    for (let i = 0; i < list.length; i += 100) {
-      const part = list.slice(i, i + 100);
-      const path = '/collections/' + C.ads + '/items' + (version === 'live' ? '/live' : '');
-      sent += part.length; out.sent += part.length;
-      let res;
-      try { res = await wfSend(run, 'PATCH', path, { items: part.map(x => ({ id: x.id, fieldData: x[version] })) }); }
-      catch (e) { out.errors.push('ADS ' + version + ': ' + ((e && e.message) || e)); out.unconfirmed += part.length; continue; }
-      const back = new Map(((res && res.items) || []).map(it => [it.id, fdOf(it)]));
-      part.forEach(x => {                                                     // TOAST-TRUTH: counts only when echoed
-        const f = back.get(x.id);
-        const good = f && Object.keys(x[version]).every(k => sameVal(f[k], x[version][k]));
-        if (good) { ok++; out.confirmed++; } else { out.unconfirmed++; out.unconfirmedItems.push(version + ' · ' + x.label); }
-      });
-    }
-    out.byJob.push({ version, sent, confirmed: ok });
-  }
-  return out;
-}

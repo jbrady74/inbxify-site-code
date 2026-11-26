@@ -7,7 +7,7 @@
 //   are set per publisher (not per title); a publisher that sets nothing gets the platform default, "Sponsored by".
 //   A franchise or block sponsor keeps "Presented by" (30 Oct) and is not touched here.
 //   1 · ctx.label-sponsored is the words the templates print before the buyer's name (email-fa/ts v15+, web-fa/ts,
-//       web-story-compact v4+). ix-issue-data v1.0.214 works the words out (PUBLISHERS settings-json labels.sponsored,
+//       web-story-compact v4+). ix-issue-data v1.0.215 works the words out (PUBLISHERS settings-json labels.sponsored,
 //       else the platform token) and sends them as context.labelSponsored, with context.labelSponsoredFrom
 //       ("publisher" or "platform"). Those words win. If none were sent (an older Data Worker), the platform token
 //       label-sponsored (ix/email-tokens-v24) is used. The one rule lives in the Data Worker; this is only the

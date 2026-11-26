@@ -5,7 +5,7 @@
           Jeff, 25 Nov: a paid article's line reads "<label> <buyer>", the
           same words as the email and the web issue; the label is set per
           publisher, else the platform default ("Sponsored by"). The words
-          come from the Data Worker (ix-issue-data v1.0.214+), which sends
+          come from the Data Worker (ix-issue-data v1.0.215+), which sends
           them as site.article.paid.label. This file types no words for it.
           A sponsored article (franchise or block sponsor) keeps "Presented
           by", unchanged (30 Oct). So paid and sponsored no longer look alike.
@@ -776,7 +776,7 @@
     var byWords = '';                                         // v1.0.19: a buyer gets the paid label, a sponsor "Presented by"
     if (who && who === pd) {
       byWords = String(pd.label || '').trim();
-      if (!byWords) warn('site.article.paid has no label (needs ix-issue-data v1.0.214), so the paid line says "' + WORDS.presented + '".');
+      if (!byWords) warn('site.article.paid has no label (needs ix-issue-data v1.0.215), so the paid line says "' + WORDS.presented + '".');
     }
     var banded = !!(fr && (fr.format === 'TS' || (fr.format === 'FA' && safeHref(fr.mascot))));   // v1.0.12
     var byRows = [], topBox = null;                           // v1.0.18: what sponsorAbove() hides
