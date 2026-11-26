@@ -1,6 +1,10 @@
-/* ta-admaker-v4.12.5.js
+/* ta-admaker-v4.12.6.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.6 (26 Nov 2026, Ad Maker Build S4) — A SCENARIO THAT DOES NOT CONFIRM SAYS WHAT IT ANSWERED. JS only; CSS v4.12.4.
+     26 Nov live test: "Scenario 104 did not confirm the ADS row." with no clue why. Every "did not confirm" now adds what
+     came back: the HTTP status and Make's own words (e.g. "Accepted" when the scenario is off or queued, or its error).
 
    v4.12.5 (26 Nov 2026, Ad Maker Build S4) — NEW ADS ARE NAMED "<Customer> · <BA|SB|SPL|TXA> · <Mon YYYY>". JS only; CSS v4.12.4.
      Image Links S4 renamed every ADS row to that pattern (ix-issue-data v1.0.213 /ads-image-backfill?do=rename, HC-P-IL4-3)
@@ -985,7 +989,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.5', CSS_FILE = 'ta-admaker-v4.12.4.css';
+  var VERSION = '4.12.6', CSS_FILE = 'ta-admaker-v4.12.4.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.18 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -1230,6 +1234,11 @@
 
   // ── Worker base (same rule as client-manager: planBoard, else planList) ──
   function workerBase() { var c = CFG(); return String(c.planBoard || c.planList || '').replace(/\/(plan-board|plans)(\?.*)?$/, '').replace(/\/$/, ''); }
+  function said(r) {   // v4.12.6: what a scenario or Worker answered, for a "did not confirm" message
+    if (!r) return '';
+    var t = r.j && (r.j.error || r.j.message) ? String(r.j.error || r.j.message) : String(r.t || '').replace(/\s+/g, ' ').trim();
+    return ' It answered ' + (r.status ? 'HTTP ' + r.status : 'nothing') + (t ? ': \u201c' + t.slice(0, 160) + '\u201d' : ', with no words') + '.';
+  }
   function fetchJson(url, opts) {
     return fetch(url, opts).then(function (r) { return r.text().then(function (t) { var j = null; try { j = JSON.parse(t); } catch (e) {} return { ok: r.ok, status: r.status, j: j, t: t }; }); });
   }
@@ -4529,7 +4538,7 @@
     return fetchJson(cfg.makeConditioner, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
       action: 'createMediaFromBrowserUpload', uploadcareUuid: up.uuid, uploadcareUrl: up.cdnUrl, originalFilename: name, mimeType: 'image/png',
       titleSlug: cfg.titleSlug || '', taItemId: cfg.taItemId || '', componentRole: role || '', customerId: c.id || '', customerName: c.name || '', autoAttach: false, sourceChannel: 'reformatter', source: 'ta-admaker-v' + VERSION }) })
-      .then(function (r) { if (!r.ok || !r.j || r.j.ok !== true || !(r.j.mediaId || r.j.mediaItemId)) throw new Error('Scenario B did not confirm the MEDIA row for ' + name + '.'); return r.j.mediaId || r.j.mediaItemId; });
+      .then(function (r) { if (!r.ok || !r.j || r.j.ok !== true || !(r.j.mediaId || r.j.mediaItemId)) throw new Error('Scenario B did not confirm the MEDIA row for ' + name + '.' + said(r)); return r.j.mediaId || r.j.mediaItemId; });
   }
   function fileName(c, shape, n) { return (c.name + '-' + shape + '-' + new Date().toISOString().slice(0, 10) + (n > 1 ? '-v' + n : '')).replace(/[^A-Za-z0-9._-]+/g, '-') + '.png'; }
   // v1.0.1 · one row per ticked shape: banners first, then sidebars.
@@ -4555,7 +4564,7 @@
     var cfg = CFG(), c = cust(); if (!cfg.makeUpdateCustomer) return Promise.reject(new Error('TA_CONFIG.makeUpdateCustomer is missing.'));
     return fetchJson(cfg.makeUpdateCustomer, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', titleSlug: cfg.titleSlug, taItemId: cfg.taItemId, publisherId: c.publisherId, customerId: c.id, publish: true, fieldData: fd, source: 'ta-admaker-v' + VERSION + ' ' + label }) })
       .then(function (r) {
-        if (!r.ok || !r.j || r.j.ok !== true) throw new Error('Scenario 114 did not confirm the customer write.');
+        if (!r.ok || !r.j || r.j.ok !== true) throw new Error('Scenario 114 did not confirm the customer write.' + said(r));
         var e = r.j.fieldData || {}, miss = [];
         var pairs = { phone: 'business-phone', website: 'contact-website', email: 'business-email', brandColorMain: 'brand-color-main', brandColorAccent: 'brand-color-accent', brandFontHeading: 'brand-font-heading', brandFontBody: 'brand-font-body', logoLink: 'logo-link', logoLinkLight: 'logo-link-light', currentBannerAd: 'current-banner-ad', currentSidebarAd: 'current-sidebar-ad', currentSplashAd: 'current-splash-ad' };
         var idOf = function (v) { if (Array.isArray(v)) v = v[0]; return v && typeof v === 'object' ? (v.id || v.itemId || '') : (v || ''); };
@@ -4612,7 +4621,7 @@
           return run(step(label + ': ADS row "' + name + '" with the recipe', 'Scenario 104'),
             fetchJson(cfg.makeCreateAssets, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ assetType: 'ad', titleSlug: cfg.titleSlug, taItemId: cfg.taItemId, fields: fields, source: 'ta-admaker-v' + VERSION }) })
               .then(function (r) {
-                if (!r.ok || !r.j || r.j.ok !== true) throw new Error('Scenario 104 did not confirm the ADS row.');
+                if (!r.ok || !r.j || r.j.ok !== true) throw new Error('Scenario 104 did not confirm the ADS row.' + said(r));
                 var e = r.j.fieldData || null, miss = [];
                 if (!e) throw new Error('Scenario 104 echoed no fieldData, so the row cannot be checked. Check Scenario 104\u2019s echo module.');
                 if (String(e['reformat-recipe'] || '').trim() !== recipe.trim()) miss.push('reformat-recipe');
@@ -4728,7 +4737,7 @@
         body.fieldData[sh === 'banner' ? 'bannerApproval' : 'sidebarApproval'] = pend;
         return run(step('Replacing the ' + sh + ' on "' + S.fix.name + '", approval back to ' + APPROVAL_WORDS.pending, 'Scenario G \u00b7 updateAd'),
           fetchJson(cfg.makeStudio, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (res) {
-            if (!res.ok || !res.j || res.j.ok !== true) throw new Error('Scenario G did not confirm the update.');
+            if (!res.ok || !res.j || res.j.ok !== true) throw new Error('Scenario G did not confirm the update.' + said(res));
             var e = res.j.fieldData || {}, miss = [];
             if (String(e[SHAPE_SLUG[sh].link] || '') !== media.up.cdnUrl) miss.push(SHAPE_SLUG[sh].link);
             if (String(e[SHAPE_SLUG[sh].approval] || '') !== pend) miss.push(SHAPE_SLUG[sh].approval);
@@ -5075,7 +5084,7 @@
         body.fieldData[sh === 'banner' ? 'bannerApproval' : 'sidebarApproval'] = pend;
         return run(step('Replacing the ' + low + ' on "' + name + '", approval back to ' + APPROVAL_WORDS.pending, 'Scenario G · updateAd'),
           fetchJson(cfg.makeStudio, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (res) {
-            if (!res.ok || !res.j || res.j.ok !== true) throw new Error('Scenario G did not confirm the update.');
+            if (!res.ok || !res.j || res.j.ok !== true) throw new Error('Scenario G did not confirm the update.' + said(res));
             var e = res.j.fieldData || {}, miss = [];
             if (String(e[SHAPE_SLUG[sh].link] || '') !== up.cdnUrl) miss.push(SHAPE_SLUG[sh].link);
             if (String(e[SHAPE_SLUG[sh].approval] || '') !== pend) miss.push(SHAPE_SLUG[sh].approval);
@@ -5092,7 +5101,7 @@
         return run(step(label + ': ADS row "' + name + '" with the Canva design id', 'Scenario 104'),
           fetchJson(cfg.makeCreateAssets, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ assetType: 'ad', titleSlug: cfg.titleSlug, taItemId: cfg.taItemId, fields: fields, source: 'ta-admaker-v' + VERSION }) })
             .then(function (r) {
-              if (!r.ok || !r.j || r.j.ok !== true) throw new Error('Scenario 104 did not confirm the ADS row.');
+              if (!r.ok || !r.j || r.j.ok !== true) throw new Error('Scenario 104 did not confirm the ADS row.' + said(r));
               var e = r.j.fieldData || null, miss = [], id = r.j.adId || r.j.itemId || '';
               if (!e) throw new Error('Scenario 104 echoed no fieldData, so the row cannot be checked.');
               if (String(e['reformat-recipe'] || '').trim() !== recipe.trim()) miss.push('reformat-recipe');
