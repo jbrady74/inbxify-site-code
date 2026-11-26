@@ -1,6 +1,13 @@
-/* ta-admaker-v4.12.6.js
+/* ta-admaker-v4.12.7.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.7 (26 Nov 2026, Ad Maker Build S4) — "CALL …" SAVES. JS only; CSS v4.12.4. Needs ix-perf v1.2.4.
+     26 Nov: Save stopped at Scenario 104 module 201, "Invalid URL in parameter 'redirect-link'": Make takes only a
+     web address there and Call sent tel:+1…. A phone click is now https://localtap.link/call/+1… (CALL_BASE), which
+     ix-perf sends on to the phone (HC-P-AMS4-4). Every click link is tidied by clickSafe() as it is picked or typed:
+     a phone or tel: becomes the localtap call link, a bare site gets https://, spaces go. A typed link that still is
+     not a web address (mailto:, a sentence) is refused in the box before Save starts, so 104 never half-writes a row.
 
    v4.12.6 (26 Nov 2026, Ad Maker Build S4) — A SCENARIO THAT DOES NOT CONFIRM SAYS WHAT IT ANSWERED. JS only; CSS v4.12.4.
      26 Nov live test: "Scenario 104 did not confirm the ADS row." with no clue why. Every "did not confirm" now adds what
@@ -989,7 +996,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.6', CSS_FILE = 'ta-admaker-v4.12.4.css';
+  var VERSION = '4.12.7', CSS_FILE = 'ta-admaker-v4.12.4.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.18 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -3024,12 +3031,21 @@
     x.sr.magic.els.push({ id: lid, k: 'text', txt: String(text), font: 'sans', weight: 700, italic: false, color: ink, align: 'center', lines: 1, oneLine: true, live: true, added: true, panel: pid, x: bx + w * 0.07, y: by + h * 0.16, w: w * 0.86, h: h * 0.68 });
     return lid;
   }
+  var CALL_BASE = 'https://localtap.link/call/';   // v4.12.7 · HC-P-AMS4-4: ix-perf v1.2.4 sends it on to tel:
+  function clickSafe(u) {   // v4.12.7: a web address Scenario 104 (Make) accepts in ADS redirect-link, or '' when there is none
+    u = String(u || '').trim(); if (!u) return '';
+    var tel = u.match(/^tel:\s*(.+)$/i), digits = (tel ? tel[1] : u).replace(/[\s().-]/g, '');
+    if (tel || /^\+?\d{7,15}$/.test(digits) && !/[a-z]/i.test(u)) return /^\+?\d{7,15}$/.test(digits) ? CALL_BASE + (digits.charAt(0) === '+' ? digits : (digits.length === 10 ? '+1' + digits : '+' + digits)) : '';
+    u = u.replace(/\s+/g, ''); if (!/^https?:\/\//i.test(u)) { if (/^[a-z][a-z0-9+.-]*:/i.test(u) && !/^[^:]+\.[a-z]{2,}(:\d+)?(\/|$)/i.test(u)) return ''; u = 'https://' + u.replace(/^\/+/, ''); }
+    try { var x = new URL(u); return /^https?:$/.test(x.protocol) && /\./.test(x.hostname) ? u : ''; } catch (e) { return ''; }
+  }
+  function asClick(o) { var u = o && clickSafe(o.url); return u ? { kind: o.kind, url: u } : null; }   // v4.12.7: every S.click is a web address
   function clickChoices() {   // v4.6.0: where a click on the ad can go
     var c = cust() || {}, out = [], so = c.socials || {};
     var CLICK_SOCIAL = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok', youtube: 'YouTube', x: 'X', pinterest: 'Pinterest', houzz: 'Houzz' };   // v4.6.1
     var link = function (u) { return /^(https?:|tel:|mailto:)/i.test(u) ? u : 'https://' + u; };
     if (c.defaultLink) out.push({ kind: 'default', label: 'The customer\u2019s default ad link \u00b7 ' + c.defaultLink, url: link(c.defaultLink) });
-    if (c.phone) out.push({ kind: 'phone', label: 'Call ' + c.phone, url: 'tel:' + String(c.phone).replace(/[^\d+]/g, '') });
+    if (c.phone && clickSafe('tel:' + c.phone)) out.push({ kind: 'phone', label: 'Call ' + c.phone, url: clickSafe('tel:' + c.phone) });   // v4.12.7
     if (c.website) out.push({ kind: 'website', label: 'The website \u00b7 ' + c.website, url: /^https?:/i.test(c.website) ? c.website : 'https://' + c.website });
     if (c.booking) out.push({ kind: 'booking', label: 'Online booking \u00b7 ' + c.booking, url: link(c.booking) });
     Object.keys(CLICK_SOCIAL).forEach(function (k) { if (so[k]) out.push({ kind: k, label: CLICK_SOCIAL[k] + ' \u00b7 ' + so[k], url: link(so[k]) }); });
@@ -3041,7 +3057,7 @@
     return '<div class="am-card am-click' + (cur ? '' : ' need') + (!cur && S.clickNudge ? ' nudge' : '') + '"><div class="am-fch"><b>Where a click goes</b><span>' + (cur ? esc(cur.url) : S.clickNudge ? '<b class="am-bad">Pick where a click goes, then Save</b>' : 'Choose one before saving') + '</span></div>' +
       ch.map(function (q) { return '<label class="am-clk"><input type="radio" name="am-click" data-click="' + esc(q.kind) + '" data-url="' + esc(q.url) + '"' + (cur && cur.kind === q.kind ? ' checked' : '') + '> ' + esc(q.label) + '</label>'; }).join('') +
       (ch.length ? '' : '<div class="am-light">The customer record has no phone, website or social pages. Type the link.</div>') +
-      '<label class="am-clk"><input type="radio" name="am-click" data-click="custom"' + (typed || S.clickCustom ? ' checked' : '') + '> A link I type</label><input class="am-inp" data-clickurl="1" placeholder="https://\u2026 or tel:\u2026" value="' + esc(typed ? cur.url : '') + '"' + (typed || S.clickCustom ? '' : ' style="display:none"') + '></div>';
+      '<label class="am-clk"><input type="radio" name="am-click" data-click="custom"' + (typed || S.clickCustom ? ' checked' : '') + '> A link I type</label><input class="am-inp" data-clickurl="1" placeholder="a website or a phone number" value="' + esc(typed ? cur.url : '') + '"' + (typed || S.clickCustom ? '' : ' style="display:none"') + '></div>';
   }
   function origHTML() {   // v4.6.0: the original ad, small, above the canvas on Improve
     if (!improveMode() || !S.magicRaw) return '';
@@ -4615,7 +4631,7 @@
           return run(step(label + ': recording in MEDIA', 'Scenario B Route 4'), mediaRow(up, fileName(c, sh, n))).then(function (id) { mediaId = id; });
         }).then(function () {
           var recipe = IxAdLayouts.recipe.stringify(IxAdLayouts.recipe.make({ input: IxAdLayouts.inputFor(input, x.sr), banner: sh === 'banner' ? x.sr : null, sidebar: sh === 'sidebar' ? x.sr : null }));
-          var fields = { adName: name, customerId: c.id, customerName: c.name, addType: addTypeId(sh), reformatRecipe: recipe, redirectLink: S.click ? S.click.url : '', clickKind: S.click ? S.click.kind : '' };   // v4.7.2: 104 module 201 writes redirectLink to Redirect Link - GO
+          var fields = { adName: name, customerId: c.id, customerName: c.name, addType: addTypeId(sh), reformatRecipe: recipe, redirectLink: S.click ? clickSafe(S.click.url) : '', clickKind: S.click ? S.click.kind : '' };   // v4.7.2: 104 module 201 writes redirectLink to Redirect Link - GO
           if (sh === 'banner') { fields.bannerImageMediaId = mediaId; fields.bannerImageSrc = up.cdnUrl; fields.bannerApproval = pendB; }
           else { fields.sidebarImageMediaId = mediaId; fields.sidebarImageSrc = up.cdnUrl; fields.sidebarApproval = pendS; }
           return run(step(label + ': ADS row "' + name + '" with the recipe', 'Scenario 104'),
@@ -5094,7 +5110,7 @@
           }));
       });
       else chain = chain.then(function () {
-        var fields = { adName: name, customerId: c.id, customerName: c.name, addType: addT, reformatRecipe: recipe, redirectLink: S.click ? S.click.url : '', clickKind: S.click ? S.click.kind : '' };
+        var fields = { adName: name, customerId: c.id, customerName: c.name, addType: addT, reformatRecipe: recipe, redirectLink: S.click ? clickSafe(S.click.url) : '', clickKind: S.click ? S.click.kind : '' };
         if (sh === 'banner') { fields.bannerImageMediaId = mediaId; fields.bannerImageSrc = up.cdnUrl; fields.bannerApproval = pend; }
         else if (sh === 'sidebar') { fields.sidebarImageMediaId = mediaId; fields.sidebarImageSrc = up.cdnUrl; fields.sidebarApproval = pend; }
         else { fields.splashImageMediaId = mediaId; fields.splashImageSrc = up.cdnUrl; }
@@ -5866,7 +5882,7 @@
         S.drafts = { banner: [], sidebar: [] }; S.drafts[shape] = [{ sr: sr, paint: p, label: 'Your parts kit', what: 'The saved ad, every piece editable.', mstep: sr.magic.kit ? 'kit' : 'tune' }];
         S.draftSig = inputSig(); initMake();
         var x = (shape === 'banner' ? S.ed.B : S.ed.S)[0]; setForward(x); setKept(x, true); x.mstep = sr.magic.kit ? 'kit' : 'tune'; syncSavePick();
-        if (r.click) S.click = r.click; if (after) after(x); go('finetune');
+        if (r.click) S.click = asClick(r.click); if (after) after(x); go('finetune');
       });
     }).catch(function (e) { S.improveErr = (e && e.message) || 'The saved ad could not be opened.'; render(); });
   }
@@ -5938,12 +5954,12 @@
     if (t.matches('[data-shslot]')) { var ssk = t.getAttribute('data-shslot'), son = t.checked; each(function (x) { if (!x.sr.shared) return; var cur = (x.sr.shared.slots || ['headline', 'headline2', 'supporting', 'business']).slice(), at = cur.indexOf(ssk); if (son && at < 0) cur.push(ssk); if (!son && at > -1) cur.splice(at, 1); x.sr.shared.slots = cur; }); render(); return; }   // v3.1.0
     if (t.matches('[data-show]')) { var shk = t.getAttribute('data-show'), on = t.checked; each(function (x) { var kk = styleKey(x, shk); if (isExtra(x, shk)) { if (on) { x.sr.style = x.sr.style || {}; x.sr.style[shk] = Object.assign({}, x.sr.style[shk] || {}, { show: true }); } else if (x.sr.style) { delete x.sr.style[shk]; if (x.sr.sizes) delete x.sr.sizes[shk]; } } else { var pp = pieceOf(x.sr, kk); if (on) delete pp.show; else pp.show = false; tidy(x.sr, kk); } }); render(); return; }   // v3.0.1: base places hide; extra lines are added
     if (t.matches('[data-bgc]')) { var bgv = hex(t.value); each(function (x) { if (x.sr.magic && x.sr.magic.flat) x.sr.magic.bg = bgv; else x.sr.bg = bgv; }); render(); return; }   // v4.1.0 · v4.4.0
-    if (t.matches('[data-tbin]')) { var ti = t.getAttribute('data-tbin'); if (ti === 'click') { var cv9 = t.value; S.click = cv9 ? { kind: cv9.split('|')[0], url: cv9.slice(cv9.indexOf('|') + 1) } : null; render(); return; } t.blur(); tbApply(ti, t.value); return; }   // v4.7.0
+    if (t.matches('[data-tbin]')) { var ti = t.getAttribute('data-tbin'); if (ti === 'click') { var cv9 = t.value; S.click = cv9 ? asClick({ kind: cv9.split('|')[0], url: cv9.slice(cv9.indexOf('|') + 1) }) : null; render(); return; } t.blur(); tbApply(ti, t.value); return; }   // v4.7.0
     if (t.matches('[data-pgrp]')) { var gx = forward(), ga = gx && magicEl(gx, t.getAttribute('data-pgrp')), gb = gx && magicEl(gx, t.value); if (ga && gb) { pushHist(); var gid2 = ga.grp || gb.grp || ('g' + Date.now() % 100000); [ga, gb].forEach(function (o) { var old = o.grp; if (old && old !== gid2) gx.sr.magic.els.forEach(function (q) { if (q.grp === old) q.grp = gid2; }); o.grp = gid2; }); } render(); return; }   // v4.6.0
     if (t.matches('[data-what]')) { if (S.canva) { S.canva.what = t.getAttribute('data-what'); render(); } return; }   // v4.11.3: What happens
     if (t.matches('[data-sendto]')) { if (S.canva) { S.canva.to = t.getAttribute('data-sendto'); render(); } return; }
-    if (t.matches('[data-click]')) { var ck = t.getAttribute('data-click'); if (ck === 'custom') { var ci = document.querySelector('#' + MOUNT_ID + ' [data-clickurl]'), cu = ci ? ci.value.trim() : ''; S.click = cu ? { kind: 'custom', url: cu } : null; S.clickCustom = true; } else { S.click = { kind: ck, url: t.getAttribute('data-url') }; S.clickCustom = false; } render(); return; }
-    if (t.matches('[data-clickurl]')) { var cv2 = t.value.trim(); S.click = /^(https?:\/\/|tel:|mailto:)/i.test(cv2) ? { kind: 'custom', url: cv2 } : null; if (cv2 && !S.click) toast('Start the link with https://, tel: or mailto:', 'err'); render(); return; }
+    if (t.matches('[data-click]')) { var ck = t.getAttribute('data-click'); if (ck === 'custom') { var ci = document.querySelector('#' + MOUNT_ID + ' [data-clickurl]'), cu = ci ? ci.value.trim() : ''; S.click = cu ? asClick({ kind: 'custom', url: cu }) : null; S.clickCustom = true; } else { S.click = asClick({ kind: ck, url: t.getAttribute('data-url') }); S.clickCustom = false; } render(); return; }
+    if (t.matches('[data-clickurl]')) { var cv2 = t.value.trim(); S.click = cv2 ? asClick({ kind: 'custom', url: cv2 }) : null; if (cv2 && !S.click) toast('That is not a web address or a phone number. Type the site (e.g. chemdry.com) or a phone number.', 'err'); render(); return; }   // v4.12.7
     if (t.matches('[data-pf]')) { var pfk = t.getAttribute('data-pf'); each(function (x) { var kk = styleKey(x, pfk), pp = pieceOf(x.sr, kk); pp.font = t.value.trim(); x._fontRetry = false; if (pp.font) IxAdLayouts.ensureFont(pp.font); tidy(x.sr, kk); }); render(); return; }   // v3.0.0
     if (t.matches('[data-ps]')) { render(); return; }
     if (t.id === 'am-layout') { var code = t.value, Lc = IxAdLayouts.LAYOUTS[code]; each(function (x) { if (cardShape(x) !== Lc.shape) return; x.sr.layout = code; if (Lc.usesPhoto) { var src = (S.drafts[Lc.shape] || []).filter(function (d) { return d.sr.layout === code; })[0]; x.sr.crop = x.sr.crop && x.sr.crop.mode !== 'whole' ? x.sr.crop : (src ? JSON.parse(JSON.stringify(src.sr.crop)) : null); } else x.sr.crop = null; }); render(); return; }
