@@ -1,6 +1,13 @@
-/* ta-admaker-v4.12.4.js
+/* ta-admaker-v4.12.5.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.5 (26 Nov 2026, Ad Maker Build S4) — NEW ADS ARE NAMED "<Customer> · <BA|SB|SPL|TXA> · <Mon YYYY>". JS only; CSS v4.12.4.
+     Image Links S4 renamed every ADS row to that pattern (ix-issue-data v1.0.213 /ads-image-backfill?do=rename, HC-P-IL4-3)
+     and asked Ad Maker to follow. versionName(c, n, shape): the customer, the shape's code, the month in short form
+     ("Nov 2026"), then " v2", " v3" for a second and third of the same customer, shape and month. When one Save
+     writes several rows, each row is counted within its own shape. Codes: banner BA, sidebar SB, splash SPL, text TXA
+     (HC-P-AMS4-3, mirrors HC-P-IL4-3; change both together).
 
    v4.12.4 (25 Nov 2026, Ad Maker Build S4) — THE AD FORM TAB IS BACK. JS only; the CSS is TA Reskin S4b's ta-admaker-v4.12.4.css.
      v4.12.3 put its version comment in front of ['form', 'Ad form', true] on the ADS_TABS line, which made that entry a
@@ -978,7 +985,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.4', CSS_FILE = 'ta-admaker-v4.12.4.css';
+  var VERSION = '4.12.5', CSS_FILE = 'ta-admaker-v4.12.4.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.18 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -1411,13 +1418,16 @@
         bannerApproval: optName('banner-approval', fd['banner-approval']), sidebarApproval: optName('sidebar-approval', fd['sidebar-approval']), createdOn: it.createdOn || '' }; });
   }
   // "<Customer> · <Month Year>", then v2, v3 — counted against the rows that exist.
-  function versionName(c, n) {
-    var month = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    var baseName = c.name + ' \u00b7 ' + month, have = versionsOf(c.id).map(function (v) { return v.name; });
+  var NAME_CODES = { banner: 'BA', sidebar: 'SB', splash: 'SPL', text: 'TXA' };   // v4.12.5 · HC-P-AMS4-3 (mirrors ix-issue-data HC-P-IL4-3)
+  function versionName(c, n, sh) {   // "<Customer> · <code> · <Mon YYYY>", then v2, v3 for the same customer, shape and month
+    var month = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    var code = NAME_CODES[sh || S.shape] || NAME_CODES.banner;
+    var baseName = c.name + ' \u00b7 ' + code + ' \u00b7 ' + month, have = versionsOf(c.id).map(function (v) { return v.name; });
     var k = 1; var name = baseName;
-    for (var i = 0; i < n; i++) { while (have.indexOf(name) > -1) { k++; name = baseName + ' v' + k; } have.push(name); if (i < n - 1) { k++; name = baseName + ' v' + k; } }
+    for (var i = 0; i < (n || 1); i++) { while (have.indexOf(name) > -1) { k++; name = baseName + ' v' + k; } have.push(name); if (i < (n || 1) - 1) { k++; name = baseName + ' v' + k; } }
     return name;
   }
+  function nthOfShape(rows, i) { var sh = rows[i].shape, k = 0; for (var j = 0; j <= i; j++) if (rows[j].shape === sh) k++; return k; }   // v4.12.5
   function needsAll() {
     var sent = sentBackItems(), needed = S.needs.filter(function (x) { return x.kind === 'needed'; }), notes = S.needs.filter(function (x) { return x.kind === 'note'; });
     var byWhen = function (a, b) { return String(a.when || '').localeCompare(String(b.when || '')); };
@@ -3497,7 +3507,7 @@
     var rows = rowsToSave(), L = proofLetters(), c = cust() || {}, cfg = CFG(), tc = window.TA_CONFIG || {};
     var send = rows.filter(function (r) { return r.x.send !== false && r.x.paint && r.x.paint.canvas; });
     if (!send.length) { toast('No proofs are marked Send.', 'err'); return; }
-    var names = {}; rows.forEach(function (r, i) { names[r.x.id] = (S.saving && S.saving.rows && S.saving.rows[i] && S.saving.rows[i].name) || versionName(c, i + 1); });
+    var names = {}; rows.forEach(function (r, i) { names[r.x.id] = (S.saving && S.saving.rows && S.saving.rows[i] && S.saving.rows[i].name) || versionName(c, nthOfShape(rows, i), r.shape); });
     var pub = cfg.publisherName || tc.publisherName || '', title = tc.titleName || cfg.titleName || '';
     toast('Making the proofs PDF\u2026', 'ok');
     loadPdfLib().then(function (JsPDF) {
@@ -4584,9 +4594,9 @@
       chain = chain.then(function () { return run(step('Piece ' + k + ': uploading and recording in MEDIA for ' + c.name, 'Uploadcare \u00b7 Scenario B Route 4'), savePiece(p, k)); });
     });
     rows.forEach(function (row, i) {
-      var n = i + 1, sh = row.shape, x = row.x, label = shapeLabel(sh) + ' \u00b7 ' + versionName(c, n);
+      var n = nthOfShape(rows, i), sh = row.shape, x = row.x, label = shapeLabel(sh) + ' \u00b7 ' + versionName(c, n, sh);
       chain = chain.then(function () {
-        var name = versionName(c, n), up = null, mediaId = null, input;
+        var name = versionName(c, n, sh), up = null, mediaId = null, input;
         usePicOf(x); S._wOverride = x.words || null; if (S.photo) { var pu = (S.pics || []).filter(function (q) { return q.img === S.photo.img; })[0]; if (pu && pu.url) S.photo.url = pu.url; }   // v4.0.3
         return layoutInput().then(function (inp) { input = inp; S._wOverride = null;
           return run(step(label + ': painting at 2\u00d7', 'in the browser'), IxAdLayouts.paint(input, x.sr).then(function (p) { x.paint = p; }));
@@ -4646,7 +4656,7 @@
         (S.fc.busy ? '<span class="am-note">Asking for a second look\u2026</span>' : '<button type="button" class="am-btn2" data-act="fcAsk" title="Claude reads the finished ads for typos, crowding and anything hard to read on a phone">' + (S.fc.asked ? 'Ask again' : 'Ask for a second look') + '</button>') + '</div>' + (S.fc.err ? '<div class="am-err">' + esc(S.fc.err) + '</div>' : '') + (S.fc.asked && !S.fc.busy && !Object.keys(S.fc.ai).length ? '<div class="am-note" style="margin:-4px 0 8px">The second look found nothing.</div>' : '');
       var h0 = colh(W.whatSaveWrites, 'Press Save in the bar. Nothing is written until then.') + clickCardHTML() + '<div class="am-card am-sum">' + fcHead +   // v4.6.0: where a click goes, first
         rows.map(function (r, i) { var L = IxAdLayouts.LAYOUTS[r.x.sr.layout] || {}, fl = fcRows[i];
-          return '<div class="am-sumrow big"><div class="pic" data-sumcv="' + i + '"></div><div class="am-sumr"><b>' + esc(shapeLabel(r.shape)) + '</b> \u00b7 ' + esc((r.x.label ? r.x.label + ' \u00b7 ' : '') + r.x.sr.layout + (L.name ? ' ' + L.name : '')) + '<div class="am-srcl">Saved as <b>' + esc(versionName(c, i + 1)) + '</b> \u00b7 ' + APPROVAL_WORDS.pending + '</div>' +
+          return '<div class="am-sumrow big"><div class="pic" data-sumcv="' + i + '"></div><div class="am-sumr"><b>' + esc(shapeLabel(r.shape)) + '</b> \u00b7 ' + esc((r.x.label ? r.x.label + ' \u00b7 ' : '') + r.x.sr.layout + (L.name ? ' ' + L.name : '')) + '<div class="am-srcl">Saved as <b>' + esc(versionName(c, nthOfShape(rows, i), r.shape)) + '</b> \u00b7 ' + APPROVAL_WORDS.pending + '</div>' +
             '<div class="am-phoneh" style="margin-top:8px">On a phone <span>' + PHONE_W + ' px</span></div><div class="am-phonepic" data-sumph="' + i + '"></div>' +
             '<div class="am-fclist">' + (fl.length ? fl.map(function (f) { return '<div class="am-fc"><span class="am-flag ' + f.level + '" style="background:' + (f.level === 'bad' ? '#FBE3E0' : '#FBF3DF') + ' !important">' + (f.ai ? 'Second look' : f.level === 'bad' ? 'Fix' : 'Check') + '</span><span class="tx">' + esc(f.text) + (f.fix && f.fix.kind === 'replace' ? ' <span class="am-light">(\u201c' + esc(f.fix.find) + '\u201d \u2192 \u201c' + esc(f.fix.v) + '\u201d)</span>' : '') + '</span>' +
               (S.fc.busyFix === f.key0 ? '<span class="am-note">Fixing\u2026</span>' : (f.fix ? '<button type="button" class="am-btn2" data-act="fcFix" data-i="' + i + '" data-k="' + esc(f.key0) + '">Fix</button>' : '') + '<a href="#" class="am-up" data-act="fcIgnore" data-k="' + esc(f.key0) + '">Ignore</a>') + '</div>'; }).join('') : '<div class="am-note">Nothing flagged on this one.</div>') + '</div></div></div>'; }).join('') +
@@ -5014,7 +5024,7 @@
   function checkNameLine(cv, c) {
     if (cv.existing) return 'Saved as <b>' + esc(cv.existing.name) + '</b>';
     if (cv.fromVersion) return 'Replaces the ' + shapeLabel(S.shape).toLowerCase() + ' on <b>' + esc(cv.fromVersion.name) + '</b>';
-    return 'Will be saved as <b>' + esc(versionName(c, 1)) + '</b>';
+    return 'Will be saved as <b>' + esc(versionName(c, 1, S.shape)) + '</b>';
   }
   function canvaRecipe(cv) { var d = shapeDims(S.shape) || {}; return JSON.stringify({ v: 'canva', designId: cv.job.designId, jobId: cv.job.id, shape: S.shape, w: d.w, h: d.h, scale: 2, made: new Date().toISOString(), by: 'ta-admaker-v' + VERSION }); }
   function isCanvaRecipe(s) { return /^\s*\{\s*"v"\s*:\s*"canva"/.test(String(s || '')); }
@@ -5050,7 +5060,7 @@
     }
     var who = what === 'send' ? sendToWho() : null, toName = who ? (cv.to === 'test' ? who.testName : who.pubName) : '';
     S.screen = 'save'; S.saving = { steps: [], rows: [], done: false, err: '', head: (ex ? SAVE_WORDS.head2Saved : SAVE_WORDS.head2)[what] + (sh === 'splash' ? ' (no approval field for splash)' : ''), outcome: what, was: !!ex }; render();
-    var name = ex ? ex.name : fromV ? fromV.name : versionName(c, 1), label = shapeLabel(sh) + ' · ' + name, up = null, mediaId = null, row = null;
+    var name = ex ? ex.name : fromV ? fromV.name : versionName(c, 1, sh), label = shapeLabel(sh) + ' · ' + name, up = null, mediaId = null, row = null;
     var designId = ex ? (ex.designId || '') : (cv.job ? cv.job.designId : ''), recipe = ex ? '' : canvaRecipe(cv), chain = Promise.resolve();
     function rowOf(id, link) { row = { name: name, id: id, shape: sh, noApproval: sh === 'splash', banner: sh === 'banner' ? link : '', sidebar: sh === 'sidebar' ? link : '', splash: sh === 'splash' ? link : '', designId: designId }; S.saving.rows.push(row); }
     if (ex) rowOf(ex.adId, ex.picture || '');

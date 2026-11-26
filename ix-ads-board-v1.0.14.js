@@ -1,7 +1,10 @@
-// ix-ads-board-v1.0.13.js
+// ix-ads-board-v1.0.14.js
 // ============================================================
 // INBXIFY · ix-ads-board · the Ads board, shared by the Publisher Portal and the T-A Ads tab
 //
+// v1.0.14 (26 Nov 2026, Ad Maker Build S4) — A SENT-BACK CARD'S PILL READS "SENT BACK". JS only; CSS stays v1.0.13.
+//   Test 6 (26 Nov): on the inbxify side a sent-back version's pill said "To make" while the Task list files it under
+//   "From the publisher, to do". Its pill is now "Sent back", like "Not sent" for an unsent one (same look, b-ix).
 // v1.0.13 (25 Nov 2026, Ad Maker Build S4) — TASK LIST AND ADVERTISERS ARE TWO VIEWS. JS and CSS v1.0.13.
 //   Ruling (Jeff, 25 Nov, by voice): the first Ads tab is a task list; the client list moves to its own tab, Advertisers.
 //   · O.view / API setView('tasks' | 'advs') picks the inbxify side's view (the host's two tabs share one board, one read).
@@ -171,7 +174,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.13', CSS_VERSION = '1.0.13', FILE = 'ix-ads-board-v' + VERSION + '.js';
+  var VERSION = '1.0.14', CSS_VERSION = '1.0.13', FILE = 'ix-ads-board-v' + VERSION + '.js';
   var SH = ['banner', 'sidebar', 'splash', 'text'];                        // HC-P-PP8-8
   var SHN = { banner: 'Banner', sidebar: 'Sidebar', splash: 'Splash', text: 'Text ad' };
   var W = {                                                              // HC-P-PP8-7
@@ -263,7 +266,7 @@
       meta: { sent: 'Approval email sent to {to} on {on}.', sentTest: 'Test approval email sent to {to} on {on}.', sentUnopened: 'Link not opened yet.', sentOpened: 'Link opened {on}.', sentUntil: 'Good until {until}.',
               unsent: 'Pending · no approval email out.', needs: 'Pending with the publisher since {on}.', answered: 'The advertiser answered on {on}; the publisher decides.', adv: 'Out with the advertiser.', back: 'Sent back by the publisher, {on}: {note}' },
       tip: { you: 'With the publisher: waiting for their OK', adv: 'Waiting on the advertiser', ix: 'To make: inbxify’s move' },
-      badge: { you: 'With publisher', adv: 'With advertiser', ix: 'To make', unsent: 'Not sent' },
+      badge: { you: 'With publisher', adv: 'With advertiser', ix: 'To make', unsent: 'Not sent', back: 'Sent back' },
       save: { steps: ['Checking your login', 'Saving the approvals', 'Pointing the site at the new ads', 'Confirming each one was written'] }
     }
   };
@@ -465,11 +468,11 @@
     function badge(o) {
       var BW = IX ? Object.assign({}, W.badge, W.ix.badge) : W.badge;
       if (o === 'ok') return '<span class="ps-ad-badge b-ok" title="' + esc(BW.ok) + '">' + mark('ok') + '<span class="bl">' + esc(BW.ok) + '</span></span>';
-      if (o === 'unsent') return '<span class="ps-ad-badge b-ix" title="' + esc(BW.unsent) + '"><span class="bl">' + esc(BW.unsent) + '</span></span>';   // v1.0.10
+      if (o === 'unsent' || o === 'back') return '<span class="ps-ad-badge b-ix" title="' + esc(BW[o]) + '"><span class="bl">' + esc(BW[o]) + '</span></span>';   // v1.0.10 (v1.0.14: back)
       if (o === 'you' || o === 'adv' || o === 'ix') return '<span class="ps-ad-badge b-' + o + '" title="' + esc(BW[o]) + '"><span class="bl">' + esc(BW[o]) + '</span></span>';
       return '<span class="ps-ad-badge b-plain" title="' + esc(BW[o] || o) + '"><span class="bl">' + esc(BW[o] || o) + '</span></span>';
     }
-    function vBadge(v) { return v.state === 'current' ? badge('ok') : IX && v.state === 'unsent' ? badge('unsent') : vOwn(v) ? badge(vOwn(v)) : badge(v.state === 'ready' ? 'ready' : 'earlier'); }   // v1.0.10: Not sent
+    function vBadge(v) { return v.state === 'current' ? badge('ok') : IX && (v.state === 'unsent' || v.state === 'back') ? badge(v.state) : vOwn(v) ? badge(vOwn(v)) : badge(v.state === 'ready' ? 'ready' : 'earlier'); }   // v1.0.10: Not sent
     function cardActs(c, sh, v) {   // the buttons on a version card, by side
       var h = '';
       if (IX) {
