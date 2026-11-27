@@ -1,5 +1,5 @@
-/* ta-admaker-v4.12.6.css */
-/* v4.12.6 CSS (27 Nov 2026, Ad Maker Build S5): the IN CANVA drafts get their own panel at the top of In progress (Jeff: "it gets lost"). Tinted panel with a purple rule down its left side; heading "In Canva · not saved to the site yet" with a count, at row-title size; rows shaped like the task rows below (name on the same left line, one muted line under it, picture to the right, a fixed purple "In Canva" pill, buttons lined up with the task rows' buttons). The older .ta-ads-dr rules are replaced by the block at the end. */
+/* ta-admaker-v4.12.7.css */
+/* v4.12.7 CSS (27 Nov 2026, preview v4.12.6 corrected: the panel bleeds 14px each side so the customer names sit on the task rows' left line, and the grid gap is 10px like the task rows so the buttons end on the same line) (27 Nov 2026, Ad Maker Build S5): the IN CANVA drafts get their own panel at the top of In progress (Jeff: "it gets lost"). Tinted panel with a purple rule down its left side; heading "In Canva · not saved to the site yet" with a count, at row-title size; rows shaped like the task rows below (name on the same left line, one muted line under it, picture to the right, a fixed purple "In Canva" pill, buttons lined up with the task rows' buttons). The older .ta-ads-dr rules are replaced by the block at the end. */
 /* v4.12.5 CSS (27 Nov 2026, Ad Maker Build S5): a ticked tile fills its circle. Jeff: on Set up, the Logo tile had the gold trim (ticked) but an empty circle. The circle was filled ink with a white tick, but a page rule turned its background white, so the white tick vanished. The ticked circle now holds ink, with the white tick, over any page rule. Checked on the live page: ticked circle rgb(30,42,58), unticked stays white. Nothing else changed. */
 /* v4.12.4 CSS (25 Nov 2026, TA Reskin S4b): the drawer heading is the platform section heading, Newsreader 22 semibold (--ix-fs-section, --ix-fw-section). CSS only; the JS stays ta-admaker-v4.12.3.js. */
 /* ta-admaker-v4.12.3.css
@@ -1138,14 +1138,14 @@ textarea.am-mailin, section.publisher-wrapper textarea.am-mailin { min-height: 1
 .am-cvpiece.on .ck, section.publisher-wrapper .am-cvpiece.on .ck{background:var(--am-ink)!important;border-color:var(--am-ink)!important;color:var(--ps-paper)!important}   /* v4.12.5 */
 
 
-/* ════ v4.12.6 (27 Nov 2026) · the IN CANVA panel at the top of In progress ════ */
-.ta-ads-dr, section.publisher-wrapper .ta-ads-dr { background: var(--ps-ground-2) !important; box-shadow: inset 3px 0 0 var(--ps-purple); border: 0; border-bottom: 1px solid var(--ps-rule); border-radius: 0; margin: 0; padding: 0 0 4px; }
+/* ════ v4.12.6-7 (27 Nov 2026) · the IN CANVA panel at the top of In progress ════ */
+.ta-ads-dr, section.publisher-wrapper .ta-ads-dr { background: var(--ps-ground-2) !important; box-shadow: inset 3px 0 0 var(--ps-purple); border: 0; border-bottom: 1px solid var(--ps-rule); border-radius: 0; margin: 0 -14px; padding: 0 0 4px; }
 .ta-ads-drh, section.publisher-wrapper .ta-ads-drh { display: flex; align-items: baseline; gap: 10px; padding: 12px 14px 6px; border: 0; }
 .ta-ads-drh h3, section.publisher-wrapper .ta-ads-drh h3 { margin: 0 !important; font: 700 var(--ix-fs-14)/1.2 Sen, system-ui, sans-serif !important; letter-spacing: 0; text-transform: none; color: var(--ps-ink) !important; }
 .ta-ads-drh .n, section.publisher-wrapper .ta-ads-drh .n { display: inline-block; min-width: 22px; text-align: center; font: 700 var(--ix-fs-12)/1 Sen, system-ui, sans-serif; color: var(--ps-paper) !important; background: var(--ps-purple) !important; border-radius: 10px; padding: 3px 7px; }
 .ta-ads-drh .s, section.publisher-wrapper .ta-ads-drh .s { font-size: var(--ix-fs-12-5); color: var(--ps-muted); }
 .ta-ads-drnone { padding: 4px 14px 10px; font-size: var(--ix-fs-13); color: var(--ps-muted); }
-.ta-ads-drrow, section.publisher-wrapper .ta-ads-drrow { display: grid; grid-template-columns: minmax(0,1fr) 132px 96px auto 26px; gap: 14px; align-items: center; min-height: 58px; padding: 6px 14px; border-top: 1px solid var(--ps-rule-soft); font-size: var(--ix-fs-13); color: var(--ps-ink); }
+.ta-ads-drrow, section.publisher-wrapper .ta-ads-drrow { display: grid; grid-template-columns: minmax(0,1fr) 132px 96px auto 26px; gap: 10px; align-items: center; min-height: 58px; padding: 6px 14px; border-top: 1px solid var(--ps-rule-soft); font-size: var(--ix-fs-13); color: var(--ps-ink); }
 .ta-ads-drrow .tx { min-width: 0; display: block; }
 .ta-ads-drrow .cu { display: block; font-weight: 600; font-size: var(--ix-fs-14); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ta-ads-drrow .l2 { display: block; margin-top: 2px; font-size: var(--ix-fs-12-5); color: var(--ps-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

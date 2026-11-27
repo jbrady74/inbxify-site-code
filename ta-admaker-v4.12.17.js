@@ -1,8 +1,9 @@
-/* ta-admaker-v4.12.16.js
+/* ta-admaker-v4.12.17.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
 
-   v4.12.16 (27 Nov 2026, Ad Maker Build S5) — THE IN CANVA DRAFTS GET THEIR OWN PANEL. JS and CSS v4.12.6.
+   v4.12.17 (27 Nov 2026, Ad Maker Build S5) — THE IN CANVA DRAFTS GET THEIR OWN PANEL. JS and CSS v4.12.7.
+     (v4.12.16 / CSS v4.12.6 were a preview only; checked in the browser, the names sat 14px right of the task rows'.)
      Jeff, 27 Nov: the IN CANVA drafts at the top of In progress "get lost". Ruled the proposal: their own tinted panel
      with a purple rule; heading "In Canva · not saved to the site yet" with a count at row-title size; each row shaped
      like the task rows below (customer name on the same left line, one muted line under it: shape · worked on · brought
@@ -1058,7 +1059,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.16', CSS_FILE = 'ta-admaker-v4.12.6.css';
+  var VERSION = '4.12.17', CSS_FILE = 'ta-admaker-v4.12.7.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.19 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
