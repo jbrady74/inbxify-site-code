@@ -15687,7 +15687,9 @@
         if (!LIMITS.unmapped[type + ':' + f.slug]) { LIMITS.unmapped[type + ':' + f.slug] = 1; log('field limit not on this form', type, f.slug, f.limit); }
         return;
       }
-      out.push({ k: k, slug: f.slug, label: f.label || f.slug, max: f.limit, html: !!f.rich, required: !!f.required });
+      // Webflow labels can carry marker symbols (e.g. an orange dot); the form shows the words only.
+      var label = String(f.label || f.slug).replace(/^[^A-Za-z0-9]+/, '').trim() || f.slug;
+      out.push({ k: k, slug: f.slug, label: label, max: f.limit, html: !!f.rich, required: !!f.required });
     });
     return out;
   }

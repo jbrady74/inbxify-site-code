@@ -621,6 +621,12 @@
 .asf2[class] .asf2-side{background:var(--ix-cream) !important;border:1px solid var(--ix-border-soft);border-radius:var(--ix-radius-sm);padding:var(--ix-sp-12);}
 .asf2[class] .asf2-ch[data-a2-ch="body"] trix-editor.asf2-rte{min-height:360px;}
 
+/* Call to action (its own chapter, Jeff 27 Nov) */
+.asf2[class] .asf2-cta-sw{display:inline-flex;}
+.asf2[class] .asf2-ch[data-a2-ch="cta"] .ix-revert[data-a2-act="cta-cancel"]{margin-left:var(--ix-sp-8);}
+.asf2[class] .asf2-cta-note{margin:var(--ix-sp-8) 0 var(--ix-sp-12);font-size:var(--ix-fs-small);color:var(--ix-text-light);max-width:760px;}
+.asf2[class] [data-a2-ctabox][hidden]{display:none;}
+
 /* Rarely used */
 .asf2[class] .asf2-ch--more .asf2-more{border:0;margin:0;padding:0;}
 .asf2[class] .asf2-ch--more .asf2-more > summary::before{content:none;}

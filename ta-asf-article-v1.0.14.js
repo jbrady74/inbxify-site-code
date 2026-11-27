@@ -30,6 +30,11 @@
      7 · NO BOXES THAT SCROLL: the teaser, short summary, CTA text and the AI strip grow with their text.
      8 · See raw text, Source metadata, Compare with print and the body's photo picker open beside the body
          (chapter 5), no longer in place of the photos.
+     9 · CALL TO ACTION IS ITS OWN CHAPTER (6), ruled by Jeff 27 Nov: one switch, "Add a call to action". Off, the
+         article has none and nothing is asked. On, the button label, the link and the text all have to be filled
+         in, and each empty one is on the what's-left list. Switching it off on an article that had one empties the
+         three fields (gold, with cancel). The switch is the form's own: on when any of the three holds words.
+         Rarely used is chapter 7.
 
    v1.0.13 (11 Nov, Grab from print) — Jeff, 11 Nov. Needs ta-asf v1.12.8.
      · The Images area's disabled "Print pages" placeholder (kept since
@@ -318,11 +323,14 @@
         { key: 'showBusinessInByline', label: '', kind: 'switch', text: 'Show business' } ] }
     ]}
   ];
+  // v1.0.14 — the call to action is its own chapter (Jeff, 27 Nov)
+  var CTA_FIELDS = [
+    { key: 'ctaButton', label: 'Button label', kind: 'text', req: true },
+    { key: 'ctaUrl', label: 'Link', kind: 'text', req: true },
+    { key: 'ctaText', label: 'Text beside the button', kind: 'textarea', req: true }
+  ];
+  var CTA_KEYS = ['ctaButton', 'ctaUrl', 'ctaText'];
   var MORE = [
-    { pair: [
-      { key: 'ctaButton', label: 'CTA button label', kind: 'text' },
-      { key: 'ctaUrl', label: 'CTA URL', kind: 'text' } ] },
-    { key: 'ctaText', label: 'CTA text', kind: 'textarea' },
     { key: 'slug', label: 'Address', kind: 'text' },   // v1.0.14: the page address, set on create
     { key: 'bannerStatement', label: 'Banner', kind: 'text' },
     // Unused today; kept reachable, not in the way (ruled 24 Sept).
@@ -636,6 +644,8 @@
     M.roles = clone(M.baseRoles);
     M.trixBaseline = null;
     M.lastBodyFromTrix = null;
+    M.ctaBase = hasCta(base);                  // v1.0.14
+    M.ctaOn = M.ctaBase || hasCta(a);
     // Dirty entries for keys this form owns are rebuilt from the new
     // baseline; anything a prefill or AI pass wrote stays as a value.
     reconcileAll();
@@ -1004,7 +1014,8 @@
     { n: 2, id: 'words',    title: 'The words',                  q: 'What a reader meets first' },
     { n: 3, id: 'byline',   title: 'Byline',                     q: 'Who wrote it and how the name prints' },
     { n: 4, id: 'pictures', title: 'Pictures',                   q: 'This article’s photos. Main, share image, captions and alt text' },
-    { n: 5, id: 'body',     title: 'Body',                       q: 'The story. Grows with the text' }
+    { n: 5, id: 'body',     title: 'Body',                       q: 'The story. Grows with the text' },
+    { n: 6, id: 'cta',      title: 'Call to action',             q: 'Optional. A button readers can click' }
   ];
   function chapterHTML(c, body, cls) {
     return '<section class="asf2-ch' + (cls ? ' ' + cls : '') + '" data-a2-ch="' + c.id + '" aria-label="' + esc(c.title) + '">' +
@@ -1037,9 +1048,14 @@
           '<div class="asf2-body" data-a2-body>' + bodyInnerHTML() + '</div>' +
           '<div class="asf2-side" data-a2-side hidden></div>' +
         '</div>') +
+      chapterHTML(ch('cta'),
+        '<label class="ix-switch asf2-cta-sw" data-a2-ctasw><input type="checkbox" data-a2-act="cta"><span class="ix-switch-track"></span><span>Add a call to action</span></label>' +
+        '<button type="button" class="ix-revert" data-a2-act="cta-cancel" hidden>cancel</button>' +
+        '<p class="asf2-cta-note">When it is on, all three are needed. A button placed inside the body itself, for example at the end of the story, is a later idea; this is the article\u2019s one call to action.</p>' +
+        '<div class="asf2-band asf2-band--3" data-a2-ctabox>' + CTA_FIELDS.map(fieldHTML).join('') + '</div>') +
       '<section class="asf2-ch asf2-ch--more" data-a2-ch="more">' +
-        '<details class="asf2-more"' + (M.moreOpen ? ' open' : '') + '><summary><span class="asf2-ch-n">6</span>' +
-          '<span class="asf2-ch-t">Rarely used</span><span class="asf2-ch-q">Call to action, address, banner statement, revenue type, video and audio links</span></summary>' +
+        '<details class="asf2-more"' + (M.moreOpen ? ' open' : '') + '><summary><span class="asf2-ch-n">7</span>' +
+          '<span class="asf2-ch-t">Rarely used</span><span class="asf2-ch-q">Address, banner statement, revenue type, video and audio links</span></summary>' +
           '<div class="asf2-more-body asf2-band asf2-band--3">' + MORE.map(fieldHTML).join('') + '</div></details>' +
       '</section>' +
       finishHTML() +
@@ -1246,6 +1262,7 @@
     renderGallery();
     renderLeadAndTray();
     renderKind();      // v1.0.14
+    renderCta();       // v1.0.14
     renderTicks();
     renderBar();
     growAll();         // v1.0.14
@@ -1423,7 +1440,7 @@
       list.push({ ch: 'words', text: 'Every field within Webflow\u2019s limits', jump: '', ok: true });
     } else {
       lc.over.forEach(function (o) {
-        var chap = o.k === 'bodyHtml' ? 'body' : FIELD_KEYS.indexOf(o.k) > -1 && MORE_KEYS[o.k] ? 'more' : o.k in BYLINE_KEYS ? 'byline' : 'words';
+        var chap = o.k === 'bodyHtml' ? 'body' : CTA_KEYS.indexOf(o.k) > -1 ? 'cta' : MORE_KEYS[o.k] ? 'more' : o.k in BYLINE_KEYS ? 'byline' : 'words';
         list.push({ ch: chap, text: o.label + ' is ' + o.n + ' characters, ' + (o.n - o.max) + ' over its limit of ' + o.max, jump: 'f:' + o.k, ok: false });
       });
     }
@@ -1439,12 +1456,17 @@
     if (!usedPhotoIds().length && (a.mainImageSrc) && !isPhotoEssay()) {
       list.push({ ch: 'pictures', text: 'Alt text for the Main photo', jump: 'ch:pictures', ok: !!String(a.mainImageAlt || '').trim() });
     }
+    if (M.ctaOn) {
+      CTA_FIELDS.forEach(function (d) {
+        list.push({ ch: 'cta', text: 'Call to action: ' + d.label.toLowerCase(), jump: 'f:' + d.key, ok: !!String(a[d.key] || '').trim() });
+      });
+    }
     [['sponsor-ok', 'Sponsor OK'], ['edit-pass', 'Edit pass']].forEach(function (t) {
       list.push({ ch: '', text: t[1], tick: t[0], ok: !!(S.rtpManualState || {})[t[0]] });
     });
     return list;
   }
-  var MORE_KEYS = { ctaButton: 1, ctaUrl: 1, ctaText: 1, slug: 1, bannerStatement: 1, revenueType: 1, videoUrl: 1, audioUrl: 1 };
+  var MORE_KEYS = { slug: 1, bannerStatement: 1, revenueType: 1, videoUrl: 1, audioUrl: 1 };
   var BYLINE_KEYS = { writerName: 1, writerTitle: 1, cowriterName: 1, cowriterTitle: 1, photographer: 1 };
 
   function renderTicks() {
@@ -1516,6 +1538,29 @@
     }
     var foot = q('.asf2-fin-foot');
     if (foot) foot.hidden = !n && !(am && am.innerHTML);
+  }
+
+  // v1.0.14 — the call-to-action chapter.
+  function hasCta(o) { return CTA_KEYS.some(function (k) { return !!String((o && o[k]) || '').trim(); }); }
+  function renderCta() {
+    var sw = q('[data-a2-act="cta"]'), box = q('[data-a2-ctabox]'), cx = q('[data-a2-act="cta-cancel"]');
+    if (!sw || !box) return;
+    sw.checked = !!M.ctaOn;
+    var ch = !!M.ctaOn !== !!M.ctaBase;
+    var w = q('[data-a2-ctasw]'); if (w) w.classList.toggle('ix-switch--changed', ch);
+    if (cx) cx.hidden = !ch;
+    box.hidden = !M.ctaOn;
+  }
+  function setCta(on) {
+    M.ctaOn = !!on;
+    if (!on) CTA_KEYS.forEach(function (k) { if (String(A()[k] || '')) setField(k, ''); });
+    renderCta(); renderTicks(); renderBar();
+    if (on) { var f = q('[data-a2-f="ctaButton"]'); if (f) f.focus(); }
+  }
+  function cancelCta() {
+    CTA_KEYS.forEach(function (k) { if (!B.fieldsEqual(A()[k], M.base[k])) revertKey(k); });
+    M.ctaOn = M.ctaBase;
+    renderCta(); renderTicks(); renderBar();
   }
 
   // v1.0.14 — boxes grow with their text; nothing scrolls inside a box.
@@ -2158,6 +2203,7 @@
     var st = B.aiAssistState(); st.done = false; st.error = ''; st.bodyUndo = null;
     M.trayPref = null;
     M.kindOpen = false;   // v1.0.14
+    M.ctaOn = M.ctaBase;  // v1.0.14
     B.render();
     B.toast(S.mode === 'create' ? 'Back to how this form opened' : 'Reverted to the saved version', 'info');
   }
@@ -2490,6 +2536,8 @@
       var act = el.getAttribute('data-a2-act');
       if (act === 'save') { save(); return true; }
       if (act === 'cancel-all') { cancelAll(); return true; }
+      if (act === 'cta') { setCta(el.checked); return true; }                                 // v1.0.14
+      if (act === 'cta-cancel') { cancelCta(); return true; }                                 // v1.0.14
       if (act === 'left') { M.leftOpen = !M.leftOpen; renderTicks(); return true; }          // v1.0.14
       if (act === 'kind-open') { M.kindOpen = true; renderKind(); return true; }              // v1.0.14
       if (el.hasAttribute('data-a2-jump')) { jumpTo(el.getAttribute('data-a2-jump')); return true; }   // v1.0.14
