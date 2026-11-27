@@ -1,6 +1,14 @@
-/* ta-admaker-v4.12.15.js
+/* ta-admaker-v4.12.17.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.17 (27 Nov 2026, Ad Maker Build S5) — THE IN CANVA DRAFTS GET THEIR OWN PANEL. JS and CSS v4.12.7.
+     (v4.12.16 / CSS v4.12.6 were a preview only; checked in the browser, the names sat 14px right of the task rows'.)
+     Jeff, 27 Nov: the IN CANVA drafts at the top of In progress "get lost". Ruled the proposal: their own tinted panel
+     with a purple rule; heading "In Canva · not saved to the site yet" with a count at row-title size; each row shaped
+     like the task rows below (customer name on the same left line, one muted line under it: shape · worked on · brought
+     back), the picture to the right of the text, a fixed purple "In Canva" pill, the buttons lined up with the task
+     rows' buttons. HARDCODING: HC-P-AMS3-6 (DRAFT_WORDS) gains pill.
 
    v4.12.15 (27 Nov 2026, Ad Maker Build S5) — CSS v4.12.5 (a ticked Set up tile fills its circle). JS change:
      CSS_FILE names v4.12.5 so the ⓘ lists the file that loads. Nothing else changed.
@@ -1051,7 +1059,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.15', CSS_FILE = 'ta-admaker-v4.12.5.css';
+  var VERSION = '4.12.17', CSS_FILE = 'ta-admaker-v4.12.7.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.19 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -5431,7 +5439,7 @@
   // ── v4.11.3 · DRAFTS IN CANVA: designs kept in Canva and not saved to the site, per customer (ix-canva GET /drafts) ──
   var CANVA_DESIGN_URL = 'https://www.canva.com/design/{id}/edit';   // HC-P-AMS3-8 · Canva's own address for a design (v4.11.6)
   var DRAFT_WORDS = {   // HC-P-AMS3-6
-    head: 'In Canva', sub: 'not saved to the site yet', none: 'No drafts in Canva.', loading: 'Reading the drafts from Canva…',
+    head: 'In Canva', sub: 'not saved to the site yet', pill: 'In Canva', none: 'No drafts in Canva.', loading: 'Reading the drafts from Canva…',
     edit: 'Edit in Canva', check: 'Check and save', remove: 'Remove from list', removeAsk: 'Take it off this list?', yes: 'Yes, remove', yesNote: 'the design stays in Canva', del: 'Remove and delete in Canva', delNote: 'opens the design; use File > Move to trash', no: 'cancel',
     removed: 'Taken off the list. The design is still in Canva.', removedDel: 'Taken off the list. The design is open in Canva: use File > Move to trash to delete it.', blocked: 'The browser blocked the Canva tab. The row is still on the list.',
     noPic: 'No picture from Canva', noPicYet: 'Canva has no picture of it yet', worked: 'Worked on {on}', notBack: 'not brought back yet', back: 'brought back {on}', copy: 'A copy of an approved ad', noShape: 'Shape not recorded'
@@ -5484,8 +5492,9 @@
       var id = esc(d.designId), sh = d.shape || '', busy = D.busy === d.designId;
       var acts = D.ask === d.designId ? '<span class="q">' + DW.removeAsk + '</span><button type="button" class="ix-btn ix-btn--danger ta-ads-drbtn" data-ads="drRemoveYes" data-v="' + id + '" title="' + esc(DW.yesNote) + '">' + DW.yes + '</button><button type="button" class="ix-btn ix-btn--danger ta-ads-drbtn" data-ads="drRemoveDel" data-v="' + id + '" title="' + esc(DW.delNote) + '">' + DW.del + '</button><a href="#" class="ta-ads-drx" data-ads="drRemoveNo">' + DW.no + '</a>'
         : '<button type="button" class="ix-btn ix-btn--primary ta-ads-drbtn" data-ads="drEdit" data-v="' + id + '"' + (busy ? ' disabled' : '') + '>' + DW.edit + '</button><button type="button" class="ix-btn ix-btn--secondary ta-ads-drbtn" data-ads="drCheck" data-v="' + id + '"' + (busy ? ' disabled' : '') + '>' + DW.check + '</button><a href="#" class="ta-ads-drx" data-ads="drRemove" data-v="' + id + '">' + DW.remove + '</a>';
-      return '<div class="ta-ads-drrow' + (D.ask === d.designId ? ' asking' : '') + '"><span class="th">' + (d.thumb ? '<img src="' + esc(d.thumb) + '" alt="" loading="lazy">' : '') + '</span><span class="cu" title="' + esc(d.customer.name) + '">' + esc(d.customer.name) + '</span><span class="sh">' + esc(sh ? shapeLabel(sh) : DW.noShape) + '</span>' +
-        '<span class="wh" title="' + esc(d.title) + '">' + (d.copiedFrom ? esc(DW.copy) + ' · ' : '') + esc(fillW(DW.worked, { on: fmtDate(d.canvaUpdated || d.updated) })) + ' · ' + esc(d.exportedAt ? fillW(DW.back, { on: fmtDate(d.exportedAt) }) : DW.notBack) + (!d.thumb ? '<small class="np">' + esc(d.thumbError ? DW.noPic + ': ' + d.thumbError : DW.noPicYet) + '</small>' : '') + '</span><span class="ac">' + acts + '</span></div>'; }).join('');
+      var line = esc(sh ? shapeLabel(sh) : DW.noShape) + ' \u00b7 ' + (d.copiedFrom ? esc(DW.copy) + ' \u00b7 ' : '') + esc(fillW(DW.worked, { on: fmtDate(d.canvaUpdated || d.updated) })) + ' \u00b7 ' + esc(d.exportedAt ? fillW(DW.back, { on: fmtDate(d.exportedAt) }) : DW.notBack) + (!d.thumb ? ' \u00b7 <span class="np">' + esc(d.thumbError ? DW.noPic + ': ' + d.thumbError : DW.noPicYet) + '</span>' : '');   // v4.12.16: one line under the name
+      return '<div class="ta-ads-drrow' + (D.ask === d.designId ? ' asking' : '') + '"><span class="tx"><span class="cu" title="' + esc(d.customer.name) + '">' + esc(d.customer.name) + '</span><span class="l2" title="' + esc(d.title || '') + '">' + line + '</span></span>' +
+        '<span class="th">' + (d.thumb ? '<img src="' + esc(d.thumb) + '" alt="" loading="lazy">' : '') + '</span><span class="pill">' + esc(DW.pill) + '</span><span class="ac">' + acts + '</span><span class="sp"></span></div>'; }).join('');
     host.innerHTML = h + '</div>';
   }
   function adsDraftOpen(designId, mode) {
