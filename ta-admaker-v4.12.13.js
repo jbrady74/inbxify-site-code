@@ -1,6 +1,11 @@
-/* ta-admaker-v4.12.12.js
+/* ta-admaker-v4.12.13.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.13 (27 Nov 2026, Ad Maker Build S5) — THE SCRATCH CHIP PICKS SCRATCH. JS only; CSS v4.12.4.
+     Jeff, 27 Nov: clicking Scratch on Start (From what) lit the chip but picked nothing ("Picked · 0"); a second
+     button, Add Scratch, did the picking. Scratch has nothing to choose from, so the chip now puts Scratch in Picked
+     on the click. The Add Scratch button is gone. Scratch comes out with its × in Picked, like every other pick.
 
    v4.12.12 (27 Nov 2026, Ad Maker Build S5) — BACK FROM START RETURNS TO THE TAB YOU CAME FROM; THE TAB STRIP FOLLOWS.
      JS only; CSS v4.12.4.
@@ -1038,7 +1043,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.12', CSS_FILE = 'ta-admaker-v4.12.4.css';
+  var VERSION = '4.12.13', CSS_FILE = 'ta-admaker-v4.12.4.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.19 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -1780,7 +1785,7 @@
     else if (chip === 'pieces') strip = ps.length ? '<div class="am-strip">' + ps.map(function (q) { return tile('piece', q.id, q.url, q.name, q.w ? q.w + ' \u00d7 ' + q.h + ' px' : 'piece'); }).join('') + '</div>' : (S.loading.media === true ? '<div class="am-srcl">Reading the customer\u2019s media\u2026</div>' : '<div class="am-srcl">No saved pieces yet. Cut them on Read with Mark the photo.</div>');
     else if (chip === 'print') strip = '<div class="am-srcl">Nothing waiting for this customer. Arrives with Print Ads as Input.</div>';
     else if (chip === 'upload') strip = (S.drop ? '<div class="am-srcl">Opening ' + esc(S.drop.name) + '\u2026</div>' : '<div class="am-drop am-paste" data-act="fileDrop" id="am-dropzone" tabindex="0"><div class="t"><b>Drop a PDF or picture here</b>, or click here and press ' + esc(pasteKey()) + ' to paste a screenshot. <a href="#" class="am-up" data-act="pickFile">Choose a file</a></div><input type="file" id="am-file" accept="image/*,application/pdf" style="display:none"></div>');
-    else if (chip === 'scratch') strip = '<button type="button" class="am-btn2' + (picked('none', 'scratch') ? ' dark' : '') + '" data-act="srcToggle" data-k="none" data-v="scratch">' + (picked('none', 'scratch') ? 'Scratch is picked \u2713' : 'Add Scratch') + '</button>';
+    // v4.12.13: no Add Scratch button; the Scratch chip itself puts Scratch in Picked (see case 'srcChip')
     var tray = '<div class="am-tray"><span class="lbl">Picked \u00b7 ' + S.srcs.length + '</span>' + (S.srcs.length ? S.srcs.map(function (r, i) {
       return '<span class="am-tpill' + (S.srcFlash === r.key ? ' flash' : '') + '"><span class="mini">' + (r.thumb ? '<img src="' + esc(r.thumb) + '" alt="">' : '') + '</span><span class="nm" title="' + esc(r.name) + '">' + esc(r.name) + '</span><button type="button" data-act="srcDrop" data-v="' + i + '" aria-label="Remove ' + esc(r.name) + '">\u00d7</button></span>';
     }).join('') : '<span class="am-srcl">Nothing yet. Pick from any chip above; nothing wins here, Read shows each one.</span>') + '</div>';
@@ -5688,7 +5693,9 @@
       case 'contactUndo': { var uk = t.getAttribute('data-k'), uf = uk.slice(0, uk.indexOf('|')), uv = uk.slice(uk.indexOf('|') + 1);
         if (S.contactDecide && S.contactDecide[uk] === 'rec' && (uf === 'phone' || uf === 'website')) { S.words[uf] = uv; if (S.base) S.base[uf] = uv; }   // v4.10.6: the ad's own value back
         if (S.contactDecide) delete S.contactDecide[uk]; render(); } break;
-      case 'srcChip': S.srcChip = t.getAttribute('data-v'); if (S.srcChip === 'upload') { S.src = 'drop'; S.drop = null; S.srcPasting = false; } render(); break;   // v3.1.0
+      case 'srcChip': S.srcChip = t.getAttribute('data-v'); if (S.srcChip === 'upload') { S.src = 'drop'; S.drop = null; S.srcPasting = false; }
+        if (S.srcChip === 'scratch' && !S.srcs.some(function (r) { return r.kind === 'none' && r.id === 'scratch'; })) { var scr = srcRecFor('none', 'scratch'); if (scr) S.srcs.push(scr); }   // v4.12.13: the chip picks Scratch
+        render(); break;   // v3.1.0
       case 'srcToggle': { var sk = t.getAttribute('data-k'), sv = t.getAttribute('data-v'), at = -1; S.srcs.forEach(function (r, i) { if (r.kind === sk && r.id === sv) at = i; }); if (at > -1) S.srcs.splice(at, 1); else { var rec = srcRecFor(sk, sv); if (rec) S.srcs.push(rec); } render(); } break;
       case 'srcDrop': S.srcs.splice(+t.getAttribute('data-v'), 1); render(); break;
       case 'pickFile': { var fi = document.getElementById('am-file'); if (fi) fi.click(); } break;
