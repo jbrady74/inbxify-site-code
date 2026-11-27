@@ -1,0 +1,193 @@
+{
+  "about": "Webflow field limits for the four asset types (P16). Built by ix-asset-list /field-limits from the collection schemas; never edit by hand. Rebuild: run the \"Field limits\" GitHub Action. rich = count the visible text. enforce false = listed but not checked by the form.",
+  "builtBy": "ix-asset-list v1.3.0",
+  "builtAt": "2026-11-27T14:52:01.334Z",
+  "types": {
+    "article": {
+      "collection": "❇️ ARTICLES",
+      "collectionId": "64e905038caaa2edd76842b5",
+      "fields": [
+        {
+          "slug": "banner-statement",
+          "label": "🟠 Banner Statement",
+          "type": "PlainText",
+          "limit": 30,
+          "rich": false,
+          "required": false
+        },
+        {
+          "slug": "name",
+          "label": "🟠 Article Title",
+          "type": "PlainText",
+          "limit": 256,
+          "rich": false,
+          "required": true,
+          "enforce": false,
+          "why": "P16: Article Name has no limit enforced"
+        },
+        {
+          "slug": "post-body",
+          "label": "🟠 Article Body RTE",
+          "type": "RichText",
+          "limit": 15000,
+          "rich": true,
+          "required": false
+        },
+        {
+          "slug": "post-body-html",
+          "label": "🟠 post-body-html",
+          "type": "PlainText",
+          "limit": 5000000,
+          "rich": false,
+          "required": false
+        },
+        {
+          "slug": "post-summary",
+          "label": "🟠 Article Teaser Summary",
+          "type": "PlainText",
+          "limit": 400,
+          "rich": false,
+          "required": false
+        },
+        {
+          "slug": "short-article-summary",
+          "label": "🟠 Short Article Summary",
+          "type": "PlainText",
+          "limit": 150,
+          "rich": false,
+          "required": false
+        },
+        {
+          "slug": "slug",
+          "label": "Slug",
+          "type": "PlainText",
+          "limit": 256,
+          "rich": false,
+          "required": true
+        },
+        {
+          "slug": "sub-title",
+          "label": "🟠 Sub-Title",
+          "type": "PlainText",
+          "limit": 60,
+          "rich": false,
+          "required": false
+        }
+      ]
+    },
+    "ad": {
+      "collection": "❇️  ADS",
+      "collectionId": "68929c45dc27b1bb31fb4404",
+      "fields": [
+        {
+          "slug": "lbp-teaser-text",
+          "label": "LBP Teaser Text",
+          "type": "PlainText",
+          "limit": 650,
+          "rich": false,
+          "required": false
+        },
+        {
+          "slug": "name",
+          "label": "🟠 ¦ Ad Name",
+          "type": "PlainText",
+          "limit": 256,
+          "rich": false,
+          "required": true
+        },
+        {
+          "slug": "short-text",
+          "label": "Text Ad Text",
+          "type": "PlainText",
+          "limit": 550,
+          "rich": false,
+          "required": false
+        },
+        {
+          "slug": "short-title",
+          "label": "Text Ad Title",
+          "type": "PlainText",
+          "limit": 30,
+          "rich": false,
+          "required": false
+        },
+        {
+          "slug": "slug",
+          "label": "Slug",
+          "type": "PlainText",
+          "limit": 256,
+          "rich": false,
+          "required": true
+        },
+        {
+          "slug": "txa-meta",
+          "label": "TXA Meta",
+          "type": "PlainText",
+          "limit": 60,
+          "rich": false,
+          "required": false
+        }
+      ]
+    },
+    "event": {
+      "collection": "❇️ EVENTS",
+      "collectionId": "68f7e5e0f07acb4581519ab4",
+      "fields": [
+        {
+          "slug": "event-description",
+          "label": "Event Description",
+          "type": "PlainText",
+          "limit": 1800,
+          "rich": false,
+          "required": false
+        },
+        {
+          "slug": "event-state",
+          "label": "Venue State",
+          "type": "PlainText",
+          "limit": 2,
+          "rich": false,
+          "required": false
+        },
+        {
+          "slug": "name",
+          "label": "Event Title",
+          "type": "PlainText",
+          "limit": 256,
+          "rich": false,
+          "required": true
+        },
+        {
+          "slug": "slug",
+          "label": "Slug",
+          "type": "PlainText",
+          "limit": 256,
+          "rich": false,
+          "required": true
+        }
+      ]
+    },
+    "realestate": {
+      "collection": "❇️ REAL ESTATE LISTINGS",
+      "collectionId": "68d452672ad6cfb333cae5f9",
+      "fields": [
+        {
+          "slug": "name",
+          "label": "Address",
+          "type": "PlainText",
+          "limit": 256,
+          "rich": false,
+          "required": true
+        },
+        {
+          "slug": "slug",
+          "label": "Slug",
+          "type": "PlainText",
+          "limit": 256,
+          "rich": false,
+          "required": true
+        }
+      ]
+    }
+  }
+}
