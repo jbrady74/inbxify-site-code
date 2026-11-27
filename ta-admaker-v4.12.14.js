@@ -1,6 +1,11 @@
-/* ta-admaker-v4.12.13.js
+/* ta-admaker-v4.12.14.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.14 (27 Nov 2026, Ad Maker Build S5) — SCRATCH SKIPS READ. JS only; CSS v4.12.4.
+     Jeff, 27 Nov: "Read the ad" makes no sense for Scratch. With only Scratch picked there is nothing to read, so
+     Start's button skips Read: "Next: set up for Canva" on the Canva path, "Show the concepts" for ideas. On the Canva
+     path, Back from Set up returns to Start, not to an empty Read.
 
    v4.12.13 (27 Nov 2026, Ad Maker Build S5) — THE SCRATCH CHIP PICKS SCRATCH. JS only; CSS v4.12.4.
      Jeff, 27 Nov: clicking Scratch on Start (From what) lit the chip but picked nothing ("Picked · 0"); a second
@@ -1043,7 +1048,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.13', CSS_FILE = 'ta-admaker-v4.12.4.css';
+  var VERSION = '4.12.14', CSS_FILE = 'ta-admaker-v4.12.4.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.19 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -1754,7 +1759,7 @@
     var srcWord = { print: W.srcPrint, drop: W.srcDrop, paste: 'a screenshot', version: W.srcVersion, piece: 'a saved piece', none: W.srcNone }[S.src] || '';
     var fv = S.src === 'version' && S.fromVersion ? versionsOf(S.custId).filter(function (v) { return v.id === S.fromVersion; })[0] : null;
     var msg = S.sel ? (c ? (!S.shape ? W.whichShape + '?' : S.srcs && S.srcs.length && !S.mode ? 'What do you need: design it in Canva, or ideas?' : S.shape === 'splash' && S.mode && S.mode !== 'canva' ? 'A splash is made in Canva \u00b7 pick Design in Canva' : S.mode === 'improve' && S.srcs && S.srcs.length > 1 ? 'Improve works from one ad \u00b7 take the others out of Picked' : S.mode === 'improve' && S.srcs && S.srcs.length && !oneSrc ? 'Improve needs an ad to start from, not Scratch' : S.srcs && S.srcs.length && S.mode === 'improve' ? 'Improving <b>' + esc(S.srcs[0].name || 'this ad') + '</b> as a ' + S.shape : S.srcs && S.srcs.length ? 'Making a ' + S.shape + ' from <b>' + S.srcs.length + ' source' + (S.srcs.length > 1 ? 's' : '') + '</b>' + (pend ? ' \u00b7 ' + pend + ' brand colour' + (pend > 1 ? 's' : '') + ' to the customer on Save' : '') : W.howStart) : W.custFirst) : 'Pick a job on the left.';
-    shell(mid, barHTML(msg, (S.sel ? ghost('startCancel', W.cancel) : '') + (S.sel && !(it && (it.coming || it.err)) ? btn('toRead', W.readAd, 'primary', !ready) : '')));
+    shell(mid, barHTML(msg, (S.sel ? ghost('startCancel', W.cancel) : '') + (S.sel && !(it && (it.coming || it.err)) ? btn('toRead', scratchOnly() ? (canvaMode() ? 'Next: set up for Canva' : 'Show the concepts') : W.readAd, 'primary', !ready) : '')));
   }
   function jobWord(it) { return S.shape ? 'Making a ' + S.shape : (it && it.what ? String(it.what) : 'Not on the list'); }
   function startCentre(it) {
@@ -4853,6 +4858,7 @@
   };
   var CANVA_POLL_MS = 3000;   // HC-P-AMC1-3
   function canvaMode() { return S.mode === 'canva'; }
+  function scratchOnly() { return !!(S.srcs && S.srcs.length) && S.srcs.every(function (r) { return r.kind === 'none'; }); }   // v4.12.14: nothing to read
   function canvaUrl() { return String(CFG().canvaUrl || 'https://ix-canva.jeff-2cd.workers.dev').replace(/\/+$/, ''); }
   function canvaApi(path, opts) {
     opts = opts || {};
@@ -5646,7 +5652,9 @@
         absorbDrop();
         if (S.readKey && S.readKey === srcsKey() && !S.err && !S.reading) { go('read'); break; }   // v3.1.0: same sources: no second read
         S.readKey = srcsKey(); S.srcs.forEach(function (r) { r.snap = null; }); S.pool = null; S.srcAt = 0; useSource(S.srcs[0]);
-        runSourceRead(); break;
+        runSourceRead();
+        if (scratchOnly() && S.screen === 'read') { var nx = document.querySelector('#' + MOUNT_ID + ' .am-savebar [data-act="toDrafts"]'); if (nx) nx.click(); }   // v4.12.14: nothing to read; go on
+        break;
       case 'readBox': S.boxed = true; readAd(); break;
       case 'wholePage': S.box = null; S.boxed = true; readAd(); break;
       case 'boxCancel': S.box = null; render(); break;
@@ -5662,7 +5670,7 @@
       case 'pagePrev': S.page = Math.max(1, S.page - 1); S.box = null; render(); break;
       case 'pageNext': S.page = Math.min(S.drop.pages, S.page + 1); S.box = null; render(); break;
       case 'readAgain': S.err = ''; S.readFresh = true; readAd(); break;   // v4.0.9: always afresh
-      case 'back': if (canvaMode()) { if (S.screen === 'canva') canvaPollStop(); go({ read: 'start', setup: 'read', canva: 'setup', check: (S.canva && S.canva.job) ? 'canva' : 'setup', save: 'check' }[S.screen] || 'start'); break; } if (improveMode() && (S.screen === 'finetune' || S.screen === 'tune')) { go('read'); break; } if (improveMode() && S.screen === 'save') { go('finetune'); break; } if ((S.screen === 'pick' || S.screen === 'drafts' || S.screen === 'make') && S.cleanReady) { openClean(); break; } go({ read: 'start', clean: 'read', drafts: 'read', make: 'read', pick: 'read', finetune: 'pick', tune: 'pick', save: (S.ed && forward()) ? 'finetune' : 'pick' }[S.screen] || 'start'); break;   // v3.0.0 · v4.2.0: Pick goes back to Clean up
+      case 'back': if (canvaMode()) { if (S.screen === 'canva') canvaPollStop(); go({ read: 'start', setup: scratchOnly() ? 'start' : 'read', canva: 'setup', check: (S.canva && S.canva.job) ? 'canva' : 'setup', save: 'check' }[S.screen] || 'start'); break; } if (improveMode() && (S.screen === 'finetune' || S.screen === 'tune')) { go('read'); break; } if (improveMode() && S.screen === 'save') { go('finetune'); break; } if ((S.screen === 'pick' || S.screen === 'drafts' || S.screen === 'make') && S.cleanReady) { openClean(); break; } go({ read: 'start', clean: 'read', drafts: 'read', make: 'read', pick: 'read', finetune: 'pick', tune: 'pick', save: (S.ed && forward()) ? 'finetune' : 'pick' }[S.screen] || 'start'); break;   // v3.0.0 · v4.2.0: Pick goes back to Clean up
       case 'wCancel': var k = t.getAttribute('data-k'); S.words[k] = S.base[k]; render(); break;
       case 'logoCancel': S.logoUse = 'file'; S.logoScope = 'version'; render(); if (S.ed) repaintAll(); break;
       case 'logoPrint': S.logoUse = 'print'; S.logoScope = 'version'; render(); if (S.ed) repaintAll(); break;
