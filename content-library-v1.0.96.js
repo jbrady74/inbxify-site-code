@@ -1,7 +1,7 @@
 // content-library-v1.0.96.js
 // v1.0.96 (27 Nov 2026, TA Reskin S4e): CONTENT LIBRARY ON THE RAIL. When ta-chrome v1.0.15 draws the Content Library group
 //   (window.TaRail.clGroup), the rail chooses the type: the title is the type's name (Articles, Events, Real Estate) with
-//   CONTENT LIBRARY in small capitals above it, the strip's own type buttons are hidden by ta-chrome-v1.0.16.css, and every
+//   CONTENT LIBRARY in small capitals above it, the strip's own type buttons are hidden by ta-chrome-v1.0.15.css, and every
 //   change of type fires document event 'cl:type' {type} so the rail marks the open one. CL_VERSION now matches the file
 //   (it read 1.0.94). Nothing else changes; without the group the page is v1.0.95.
 // v1.0.95 (26 Nov 2026, Image Links S4d): AN AD'S PICTURE IS img-main.
