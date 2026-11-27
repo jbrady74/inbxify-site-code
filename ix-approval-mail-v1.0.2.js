@@ -1,8 +1,11 @@
-/* ix-approval-mail-v1.0.1.js
+/* ix-approval-mail-v1.0.2.js
    INBXIFY ix series — THE APPROVAL EMAIL POP-UP (Ad Maker Build S6, B2, 27 Nov 2026)
-   Companion CSS: ix-approval-mail-v1.0.1.css.
+   Companion CSS: ix-approval-mail-v1.0.2.css.
+   v1.0.2 (27 Nov 2026, checked in Chrome on the T-A page): ta-page-head-v1.4.css forces every text box and textarea to
+     Tenor Sans 12px with !important, so the message showed in 12px Tenor Sans, not the email's 16px Helvetica. The
+     email's paragraph style is now set on the message box with !important, and the CSS holds its boxes the same way.
    v1.0.1 (27 Nov 2026): the message box takes the email's own paragraph style from ix-sales v1.3.21 (font, size, colour),
-   so the words are edited in the type the publisher reads them in. (v1.0.0 was on the preview branch only.)
+   so the words are edited in the type the publisher reads them in. (v1.0.0 and v1.0.1 were on the preview branch only.)
 
    Rulings (Jeff, 24 Nov and 27 Nov, on the B2 mockup):
    · The approval email opens in a large centred pop-up (not full screen) that shows the whole email without
@@ -33,7 +36,7 @@
 */
 (function () {
   'use strict';
-  var FILE = 'ix-approval-mail-v1.0.1.js', VERSION = '1.0.1';
+  var FILE = 'ix-approval-mail-v1.0.2.js', VERSION = '1.0.2';
   var W = {   // HC-P-AMS6-2
     title: 'The approval email', sendTo: 'Send to', test: 'Me, as a test', noContact: 'The PUBLISHERS record has no Contact Name or Business Email, so only a test can be sent.',
     testNote: 'You get {first}’s email word for word, “Hi {first}” included. Approving from it counts as a real approval.',
@@ -111,7 +114,10 @@
         var ta = document.createElement('textarea');
         ta.className = 'ixam-in ixam-msg' + (changedMsg() ? ' chg' : '');
         ta.id = 'ixam-msg'; ta.setAttribute('aria-label', 'Message'); ta.maxLength = 4000; ta.value = S.message; ta.disabled = S.busy;
-        var ps = spot.getAttribute('style') || ''; if (ps) ta.setAttribute('style', ps.replace(/margin[^;]*;?/g, ''));   // the email's own paragraph type, from ix-sales
+        (spot.getAttribute('style') || '').split(';').forEach(function (d) {   // the email's own paragraph type, from ix-sales; !important beats the T-A page's textarea rule
+          var i = d.indexOf(':'); if (i < 0) return; var k = d.slice(0, i).trim(), v = d.slice(i + 1).trim();
+          if (k && v && !/^margin/.test(k)) ta.style.setProperty(k, v, 'important');
+        });
         spot.parentNode.replaceChild(ta, spot); grow(ta);
       }
       Array.prototype.forEach.call(ov.querySelectorAll('img[data-ix-mail="picture"]'), function (img) {
