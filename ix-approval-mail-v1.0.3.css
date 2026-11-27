@@ -1,5 +1,5 @@
-/* ix-approval-mail-v1.0.2.css
-   Companion to ix-approval-mail-v1.0.2.js (Ad Maker Build S6, B2, 27 Nov 2026): the approval email pop-up.
+/* ix-approval-mail-v1.0.3.css
+   Companion to ix-approval-mail-v1.0.3.js (Ad Maker Build S6, B2, 27 Nov 2026): the approval email pop-up.
    The pop-up mounts on <body>, outside section.publisher-wrapper, so the T-A page's wildcard white paint does not
    reach it. Portal look: every colour and type size is a token from ix-tokens-portal-look. The email itself (inside
    .ixam-frame) carries its own inline styles from ix-sales, and the message box takes the email's paragraph style
@@ -10,7 +10,7 @@
    high and a blue focus ring, all !important. The pop-up's boxes hold their own look with !important (the selectors
    here are more specific, so they win). Its labels and bold words name their font too.
    HARDCODING: HC-P-AMS6-2 (sizes above). */
-.ix-overlay.ixam-ov { align-items: flex-start !important; overflow-y: auto !important; padding: 40px 24px !important; background: var(--ix-scrim) !important; }
+.ix-overlay.ixam-ov { align-items: flex-start !important; overflow-y: auto !important; padding: 24px !important; background: var(--ix-scrim) !important; }
 .ixam-ov .ixam { box-sizing: border-box; width: 1040px; max-width: 100%; margin: 0 auto; background: var(--ix-surface); border: 1px solid var(--ix-border); border-radius: var(--ix-radius-sm);
   box-shadow: var(--ix-shadow-lg); font-family: var(--ix-font-body); font-size: var(--ix-fs-row); line-height: var(--ix-lh-body); color: var(--ix-text-dark); text-align: left; }
 .ixam-ov .ixam * { box-sizing: border-box; }
@@ -34,7 +34,7 @@
 .ixam-ov .ixam-link { align-self: flex-start; margin-top: 4px; border: 0; background: none; padding: 0; font-family: var(--ix-font-body); font-size: var(--ix-fs-body); font-weight: 600; line-height: 1.3; color: var(--ix-text-dark); text-decoration: underline; cursor: pointer; }
 .ixam-ov .ixam-mail { flex: 1; min-width: 0; background: var(--ix-cream); border: 1px solid var(--ix-border-soft); }
 .ixam-ov .ixam-wait { padding: 80px 24px; text-align: center; color: var(--ix-text-light); }
-.ixam-ov .ixam-subj { display: flex; align-items: center; gap: 12px; max-width: 600px; margin: 20px auto 0; padding: 0 16px; }
+.ixam-ov .ixam-subj { display: flex; align-items: center; gap: 12px; max-width: 600px; margin: 20px auto 0; padding: 0; }
 .ixam-ov .ixam-subj .ixam-cap { flex: none; width: 64px; }
 .ixam-ov .ixam-frame > table > tbody > tr > td { padding: 16px 16px 20px !important; }
 .ixam-ov .ixam-frame img { max-width: 100%; }

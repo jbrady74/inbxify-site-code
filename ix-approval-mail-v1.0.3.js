@@ -1,6 +1,9 @@
-/* ix-approval-mail-v1.0.2.js
+/* ix-approval-mail-v1.0.3.js
    INBXIFY ix series — THE APPROVAL EMAIL POP-UP (Ad Maker Build S6, B2, 27 Nov 2026)
-   Companion CSS: ix-approval-mail-v1.0.2.css.
+   Companion CSS: ix-approval-mail-v1.0.3.css.
+   v1.0.3 (27 Nov 2026, checked in Chrome): the Webflow site CSS sets every img to 200 px wide, so the ad picture showed
+     at 200 px. Each picture in the email now takes the width ix-sales gives it (536 or 240). The subject row lines up
+     with the email card's edges, and the dim margin above the pop-up is 24 px.
    v1.0.2 (27 Nov 2026, checked in Chrome on the T-A page): ta-page-head-v1.4.css forces every text box and textarea to
      Tenor Sans 12px with !important, so the message showed in 12px Tenor Sans, not the email's 16px Helvetica. The
      email's paragraph style is now set on the message box with !important, and the CSS holds its boxes the same way.
@@ -36,7 +39,7 @@
 */
 (function () {
   'use strict';
-  var FILE = 'ix-approval-mail-v1.0.2.js', VERSION = '1.0.2';
+  var FILE = 'ix-approval-mail-v1.0.3.js', VERSION = '1.0.3';
   var W = {   // HC-P-AMS6-2
     title: 'The approval email', sendTo: 'Send to', test: 'Me, as a test', noContact: 'The PUBLISHERS record has no Contact Name or Business Email, so only a test can be sent.',
     testNote: 'You get {first}’s email word for word, “Hi {first}” included. Approving from it counts as a real approval.',
@@ -122,6 +125,7 @@
       }
       Array.prototype.forEach.call(ov.querySelectorAll('img[data-ix-mail="picture"]'), function (img) {
         if (!img.getAttribute('src') && opts.picture) { var u = opts.picture(img.getAttribute('data-shape')); if (u) img.setAttribute('src', u); }
+        var w = img.getAttribute('width'); if (w) img.style.setProperty('width', w + 'px', 'important');   // v1.0.3: the site CSS sets img { width: 200px }
       });
       Array.prototype.forEach.call(ov.querySelectorAll('.ixam-frame a'), function (a) { a.removeAttribute('href'); a.setAttribute('tabindex', '-1'); });
     }
