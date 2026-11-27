@@ -1,0 +1,57 @@
+/* ix-approval-mail-v1.0.1.css
+   Companion to ix-approval-mail-v1.0.1.js (Ad Maker Build S6, B2, 27 Nov 2026): the approval email pop-up.
+   The pop-up mounts on <body>, outside section.publisher-wrapper, so the T-A page's wildcard white paint does not
+   reach it. Portal look: every colour and type size is a token from ix-tokens-portal-look. The email itself (inside
+   .ixam-frame) carries its own inline styles from ix-sales, and the message box takes the email's paragraph style
+   from there, so the words are edited in the type Doug reads them in.
+   The pop-up is never capped to the window: it grows with the email and the dim page scrolls (design rule,
+   12 Nov). Fixed sizes: 1040 px wide, the side column 280 px, buttons 44 px tall and 132 px / 180 px wide.
+   HARDCODING: HC-P-AMS6-2 (sizes above). */
+.ix-overlay.ixam-ov { align-items: flex-start !important; overflow-y: auto !important; padding: 40px 24px !important; background: var(--ix-scrim) !important; }
+.ixam-ov .ixam { box-sizing: border-box; width: 1040px; max-width: 100%; margin: 0 auto; background: var(--ix-surface); border: 1px solid var(--ix-border); border-radius: var(--ix-radius-sm);
+  box-shadow: var(--ix-shadow-lg); font-family: var(--ix-font-body); font-size: var(--ix-fs-row); line-height: var(--ix-lh-body); color: var(--ix-text-dark); text-align: left; }
+.ixam-ov .ixam * { box-sizing: border-box; }
+.ixam-ov .ixam-head { display: flex; align-items: baseline; gap: 16px; padding: 20px 28px 16px; border-bottom: 1px solid var(--ix-border-soft); }
+.ixam-ov .ixam-head h2 { margin: 0; font-family: var(--ix-font-display); font-size: var(--ix-fs-section); font-weight: var(--ix-fw-section); line-height: 1.1; color: var(--ix-text-dark); white-space: nowrap; }
+.ixam-ov .ixam-sub { font-size: var(--ix-fs-row); color: var(--ix-text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ixam-ov .ixam-sp { flex: 1; }
+.ixam-ov .ixam-x { align-self: center; border: 0; background: none; padding: 6px; cursor: pointer; color: var(--ix-text-light); line-height: 0; }
+.ixam-ov .ixam-x:hover { color: var(--ix-text-dark); }
+.ixam-ov .ixam-body { display: flex; gap: 28px; padding: 24px 28px; align-items: flex-start; }
+.ixam-ov .ixam-side { width: 280px; flex: none; display: flex; flex-direction: column; gap: 22px; }
+.ixam-ov .ixam-grp { display: flex; flex-direction: column; gap: 10px; }
+.ixam-ov .ixam-see { gap: 6px; font-size: var(--ix-fs-body); color: var(--ix-text-mid); }
+.ixam-ov .ixam-cap { font-family: var(--ix-font-caps); font-size: var(--ix-fs-label); font-weight: 700; line-height: 1; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ix-text-light); }
+.ixam-ov .ixam-r { display: flex; gap: 10px; align-items: baseline; cursor: pointer; margin: 0; font-weight: 400; }
+.ixam-ov .ixam-r input { margin: 0; flex: none; position: relative; top: 2px; accent-color: var(--ix-text-dark); }
+.ixam-ov .ixam-r span { display: flex; flex-direction: column; min-width: 0; }
+.ixam-ov .ixam-r b { font-weight: 700; color: var(--ix-text-dark); }
+.ixam-ov .ixam-r i { font-style: normal; color: var(--ix-text-light); overflow-wrap: anywhere; }
+.ixam-ov .ixam-note { font-size: var(--ix-fs-body); color: var(--ix-text-mid); background: var(--ix-cream); border: 1px solid var(--ix-border-soft); padding: 10px 12px; }
+.ixam-ov .ixam-link { align-self: flex-start; margin-top: 4px; border: 0; background: none; padding: 0; font-family: var(--ix-font-body); font-size: var(--ix-fs-body); font-weight: 600; line-height: 1.3; color: var(--ix-text-dark); text-decoration: underline; cursor: pointer; }
+.ixam-ov .ixam-mail { flex: 1; min-width: 0; background: var(--ix-cream); border: 1px solid var(--ix-border-soft); }
+.ixam-ov .ixam-wait { padding: 80px 24px; text-align: center; color: var(--ix-text-light); }
+.ixam-ov .ixam-subj { display: flex; align-items: center; gap: 12px; max-width: 600px; margin: 20px auto 0; padding: 0 16px; }
+.ixam-ov .ixam-subj .ixam-cap { flex: none; width: 64px; }
+.ixam-ov .ixam-in { display: block; width: 100%; margin: 0; color: var(--ix-text-dark); background: var(--ix-surface); border: 1px dashed var(--ix-border); border-radius: var(--ix-radius-sharp); padding: 6px 8px; box-shadow: none; }
+.ixam-ov .ixam-subj .ixam-in { height: 40px; font-family: var(--ix-font-body); font-size: var(--ix-fs-row); font-weight: 700; }
+.ixam-ov .ixam-in:hover { border-color: var(--ix-gold); }
+.ixam-ov .ixam-in:focus { outline: none; border: 1.5px solid var(--ix-gold); box-shadow: var(--ix-shadow-gold); }
+.ixam-ov .ixam-in.chg { border: 1.5px solid var(--ix-gold); }
+.ixam-ov .ixam-in:disabled { opacity: 0.7; }
+.ixam-ov .ixam-msg { resize: none; overflow: hidden; margin: -7px -9px 9px; width: calc(100% + 18px); min-height: 120px; background: transparent; }
+.ixam-ov .ixam-frame > table > tbody > tr > td { padding: 16px 16px 20px !important; }
+.ixam-ov .ixam-frame img { max-width: 100%; }
+.ixam-ov .ixam-frame img[src=""], .ixam-ov .ixam-frame img:not([src]) { min-height: 120px; background: var(--ix-border-soft); }
+.ixam-ov .ixam-frame a { cursor: default; }
+.ixam-ov .ixam-bar { display: flex; align-items: center; gap: 12px; padding: 16px 28px; border-top: 1px solid var(--ix-border-soft); }
+.ixam-ov .ixam-bmsg { font-size: var(--ix-fs-row); color: var(--ix-text-mid); }
+.ixam-ov .ixam-bmsg.bad { color: var(--ix-danger); font-weight: 600; }
+.ixam-ov .ixam-btn { height: 44px; padding: 0 20px; border-radius: var(--ix-radius-sm); cursor: pointer; font-family: var(--ix-font-body); font-size: var(--ix-fs-row); font-weight: 600; line-height: 1; white-space: nowrap; }
+.ixam-ov .ixam-cancel { width: 132px; background: var(--ix-surface); color: var(--ix-text-dark); border: 1.5px solid var(--ix-text-dark); }
+.ixam-ov .ixam-go { width: 180px; background: var(--ix-ok); color: var(--ix-text-invert); border: 0; }
+.ixam-ov .ixam-btn:disabled { opacity: 0.45; cursor: default; }
+.ixam-ov .ixam-done { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 72px 28px; text-align: center; }
+.ixam-ov .ixam-done b { font-family: var(--ix-font-display); font-size: var(--ix-fs-section); font-weight: var(--ix-fw-section); line-height: 1.2; }
+.ixam-ov .ixam-done span { max-width: 520px; font-size: var(--ix-fs-row); color: var(--ix-text-mid); }
+.ixam-ov .ixam-done .ixam-go { margin-top: 8px; }

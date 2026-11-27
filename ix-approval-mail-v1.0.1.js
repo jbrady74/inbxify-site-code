@@ -1,6 +1,8 @@
-/* ix-approval-mail-v1.0.0.js
+/* ix-approval-mail-v1.0.1.js
    INBXIFY ix series — THE APPROVAL EMAIL POP-UP (Ad Maker Build S6, B2, 27 Nov 2026)
-   Companion CSS: ix-approval-mail-v1.0.0.css.
+   Companion CSS: ix-approval-mail-v1.0.1.css.
+   v1.0.1 (27 Nov 2026): the message box takes the email's own paragraph style from ix-sales v1.3.21 (font, size, colour),
+   so the words are edited in the type the publisher reads them in. (v1.0.0 was on the preview branch only.)
 
    Rulings (Jeff, 24 Nov and 27 Nov, on the B2 mockup):
    · The approval email opens in a large centred pop-up (not full screen) that shows the whole email without
@@ -10,7 +12,7 @@
      until" line are shown and fixed; only the subject and the message can be changed, in place.
    · A test goes to Jeff as the very same email ("Hi Doug" included); seeing and editing it here is enough.
 
-   The email's layout is NOT drawn here. ix-sales v1.3.20+ answers a preview with `frame`, the email's body HTML from
+   The email's layout is NOT drawn here. ix-sales v1.3.21+ answers a preview with `frame`, the email's body HTML from
    the same code that builds the email it sends, with two marks: <div data-ix-mail="message"> (the editable message
    goes there) and data-ix-mail="picture" on each picture (an empty src is filled by opts.picture(shape)).
 
@@ -31,7 +33,7 @@
 */
 (function () {
   'use strict';
-  var FILE = 'ix-approval-mail-v1.0.0.js', VERSION = '1.0.0';
+  var FILE = 'ix-approval-mail-v1.0.1.js', VERSION = '1.0.1';
   var W = {   // HC-P-AMS6-2
     title: 'The approval email', sendTo: 'Send to', test: 'Me, as a test', noContact: 'The PUBLISHERS record has no Contact Name or Business Email, so only a test can be sent.',
     testNote: 'You get {first}’s email word for word, “Hi {first}” included. Approving from it counts as a real approval.',
@@ -109,6 +111,7 @@
         var ta = document.createElement('textarea');
         ta.className = 'ixam-in ixam-msg' + (changedMsg() ? ' chg' : '');
         ta.id = 'ixam-msg'; ta.setAttribute('aria-label', 'Message'); ta.maxLength = 4000; ta.value = S.message; ta.disabled = S.busy;
+        var ps = spot.getAttribute('style') || ''; if (ps) ta.setAttribute('style', ps.replace(/margin[^;]*;?/g, ''));   // the email's own paragraph type, from ix-sales
         spot.parentNode.replaceChild(ta, spot); grow(ta);
       }
       Array.prototype.forEach.call(ov.querySelectorAll('img[data-ix-mail="picture"]'), function (img) {
@@ -161,7 +164,7 @@
       S.std = { subject: j.subject || '', message: j.message || '' }; S.subject = S.std.subject; S.message = S.std.message;
       S.pub = j.to && j.to.publisher ? j.to.publisher : null; S.test = (j.to && j.to.test) || ''; S.to = S.pub ? 'publisher' : 'test';
       S.frame = j.frame || '';
-      if (!S.frame) S.err = fill(W.fail, { msg: 'ix-sales is older than v1.3.20 and sent no layout' });
+      if (!S.frame) S.err = fill(W.fail, { msg: 'ix-sales is older than v1.3.21 and sent no layout' });
       render(); focusFirst('#ixam-msg');
     }, function (e) { if (closed) return; S.loading = false; S.err = fill(W.fail, { msg: (e && e.message) || String(e) }); render(); });
     return { close: close };
