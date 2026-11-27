@@ -1,19 +1,22 @@
-// ta-chrome-v1.0.15.js
+// ta-chrome-v1.0.16.js
 // ============================================================
-// ta-chrome-v1.0.15.js
+// ta-chrome-v1.0.16.js
+// v1.0.16 (27 Nov 2026, TA Reskin S4e): the group draws its own rows and clicks Webflow's hidden links; v1.0.15 moved
+//   Webflow's links into the group, which broke Webflow's tabs (the checks showed it). v1.0.15 never went live.
 // v1.0.15 (27 Nov 2026, TA Reskin S4e · CONTENT LIBRARY ON THE RAIL). Jeff, 27 Nov, canvas "One look" page S4e, yes to all:
 //   the Asset Library is renamed Content Library (a Designer label; Jeff did it) and stays one rail tab; Ads moves inside it.
 //   1. The rail draws Content Library as a group: hovering it (or keyboard focus) opens it downward with Ads, Articles, Events
 //      and Real Estate indented under it. On any of the four the group stays open, Content Library is bold and its chevron
 //      points up; the open one has the bed and the coral bar.
-//   2. Ads is still its own Designer tab: its link is moved into the group, nothing about the Ads pane changes.
+//   2. Ads is still its own Designer tab and nothing about the Ads pane changes. Webflow's links for Ads and ContentLibrary stay
+//      where the Designer put them, hidden; the group is drawn as its own rows (moving Webflow's links breaks its tabs).
 //      Articles, Events and Real Estate open the Content Library pane and switch the library to that type (window._clSetMain).
 //   3. Clicking "Content Library" itself opens Ads, the first of the four (ruling 6).
 //   4. The address: a type is #lib-<type> (articles, events, realestate), so Refresh and Back return to it; Ads stays #Ads.
 //   5. The group stands aside when the Designer has separate Articles, Events or RealEstate tabs (the old plan), and when the
 //      page has no ContentLibrary tab.
 //   HC-P-RESKIN-9: the group's members and their order (Ads, Articles, Events, Real Estate) and its type keys are platform
-//   constants here (CL_KIDS). Companion CSS: ta-chrome-v1.0.15.css. Pairs with content-library-v1.0.96.js. Everything else is v1.0.14.
+//   constants here (CL_KIDS). Companion CSS: ta-chrome-v1.0.16.css. Pairs with content-library-v1.0.96.js. Everything else is v1.0.14.
 // ============================================================
 // (v1.0.14 header follows)
 // ta-chrome-v1.0.14.js
@@ -334,7 +337,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.0.15';
+  var VERSION = '1.0.16';
 
   // v1.0.12 — Designer tab name -> the name every module finds its
   // pane by. Runs now, at script load, not in init(): the scripts
@@ -872,84 +875,78 @@
     { key: 'events',     label: 'Events' },
     { key: 'realestate', label: 'Real Estate' }
   ];
-  var CLG = null;   // { wrap, par, kids:{key:el}, type }
+  var CLG = null;   // { wrap, par, kids, realCL, realAds, type }
 
   function clSetType(type, tries) {
     tries = tries || 0;
     if (typeof window._clSetMain === 'function') { window._clSetMain(type); return; }
     if (tries < 40) setTimeout(function () { clSetType(type, tries + 1); }, 150);   // the library loads after auth
   }
-  function clOpen(type, fromAddress) {
+  function clGo(link, hash) {
+    if (link) link.click();                                                   // Webflow opens the pane
+    try { history.replaceState(history.state, '', location.pathname + location.search + '#' + hash); } catch (e) {}
+    clPaint();
+  }
+  function clOpen(type) {
     if (!CLG) return;
     CLG.type = type;
-    CLG.internal = true; CLG.par.click(); CLG.internal = false;            // Webflow shows the Content Library pane
+    clGo(CLG.realCL, 'lib-' + type);
     clSetType(type);
-    try { history.replaceState(history.state, '', location.pathname + location.search + '#lib-' + type); } catch (e) {}
-    clPaint();
   }
   function clPaint() {
     if (!CLG) return;
-    var parOn = CLG.par.classList.contains('w--current');
-    var ads = CLG.kids.ads, adsOn = !!(ads && ads.classList.contains('w--current'));
-    var here = parOn || adsOn;
-    CLG.wrap.classList.toggle('is-here', here);
-    CLG.par.setAttribute('aria-expanded', here ? 'true' : 'false');
+    var clOn = CLG.realCL.classList.contains('w--current');
+    var adsOn = !!(CLG.realAds && CLG.realAds.classList.contains('w--current'));
+    CLG.wrap.classList.toggle('is-here', clOn || adsOn);
+    CLG.par.setAttribute('aria-expanded', (clOn || adsOn) ? 'true' : 'false');
     CL_KIDS.forEach(function (k) {
-      if (k.tab) return;
-      var on = parOn && (CLG.type || 'articles') === k.key;
-      CLG.kids[k.key].classList.toggle('is-on', on);
-      if (on) CLG.kids[k.key].setAttribute('aria-current', 'page'); else CLG.kids[k.key].removeAttribute('aria-current');
+      var el = CLG.kids[k.key]; if (!el) return;
+      var on = k.tab ? adsOn : (clOn && (CLG.type || 'articles') === k.key);
+      el.classList.toggle('is-on', on);
+      if (on) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current');
     });
   }
+  function clRow(cls, label, onClick) {
+    var el = document.createElement('a'); el.href = '#'; el.className = cls; el.setAttribute('role', 'tab');
+    var l = document.createElement('span'); l.className = 'ta-clg-label'; l.textContent = label; el.appendChild(l);
+    el.addEventListener('click', function (e) { e.preventDefault(); onClick(); });
+    return el;
+  }
+  function labelOf(link, fallback) { var l = link && link.querySelector('.pl-label-sm'); return (l && l.textContent.trim()) || fallback; }
+  // Webflow's own tab links stay where the Designer put them (moving them breaks Webflow's tabs); they are hidden, and
+  // the group is drawn as its own rows in the Content Library tab's place. A row's click clicks the hidden Webflow link.
   function clGroup() {
     var container = document.querySelector('.dashboard-tabs.w-tabs .w-tab-menu');
     if (!container || container.dataset.clGroup) return;
     var byKey = {};
     Array.prototype.forEach.call(container.querySelectorAll('.w-tab-link[data-w-tab]'), function (t) { byKey[t.getAttribute('data-w-tab')] = t; });
-    var par = byKey[CL_PARENT];
-    if (!par || byKey.Articles || byKey.Events || byKey.RealEstate) return;
+    var realCL = byKey[CL_PARENT], realAds = byKey.Ads;
+    if (!realCL || byKey.Articles || byKey.Events || byKey.RealEstate) return;
     container.dataset.clGroup = '1';
-    par.classList.remove('ta-tab-hidden'); par.removeAttribute('aria-hidden'); par.removeAttribute('tabindex');
+    [realCL, realAds].forEach(function (t) { if (t) { t.classList.add('ta-tab-hidden'); t.setAttribute('aria-hidden', 'true'); t.setAttribute('tabindex', '-1'); } });
 
     var wrap = document.createElement('div'); wrap.className = 'ta-clg';
+    var par = clRow('ta-clg-par', labelOf(realCL, 'Content Library'), function () { if (realAds) clGo(realAds, 'Ads'); else clOpen('articles'); });
+    par.setAttribute('aria-haspopup', 'true');
+    var chev = document.createElement('span'); chev.className = 'ta-clg-chev'; chev.setAttribute('aria-hidden', 'true'); par.appendChild(chev);
     var sub = document.createElement('div'); sub.className = 'ta-clg-sub'; sub.setAttribute('role', 'group');
-    par.parentNode.insertBefore(wrap, par);
-    wrap.appendChild(par); wrap.appendChild(sub);
-    par.classList.add('ta-clg-par'); par.setAttribute('aria-haspopup', 'true');
-    var chev = document.createElement('span'); chev.className = 'ta-clg-chev'; chev.setAttribute('aria-hidden', 'true');
-    par.appendChild(chev);
-
     var kids = {};
     CL_KIDS.forEach(function (k) {
-      var el;
-      if (k.tab) {
-        el = byKey[k.tab]; if (!el) return;
-        el.classList.remove('ta-tab-hidden'); el.removeAttribute('aria-hidden'); el.removeAttribute('tabindex');
-      } else {
-        el = document.createElement('a'); el.href = '#lib-' + k.key; el.setAttribute('role', 'tab');
-        el.innerHTML = '<div class="pl-label-sm"></div>'; el.firstChild.textContent = k.label;
-        el.addEventListener('click', function (e) { e.preventDefault(); clOpen(k.key); });
-      }
-      el.classList.add('ta-clg-kid'); el.setAttribute('data-cl-kid', k.key);
-      sub.appendChild(el); kids[k.key] = el;
+      if (k.tab && !realAds) return;
+      var el = k.tab ? clRow('ta-clg-kid', labelOf(realAds, 'Ads'), function () { clGo(realAds, 'Ads'); })
+                     : clRow('ta-clg-kid', k.label, function () { clOpen(k.key); });
+      el.setAttribute('data-cl-kid', k.key); sub.appendChild(el); kids[k.key] = el;
     });
-    CLG = { wrap: wrap, par: par, kids: kids, type: null, internal: false };
+    wrap.appendChild(par); wrap.appendChild(sub);
+    realCL.parentNode.insertBefore(wrap, realCL);
+    CLG = { wrap: wrap, par: par, kids: kids, realCL: realCL, realAds: realAds, type: null };
     document.body.classList.add('ta-clg-on');
     window.TaRail = window.TaRail || {}; window.TaRail.clGroup = true;
 
-    // "Content Library" itself opens Ads (ruling 6)
-    par.addEventListener('click', function (e) {
-      if (CLG.internal || !kids.ads) return;
-      e.preventDefault(); e.stopImmediatePropagation(); kids.ads.click();
-    }, true);
-
-    // the library says which type it shows
     document.addEventListener('cl:type', function (e) { if (e.detail && e.detail.type) { CLG.type = e.detail.type; clPaint(); } });
     new MutationObserver(clPaint).observe(container, { subtree: true, attributes: true, attributeFilter: ['class'] });
-
-    // on load: #lib-<type> opens that type
     var m = /^#lib-(articles|events|realestate)$/.exec(location.hash || '');
-    if (m) setTimeout(function () { clOpen(m[1], true); }, 0);
+    if (m) setTimeout(function () { clOpen(m[1]); }, 0);
     clPaint();
   }
 
