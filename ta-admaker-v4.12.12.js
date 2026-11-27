@@ -1,6 +1,15 @@
-/* ta-admaker-v4.12.11.js
+/* ta-admaker-v4.12.12.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.12 (27 Nov 2026, Ad Maker Build S5) — BACK FROM START RETURNS TO THE TAB YOU CAME FROM; THE TAB STRIP FOLLOWS.
+     JS only; CSS v4.12.4.
+     1 Jeff, Test 1b (27 Nov): Back from Start left TA Studio. It should go back to the Task list first, and only the
+       next Back leaves the page. Ad Maker now remembers the Ads tab it was opened from (Task list or Advertisers, by a
+       card's button, a Canva draft or the AD MAKER tab). While Ad Maker shows and there is such a tab, it keeps its one
+       history entry; Back on Start shows that tab again. Opened from outside (Quill's link), Back on Start leaves.
+     2 Seen in Test 1b's screenshots: with a job open from a Task list card, the strip still underlined TASK LIST.
+       adsShowTab looked for .ix-btn--tab; the strip's buttons are .ix-tab-l1. It now marks AD MAKER.
 
    v4.12.11 (27 Nov 2026, Ad Maker Build S5) — BROWSER BACK STEPS BACK ONE STEP EVERY TIME. JS only; CSS v4.12.4.
      Test 1b (27 Nov): a Senior Care Authority job opened at step 4 (Canva). Back went to step 3; the next Back left
@@ -1029,7 +1038,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.11', CSS_FILE = 'ta-admaker-v4.12.4.css';
+  var VERSION = '4.12.12', CSS_FILE = 'ta-admaker-v4.12.4.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.19 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -5336,8 +5345,10 @@
   }
   function adsShowTab() {
     var el = adsEl(); if (!el) return;
+    if (A.tab === 'maker' && A.lastTab && A.lastTab !== 'maker') A.prevTab = A.lastTab; else if (A.tab !== 'maker') A.prevTab = '';   // v4.12.12: Back on Start returns here
+    A.lastTab = A.tab;
     el.querySelectorAll('.ta-ads-pane').forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== A.tab; });
-    el.querySelectorAll('.ta-ads-strip .ix-btn--tab').forEach(function (b) { var on = b.getAttribute('data-v') === A.tab; b.classList.toggle('is-active', on); b.setAttribute('aria-selected', on); });
+    el.querySelectorAll('.ta-ads-strip .ix-tab-l1').forEach(function (b) { var on = b.getAttribute('data-v') === A.tab; b.classList.toggle('is-active', on); b.setAttribute('aria-selected', on); });
     if (A.tab === 'all' || A.tab === 'advs') {   // v4.12.3: one board, two views
       if (!A.boardHost) { A.boardHost = document.createElement('div'); A.boardHost.id = 'ta-ads-board'; }
       var bs = el.querySelector('.ta-ads-pane[data-pane="' + A.tab + '"] .ta-ads-bslot'); if (bs && A.boardHost.parentNode !== bs) bs.appendChild(A.boardHost);
@@ -5526,8 +5537,9 @@
   // is past Start, only once the page has had a click, and never adds one in the Back handler: after stepping back it moves
   // forward onto the guard again, which adds nothing.
   var guard = false, restoring = false, popping = false;
+  function histWants() { return A.tab === 'maker' && (S.screen !== 'start' || !!A.prevTab); }   // v4.12.12: a step to go back to, or a tab to return to
   function histNote() {
-    if (popping || guard || S.screen === 'start') return;
+    if (popping || guard || !histWants()) return;
     if (history.state && history.state.amGuard) { guard = true; return; }   // already standing on the guard (Forward after Start)
     if (window.navigator && navigator.userActivation && !navigator.userActivation.hasBeenActive) return;   // no click yet: try again on a later render
     try { history.pushState({ amGuard: 1 }, ''); guard = true; } catch (e) { log('history', e); }
@@ -5535,13 +5547,18 @@
   window.addEventListener('popstate', function (e) {
     if (!mounted) return;
     if (restoring) { restoring = false; return; }   // our own move forward onto the guard
-    if (e.state && e.state.amGuard) { guard = S.screen !== 'start'; return; }   // the Forward button onto the guard
+    if (e.state && e.state.amGuard) { guard = histWants(); return; }   // the Forward button onto the guard
     if (!guard) return;   // not ours
     guard = false;
+    if (A.tab !== 'maker') { history.back(); return; }   // another Ads tab is showing: leave the page
+    if (S.screen === 'start') {   // v4.12.12: on Start, go back to the tab Ad Maker was opened from; the next Back leaves
+      if (A.prevTab) { A.tab = A.prevTab; adsRender(); } else history.back();
+      return;
+    }
     var m = document.getElementById(MOUNT_ID), bk = m && m.offsetParent !== null && !S.saving ? m.querySelector('.am-savebar [data-act="back"]') : null;
-    if (!bk || S.screen === 'start') { history.back(); return; }   // nothing to step back from: leave the page
+    if (!bk) { history.back(); return; }   // nothing to step back from: leave the page
     popping = true; try { bk.click(); } finally { popping = false; }
-    if (S.screen !== 'start') { guard = true; restoring = true; history.forward(); }   // still past Start: stand on the guard again
+    if (histWants()) { guard = true; restoring = true; history.forward(); }   // still past Start, or a tab to return to: stand on the guard again
   });
   function render() {
     histNote();
