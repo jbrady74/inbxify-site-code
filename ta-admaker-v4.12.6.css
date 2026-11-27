@@ -1,4 +1,5 @@
-/* ta-admaker-v4.12.5.css */
+/* ta-admaker-v4.12.6.css */
+/* v4.12.6 CSS (27 Nov 2026, Ad Maker Build S5): the IN CANVA drafts get their own panel at the top of In progress (Jeff: "it gets lost"). Tinted panel with a purple rule down its left side; heading "In Canva · not saved to the site yet" with a count, at row-title size; rows shaped like the task rows below (name on the same left line, one muted line under it, picture to the right, a fixed purple "In Canva" pill, buttons lined up with the task rows' buttons). The older .ta-ads-dr rules are replaced by the block at the end. */
 /* v4.12.5 CSS (27 Nov 2026, Ad Maker Build S5): a ticked tile fills its circle. Jeff: on Set up, the Logo tile had the gold trim (ticked) but an empty circle. The circle was filled ink with a white tick, but a page rule turned its background white, so the white tick vanished. The ticked circle now holds ink, with the white tick, over any page rule. Checked on the live page: ticked circle rgb(30,42,58), unticked stays white. Nothing else changed. */
 /* v4.12.4 CSS (25 Nov 2026, TA Reskin S4b): the drawer heading is the platform section heading, Newsreader 22 semibold (--ix-fs-section, --ix-fw-section). CSS only; the JS stays ta-admaker-v4.12.3.js. */
 /* ta-admaker-v4.12.3.css
@@ -1111,26 +1112,6 @@ section.publisher-wrapper .am-frame, section.publisher-wrapper .am-work, section
 .am-savenote, section.publisher-wrapper .am-savenote { margin-top: 12px; font-size: var(--ix-fs-13-5); line-height: 1.5; color: var(--am-ink) !important; }
 
 /* Drafts in Canva, above the board on All ads */
-.ta-ads-dr{background:var(--ps-paper);border:1px solid var(--ps-rule);border-radius:3px;margin:0 0 18px;padding:14px 18px 8px}
-.ta-ads-drh{display:flex;align-items:baseline;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--ps-rule-soft)}
-.ta-ads-drh h3{margin:0!important;font:var(--ix-fw-section) var(--ix-fs-section)/1.2 var(--ix-font-display)!important;color:var(--ps-ink)}
-.ta-ads-drh .n,section.publisher-wrapper .ta-ads-drh .n{font:700 var(--ix-fs-12)/1 Sen,system-ui,sans-serif;color:var(--ps-ink);background:var(--ps-ground-2)!important;border-radius:10px;padding:3px 8px}
-.ta-ads-drh .s{font-size:var(--ix-fs-12-5);color:var(--ps-muted)}
-.ta-ads-drnone{padding:12px 0 8px;font-size:var(--ix-fs-13);color:var(--ps-muted);min-height:20px}
-.ta-ads-drrow{display:grid;grid-template-columns:132px minmax(0,1.2fr) 76px minmax(0,1.6fr) 400px;gap:14px;align-items:center;padding:8px 0;border-bottom:1px solid var(--ps-rule-soft);font-size:var(--ix-fs-13);color:var(--ps-ink)}
-.ta-ads-drrow:last-child{border-bottom:0}
-.ta-ads-drrow>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ta-ads-drrow .th,section.publisher-wrapper .ta-ads-drrow .th{height:48px;background:var(--ps-ground-2)!important;border:1px solid var(--ps-rule-soft);display:flex;align-items:center;justify-content:center}
-.ta-ads-drrow .th img{display:block;max-width:100%;max-height:46px;width:auto;height:auto}
-.ta-ads-drrow .cu{font-weight:700}
-.ta-ads-drrow .sh,.ta-ads-drrow .wh{color:var(--ps-muted)}
-.ta-ads-drrow .ac{display:flex;align-items:center;justify-content:flex-end;gap:10px;overflow:visible}
-.ta-ads-drrow .ac .q{font-size:var(--ix-fs-12-5);color:var(--ps-ink-2);white-space:nowrap}
-.ta-ads-drrow.asking .wh{display:none}.ta-ads-drrow.asking .ac{grid-column:4/6}
-.ta-ads-drrow .wh .np{display:block;font-size:var(--ix-fs-11);color:var(--ps-red-deep);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ta-ads-drbtn{height:30px!important;padding:0 12px!important;font-size:var(--ix-fs-12-5)!important;width:128px;flex:none}
-.ta-ads-drx{font-size:var(--ix-fs-12);color:var(--ps-muted);text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
-@media (max-width:1180px){.ta-ads-drrow{grid-template-columns:132px minmax(0,1fr) 76px minmax(0,1fr) 400px}}
 
 /* ════ v4.11.5 (22 Nov 2026, Ad Maker Build S3) · WHAT HAPPENS IN THE RIGHT-HAND COLUMN, AND THE EMAIL'S WORDS ════ */
 .am-panel.scr-check .am-col.am-right .am-what, section.publisher-wrapper .am-panel.scr-check .am-col.am-right .am-what { margin-bottom: 0; }
@@ -1142,7 +1123,6 @@ textarea.am-mailin, section.publisher-wrapper textarea.am-mailin { min-height: 1
 .am-mailin.chg, section.publisher-wrapper .am-mailin.chg { border-color: var(--ps-gold) !important; box-shadow: 0 0 0 3px var(--ps-gold-glow); }
 
 /* ════ v4.11.6 (23 Nov 2026) · version only: the Drafts list's remove question has a second answer, styled by the v4.11.3 rules ════ */
-.ta-ads-drrow.asking .ta-ads-drbtn, section.publisher-wrapper .ta-ads-drrow.asking .ta-ads-drbtn { width: auto !important; min-width: 0; padding-left: 14px; padding-right: 14px; white-space: nowrap; }
 
 /* ════ v4.11.7 (23 Nov 2026) · version only ════ */
 
@@ -1155,8 +1135,27 @@ textarea.am-mailin, section.publisher-wrapper textarea.am-mailin { min-height: 1
 .am-bad { color: var(--ps-red-deep); }
 
 /* ════ v4.12.2 (25 Nov 2026) · Drafts in Canva inside the board's In progress stage ════ */
-.ps-ad-slot .ta-ads-dr, section.publisher-wrapper .ps-ad-slot .ta-ads-dr { border: 0; border-radius: 0; margin: 0; padding: 4px 14px 6px; border-bottom: 1px solid var(--ps-rule-soft); background: transparent; }
-.ps-ad-slot .ta-ads-drh, section.publisher-wrapper .ps-ad-slot .ta-ads-drh { padding: 6px 0 4px; border-bottom: 0; }
-.ps-ad-slot .ta-ads-drh h3, section.publisher-wrapper .ps-ad-slot .ta-ads-drh h3 { font: 700 var(--ix-fs-12)/1.2 Sen, system-ui, sans-serif !important; letter-spacing: .06em; text-transform: uppercase; color: var(--ps-muted); }
-.ps-ad-slot .ta-ads-drh .n, section.publisher-wrapper .ps-ad-slot .ta-ads-drh .n { display: none; }
 .am-cvpiece.on .ck, section.publisher-wrapper .am-cvpiece.on .ck{background:var(--am-ink)!important;border-color:var(--am-ink)!important;color:var(--ps-paper)!important}   /* v4.12.5 */
+
+
+/* ════ v4.12.6 (27 Nov 2026) · the IN CANVA panel at the top of In progress ════ */
+.ta-ads-dr, section.publisher-wrapper .ta-ads-dr { background: var(--ps-ground-2) !important; box-shadow: inset 3px 0 0 var(--ps-purple); border: 0; border-bottom: 1px solid var(--ps-rule); border-radius: 0; margin: 0; padding: 0 0 4px; }
+.ta-ads-drh, section.publisher-wrapper .ta-ads-drh { display: flex; align-items: baseline; gap: 10px; padding: 12px 14px 6px; border: 0; }
+.ta-ads-drh h3, section.publisher-wrapper .ta-ads-drh h3 { margin: 0 !important; font: 700 var(--ix-fs-14)/1.2 Sen, system-ui, sans-serif !important; letter-spacing: 0; text-transform: none; color: var(--ps-ink) !important; }
+.ta-ads-drh .n, section.publisher-wrapper .ta-ads-drh .n { display: inline-block; min-width: 22px; text-align: center; font: 700 var(--ix-fs-12)/1 Sen, system-ui, sans-serif; color: var(--ps-paper) !important; background: var(--ps-purple) !important; border-radius: 10px; padding: 3px 7px; }
+.ta-ads-drh .s, section.publisher-wrapper .ta-ads-drh .s { font-size: var(--ix-fs-12-5); color: var(--ps-muted); }
+.ta-ads-drnone { padding: 4px 14px 10px; font-size: var(--ix-fs-13); color: var(--ps-muted); }
+.ta-ads-drrow, section.publisher-wrapper .ta-ads-drrow { display: grid; grid-template-columns: minmax(0,1fr) 132px 96px auto 26px; gap: 14px; align-items: center; min-height: 58px; padding: 6px 14px; border-top: 1px solid var(--ps-rule-soft); font-size: var(--ix-fs-13); color: var(--ps-ink); }
+.ta-ads-drrow .tx { min-width: 0; display: block; }
+.ta-ads-drrow .cu { display: block; font-weight: 600; font-size: var(--ix-fs-14); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ta-ads-drrow .l2 { display: block; margin-top: 2px; font-size: var(--ix-fs-12-5); color: var(--ps-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ta-ads-drrow .l2 .np { color: var(--ps-red-deep); }
+.ta-ads-drrow .th, section.publisher-wrapper .ta-ads-drrow .th { width: 132px; height: 44px; background: var(--ps-paper) !important; border: 1px solid var(--ps-rule-soft); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.ta-ads-drrow .th img { display: block; max-width: 100%; max-height: 42px; width: auto; height: auto; }
+.ta-ads-drrow .pill, section.publisher-wrapper .ta-ads-drrow .pill { width: 96px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; background: var(--ps-purple) !important; color: var(--ps-paper) !important; font-size: var(--ix-fs-12); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ta-ads-drrow .ac { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.ta-ads-drrow .ac .q { font-size: var(--ix-fs-12-5); color: var(--ps-ink-2); white-space: nowrap; }
+.ta-ads-drbtn, section.publisher-wrapper .ta-ads-drbtn { height: 30px !important; padding: 0 12px !important; font-size: var(--ix-fs-12-5) !important; width: 128px; flex: none; }
+.ta-ads-drrow.asking .ta-ads-drbtn, section.publisher-wrapper .ta-ads-drrow.asking .ta-ads-drbtn { width: auto !important; min-width: 0; padding-left: 14px !important; padding-right: 14px !important; white-space: nowrap; }
+.ta-ads-drx { font-size: var(--ix-fs-12); color: var(--ps-muted); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+@media (max-width: 1180px) { .ta-ads-drrow, section.publisher-wrapper .ta-ads-drrow { grid-template-columns: minmax(0,1fr) 96px 96px auto 26px; } .ta-ads-drrow .th { width: 96px; } }
