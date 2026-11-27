@@ -1,8 +1,15 @@
-// workers/ix-canva/ix-canva-v0.3.3.js
+// workers/ix-canva/ix-canva-v0.3.4.js
 // ============================================================
 // INBXIFY · Cloudflare Worker · ix-canva
 // Host: ix-canva.jeff-2cd.workers.dev
 //
+// v0.3.4 (27 Nov 2026, Ad Maker Build S5) — CANVA'S RETURN BUTTON WORKS.
+//   Jeff, 27 Nov: "Return to inbxify" in Canva answered "The return token was signed with a key Canva no longer
+//   publishes" (403). The return token (correlation_jwt) is signed with Canva's REST API keys, published at
+//   /rest/v1/connect/keys (Ed25519, alg EdDSA), not with the app's own keys at /apps/<id>/jwks, which is where
+//   this Worker looked. /return now verifies against /connect/keys and checks EdDSA signatures. The Apps SDK tokens
+//   (lines that pass CANVA_APP_ID as aud) still use the app's keys. Each key set is cached in KV for an hour under
+//   its own name and fetched again when a token names a key that is not in it.
 // v0.3.3 (23 Nov 2026, Ad Maker Build S3) — A DELETED AD'S RECORD GOES; THE CONNECT LANDING SAYS SO.
 //   · POST /draft/remove takes adDeleted:true: the record is removed whatever its state (sent, approved). Ad Maker
 //     sends it after ix-sales has deleted the ad. Without it only a draft comes off, as before.
@@ -103,7 +110,7 @@
 // v0.1.3 (18 Nov 2026) — the test Worker: /connect, /test, /return; see the git history for its notes.
 // ============================================================
 
-const VERSION = '0.3.3';
+const VERSION = '0.3.4';
 const SHEET_MAX = 65536;   // HC-P-CANVA1-10
 const APPROVED_FOLDER = 'Approved';   // HC-P-CANVA1-12 · v0.3.1: the subfolder approved designs move to
 const DRAFT_THUMBS = 24;              // HC-P-CANVA1-13 · v0.3.1: designs looked up in Canva per GET /drafts
@@ -658,11 +665,12 @@ async function testEdit(env, url) {
 }
 
 // ── return navigation ─────────────────────────────────────────────────────
-async function jwks(env) {
-  const key = 'jwks', c = await env.CANVA_KV.get(key, 'json');
+async function jwks(env, which) {   // v0.3.4: which = 'connect' (REST API keys: the return token) or 'app' (the app's keys)
+  const key = which === 'connect' ? 'jwks-connect' : 'jwks', c = await env.CANVA_KV.get(key, 'json');
   if (c && c.at && Date.now() - c.at < 3600000) return c.keys;
-  const r = await fetch(CANVA_API + '/apps/' + encodeURIComponent(env.CANVA_APP_ID || '') + '/jwks');
-  if (!r.ok) throw httpErr(502, 'Canva’s public keys could not be fetched (' + r.status + '). Is CANVA_APP_ID set?');
+  const addr = which === 'connect' ? CANVA_API + '/connect/keys' : CANVA_API + '/apps/' + encodeURIComponent(env.CANVA_APP_ID || '') + '/jwks';
+  const r = await fetch(addr);
+  if (!r.ok) throw httpErr(502, 'Canva’s public keys could not be fetched (' + r.status + ')' + (which === 'connect' ? '.' : '. Is CANVA_APP_ID set?'));
   const j = await r.json(); const keys = j.keys || [];
   await env.CANVA_KV.put(key, JSON.stringify({ at: Date.now(), keys }), { expirationTtl: 86400 });
   return keys;
@@ -671,15 +679,23 @@ async function verifyJwt(env, jwt, aud) {   // v0.3.0: aud is the id the token m
   const parts = String(jwt || '').split('.'); if (parts.length !== 3) throw httpErr(400, 'The return token is not in the shape Canva documents.');
   const header = JSON.parse(new TextDecoder().decode(b64urlDecode(parts[0])));
   const payload = JSON.parse(new TextDecoder().decode(b64urlDecode(parts[1])));
-  let keys = await jwks(env), k = keys.find(x => x.kid === header.kid);
-  if (!k) { await env.CANVA_KV.delete('jwks'); keys = await jwks(env); k = keys.find(x => x.kid === header.kid); }
-  if (!k) throw httpErr(403, 'The return token was signed with a key Canva no longer publishes.');
-  const alg = (header.alg || 'RS256').toUpperCase();
-  const algo = alg === 'RS256' ? { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' } : alg === 'ES256' ? { name: 'ECDSA', namedCurve: 'P-256' } : null;
+  const which = aud === undefined ? 'connect' : 'app';   // v0.3.4: the return token is signed with the REST API keys
+  let keys = await jwks(env, which), k = keys.find(x => x.kid === header.kid);
+  if (!k) { await env.CANVA_KV.delete(which === 'connect' ? 'jwks-connect' : 'jwks'); keys = await jwks(env, which); k = keys.find(x => x.kid === header.kid); }
+  if (!k) throw httpErr(403, 'The return token was signed with a key Canva does not publish (' + (which === 'connect' ? '/connect/keys' : 'app keys') + ').');
+  const alg = (header.alg || k.alg || 'RS256').toUpperCase();
+  const algo = alg === 'RS256' ? { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' } : alg === 'ES256' ? { name: 'ECDSA', namedCurve: 'P-256' } : (alg === 'EDDSA' || alg === 'ED25519') ? { name: 'Ed25519' } : null;
   if (!algo) throw httpErr(403, 'The return token uses an algorithm this Worker does not check (' + alg + ').');
-  const pub = await crypto.subtle.importKey('jwk', k, algo, false, ['verify']);
-  const sigAlgo = alg === 'ES256' ? { name: 'ECDSA', hash: 'SHA-256' } : algo;
-  const ok = await crypto.subtle.verify(sigAlgo, pub, b64urlDecode(parts[2]), new TextEncoder().encode(parts[0] + '.' + parts[1]));
+  const data = new TextEncoder().encode(parts[0] + '.' + parts[1]), sig = b64urlDecode(parts[2]);
+  let ok;
+  if (algo.name === 'Ed25519') {   // v0.3.4: Workers name it Ed25519; older runtimes NODE-ED25519
+    let pub; try { pub = await crypto.subtle.importKey('jwk', k, { name: 'Ed25519' }, false, ['verify']); ok = await crypto.subtle.verify({ name: 'Ed25519' }, pub, sig, data); }
+    catch (e) { pub = await crypto.subtle.importKey('jwk', k, { name: 'NODE-ED25519', namedCurve: 'NODE-ED25519' }, false, ['verify']); ok = await crypto.subtle.verify({ name: 'NODE-ED25519' }, pub, sig, data); }
+  } else {
+    const pub = await crypto.subtle.importKey('jwk', k, algo, false, ['verify']);
+    const sigAlgo = alg === 'ES256' ? { name: 'ECDSA', hash: 'SHA-256' } : algo;
+    ok = await crypto.subtle.verify(sigAlgo, pub, sig, data);
+  }
   if (!ok) throw httpErr(403, 'The return token’s signature did not verify.');
   const want = aud === undefined ? env.CANVA_CLIENT_ID : aud;
   if (!want) throw httpErr(500, 'The Worker does not know which app id the token must be for (CANVA_APP_ID / CANVA_CLIENT_ID).');
