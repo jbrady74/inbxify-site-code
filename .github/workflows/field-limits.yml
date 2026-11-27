@@ -1,0 +1,50 @@
+# .github/workflows/field-limits.yml
+# INBXIFY · ASF Rethink A1 · rebuild config/field-limits.json from Webflow (P16).
+# Run it by hand (Actions → Field limits → Run workflow) after a field limit changes in Webflow, or let it run
+# every Monday. It asks the ix-asset-list Worker's /field-limits (the four asset collections' schemas), and if
+# anything changed it pushes an agent-field-limits-<run> branch and opens a pull request with the table.
+# Nothing goes live until Jeff merges. No secrets: the Worker holds the Webflow token.
+name: Field limits
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 11 * * 1'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Read Webflow through the Worker and write the file
+        run: node tools/build-field-limits.mjs --table limits-table.md
+      - name: Open a pull request if a limit changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- config/field-limits.json && [ -z "$(git status --porcelain -- config/field-limits.json)" ]; then
+            echo "No change. Webflow matches config/field-limits.json."; exit 0
+          fi
+          B="agent-field-limits-${{ github.run_number }}"
+          git config user.name "inbxify field limits"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -b "$B"
+          git add config/field-limits.json
+          git commit -m "Field limits: rebuilt from Webflow (run ${{ github.run_number }})"
+          git push origin "$B"
+          {
+            echo "Rebuilt from the Webflow collection schemas by the Field limits Action. Merge to put the new limits live on the asset form's Save check."
+            echo
+            cat limits-table.md
+          } > pr-body.md
+          gh pr create --base main --head "$B" --title "Field limits: rebuilt from Webflow" --body-file pr-body.md
