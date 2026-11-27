@@ -1,6 +1,14 @@
-/* ta-admaker-v4.12.10.js
+/* ta-admaker-v4.12.11.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.11 (27 Nov 2026, Ad Maker Build S5) — BROWSER BACK STEPS BACK ONE STEP EVERY TIME. JS only; CSS v4.12.4.
+     Test 1b (27 Nov): a Senior Care Authority job opened at step 4 (Canva). Back went to step 3; the next Back left
+     TA Studio for Quill. Cause: Chrome lets a page add one history entry per click. v4.11.5 added a new entry inside
+     the Back handler (no click), and Chrome then skips the entry under it, which was TA Studio's own.
+     Now Ad Maker keeps ONE extra entry above TA Studio's while a job is past Start, added only after a click on the page.
+     Back lands on TA Studio's entry; Ad Maker steps back one step and, if still past Start, moves forward onto its
+     entry again (history.forward), which adds nothing. From Start, Back leaves the page.
 
    v4.12.10 (26 Nov 2026, Ad Maker Build S4) — WORDS: "ALL ADS" IS NOW "TASK LIST" EVERYWHERE ON SCREEN. JS only; CSS v4.12.4.
      Test 8 (26 Nov) showed "its card on All ads can send it for approval" after a save; the tab was renamed in v4.12.3.
@@ -1021,7 +1029,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.10', CSS_FILE = 'ta-admaker-v4.12.4.css';
+  var VERSION = '4.12.11', CSS_FILE = 'ta-admaker-v4.12.4.css';
   var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.19 or later · ix-members v1.1.1 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -5513,21 +5521,27 @@
   //  Render, events, mount
   // ══════════════════════════════════════════════════════════════
   function toast(msg, kind) { if (window.IxToast && IxToast.show) { try { IxToast.show(msg, kind === 'err' ? 'err' : 'ok', kind === 'err' ? { sticky: true } : undefined); return; } catch (e) {} } log(kind || 'ok', msg); }
-  // v4.11.5 · the browser's Back goes back one step. Every change of screen leaves a history entry; popstate presses the page's own Back.
-  var histDepth = 0, histScreen = '', popping = false;
+  // v4.12.11 · the browser's Back goes back one step (v4.11.5, redone). Chrome allows one new history entry per click on the
+  // page; an entry added without one makes Back skip the entry beneath it. So Ad Maker adds ONE entry (the guard) while a job
+  // is past Start, only once the page has had a click, and never adds one in the Back handler: after stepping back it moves
+  // forward onto the guard again, which adds nothing.
+  var guard = false, restoring = false, popping = false;
   function histNote() {
-    var now = (S.sel ? String(S.sel) : '') + '|' + S.screen;
-    if (now === histScreen) return; var first = !histScreen; histScreen = now;
-    if (first || popping || S.screen === 'start') return;
-    try { history.pushState({ amStep: ++histDepth }, ''); } catch (e) { log('history', e); }
+    if (popping || guard || S.screen === 'start') return;
+    if (history.state && history.state.amGuard) { guard = true; return; }   // already standing on the guard (Forward after Start)
+    if (window.navigator && navigator.userActivation && !navigator.userActivation.hasBeenActive) return;   // no click yet: try again on a later render
+    try { history.pushState({ amGuard: 1 }, ''); guard = true; } catch (e) { log('history', e); }
   }
-  window.addEventListener('popstate', function () {
-    if (!mounted || !histDepth) return;
-    histDepth--;
+  window.addEventListener('popstate', function (e) {
+    if (!mounted) return;
+    if (restoring) { restoring = false; return; }   // our own move forward onto the guard
+    if (e.state && e.state.amGuard) { guard = S.screen !== 'start'; return; }   // the Forward button onto the guard
+    if (!guard) return;   // not ours
+    guard = false;
     var m = document.getElementById(MOUNT_ID), bk = m && m.offsetParent !== null && !S.saving ? m.querySelector('.am-savebar [data-act="back"]') : null;
-    if (!bk || S.screen === 'start') { var n = histDepth; histDepth = 0; history.go(-(n + 1)); return; }   // nothing to step back from: leave, past any entries left
+    if (!bk || S.screen === 'start') { history.back(); return; }   // nothing to step back from: leave the page
     popping = true; try { bk.click(); } finally { popping = false; }
-    if (S.screen !== 'start' && !histDepth) { try { history.pushState({ amStep: ++histDepth }, ''); } catch (e) { log('history', e); } }   // a job opened part-way in: Back keeps stepping until Start
+    if (S.screen !== 'start') { guard = true; restoring = true; history.forward(); }   // still past Start: stand on the guard again
   });
   function render() {
     histNote();
