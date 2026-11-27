@@ -16,7 +16,7 @@
 //   5. The group stands aside when the Designer has separate Articles, Events or RealEstate tabs (the old plan), and when the
 //      page has no ContentLibrary tab.
 //   HC-P-RESKIN-9: the group's members and their order (Ads, Articles, Events, Real Estate) and its type keys are platform
-//   constants here (CL_KIDS). Companion CSS: ta-chrome-v1.0.16.css. Pairs with content-library-v1.0.96.js. Everything else is v1.0.14.
+//   constants here (CL_KIDS). Companion CSS: ta-chrome-v1.0.17.css. Pairs with content-library-v1.0.96.js. Everything else is v1.0.14.
 // ============================================================
 // (v1.0.14 header follows)
 // ta-chrome-v1.0.14.js

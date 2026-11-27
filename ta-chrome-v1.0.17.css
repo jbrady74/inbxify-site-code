@@ -1,4 +1,5 @@
-/* ta-chrome-v1.0.16.css */
+/* ta-chrome-v1.0.17.css */
+/* v1.0.17 (27 Nov 2026, TA Reskin S4e): the rows were all bold (the page's link weight won); a row is regular and only the open one and the group's name, while you are in it, are bold. Pairs with ta-chrome-v1.0.16.js. */
 /* v1.0.16 (27 Nov 2026, TA Reskin S4e): the group draws its own rows; Webflow's Ads and ContentLibrary links stay hidden in place (v1.0.15 moved them, which broke Webflow's tabs; it never went live).
    v1.0.15 (27 Nov 2026, TA Reskin S4e · CONTENT LIBRARY ON THE RAIL). Companion to ta-chrome-v1.0.16.js, which draws the
    Content Library group (.ta-clg) with its four members (Ads, Articles, Events, Real Estate) as its own rows. Mockup: canvas "One look", page S4e.
@@ -12,7 +13,7 @@
 .publisher-wrapper .dashboard-tabs.w-tabs .w-tab-menu .ta-clg .ta-clg-kid {
   display: flex; align-items: center; width: 100%; box-sizing: border-box; margin: 0; position: relative;
   text-decoration: none; cursor: pointer; background-color: transparent !important; white-space: nowrap;
-  font-family: var(--ix-font-body); color: var(--ix-rail-label); transition: background-color .15s ease;
+  font-family: var(--ix-font-body); font-weight: 400 !important; color: var(--ix-rail-label); transition: background-color .15s ease;
 }
 .publisher-wrapper .dashboard-tabs.w-tabs .w-tab-menu .ta-clg .ta-clg-par {
   justify-content: space-between; height: var(--ix-rail-row); padding: 0 16px 0 24px; font-size: var(--ix-fs-row);
@@ -23,7 +24,7 @@
 .publisher-wrapper .dashboard-tabs.w-tabs .w-tab-menu .ta-clg .ta-clg-kid:hover { background-color: var(--ix-cream-warm) !important; color: var(--ix-rail-label-on); }
 .publisher-wrapper .dashboard-tabs.w-tabs .w-tab-menu .ta-clg .ta-clg-par:focus-visible,
 .publisher-wrapper .dashboard-tabs.w-tabs .w-tab-menu .ta-clg .ta-clg-kid:focus-visible { outline: 2px solid var(--ix-blue); outline-offset: -2px; }
-.publisher-wrapper .dashboard-tabs.w-tabs .w-tab-menu .ta-clg.is-here .ta-clg-par { color: var(--ix-rail-label-on); font-weight: 700; }
+.publisher-wrapper .dashboard-tabs.w-tabs .w-tab-menu .ta-clg.is-here .ta-clg-par { color: var(--ix-rail-label-on); font-weight: 700 !important; }
 
 /* the chevron */
 .publisher-wrapper .dashboard-tabs.w-tabs .w-tab-menu .ta-clg .ta-clg-chev {
@@ -47,7 +48,7 @@
 
 /* the open member: the bed and the coral bar, as an open rail tab */
 .publisher-wrapper .dashboard-tabs.w-tabs .w-tab-menu .ta-clg .ta-clg-kid.is-on {
-  background-color: var(--ix-rail-open) !important; box-shadow: inset 3px 0 0 var(--ix-here); color: var(--ix-rail-label-on); font-weight: 700;
+  background-color: var(--ix-rail-open) !important; box-shadow: inset 3px 0 0 var(--ix-here); color: var(--ix-rail-label-on); font-weight: 700 !important;
 }
 
 /* the library's own Articles · Events · Real Estate buttons go: the rail switches type now (ruling 7).
