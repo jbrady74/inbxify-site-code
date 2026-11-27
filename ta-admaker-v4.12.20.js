@@ -1,6 +1,14 @@
-/* ta-admaker-v4.12.19.js
+/* ta-admaker-v4.12.20.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.20 (27 Nov 2026, Ad Maker Build S6) — AN IN CANVA ROW SHOWS THE DESIGN AS IT LAST CAME BACK. JS only (CSS v4.12.8).
+     Jeff, 27 Nov (Test 1): a banner made from scratch in Canva and brought back showed a blank picture on its In Canva
+     row. The row showed Canva's design thumbnail, which Canva drew when the design was made (an empty page) and had
+     not redrawn (checked on the live Ads tab: Bergen Performance Marine, 771 × 259, white). A row whose design has
+     been brought back now shows that PNG, read from ix-canva v0.3.5 GET /draft/png (kept at each export). A design
+     never brought back still shows Canva's thumbnail. A picture that cannot be read falls back to Canva's thumbnail
+     and is not asked for again until the page reloads. ⓘ: needs ix-canva v0.3.5.
 
    v4.12.19 (27 Nov 2026, Ad Maker Build S6) — B2: THE APPROVAL EMAIL OPENS IN A POP-UP BEFORE ANYTHING IS SAVED.
      Rulings (Jeff, 27 Nov, on the B2 mockup): one pop-up for Check and the board card; it shows the email as Doug gets
@@ -1077,8 +1085,8 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.19', CSS_FILE = 'ta-admaker-v4.12.8.css';
-  var NEEDS = 'needs ix-canva v0.3.3 or later · ix-sales v1.3.20 or later · ix-members v1.1.1 or later · ix-approval-mail v1.0.0 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
+  var VERSION = '4.12.20', CSS_FILE = 'ta-admaker-v4.12.8.css';
+  var NEEDS = 'needs ix-canva v0.3.5 or later · ix-sales v1.3.20 or later · ix-members v1.1.1 or later · ix-approval-mail v1.0.0 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
   var ADVICE_BIGGER = 1.25;   // HC-P-SSB8-25
@@ -5292,7 +5300,7 @@
   };
   var ADS_W = { title: 'Ads', newAd: '+ New ad', allAds: 'Task list', idea: 'Idea · not built', works: 'Works today', notBuilt: 'Not built · thinking only', purpose: 'Purpose', decided: 'Decided so far', open: 'Open questions',
     formLine: 'Type an ADS row by hand: the name, the customer, pictures already hosted, the click link. The same form the Articles, Events and Real Estate tabs use.', formBtn: 'Open the ad form', formMissing: 'The Asset Form (ta-asf) is not on this page.' };
-  var A = { tab: 'all', page: 'tabs', board: null, mounted: false, pubId: '', pubName: '', contact: null, you: null, linkDays: 14, drafts: { list: null, err: '', loading: false, ask: '', busy: '' } };
+  var A = { drPng: {}, drPngBusy: {}, tab: 'all', page: 'tabs', board: null, mounted: false, pubId: '', pubName: '', contact: null, you: null, linkDays: 14, drafts: { list: null, err: '', loading: false, ask: '', busy: '' } };
   function adsEl() { return document.getElementById(ADS_MOUNT_ID); }
   function adsBadge() {
     if (!(window.IxInfo && IxInfo.badge)) return '';
@@ -5303,7 +5311,7 @@
       blurb: 'The Ads rail tab. Task list: every ad job of the publisher in four stages (Not started; In progress, with designs still in Canva; With the publisher, waiting; From the publisher, to do); a row opens that customer’s cards under it. Advertisers: the clients with an ad, ad space sold or an ad request, with what runs for each shape. Then Ad Maker (Design in Canva or concepts), the ad form, and four idea tabs. Make sidebar / Make banner opens an Ad Maker job on that customer’s own ads.',
       scenarios: [
         { name: 'Worker — ix-sales', note: 'GET /ads?publisher= (every customer, versions, states, brand, contact); POST /ads/<id>/decide as inbxify (Approve and make current / hold: Scenario G, then 114, logged); POST /ads/send-approval (the review link by email, through ix-members and Resend); POST /ads/delete (a true delete: the ADS row, its MEDIA row, its Uploadcare file, its open links)' },
-        { name: 'Worker — ix-canva', note: 'TA_CONFIG.canvaUrl: POST /job, GET /job/<id>, GET /job/<id>/png, POST /job/<id>/export, POST /job/from-design (copies an approved design), GET /drafts, POST /design/state, POST /draft/remove' },
+        { name: 'Worker — ix-canva', note: 'TA_CONFIG.canvaUrl: POST /job, GET /job/<id>, GET /job/<id>/png, POST /job/<id>/export, POST /job/from-design (copies an approved design), GET /drafts, GET /draft/png (the row picture), POST /design/state, POST /draft/remove' },
         { name: 'Worker — ix-adreformat', note: 'TA_CONFIG.adReformatWorker: reads the ad' },
         { name: 'Worker — ix-asset-list', note: '/list?type=ad: sent back, versions, recipes' },
         { name: 'Scenario B — Route 4', note: 'MEDIA rows for the saved pictures' },
@@ -5500,10 +5508,28 @@
       var id = esc(d.designId), sh = d.shape || '', busy = D.busy === d.designId;
       var acts = D.ask === d.designId ? '<span class="q">' + DW.removeAsk + '</span><button type="button" class="ix-btn ix-btn--danger ta-ads-drbtn" data-ads="drRemoveYes" data-v="' + id + '" title="' + esc(DW.yesNote) + '">' + DW.yes + '</button><button type="button" class="ix-btn ix-btn--danger ta-ads-drbtn" data-ads="drRemoveDel" data-v="' + id + '" title="' + esc(DW.delNote) + '">' + DW.del + '</button><a href="#" class="ta-ads-drx" data-ads="drRemoveNo">' + DW.no + '</a>'
         : '<button type="button" class="ix-btn ix-btn--primary ta-ads-drbtn" data-ads="drEdit" data-v="' + id + '"' + (busy ? ' disabled' : '') + '>' + DW.edit + '</button><button type="button" class="ix-btn ix-btn--secondary ta-ads-drbtn" data-ads="drCheck" data-v="' + id + '"' + (busy ? ' disabled' : '') + '>' + DW.check + '</button><a href="#" class="ta-ads-drx" data-ads="drRemove" data-v="' + id + '">' + DW.remove + '</a>';
-      var line = esc(sh ? shapeLabel(sh) : DW.noShape) + ' \u00b7 ' + (d.copiedFrom ? esc(DW.copy) + ' \u00b7 ' : '') + esc(fillW(DW.worked, { on: fmtDate(d.canvaUpdated || d.updated) })) + ' \u00b7 ' + esc(d.exportedAt ? fillW(DW.back, { on: fmtDate(d.exportedAt) }) : DW.notBack) + (!d.thumb ? ' \u00b7 <span class="np">' + esc(d.thumbError ? DW.noPic + ': ' + d.thumbError : DW.noPicYet) + '</span>' : '');   // v4.12.16: one line under the name
+      var line = esc(sh ? shapeLabel(sh) : DW.noShape) + ' \u00b7 ' + (d.copiedFrom ? esc(DW.copy) + ' \u00b7 ' : '') + esc(fillW(DW.worked, { on: fmtDate(d.canvaUpdated || d.updated) })) + ' \u00b7 ' + esc(d.exportedAt ? fillW(DW.back, { on: fmtDate(d.exportedAt) }) : DW.notBack) + (!d.thumb && !d.hasPng ? ' \u00b7 <span class="np">' + esc(d.thumbError ? DW.noPic + ': ' + d.thumbError : DW.noPicYet) + '</span>' : '');   // v4.12.16: one line under the name
       return '<div class="ta-ads-drrow' + (D.ask === d.designId ? ' asking' : '') + '"><span class="tx"><span class="cu" title="' + esc(d.customer.name) + '">' + esc(d.customer.name) + '</span><span class="l2" title="' + esc(d.title || '') + '">' + line + '</span></span>' +
-        '<span class="th">' + (d.thumb ? '<img src="' + esc(d.thumb) + '" alt="" loading="lazy">' : '') + '</span><span class="pill">' + esc(DW.pill) + '</span><span class="ac">' + acts + '</span><span class="sp"></span></div>'; }).join('');
+        '<span class="th">' + (d.hasPng ? '<img data-drpng="' + esc(d.designId) + '" alt=""' + (A.drPng[d.designId + '|' + d.exportedAt] ? ' src="' + A.drPng[d.designId + '|' + d.exportedAt] + '"' : '') + '>' : d.thumb ? '<img src="' + esc(d.thumb) + '" alt="" loading="lazy">' : '') + '</span><span class="pill">' + esc(DW.pill) + '</span><span class="ac">' + acts + '</span><span class="sp"></span></div>'; }).join('');
     host.innerHTML = h + '</div>';
+    adsDraftPngs();
+  }
+  // v4.12.20 · the row's picture is the design as it last came back from Canva (ix-canva v0.3.5 GET /draft/png), not Canva's
+  // thumbnail, which Canva draws when a design is made (a design started from scratch shows white) and does not redraw.
+  function adsDraftPngs() {
+    (A.drafts.list || []).forEach(function (d) {
+      if (!d.hasPng) return;
+      var k = d.designId + '|' + d.exportedAt;
+      if (A.drPng[k] || A.drPngBusy[k]) return;
+      A.drPngBusy[k] = 1;
+      canvaApi('/draft/png?design=' + encodeURIComponent(d.designId), { raw: true }).then(function (blob) {
+        A.drPng[k] = URL.createObjectURL(blob); delete A.drPngBusy[k];
+        var img = document.querySelector('#ta-ads-drafts img[data-drpng="' + d.designId.replace(/"/g, '') + '"]'); if (img) img.src = A.drPng[k];
+      }, function (e) {
+        log('draft png', d.designId, e && e.message);
+        if (d.thumb) { var img = document.querySelector('#ta-ads-drafts img[data-drpng="' + d.designId.replace(/"/g, '') + '"]'); if (img) img.src = d.thumb; }   // fall back to Canva's thumbnail
+      });   // a failed picture is not asked for again until the page reloads
+    });
   }
   function adsDraftOpen(designId, mode) {
     var d = (A.drafts.list || []).filter(function (x) { return x.designId === designId; })[0]; if (!d) return;

@@ -1,8 +1,21 @@
-// workers/ix-canva/ix-canva-v0.3.4.js
+// workers/ix-canva/ix-canva-v0.3.5.js
 // ============================================================
 // INBXIFY · Cloudflare Worker · ix-canva
 // Host: ix-canva.jeff-2cd.workers.dev
 //
+// v0.3.5 (27 Nov 2026, Ad Maker Build S6) — AN IN CANVA ROW SHOWS THE DESIGN AS IT CAME BACK, NOT CANVA'S THUMBNAIL.
+//   Jeff, 27 Nov: a banner made from scratch in Canva and brought back with Return showed a blank picture on its In
+//   Canva row. Checked on the live Ads tab (Bergen Performance Marine): the picture loads, 771 × 259, and is white.
+//   It is Canva's design thumbnail, which Canva drew when the design was made (an empty page) and has not redrawn.
+//   · Every export (Return to inbxify, Fetch from Canva) now also keeps the PNG in KV under png:<design id>, with
+//     its export time, replacing the one before. No expiry, so the row keeps its picture after Canva's link lapses.
+//   · GET /draft/png?design=<id> (staff login) answers that PNG. A design exported before v0.3.5 has none in KV: the
+//     Worker fetches its newest job's export once and keeps it. Never a new export. 404 when the design was never
+//     brought back.
+//   · GET /drafts: each draft gains hasPng (it has been brought back, so the row can ask /draft/png). thumb (Canva's
+//     thumbnail) stays for a draft that was never brought back.
+//   · POST /draft/remove also removes the kept PNG.
+//   HARDCODING: HC-P-CANVA1-16 the KV key png:<design id>.
 // v0.3.4 (27 Nov 2026, Ad Maker Build S5) — CANVA'S RETURN BUTTON WORKS.
 //   Jeff, 27 Nov: "Return to inbxify" in Canva answered "The return token was signed with a key Canva no longer
 //   publishes" (403). The return token (correlation_jwt) is signed with Canva's REST API keys, published at
@@ -110,7 +123,7 @@
 // v0.1.3 (18 Nov 2026) — the test Worker: /connect, /test, /return; see the git history for its notes.
 // ============================================================
 
-const VERSION = '0.3.4';
+const VERSION = '0.3.5';
 const SHEET_MAX = 65536;   // HC-P-CANVA1-10
 const APPROVED_FOLDER = 'Approved';   // HC-P-CANVA1-12 · v0.3.1: the subfolder approved designs move to
 const DRAFT_THUMBS = 24;              // HC-P-CANVA1-13 · v0.3.1: designs looked up in Canva per GET /drafts
@@ -161,6 +174,7 @@ export default {
       if (p === '/app/job' && req.method === 'GET') return json(env, origin, await appJob(env, req));   // v0.3.0: the Canva app
       if (p === '/drafts' && req.method === 'GET') { await authorize(env, req, origin); return json(env, origin, await draftsList(env, url)); }   // v0.3.1
       if (p === '/design/state' && req.method === 'POST') { const who = await authorize(env, req, origin); return json(env, origin, await designState(env, await readJson(req), who)); }   // v0.3.1
+      if (p === '/draft/png' && req.method === 'GET') { await authorize(env, req, origin); return draftPng(env, origin, url); }   // v0.3.5
       if (p === '/draft/remove' && req.method === 'POST') { await authorize(env, req, origin); return json(env, origin, await draftRemove(env, await readJson(req))); }   // v0.3.1
       if (p === '/design/link' && req.method === 'POST') { await authorize(env, req, origin); return json(env, origin, await designLink(env, await readJson(req))); }
       return json(env, origin, { ok: false, error: 'Not found' }, 404);
@@ -434,7 +448,27 @@ async function jobExport(env, id, from) {
   job.status = 'exported'; job.exportUrl = url; job.exportedAt = new Date().toISOString(); job.exportFrom = from || 'page'; job.error = '';
   await saveJob(env, job);
   await draftTouch(env, job, { exportedAt: job.exportedAt });   // v0.3.1
+  await pngKeep(env, job.designId, url, job.exportedAt, job.id);   // v0.3.5: the row's picture
   return { ok: true, job: jobOut(job) };
+}
+// v0.3.5 · HC-P-CANVA1-16 · the newest export of a design, kept in KV for its In Canva row (Canva's thumbnail goes stale)
+function pngKey(designId) { return 'png:' + designId; }
+async function pngKeep(env, designId, url, at, jobId) {
+  if (!designId || !url) return false;
+  try { const r = await fetch(url); if (!r.ok) return false; await env.CANVA_KV.put(pngKey(designId), await r.arrayBuffer(), { metadata: { at: at || '', jobId: jobId || '' } }); return true; }
+  catch (e) { return false; }   // the export itself stands; the row falls back to Canva's thumbnail
+}
+async function draftPng(env, origin, url) {
+  const designId = String(url.searchParams.get('design') || '').trim(); if (!designId) throw httpErr(400, 'design is required.');
+  let got = await env.CANVA_KV.getWithMetadata(pngKey(designId), 'arrayBuffer');
+  if (!got || !got.value) {   // exported before v0.3.5: keep its newest job's export once (never a new export)
+    const jobId = await env.CANVA_KV.get('design:' + designId), job = jobId ? await env.CANVA_KV.get(jobKey(jobId), 'json') : null;
+    if (!job || !job.exportUrl) throw httpErr(404, 'This design has not been brought back from Canva yet.');
+    if (!(await pngKeep(env, designId, job.exportUrl, job.exportedAt, job.id))) throw httpErr(404, 'Canva’s link to the last export has lapsed. Bring the design back again (Edit in Canva, then Return to inbxify).');
+    got = await env.CANVA_KV.getWithMetadata(pngKey(designId), 'arrayBuffer');
+  }
+  const h = Object.assign({ 'Content-Type': 'image/png', 'Cache-Control': 'no-store', 'X-Exported-At': String((got.metadata && got.metadata.at) || '') }, corsHeaders(env, origin));
+  return new Response(got.value, { status: 200, headers: h });
 }
 async function jobPng(env, origin, id) {
   const job = await loadJob(env, id);
@@ -505,7 +539,7 @@ async function draftsList(env, url) {
   }
   return { ok: true, drafts: recs.map(draftOut), looked, backfilled };
 }
-function draftOut(d) { return { designId: d.designId, customer: d.customer, shape: d.shape || '', title: d.title || '', state: DRAFT_STATES.includes(d.state) ? d.state : 'draft', adId: d.adId || '', made: d.made || '', updated: d.updated || '', exportedAt: d.exportedAt || '', copiedFrom: d.copiedFrom || '', thumb: d.thumb || '', canvaUpdated: d.canvaUpdated || '', thumbError: d.thumbError || '' }; }
+function draftOut(d) { return { designId: d.designId, customer: d.customer, shape: d.shape || '', title: d.title || '', state: DRAFT_STATES.includes(d.state) ? d.state : 'draft', adId: d.adId || '', made: d.made || '', updated: d.updated || '', exportedAt: d.exportedAt || '', copiedFrom: d.copiedFrom || '', thumb: d.thumb || '', canvaUpdated: d.canvaUpdated || '', thumbError: d.thumbError || '', hasPng: !!d.exportedAt }; }   // v0.3.5: hasPng
 async function approvedFolder(env, parentId) {   // the customer's "Approved" subfolder: remembered, else found, else made
   const key = 'folder-approved:' + parentId, known = await env.CANVA_KV.get(key);
   if (known) { try { await api(env, '/folders/' + encodeURIComponent(known)); return known; } catch (e) { await env.CANVA_KV.delete(key); } }
@@ -546,6 +580,7 @@ async function draftRemove(env, b) {
   const d = await draftGet(env, custId, designId); if (!d) return { ok: true, removed: false };
   if (d.state !== 'draft' && b.adDeleted !== true) throw httpErr(409, 'Only a draft comes off the list. This design is ' + d.state + '.');
   await env.CANVA_KV.delete(draftKey(custId, designId));
+  await env.CANVA_KV.delete(pngKey(designId));   // v0.3.5
   return { ok: true, removed: true };
 }
 
