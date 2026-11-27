@@ -1,4 +1,5 @@
-/* ix-ads-board-v1.0.15.css */
+/* ix-ads-board-v1.0.16.css */
+/* v1.0.16 CSS (27 Nov 2026, Ad Maker Build S5): the T-A Task list scrolls with the mouse wheel again. Each stage box body (.bb) was a scroll box with overscroll-behavior:contain (a Portal rule for its fixed-height boxes). On T-A the boxes have no height, so a box body that rounded to a fraction of a pixel taller than itself (seen with the "Delete this ad for good?" box open) took every wheel turn and passed none to the page. On the inbxify side the stage box bodies are now plain blocks. Checked on the live page by injecting this rule: with the delete box open the wheel scrolled the page. Nothing else changed. */
 /* v1.0.15 CSS (27 Nov 2026, Ad Maker Build S5): an open Task list row turns its chevron up, as the Advertisers list rows already do (.ps-ad-brow.ps-ad-openrow). Seen in Test 1a: AA ChemDry's open row still pointed down. Nothing else changed. */
 /* v1.0.14 CSS (25 Nov 2026, TA Reskin S4b): the box headings (Not started, In progress, With the publisher, From the publisher) are the platform section heading: Newsreader 22 semibold (--ix-fs-section, --ix-fw-section), on T-A and the Portal alike. They were 21 regular on T-A, 19 semibold on the Portal. CSS only; the JS stays ix-ads-board-v1.0.13.js. */
 /* ============================================================
@@ -399,3 +400,4 @@ textarea.ps-ad-sendin{min-height:128px;resize:vertical}
 .ps-ad-box.b-list .bh .sub{font-size:var(--ix-fs-12-5);color:var(--ps-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 @media (max-width:760px){.ps-ad-brow.nocov.has-act{grid-template-columns:minmax(0,1fr) 26px}}
 .ps-ad-brow .chv svg{transition:transform .15s}
+.side-inbxify .ps-ad-stages .ps-ad-box .bb{overflow:visible;overscroll-behavior:auto}   /* v1.0.16 */
