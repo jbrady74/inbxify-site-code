@@ -1,4 +1,5 @@
-/* ta-admaker-v4.12.4.css */
+/* ta-admaker-v4.12.5.css */
+/* v4.12.5 CSS (27 Nov 2026, Ad Maker Build S5): a ticked tile fills its circle. Jeff: on Set up, the Logo tile had the gold trim (ticked) but an empty circle. The circle was filled ink with a white tick, but a page rule turned its background white, so the white tick vanished. The ticked circle now holds ink, with the white tick, over any page rule. Checked on the live page: ticked circle rgb(30,42,58), unticked stays white. Nothing else changed. */
 /* v4.12.4 CSS (25 Nov 2026, TA Reskin S4b): the drawer heading is the platform section heading, Newsreader 22 semibold (--ix-fs-section, --ix-fw-section). CSS only; the JS stays ta-admaker-v4.12.3.js. */
 /* ta-admaker-v4.12.3.css
    INBXIFY · AD MAKER and the T-A ADS TAB · companion to ta-admaker-v4.12.3.js
@@ -1158,3 +1159,4 @@ textarea.am-mailin, section.publisher-wrapper textarea.am-mailin { min-height: 1
 .ps-ad-slot .ta-ads-drh, section.publisher-wrapper .ps-ad-slot .ta-ads-drh { padding: 6px 0 4px; border-bottom: 0; }
 .ps-ad-slot .ta-ads-drh h3, section.publisher-wrapper .ps-ad-slot .ta-ads-drh h3 { font: 700 var(--ix-fs-12)/1.2 Sen, system-ui, sans-serif !important; letter-spacing: .06em; text-transform: uppercase; color: var(--ps-muted); }
 .ps-ad-slot .ta-ads-drh .n, section.publisher-wrapper .ps-ad-slot .ta-ads-drh .n { display: none; }
+.am-cvpiece.on .ck, section.publisher-wrapper .am-cvpiece.on .ck{background:var(--am-ink)!important;border-color:var(--am-ink)!important;color:var(--ps-paper)!important}   /* v4.12.5 */
