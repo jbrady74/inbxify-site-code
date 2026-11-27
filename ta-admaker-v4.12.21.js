@@ -1,6 +1,12 @@
-/* ta-admaker-v4.12.20.js
+/* ta-admaker-v4.12.21.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.21 (27 Nov 2026, Ad Maker Build S6) — "CHECK AND SAVE" IS NOW "FINISH THIS AD". JS only (CSS v4.12.8).
+     Jeff, 27 Nov (by voice, during Test 1): "Check and save" did not say what it does; he would not have clicked it on
+     his own. Ruled: "Finish this ad" on every In Canva row, whatever state the design is in. It opens Check, the last
+     step: look it over, choose what happens, save. The draft-kept message names it the same way and calls the panel
+     In Canva (it still said Drafts in Canva). Nothing else changed.
 
    v4.12.20 (27 Nov 2026, Ad Maker Build S6) — AN IN CANVA ROW SHOWS THE DESIGN AS IT LAST CAME BACK. JS only (CSS v4.12.8).
      Jeff, 27 Nov (Test 1): a banner made from scratch in Canva and brought back showed a blank picture on its In Canva
@@ -1085,7 +1091,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.20', CSS_FILE = 'ta-admaker-v4.12.8.css';
+  var VERSION = '4.12.21', CSS_FILE = 'ta-admaker-v4.12.8.css';
   var NEEDS = 'needs ix-canva v0.3.5 or later · ix-sales v1.3.20 or later · ix-members v1.1.1 or later · ix-approval-mail v1.0.0 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -5089,7 +5095,7 @@
     head2: { draft: 'Kept as a draft in Canva', send: '1 version saved and sent for approval', current: '1 version saved, approved and made current', hold: '1 version saved, approved and held', plain: '1 version saved' },
     head2Saved: { send: 'Sent for approval', current: 'Approved and made current', hold: 'Approved and held', plain: 'Saved' },
     savedMsgSaved: { send: 'Sent. The decision comes back by email.', current: 'Approved and running.', hold: 'Approved. The current ad keeps running.' },
-    draftDone: 'The design is in Canva, in {customer}’s folder. It is listed under Drafts in Canva on the Task list, with Edit in Canva and Check and save.',
+    draftDone: 'The design is in Canva, in {customer}’s folder. It is listed under In Canva on the Task list, with Edit in Canva and Finish this ad.',
     draftDoneFix: 'Your changes stay in Canva. The saved ad still shows its earlier picture until you save it here.',
     rowSent: 'Approval email sent to {to}. The link works for {days} days.', rowSentTest: 'Test approval email sent to {to}. Approving from it counts.',
     rowCurrent: 'Approved by inbxify for the publisher · the customer’s current {shape}', rowHold: 'Approved by inbxify for the publisher · held, not running',
@@ -5260,7 +5266,7 @@
         cv.fromVersion = (v && v.id && !j.copied) ? { id: v.id, name: v.name || '', shape: S.shape } : null;
         if (j.copied) toast(SAVE_WORDS.copy, 'ok');
         render();
-        if (o.noTab) { canvaFetch(); return; }   // Check and save: bring the picture back without opening Canva
+        if (o.noTab) { canvaFetch(); return; }   // Finish this ad: bring the picture back without opening Canva
         canvaPointTab(tab, j.editUrl); canvaPollStart(); })
       .catch(function (e) { if (tab) try { tab.close(); } catch (x) {} cv.busy = false; cv.err = e.message; render(); });
   }
@@ -5456,7 +5462,7 @@
   var CANVA_DESIGN_URL = 'https://www.canva.com/design/{id}/edit';   // HC-P-AMS3-8 · Canva's own address for a design (v4.11.6)
   var DRAFT_WORDS = {   // HC-P-AMS3-6
     head: 'In Canva', sub: 'not saved to the site yet', pill: 'In Canva', none: 'No drafts in Canva.', loading: 'Reading the drafts from Canva…',
-    edit: 'Edit in Canva', check: 'Check and save', remove: 'Remove from list', removeAsk: 'Take it off this list?', yes: 'Yes, remove', yesNote: 'the design stays in Canva', del: 'Remove and delete in Canva', delNote: 'opens the design; use File > Move to trash', no: 'cancel',
+    edit: 'Edit in Canva', check: 'Finish this ad', remove: 'Remove from list', removeAsk: 'Take it off this list?', yes: 'Yes, remove', yesNote: 'the design stays in Canva', del: 'Remove and delete in Canva', delNote: 'opens the design; use File > Move to trash', no: 'cancel',
     removed: 'Taken off the list. The design is still in Canva.', removedDel: 'Taken off the list. The design is open in Canva: use File > Move to trash to delete it.', blocked: 'The browser blocked the Canva tab. The row is still on the list.',
     noPic: 'No picture from Canva', noPicYet: 'Canva has no picture of it yet', worked: 'Worked on {on}', notBack: 'not brought back yet', back: 'brought back {on}', copy: 'A copy of an approved ad', noShape: 'Shape not recorded'
   };
