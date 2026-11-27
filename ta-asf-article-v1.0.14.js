@@ -323,7 +323,7 @@
       { key: 'ctaButton', label: 'CTA button label', kind: 'text' },
       { key: 'ctaUrl', label: 'CTA URL', kind: 'text' } ] },
     { key: 'ctaText', label: 'CTA text', kind: 'textarea' },
-    { key: 'slug', label: 'Slug', kind: 'text' },
+    { key: 'slug', label: 'Address', kind: 'text' },   // v1.0.14: the page address, set on create
     { key: 'bannerStatement', label: 'Banner', kind: 'text' },
     // Unused today; kept reachable, not in the way (ruled 24 Sept).
     { key: 'revenueType', label: 'Revenue type', kind: 'select', opts: 'revenue' },
@@ -361,7 +361,7 @@
     writerName: 'writer', writerTitle: 'writer title', cowriterName: 'co-writer',
     cowriterTitle: 'co-writer title', photographer: 'photographer', showPhotoCredits: 'credits',
     hideWriterTitles: 'hide writer titles', showBusinessInByline: 'show business in byline',   // v1.0.10
-    ctaButton: 'CTA label', ctaUrl: 'CTA URL', ctaText: 'CTA text', slug: 'slug',
+    ctaButton: 'CTA label', ctaUrl: 'CTA URL', ctaText: 'CTA text', slug: 'address',
     bannerStatement: 'banner', videoUrl: 'video URL', audioUrl: 'audio URL',
     galleryMediaIds: 'gallery', bodyHtml: 'body'
   };
@@ -1066,7 +1066,9 @@
   // v1.0.14 — the kind band (P12).
   function kindName(id) {
     var t = (B.cfg.articleTypes || []).filter(function (x) { return x.id === id; })[0];
-    return t ? t.label.replace(/\s+Article$/i, '') + (/video/i.test(t.label) ? ' article' : /standard/i.test(t.label) ? ' article' : '') : 'Standard article';
+    var base = t ? t.label.replace(/\s+Article$/i, '') : 'Standard';
+    base = base.charAt(0).toUpperCase() + base.slice(1).toLowerCase();       // "Photo essay"
+    return id === 'photo-essay' ? base : base + ' article';                 // "Standard article", "Video article"
   }
   function renderKind() {
     var host = q('[data-a2-kind]');

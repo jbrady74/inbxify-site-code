@@ -601,7 +601,7 @@
 .asf2[class] .asf2-words .asf2-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--ix-sp-24);}
 
 /* nothing scrolls inside a box: text boxes grow (height set by the script) */
-.asf2[class] textarea.asf2-grow{resize:none;overflow:hidden;min-height:38px;}
+.asf2[class] textarea.asf2-grow,.ix-dense textarea.ix-picker-input.asf2-grow{resize:none !important;overflow:hidden !important;min-height:38px !important;}
 .asf2[class] .asf2-ai{min-height:30px;}
 .asf2[class] .asf2-ai-txt{white-space:normal;overflow:visible;}
 
@@ -622,8 +622,11 @@
 .asf2[class] .asf2-ch[data-a2-ch="body"] trix-editor.asf2-rte{min-height:360px;}
 
 /* Rarely used */
-.asf2[class] .asf2-ch--more .asf2-more{border:0;margin:0;}
-.asf2[class] .asf2-ch--more .asf2-more > summary{display:flex;align-items:center;gap:var(--ix-sp-12);padding:var(--ix-sp-12) var(--ix-sp-24);cursor:pointer;list-style:none;}
+.asf2[class] .asf2-ch--more .asf2-more{border:0;margin:0;padding:0;}
+.asf2[class] .asf2-ch--more .asf2-more > summary::before{content:none;}
+.asf2[class] .asf2-ch--more .asf2-more > summary::marker{content:'';}
+.asf2[class] .asf2-ch--more .asf2-more > summary{display:flex;align-items:center;gap:var(--ix-sp-12);padding:var(--ix-sp-12) var(--ix-sp-24);cursor:pointer;list-style:none;
+  font-family:var(--ix-font-body);font-size:var(--ix-fs-body);letter-spacing:0;text-transform:none;color:var(--ix-text-dark) !important;font-weight:400;}
 .asf2[class] .asf2-ch--more .asf2-more > summary::-webkit-details-marker{display:none;}
 .asf2[class] .asf2-ch--more .asf2-more > summary::after{content:'+';margin-left:auto;font-size:var(--ix-fs-card-title);color:var(--ix-text-mid);}
 .asf2[class] .asf2-ch--more .asf2-more[open] > summary::after{content:'\2013';}
@@ -635,7 +638,7 @@
 @media (prefers-reduced-motion:reduce){.asf2[class] .asf2-flash{animation:none;outline:2px solid var(--ix-gold);}}
 
 /* the finish bar (P8, P9, P11, P14, P15): fixed bottom right, above the form */
-.asf2[class] .asf2-finish{position:fixed;right:28px;bottom:22px;z-index:1000;width:400px;background:var(--ix-surface) !important;
+.asf2[class] .asf2-finish{position:fixed;right:28px;bottom:22px;z-index:1000;width:460px;background:var(--ix-surface) !important;
   border:1px solid var(--ix-border);border-radius:var(--ix-radius);box-shadow:var(--ix-shadow-lg);}
 .asf2[class] .asf2-fin-top{display:flex;align-items:center;gap:var(--ix-sp-12);padding:var(--ix-sp-12) var(--ix-sp-16);}
 .asf2[class] .asf2-ring{width:42px;height:42px;flex:none;}
@@ -653,8 +656,8 @@
   font-family:var(--ix-font-body);font-size:var(--ix-fs-body);color:var(--ix-text-dark);text-align:left;cursor:pointer;}
 .asf2[class] .asf2-left-i:hover{text-decoration:underline;}
 .asf2[class] .asf2-left-i[disabled]{cursor:default;text-decoration:none;color:var(--ix-text-mid);}
-.asf2[class] .asf2-left-i .asf2-dot{width:8px;height:8px;border-radius:50%;background:var(--ix-gold);flex:none;}
-.asf2[class] .asf2-left-i .asf2-box{width:12px;height:12px;border:1.5px solid var(--ix-text-mid);border-radius:2px;flex:none;}
+.asf2[class] .asf2-left-i .asf2-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ix-gold) !important;flex:none;}
+.asf2[class] .asf2-left-i .asf2-box{display:inline-block;width:12px;height:12px;border:1.5px solid var(--ix-text-mid);border-radius:2px;flex:none;}
 .asf2[class] .asf2-left-i.is-on .asf2-box{background:var(--ix-ok) !important;border-color:var(--ix-ok);}
 .asf2[class] .asf2-left-i.is-changed{outline:2px solid var(--ix-changed-border);outline-offset:1px;border-radius:2px;}
 .asf2[class] .asf2-left-hint{margin-left:auto;font-size:var(--ix-fs-tiny);color:var(--ix-text-light);}
@@ -662,6 +665,8 @@
 .asf2[class] .asf2-fin-foot{display:flex;gap:var(--ix-sp-8);align-items:center;border-top:1px solid var(--ix-border-soft);padding:6px var(--ix-sp-16);font-size:var(--ix-fs-small);color:var(--ix-text-mid);}
 .asf2[class] .asf2-fin-foot[hidden]{display:none;}
 .asf2[class] .asf2-fin-foot .asf2-archmsg{max-width:100%;}
+.asf2[class] .asf2-fin-foot .asf2-dirtycount{font-family:var(--ix-font-body);font-size:var(--ix-fs-small);color:var(--ix-text-mid);}
+.asf2[class] .asf2-ch--more .asf2-more-body{display:grid;}
 
 @media (max-width:1180px){
   .asf2[class] .asf2-band--3{grid-template-columns:repeat(2,minmax(0,1fr));}
