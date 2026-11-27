@@ -1,6 +1,16 @@
-// ix-ads-board-v1.0.14.js
+// ix-ads-board-v1.0.15.js
 // ============================================================
 // INBXIFY · ix-ads-board · the Ads board, shared by the Publisher Portal and the T-A Ads tab
+//
+// v1.0.15 (27 Nov 2026, Ad Maker Build S6) — B2: "SEND FOR APPROVAL" ON A CARD OPENS THE APPROVAL EMAIL POP-UP. JS only.
+//   Rulings (Jeff, 27 Nov, on the B2 mockup): one pop-up for the card and Ad Maker's Check, showing the whole email as
+//   the publisher gets it, subject and message editable in place; a test goes to Jeff word for word.
+//   · The card's "Send for approval" / "Send again" (and the Task list row's send button) open IxApprovalMail
+//     (ix-approval-mail-v1.0.0.js, loaded before this file on the T-A page). The box that opened inside the card is gone.
+//   · "Send email" in the pop-up sends, shows "Sent to …" with the link's last day, and reloads the board. Cancel or ✕
+//     leaves the card as it was.
+//   · CSS_VERSION now names v1.0.16, the CSS that loads (it said 1.0.13). The .ps-ad-sendbox rules in it are unused.
+//   HARDCODING: HC-P-AMS6-4 W.ix.send is now the pop-up's sub line, bar and done words.
 //
 // v1.0.14 (26 Nov 2026, Ad Maker Build S4) — A SENT-BACK CARD'S PILL READS "SENT BACK". JS only; CSS stays v1.0.13.
 //   Test 6 (26 Nov): on the inbxify side a sent-back version's pill said "To make" while the Task list files it under
@@ -174,7 +184,7 @@
 // ============================================================
 (function () {
   'use strict';
-  var VERSION = '1.0.14', CSS_VERSION = '1.0.13', FILE = 'ix-ads-board-v' + VERSION + '.js';
+  var VERSION = '1.0.15', CSS_VERSION = '1.0.16', FILE = 'ix-ads-board-v' + VERSION + '.js';
   var SH = ['banner', 'sidebar', 'splash', 'text'];                        // HC-P-PP8-8
   var SHN = { banner: 'Banner', sidebar: 'Sidebar', splash: 'Splash', text: 'Text ad' };
   var W = {                                                              // HC-P-PP8-7
@@ -260,9 +270,9 @@
           two: '{n} approval emails for this ad are open. All of them stop.', others1: 'That email also carries 1 other ad. Its link stops for that ad too.', othersN: 'That email also carries {n} other ads. Its link stops for them too.',
           others1Pl: 'Those emails also carry 1 other ad. Their links stop for that ad too.', othersNPl: 'Those emails also carry {n} other ads. Their links stop for them too.', goPl: 'Take back the emails',
           go: 'Take back the email', going: 'Taking back\u2026', keep: 'keep it', done: 'Email taken back \u00b7 link closed', fail: 'Not taken back: {msg}', label: 'Taking back the approval email' },
-        send: { head: 'Send for approval', headAgain: 'Send again', again: '{name} already has a link from {on}. That link keeps working; this sends a new one.', to: 'Send to', test: '(test)', testNote: 'the same email, sent to you', noPub: 'The PUBLISHERS record has no Contact Name or Business Email, so only a test can be sent.',
-          subject: 'Subject', message: 'Message', added: 'Added under your message: the {shape}, a \u201c{button}\u201d button, and \u201c{until}\u201d', go: 'Send email', going: 'Sending\u2026', loading: 'Reading the email\u2026', cancel: 'cancel',
-          done: 'Approval email sent to {to}.', doneTest: 'Test approval email sent to {to}.', fail: 'The email was not sent: {msg}', need: 'The subject and the message cannot be empty.' },
+        send: { first: 'Pending · not sent yet', again: 'sending again: the link sent to {name} on {on} keeps working', go: 'Send email', going: 'Sending…', loading: 'Reading the email…',   // v1.0.15: the pop-up's words (HC-P-AMS6-4)
+          bar: 'Send emails {to}. The ad stays Pending until the answer comes back.', done: 'Sent to {to}', doneTest: 'Test email sent to {to}', doneLine: 'The link works until {until}. The card on the Task list now shows the email is out.',
+          fail: 'The email was not sent: {msg}', missing: 'The approval email pop-up (ix-approval-mail) is not on this page. Add it to the page’s loader list.' },
       meta: { sent: 'Approval email sent to {to} on {on}.', sentTest: 'Test approval email sent to {to} on {on}.', sentUnopened: 'Link not opened yet.', sentOpened: 'Link opened {on}.', sentUntil: 'Good until {until}.',
               unsent: 'Pending · no approval email out.', needs: 'Pending with the publisher since {on}.', answered: 'The advertiser answered on {on}; the publisher decides.', adv: 'Out with the advertiser.', back: 'Sent back by the publisher, {on}: {note}' },
       tip: { you: 'With the publisher: waiting for their OK', adv: 'Waiting on the advertiser', ix: 'To make: inbxify’s move' },
@@ -482,7 +492,7 @@
           var sending = S.send && S.send.id === v.id;
           h += '<button type="button" class="ix-btn ix-btn--primary" data-act="current|' + esc(v.id) + '">' + esc(W.ix.act.approve) + '</button><button type="button" class="ix-btn ix-btn--primary" data-act="hold|' + esc(v.id) + '">' + esc(W.ix.act.hold) + '</button>' +
             (!tool ? '' : '<button type="button" class="ix-btn ix-btn--secondary' + (sending ? ' ps-ad-btnon' : '') + '" data-send="' + esc(v.id) + '">' + esc(v.sent ? W.ix.act.sendAgain : W.ix.act.send) + '</button>') + actBtn({ kind: 'edit', label: W.ix.act.edit, sh: sh, v: v, coming: !tool }, c);
-          return '<div class="ps-ad-acts' + (!tool ? ' three' : '') + '">' + h + '</div>' + (sending ? sendBox(c, sh, v) : '');
+          return '<div class="ps-ad-acts' + (!tool ? ' three' : '') + '">' + h + '</div>';
         }
         else if (v.state === 'back') h += actBtn({ kind: 'open', label: W.ix.act.open, sh: sh, v: v, coming: !tool }, c, 'ix-btn--primary');
         else if (v.state === 'ready') h += '<button type="button" class="ix-btn ix-btn--primary" data-act="make|' + esc(v.id) + '">' + esc(W.ix.act.makeCurrent) + '</button>' + actBtn({ kind: 'edit', label: W.ix.act.edit, sh: sh, v: v, coming: !tool }, c);
@@ -554,43 +564,34 @@
       return '<div class="ps-ad-gone" role="status"><div class="gh"><b>' + esc(fill(X.done, { name: G.name })) + '</b><button type="button" class="ps-ad-cancel" data-goneclose="1">' + esc(X.close) + '</button></div>' +
         '<div>' + esc(X.withHead) + ' ' + esc(w.join(', ')) + '.</div>' + (li ? '<div class="gl">' + esc(X.left) + '</div><ul>' + li + '</ul>' : '') + '</div>';
     }
-    // ── v1.0.4 · the Send for approval box, inside the card (inbxify side) ──
-    function sendBox(c, sh, v) {
-      var B = S.send, X = W.ix.send, again = !!v.sent;
-      var h = '<div class="ps-ad-sendbox"><div class="sbh"><b>' + esc(again ? X.headAgain : X.head) + '</b><button type="button" class="ps-ad-cancel" data-sendcancel="1">' + esc(X.cancel) + '</button></div>';
-      if (again) h += '<div class="ps-ad-quiet">' + esc(fill(X.again, { name: v.sent.test ? v.sent.to : (v.sent.toName || v.sent.to), on: day(v.sent.sentAt) })) + '</div>';
-      if (B.loading) return h + '<div class="ps-ad-quiet">' + esc(X.loading) + '</div></div>';
-      if (B.err && !B.to) return h + '<div class="ps-ad-need">' + esc(B.err) + '</div></div>';
-      var P = B.pub, hasPub = !!P;
-      h += '<div class="sbf"><span class="sbl">' + esc(X.to) + '</span>' +
-        '<label class="sbr"><input type="radio" name="ps-ad-sendto" data-sendto="publisher"' + (B.to === 'publisher' ? ' checked' : '') + (hasPub ? '' : ' disabled') + '> ' + esc(hasPub ? P.name + ' \u00b7 ' + P.email : X.noPub) + '</label>' +
-        '<label class="sbr"><input type="radio" name="ps-ad-sendto" data-sendto="test"' + (B.to === 'test' ? ' checked' : '') + '> ' + esc(B.test + ' ' + X.test) + ' <span class="ps-ad-quiet">' + esc(X.testNote) + '</span></label></div>';
-      h += '<div class="sbf"><label class="sbl" for="ps-ad-sendsub">' + esc(X.subject) + '</label><input type="text" id="ps-ad-sendsub" class="ps-ad-sendin' + (B.subject !== B.std.subject ? ' chg' : '') + '" data-sendf="subject" maxlength="200" value="' + esc(B.subject) + '"></div>';
-      h += '<div class="sbf"><label class="sbl" for="ps-ad-sendmsg">' + esc(X.message) + '</label><textarea id="ps-ad-sendmsg" class="ps-ad-sendin' + (B.message !== B.std.message ? ' chg' : '') + '" data-sendf="message" maxlength="4000">' + esc(B.message) + '</textarea></div>';
-      h += '<div class="ps-ad-quiet">' + esc(fill(X.added, { shape: SHN[sh].toLowerCase(), button: (B.added || [])[0] || '', until: (B.added || [])[1] || '' })) + '</div>';
-      if (B.err) h += '<div class="ps-ad-need">' + esc(B.err) + '</div>';
-      return h + '<div class="sba"><button type="button" class="ix-btn ix-btn--primary" data-sendgo="1"' + (B.busy ? ' disabled' : '') + '>' + esc(B.busy ? X.going : X.go) + '</button></div></div>';
-    }
-    async function openSend(id) {
+    // ── v1.0.15 · B2: Send for approval opens the shared approval email pop-up (ix-approval-mail), not a box in the card ──
+    function openSend(id) {
       var f = findV(id); if (!f) return;
-      var B = S.send = { id: id, loading: true, err: '', busy: false }; render();
-      var r = await ctx.api('/ads/send-approval', { method: 'POST', body: { publisher: ctx.publisher.id, items: [{ adId: id, shape: f.sh }], to: 'publisher', preview: true }, label: W.ix.send.loading });
-      if (S.send !== B) return;
-      B.loading = false;
-      if (!r.ok) { B.err = (r.json && r.json.error) || ('HTTP ' + r.status); render(); return; }
-      var j = r.json; B.std = { subject: j.subject, message: j.message }; B.subject = j.subject; B.message = j.message; B.pub = j.to && j.to.publisher; B.test = (j.to && j.to.test) || ''; B.added = j.added || []; B.to = B.pub ? 'publisher' : 'test';
-      render();
-    }
-    async function goSend() {
-      var B = S.send, f = B && findV(B.id); if (!B || !f || B.busy) return;
-      if (!String(B.subject).trim() || !String(B.message).trim()) { B.err = W.ix.send.need; render(); return; }
-      B.busy = true; B.err = ''; render();
-      var body = { publisher: ctx.publisher.id, items: [{ adId: B.id, shape: f.sh }], to: B.to };
-      if (B.subject !== B.std.subject) body.subject = B.subject; if (B.message !== B.std.message) body.message = B.message;
-      var r = await ctx.api('/ads/send-approval', { method: 'POST', body: body, label: W.ix.send.going });
-      if (!r.ok || !r.json || !r.json.mailId) { B.busy = false; B.err = fill(W.ix.send.fail, { msg: (r.json && r.json.error) || ('HTTP ' + r.status) }); render(); return; }
-      delete S.took[B.id]; S.send = null; toast(fill(r.json.test ? W.ix.send.doneTest : W.ix.send.done, { to: r.json.test ? r.json.sentTo : (r.json.sentToName || r.json.sentTo) }), 'ok', 'send');
-      await load(); render();
+      var X = W.ix.send, v = f.v, again = !!v.sent;
+      if (!(window.IxApprovalMail && IxApprovalMail.open)) { toast(X.missing, 'error', 'send'); return; }
+      S.send = { id: id }; render();   // the card's button shows it is the one open
+      IxApprovalMail.open({
+        sub: SHN[f.sh] + ' · ' + (f.c.name || '') + ' · ' + (again ? fill(X.again, { name: v.sent.test ? v.sent.to : (v.sent.toName || v.sent.to), on: day(v.sent.sentAt) }) : X.first),
+        load: function () {
+          return ctx.api('/ads/send-approval', { method: 'POST', body: { publisher: ctx.publisher.id, items: [{ adId: id, shape: f.sh }], to: 'publisher', preview: true }, label: X.loading })
+            .then(function (r) { if (!r.ok) throw new Error((r.json && r.json.error) || ('HTTP ' + r.status)); return r.json; });
+        },
+        picture: function () { return v.picture || ''; },
+        go: X.go,
+        bar: function (to) { return fill(X.bar, { to: to }); },
+        send: function (words) {
+          var body = { publisher: ctx.publisher.id, items: [{ adId: id, shape: f.sh }], to: words.to };
+          if (words.subject != null) body.subject = words.subject; if (words.message != null) body.message = words.message;
+          return ctx.api('/ads/send-approval', { method: 'POST', body: body, label: X.going }).then(function (r) {
+            if (!r.ok || !r.json || !r.json.mailId) throw new Error(fill(X.fail, { msg: (r.json && r.json.error) || ('HTTP ' + r.status) }));
+            delete S.took[id];
+            var j = r.json, to = j.test ? j.sentTo : (j.sentToName || j.sentTo);
+            load().then(render);
+            return { head: fill(j.test ? X.doneTest : X.done, { to: to }), line: fill(X.doneLine, { until: day(j.until) }) };
+          });
+        },
+        onClose: function () { if (S.send && S.send.id === id) { S.send = null; render(); } }
+      });
     }
     function vCard(c, sh, v, opts) {
       opts = opts || {};
@@ -850,7 +851,6 @@
         var t = e.target.closest('button,[data-c],[data-go]'); if (!t || !el.contains(t)) return;
         var d = t.dataset;
         if (d.send) { if (S.send && S.send.id === d.send) { S.send = null; render(); } else openSend(d.send); return; }   // v1.0.4
-        if (d.sendcancel) { S.send = null; render(); return; }
         if (d.del) { S.del = { id: d.del, busy: false, err: '' }; S.tb = null; render(); return; }   // v1.0.6
         if (d.delcancel) { S.del = null; render(); return; }
         if (d.tb) { S.tb = { id: d.tb, busy: false, err: '' }; S.del = null; render(); return; }   // v1.0.9
@@ -860,7 +860,6 @@
         if (d.sendrow) { var sr = d.sendrow.split('|'), rw = t.closest('[data-go]'), gk = rw ? rw.getAttribute('data-go').split('|') : []; S.open = sr[0]; S.openAt = gk.length > 2 ? gk.slice(2).join('|') : ''; S.tab[sr[0]] = 'process'; S.scrollTo = sr[0]; openSend(sr[1]); return; }   // v1.0.10 (v1.0.13: under its task row)
         if (d.delgo) { goDelete(); return; }
         if (d.goneclose) { S.gone = null; render(); return; }
-        if (d.sendgo) { goSend(); return; }
         if (d.ix) {   // inbxify side: hand the action to the host (Ad Maker)
           var ix = d.ix.split('|'), c0 = cust(ix[1]); if (!c0 || !O.onAction) return;
           var v0 = ix[3] ? (vOf(c0, ix[2]).find(function (x) { return x.id === ix[3]; }) || null) : null;
@@ -899,10 +898,8 @@
         var t = e.target;
         if ((e.key === 'Enter' || e.key === ' ') && t.dataset && (t.dataset.c || t.dataset.go) && (t.classList.contains('r') || t.classList.contains('ps-ad-brow'))) { e.preventDefault(); t.click(); }
       });
-      on(el, 'change', function (e) { var t = e.target; if (t.dataset && t.dataset.sendto && S.send) { S.send.to = t.dataset.sendto; } });   // v1.0.4
       on(el, 'input', function (e) {
         var t = e.target;
-        if (t.dataset && t.dataset.sendf && S.send) { S.send[t.dataset.sendf] = t.value; S.send.err = ''; t.classList.toggle('chg', t.value !== S.send.std[t.dataset.sendf]); return; }
         if (t.id === 'ps-ad-reqnote' && S.req) { S.req.note = t.value; S.req.err = ''; reqFoot(); return; }
         if (t.id === 'ps-ad-reqwhen' && S.req) { S.req.when = t.value; reqFoot(); return; }
         if (t.id === 'ps-ad-q') { S.q = t.value; var lst = el.querySelector('#ps-ad-list'); if (lst) lst.innerHTML = listRows(); return; }

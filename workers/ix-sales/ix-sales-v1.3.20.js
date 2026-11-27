@@ -1,10 +1,24 @@
-// ix-sales-v1.3.19.js
+// ix-sales-v1.3.20.js
 // INBXIFY · Cloudflare Worker · ix-sales
 // SALES RECORDS and OBLIGATIONS: the one place the rules live. The portal
 // (S2) and Studio (S3) both call this; the Revenue Picker (S4) and Scenario
 // 108 (S5) call it too. Scoping: Sales-Records-Obligations-Scoping-v0_7.md.
 // Since v1.3.0 also the portal's Ads tab and the advertiser review page.
 //
+// v1.3.20 (27 Nov 2026, Ad Maker Build S6) — THE APPROVAL EMAIL IN A POP-UP; A SIDEBAR SITS BESIDE THE WORDS.
+//   Rulings (Jeff, 27 Nov, on the B2 mockup): Check and the board card open one pop-up that shows the whole email as
+//   it lands, with the subject and the message editable in place; a test goes to Jeff word for word ("Hi Doug").
+//   · The approval email's body is built in one place, approvalMailInner(). The email that is sent and the pop-up's
+//     copy come from the same code, so the pop-up can never show a different layout from the one Doug gets.
+//   · POST /ads/send-approval { …, preview:true } (both forms: items, or customer + shape) gains
+//     frame: the email's body HTML (the cream ground and the white card, no <html>/<body>) with two marks the pop-up
+//     fills: <div data-ix-mail="message"></div> where the message goes, and on each picture data-ix-mail="picture"
+//     data-shape="<shape>" (src empty when the ad is not saved yet: Check fills it with the Canva PNG). The link is "#".
+//   · A sidebar goes out 240 px wide. When every picture in the email is a sidebar, the sidebar sits to the right of
+//     the words, the button and the date line (it was 536 px wide under the words, about 1,070 px tall). In an email
+//     with a banner too, the banner stays 536 px under the words and the sidebar follows at 240 px.
+//   No schema change. No new variable or binding.
+//   HARDCODING: HC-P-AMS6-1 the sidebar's 240 px width and the 24 px gap beside it (email layout).
 // v1.3.19 (26 Nov 2026, Ad Maker Build S4) — AD PICTURES READ FROM ADS img-main FIRST (Image Links S4d).
 //   adPicture() (the approval email and the /review page) takes img-main, then the shape's old field. POST /ads/delete
 //   collects img-main with the old fields, so its picture file and MEDIA row are still found once the old fields go.
@@ -428,7 +442,7 @@
 //           month falls back to the calendar month end.
 // ============================================================
 
-const VERSION = '1.3.19';
+const VERSION = '1.3.20';
 // v1.3.16 the obligations table sections, in order (HC-P-PP14-1)
 const SECTIONS = [{ key: 'needs', label: 'Needs you' }, { key: 'running', label: 'Running now' }, { key: 'later', label: 'Starting later' }, { key: 'ended', label: 'Ended' }];
 // v1.3.7 · CUSTOMERS slugs that make up a customer's brand record (HC-P-AMB1-1)
@@ -2072,9 +2086,33 @@ async function sendMail(run, mail, useLogin) {                        // through
   if (!res.ok || !j || !j.ok || !j.id) throw httpErr(502, 'The email was not sent: ' + ((j && j.error) || ('ix-members HTTP ' + res.status)) + (res.status === 404 ? ' (ix-members needs v1.1.1 for POST /send)' : ''));
   return { id: j.id, to: j.to };
 }
+function mailFrame(inner) {                                           // v1.3.20: the ground and the card, without <html>/<body> (the pop-up draws this)
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FAF6EE;"><tr><td align="center" style="padding:32px 16px;">' +
+    '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#FFFFFF;border:1px solid #D9D2C3;border-radius:3px;"><tr><td style="padding:32px;">' + inner + '</td></tr></table></td></tr></table>';
+}
 function mailShell(inner) {
-  return '<!doctype html><html><body style="margin:0;padding:0;background:#FAF6EE;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FAF6EE;"><tr><td align="center" style="padding:32px 16px;">' +
-    '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#FFFFFF;border:1px solid #D9D2C3;border-radius:3px;"><tr><td style="padding:32px;">' + inner + '</td></tr></table></td></tr></table></body></html>';
+  return '<!doctype html><html><body style="margin:0;padding:0;background:#FAF6EE;">' + mailFrame(inner) + '</body></html>';
+}
+// v1.3.20 · HC-P-AMS6-1 · the approval email's body, one place for the email that is sent and the pop-up's copy.
+// o: { message, pics:[{ shape, label, name, picture }], link, until }. frame:true puts the pop-up's marks in.
+const MAIL_SIDE = { w: 240, gap: 24 };
+function approvalMailInner(o, frame) {
+  const link = frame ? '#' : o.link;
+  const words = frame ? '<div data-ix-mail="message"></div>' : String(o.message || '').split(/\n{2,}/).map(par => '<p style="' + MAIL_P + '">' + escH(par).replace(/\n/g, '<br>') + '</p>').join('');
+  const pic = (p, w) => {
+    const mark = frame ? ' data-ix-mail="picture" data-shape="' + escH(p.shape || '') + '"' : '';
+    const img = '<img' + mark + ' src="' + escH(p.picture || '') + '" alt="' + escH(p.label + ': ' + p.name) + '" width="' + w + '" style="display:block;max-width:100%;height:auto;border:1px solid #D9D2C3;">';
+    return '<p style="margin:0 0 6px;font:600 12px/1.2 Helvetica,Arial,sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:#5A5E66;">' + escH(p.label) + '</p>' +
+      (p.picture || frame ? '<p style="margin:0 0 20px;"><a href="' + escH(link) + '">' + img + '</a></p>' : '<p style="' + MAIL_P + '">' + escH(p.name) + '</p>');
+  };
+  const button = '<p style="margin:8px 0 24px;"><a href="' + escH(link) + '" style="display:inline-block;padding:14px 24px;background:#22252B;color:#FFFFFF;border-radius:3px;font:600 16px/1 Helvetica,Arial,sans-serif;text-decoration:none;">' + escH(APPROVAL_WORDS.button) + '</a></p>';
+  const until = '<p style="margin:0 0 16px;font:14px/1.5 Helvetica,Arial,sans-serif;color:#5A5E66;">' + escH(APPROVAL_WORDS.until(o.until)) + '</p>';
+  const signoff = '<p style="' + MAIL_P + 'margin:0;">' + escH(APPROVAL_WORDS.signoff) + '</p>';
+  const pics = o.pics || [], side = pics.length && pics.every(p => p.shape === 'sidebar');
+  if (side) return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>' +
+    '<td valign="top" style="padding-right:' + MAIL_SIDE.gap + 'px;">' + words + button + until + signoff + '</td>' +
+    '<td valign="top" width="' + MAIL_SIDE.w + '" style="width:' + MAIL_SIDE.w + 'px;">' + pics.map(p => pic(p, MAIL_SIDE.w)).join('') + '</td></tr></table>';
+  return words + pics.map(p => pic(p, p.shape === 'sidebar' ? MAIL_SIDE.w : 536)).join('') + button + until + signoff;
 }
 const MAIL_P = 'margin:0 0 16px;font:16px/1.55 Helvetica,Arial,sans-serif;color:#22252B;';
 function shapesPhrase(items) { const n = items.map(i => ((ADS_TAB.shapes[i.shape] || {}).label || i.shape).toLowerCase()); return n.length <= 1 ? (n[0] || 'ad') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1]; }
@@ -2159,7 +2197,7 @@ async function sendApproval(run, b) {
   const sentTo = test ? String(run.who.email || '') : pub.email;
   if (!preview && !sentTo) throw httpErr(400, 'Your login has no email address, so a test cannot be sent to you.');
   const v = named.every(it => it._pic) ? {} : await issueData(run, '/customer-ads?archived=1&customer=' + first.cust).catch(() => ({}));
-  const pics = named.map(it => { const row = (((v.versions || {})[it.shape]) || []).find(x => x.id === it.adId); return { label: ADS_TAB.shapes[it.shape].label, name: it.name, picture: it._pic || (row && /^https?:\/\//.test(row.picture || '') ? row.picture : '') }; });
+  const pics = named.map(it => { const row = (((v.versions || {})[it.shape]) || []).find(x => x.id === it.adId); return { shape: it.shape, label: ADS_TAB.shapes[it.shape].label, name: it.name, picture: it._pic || (row && /^https?:\/\//.test(row.picture || '') ? row.picture : '') }; });
   named.forEach(it => { delete it._pic; });
   const token = randomToken(), expires = new Date(Date.now() + cfg.linkDays * 86400000);
   const link = cfg.pageUrl + (cfg.pageUrl.includes('?') ? '&' : '?') + 't=' + token;
@@ -2168,7 +2206,8 @@ async function sendApproval(run, b) {
   const o = { count: named.length, customer, shapes: shapesPhrase(named), title: first.titleName };
   const stdSubject = APPROVAL_WORDS.subject(o), stdMessage = [APPROVAL_WORDS.hello(firstName), APPROVAL_WORDS.lede(o), APPROVAL_WORDS.choices].join('\n\n');
   if (preview) return { ok: true, preview: true, subject: stdSubject, message: stdMessage, to: { publisher: hasPub ? { name: pub.person, email: pub.email } : null, test: String(run.who.email || '') },
-    until: expires.toISOString(), linkDays: cfg.linkDays, added: [APPROVAL_WORDS.button, APPROVAL_WORDS.until(until)] };
+    until: expires.toISOString(), linkDays: cfg.linkDays, added: [APPROVAL_WORDS.button, APPROVAL_WORDS.until(until)],
+    frame: mailFrame(approvalMailInner({ pics, until }, true)) };   // v1.3.20
   const subject = String(b.subject || '').replace(/\s+/g, ' ').trim().slice(0, MAIL_SUBJECT_MAX) || stdSubject;
   const message = String(b.message || '').replace(/\r\n?/g, '\n').trim().slice(0, MAIL_MESSAGE_MAX) || stdMessage;
   const edited = subject !== stdSubject || message !== stdMessage;
@@ -2177,12 +2216,7 @@ async function sendApproval(run, b) {
     data: { kind: 'approval', test, sentTo, sentToName: pub.person, sentAt: iso(), edited, openedAt: null, decidedAt: null, title: first.titleName, items: named } });
   // the email: the same words and pictures whoever it goes to (ruled 18 Nov: the test email is identical to the publisher's)
   const text = message + '\n\n' + APPROVAL_WORDS.button + ': ' + link + '\n\n' + APPROVAL_WORDS.until(until) + '\n\n' + APPROVAL_WORDS.signoff;
-  const html = mailShell(message.split(/\n{2,}/).map(par => '<p style="' + MAIL_P + '">' + escH(par).replace(/\n/g, '<br>') + '</p>').join('') +
-    pics.map(p => '<p style="margin:0 0 6px;font:600 12px/1.2 Helvetica,Arial,sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:#5A5E66;">' + escH(p.label) + '</p>' +
-      (p.picture ? '<p style="margin:0 0 20px;"><a href="' + escH(link) + '"><img src="' + escH(p.picture) + '" alt="' + escH(p.label + ': ' + p.name) + '" width="536" style="display:block;max-width:100%;height:auto;border:1px solid #D9D2C3;"></a></p>' : '<p style="' + MAIL_P + '">' + escH(p.name) + '</p>')).join('') +
-    '<p style="margin:8px 0 24px;"><a href="' + escH(link) + '" style="display:inline-block;padding:14px 24px;background:#22252B;color:#FFFFFF;border-radius:3px;font:600 16px/1 Helvetica,Arial,sans-serif;text-decoration:none;">' + escH(APPROVAL_WORDS.button) + '</a></p>' +
-    '<p style="margin:0 0 16px;font:14px/1.5 Helvetica,Arial,sans-serif;color:#5A5E66;">' + escH(APPROVAL_WORDS.until(until)) + '</p>' +
-    '<p style="' + MAIL_P + 'margin:0;">' + escH(APPROVAL_WORDS.signoff) + '</p>');
+  const html = mailShell(approvalMailInner({ message, pics, link, until }, false));   // v1.3.20: the same body the pop-up showed
   let mail;
   try { mail = await sendMail(run, { to: sentTo, subject, html, text, replyTo: run.who.email || '' }, true); }
   catch (e) {                                                         // no email, no open link: close the row so the board never shows a link that was not sent
@@ -2198,9 +2232,11 @@ async function approvalDraft(run, b) {                                // v1.3.10
   const custTitles = refIds(fd(custRow)[JOIN.customer.titles]).filter(t => sc.taIds.has(t)), ta = sc.taById.get(custTitles[0]) || sc.tas[0];
   const pub = await publisherCard(run, sc.publisherId), expires = new Date(Date.now() + cfg.linkDays * 86400000);
   const o = { count: 1, customer: String(fd(custRow).name || ''), shapes: shapesPhrase([{ shape: b.shape }]), title: String(fd(ta || {}).name || '') };
+  const until = expires.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }), S = ADS_TAB.shapes[b.shape];
   return { ok: true, preview: true, subject: APPROVAL_WORDS.subject(o), message: [APPROVAL_WORDS.hello(String(pub.person || '').split(' ')[0]), APPROVAL_WORDS.lede(o), APPROVAL_WORDS.choices].join('\n\n'),
     to: { publisher: pub.email && pub.person ? { name: pub.person, email: pub.email } : null, test: String(run.who.email || '') }, until: expires.toISOString(), linkDays: cfg.linkDays,
-    added: [APPROVAL_WORDS.button, APPROVAL_WORDS.until(expires.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }))] };
+    added: [APPROVAL_WORDS.button, APPROVAL_WORDS.until(until)],
+    frame: mailFrame(approvalMailInner({ pics: [{ shape: b.shape, label: S.label, name: o.customer, picture: '' }], until }, true)) };   // v1.3.20: Check fills the picture with the Canva PNG
 }
 async function approvalGet(run, r, expired) {
   const pub = await publisherCard(run, r.publisher);
