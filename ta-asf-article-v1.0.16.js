@@ -1,0 +1,2937 @@
+/* ta-asf-article-v1.0.16.js */
+/* ============================================================
+   ta-asf-article-v1.0.16.js
+   INBXIFY TA Studio — the Article form of the ASF (create and edit)
+
+   v1.0.16 (28 Nov 2026, ASF Rethink A1) — ROWS, THE INK RAIL, WEB AND EMAIL TEASER, THE FULLER LIST. Needs
+   ta-asf v1.12.18 and ta-asf-article-v1.0.13.css. Jeff's rulings of 28 Nov (rows mockup "no changes"; rail A;
+   "What a finished article needs" v0.1; Web teaser and Email teaser).
+     1 · ROWS. Where it runs, The words, Byline, Call to action and Rarely used show every field as one row:
+         name and a short hint · the field · a status pill (Done, Missing, Optional, N over, Not needed, Off) ·
+         tools (AI mark, count, cancel). Pairs are gone; each field has its own row. Banner statement moves up
+         to The words. Pictures stay as tiles and the Body stays full width.
+     2 · WEB TEASER AND EMAIL TEASER. Teaser is now "Web teaser" (web issue tile and archive) and Short summary
+         is "Email teaser" (the email tile, one complete thought). Both are needed. Same fields, same saves.
+         ix-issue-data v1.0.225 prints the Email teaser on the email tile.
+     3 · THE FULLER WHAT'S-LEFT LIST (HC-P-A1-8): Section, Headline, Web teaser, Email teaser, Writer, Main photo,
+         Share photo, alt text on every photo in use, Body, Edit pass; Customer, Obligation and Sponsor OK when
+         paid; the three call-to-action fields when it is on; every field within Webflow's limits.
+     4 · PICTURES NEVER FOLD AWAY. The photo cards (with their alt boxes) always show. A Main photo that is not
+         in this article's photos still needs alt text, and the list says so.
+     5 · THE INK RAIL (rail A). The finish card becomes one full-width ink bar at the bottom: ring and count on
+         the left, the change count, then Cancel changes and Save. What's left opens upward from its left end.
+     Saves are unchanged; Save still writes to Webflow until C1 and C2 build the drafts rule of 28 Nov.
+
+   v1.0.15 header follows.
+
+   v1.0.15 (27 Nov 2026, ASF Rethink A1) — CANCEL BESIDE SAVE; THE TOP ROW STAYS. Needs ta-asf v1.12.17 and
+   ta-asf-article-v1.0.12.css. Jeff, 27 Nov: Cancel and Save together on the bottom bar; Cancel more prominent;
+   the top row fixed.
+     · The finish bar (still fixed at the bottom right) ends with two equal buttons, Cancel changes then Save.
+       Cancel changes is always there; it is greyed until something has changed, and puts the form back to how it
+       opened. The small text link is gone. Show what's left stays under the count.
+     · The header row (Edit Article Record, ⓘ, ✕) stays at the top of the screen while the form scrolls.
+     Nothing else changed.
+
+   v1.0.14 (27 Nov 2026, ASF Rethink A1) — THE FORM SHELL. Needs ta-asf v1.12.15 and ta-asf-article-v1.0.11.css.
+     Spec: ASF-Rethink-Scoping-v0_3.md (P3, P8, P9, P11, P12, P14, P15, P16) and "ASF rethink mockup v0.5".
+     The fields, their save paths and their behaviour are unchanged. What changes is where they sit:
+     1 · FULL WIDTH. The form uses the whole window (the panel's 1480 px cap is lifted for this form only).
+         The page grows with its content; nothing scrolls inside a box.
+     2 · SIX CHAPTERS, top to bottom (P3): 1 Where it runs and who pays · 2 The words · 3 Byline · 4 Pictures ·
+         5 Body · 6 Rarely used. The existing fields move into them as they are; A2, A3 and A4 rebuild the
+         insides of The words, Byline and Pictures. Each chapter head says Done or how many things are left in it.
+     3 · THE KIND BAND (P12) at the top: "This is a Standard article", with Photo essay and Video article beside it.
+         On a new article the kind is chosen there (Standard and Photo essay, as the Format select did); Video
+         article is shown, not offered, until A6. On an existing article the kind is shown, with a small Change
+         link that keeps today's ability to correct it (gold and cancel like every field).
+     4 · THE FINISH BAR (P8, P9, P11, P14, P15), fixed at the bottom right: a progress ring and "N things before
+         this is complete", a what's-left list whose items jump to their field, a small Cancel changes link that
+         puts the form back to how it opened, and Save. The old top bar (crumb, ticks, Cancel, Save) is gone; its
+         ticks are the list's items. Sponsor OK and Edit pass stay as ticks on the list.
+         What's left: a headline; every field within its Webflow limit (one item per field over, from
+         config/field-limits.json through ta-asf); a Main photo (a gallery on a photo essay); alt text on every
+         photo the article uses; Sponsor OK; Edit pass. The CTA is no longer counted (it sits in Rarely used).
+         Saving before the article is complete is allowed, as before.
+     5 · SAVE CHECKS THE LIMITS FIRST, before captions and alt go to MEDIA, so an over-limit field means nothing
+         at all is sent. The toast names each field and its count (ta-asf), and the what's-left list opens.
+     6 · NO INTERNAL IDS on the form: where a name is missing, the form says so in words instead of showing the
+         record's id (photo names, Section, Customer, Product Library, MNLS, obligations, revenue type).
+     7 · NO BOXES THAT SCROLL: the teaser, short summary, CTA text and the AI strip grow with their text.
+     8 · See raw text, Source metadata, Compare with print and the body's photo picker open beside the body
+         (chapter 5), no longer in place of the photos.
+     9 · CALL TO ACTION IS ITS OWN CHAPTER (6), ruled by Jeff 27 Nov: one switch, "Add a call to action". Off, the
+         article has none and nothing is asked. On, the button label, the link and the text all have to be filled
+         in, and each empty one is on the what's-left list. Switching it off on an article that had one empties the
+         three fields (gold, with cancel). The switch is the form's own: on when any of the three holds words.
+         Rarely used is chapter 7.
+
+   v1.0.13 (11 Nov, Grab from print) — Jeff, 11 Nov. Needs ta-asf v1.12.8.
+     · The Images area's disabled "Print pages" placeholder (kept since
+       24 Sept for a visual matcher that was never built) is replaced by
+       "Grab from print", styled like Add from library and Generate
+       image. It shows only when the article has a print page, and opens
+       the print panel with the photo box already on (ta-asf print-grab).
+     · Compare with print on the Body row stays, for checking the words.
+     · The visual matcher's print-match line on a photo card (printMatchOf)
+       is untouched; it still shows nothing until something sets it.
+
+   v1.0.12 (11 Nov, Print Photo on Edit Article) — A PHOTO MADE FROM THE
+   PRINT PAGE BECOMES MAIN WHEN THERE IS NONE. Needs ta-asf v1.12.7 and
+   ix-print-photo v1.0.0. Spec: Print-Photo-Edit-Article-Scoping-v0_1.md,
+   decision 2 (Jeff, 11 Nov).
+     · New addPrintPhoto(media), called by ta-asf's print panel after
+       Scenario L confirms the MEDIA row. The photo joins Images with the
+       AI badge. If the article has no Main and is not a Photo Essay, it
+       becomes Main: pending, gold, until Save; the Main row's cancel
+       puts it back. If a Main is already set, the photo only joins
+       Images and the toast says to click Main on it.
+     · addGeneratedImage (ta-image-gen's hand-off) is unchanged: that
+       photo still joins Images unused (ruled 24 Sept).
+
+   v1.0.11 (8 Nov, Inset Photo S2 · Build) — INSET PHOTOS AND MOVABLE
+   CROPS ON THE IMAGES TRAY. Spec: Inset-Photo-and-Crops-Scoping-v0_4.md
+   and inbxify-inset-photo-mockup-v0_2.html (C1 to C8 accepted). Needs
+   ix-photo-compose v1.0.0 (JS + CSS), ta-asf v1.12.5,
+   ta-asf-article-v1.0.9.css, ix-issue-data v1.0.166, Scenario B and
+   Scenario G blueprints of 8 Nov, MEDIA field image-recipe.
+     1 · Every photo card gets two actions under it: Adjust crops, and
+         Make inset photo (Edit inset photo on an inset photo). Both
+         open ix-photo-compose.
+     2 · Crop positions are held here until Save, then written to the
+         photo's MEDIA row (image-recipe) through Scenario G
+         updateMediaText (setRecipe / imageRecipe), one row per call,
+         beside its caption and alt. A card with moved crops gets the
+         gold border and its own cancel.
+     3 · The share image follows. The OG photo's crop position is sent
+         to ta-asf as ogCropAt, which writes it into main-image-for-og.
+         The crop panel names other articles that use the photo as their
+         share image; they keep the old framing until each is saved
+         (Jeff, 8 Nov, 2A).
+     4 · A new inset photo is its own MEDIA row (made by the composer
+         through Scenario B). It joins the tray and becomes Main
+         (pending, gold, until Save). The two photos in it show
+         "In inset photo" and count as used.
+     5 · Rebuilding: the composite it replaces is set to Archived
+         through Scenario K after the article's Save is verified. The
+         bar says so in one line with a "keep it" link. When the old one
+         is used anywhere else (another article's Main, share image,
+         gallery or body, or this article's body or gallery), it is not
+         archived and the line says where.
+     6 · A card whose recipe names a source photo that no longer exists
+         says it can no longer be rebuilt.
+   The photo facts (shapes, recipes, title ring values, where photos are
+   used) come from the Data Worker's /media?photo=1.
+
+   v1.0.10 (29 Oct, Code-Built Site S6g) — THE BYLINE CHOICES ARE ON THE
+   FORM. Group 3 People gains two switches under the writers: Hide
+   Writer Titles (ARTICLES hide-writer-titles) and Show Business in
+   Byline (ARTICLES show-business-in-byline). The site follows them
+   (ix-article v1.0.8+, Worker v1.0.113+). They were on the old Studio
+   edit form (ta-studio v1.4.12) and not here, which is where articles
+   are edited. Needs ta-asf v1.12.3 (hydrate, slugs, dirty sections).
+
+   v1.0.9 (13 Oct, ASF Where it runs) — THE SECTION IS THE ONE CHOICE.
+   Needs ta-asf v1.11.11, ta-asf-article-v1.0.7.css, ix-issue-data
+   v1.0.50. SPEC: inbxify-asf-where-it-runs-mockup-v0_1.html, all five
+   changes accepted by Jeff 13 Oct.
+     1 · Group 1 is "Where it runs": the Section first and larger, its
+         type (FA, TS, LBP) as a read-only tag beside it, from the
+         Section only. No type is picked anywhere.
+     2 · The Product Library dropdown is gone. Product Library and MNLS
+         are filled from the Section when it changes and shown
+         read-only under "Old newsletter page". Filled only when the
+         Data Worker says SECTIONS has its PRODUCT LIBRARY link
+         (B.sectionsLegacy().productField), so nothing is cleared
+         before that field exists. Cancel on the Section puts all three
+         back. mnlsId is now a key this form owns (saved like product).
+     3 · Customer, Paid and Obligation are their own group, "Who pays".
+     4 · No Section is allowed. The form says, in salmon, that the
+         Picker can then only place the article in a slot with no type.
+     5 · The article format dropdown (Standard, Photo essay) moves into
+         "Where it runs" and is labelled Format, so "Type" only ever
+         means FA, TS or LBP.
+     Also (Jeff, 13 Oct: "use this proposed, the font sizes and the
+     compactness"): in the facts column each label sits to the left of
+     its field, one row per field; labels and group heads use the
+     mockup's sizes (CSS only). Groups renumbered: Words 4, Main/OG &
+     body 5, Images 6.
+
+   v1.0.8 (11 Oct, IPP Build S11) — PRODUCT LIBRARY IS BACK, SECTIONS
+   COME FROM THE DATA WORKER. Needs ta-asf v1.11.10. CSS unchanged.
+     · Product Library sits under Section in Placement. Options are the
+       page's PRODUCT LIBRARY rows (ta-asf readProducts). It travels as
+       productId: Scenario 104 v10.x writes product on create (and fills
+       MNLS from the product when none is picked), Scenario G writes it
+       on a full article save. Gold border and cancel like every field.
+     · Section options come from ta-asf, which now reads the Data
+       Worker's /sections (this title's rows plus the shared ones). While
+       they load the list says so; if they fail it says why, instead of
+       showing an empty list that looks like "no sections".
+     · Every dropdown repaints its options when its list changes (it
+       used to repaint only when the chosen value was missing), so a
+       list that arrives after the form opened shows up. The chosen
+       value, its gold border and its cancel are kept.
+
+   SPEC: inbxify-asf-mockup-v0_10.html (build spec, 24 Sept 2026).
+   If this file and the mockup disagree, this file is wrong.
+
+   v1.0.7 (8 Oct, Create from print P1.5) — COMPARE WITH PRINT.
+     Needs ta-asf v1.11.8 and ta-asf-article-v1.0.6.css.
+     · "Compare with print \u2192" joins See raw text and Source metadata
+       on the Body row whenever the article has a print source (ta-asf
+       S.printSource: passed by Create from print, or found through the
+       Data Worker's /article-print on edit).
+     · It swaps the Images column for ta-asf's print panel
+       (B.renderPrintPanel): the printed page, page turn, Open full size,
+       and Re-read the body from print. The panel and its actions live in
+       ta-asf; this file only shows the link and the swap.
+     · An older ta-asf without renderPrintPanel: no link, nothing breaks.
+
+   v1.0.6 (25 Sept) — nothing looks broken when nothing has changed
+     (Jeff, live test). Built from the repo's v1.0.5.
+     · "change" / "pick" on the Main and OG previews always does
+       something visible: it scrolls Images into view and says what to
+       do next — click Main (or OG) on the photo you want, or, when the
+       article has only one photo, add another first (focus lands on
+       Add from library). v1.0.5 only opened Images, which was often
+       already open, so the click seemed to do nothing.
+     · With nothing changed, Save reads "No changes"; Save and Cancel
+       explain on hover that they light up once something is edited.
+
+   v1.0.5 (25 Sept) — the upload helper's steps 2 and 3 corrected
+     after reading Scenario B's upload route (modules 64–67): the MEDIA
+     item points at a web-ready copy (resized, compressed, format per
+     browser), Webflow keeps its own copy, and the item is named after
+     the file with the IMG___ prefix — not "plus a short code".
+
+   v1.0.4 (25 Sept) — Upload explains itself first (Jeff, 25 Sept).
+     Both Upload buttons (Images and the body toolbar) open a short
+     helper before the file picker: what files are accepted and how
+     big (read from ta-asf's upload settings), where the file is kept,
+     what Scenario B files it as, and where it ends up. "Choose a
+     file" then opens ta-asf's own picker, unchanged. A per-browser
+     "Don't show this again" switch skips it; "About uploads" under
+     Images always reopens it.
+
+   v1.0.3 (24 Sept) — the body section matches v1.10.0 in full:
+     · "See raw text →" and "Source metadata →" on the Body row, right
+       above the editor (v1.0.1–1.0.2 had them in the group header)
+     · "↑ Upload" in the toolbar puts a new photo straight into the
+       body, through ta-asf's own upload path (Scenario B); the photo
+       also joins Images
+     · the toolbar stays pinned at the top while the body scrolls
+     · the body is typed like the published page (Spectral 18/1.95,
+       Fraunces headings 28/24/22) and grows with its text
+     · character count under the editor (n / 20,000)
+     · clicking the Main preview opens the photo full size
+   Needs ta-asf-article-v1.0.5.css.
+
+   v1.0.2 (24 Sept) — the body editor has Trix's FULL toolbar again,
+   as v1.10.0 had it: bold, italic, strike, link, heading, quote,
+   code, bullets, numbers, indent, undo/redo. Customised the same way
+   v1.10.0 customizeTrixToolbar() did: the file-tools group removed
+   (photos come from Images), H2 and H3 added to the block tools, and
+   the Image button (this article's photos) added to the text tools.
+   v1.0.1 had replaced the toolbar with a six-button sketch from the
+   mockup, which dropped formatting v1.10.0 offered. Needs
+   ta-asf-article-v1.0.4.css.
+
+   v1.0.1 (24 Sept) — replaces v1.0.0. One change: captions and alt
+   text go to Scenario G one MEDIA row per call (updateMediaText with
+   mediaId / setCaption / caption / setAltText / altText at the top
+   level). Each reply returns the written row as fieldData and is
+   checked; rows that confirm stay saved if a later one fails, and the
+   toast names which did and did not. Matches the Scenario G blueprint
+   of 24 Sept (modules 300–303). v1.0.0 sent every row in one call,
+   which that blueprint does not accept.
+
+   WHAT THIS FILE IS
+     ta-asf (v1.11.0+) owns the overlay, the save routes, hydration,
+     uploads, the library modal, the pickers, the new-customer path
+     and AI assist. When the asset type is Article it hands the panel
+     to this module, which draws the reordered three-column form and
+     runs everything the mockup added:
+       · Facts / Words / Images columns, dense, coloured group heads
+       · readiness as ticks in the top bar
+       · one tray holding every image of this article; Main and OG
+         are set ONLY with the buttons on each Images card
+       · captions and alt text edited on the card, saved to MEDIA
+       · Images collapses to a rail, and reopens by itself whenever
+         a photo becomes unused
+       · one Save for everything; gold border + "cancel" on every
+         changed field; top-bar Cancel reverts all
+
+   THE CONTRACT WITH ta-asf
+     window.InbxASFArticle = { connect, render, handle, save,
+                               hasPending, onSaveState, onClose,
+                               addGeneratedImage, version }
+     ta-asf calls connect(bridge) once, then render(panel) every time
+     it would have repainted the Article form. render() builds the
+     form once per open (and once per saved baseline) and after that
+     only PATCHES it, so the body editor, focus, scroll and the More
+     panel survive every repaint.
+     ta-asf offers every overlay event to handle(type, e) first. A
+     true return means this module handled it.
+
+   STATE
+     All article values live on the ta-asf state object (S.article,
+     S.dirtyFields). This module writes both the same way ta-asf's
+     own setters do, so createAsset / updateAsset read exactly what
+     is on screen. Dirty entries are always { from, to } (v1.5.38).
+     Caption and alt edits are held here until Save, then written to
+     MEDIA through Scenario G's updateMediaText route.
+
+   CSS: ta-asf-article-v1.0.1.css + ix-form-controls-v1.1.0.css.
+   Root markup: <div class="asf2 ix-dense ix-surface-scope">.
+   Class names are the mockup's. No inline styles.
+
+   MULTI-TENANT: every option list comes from the page or TA_CONFIG.
+   Hardcoded values are listed in HC below with provisional ids.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var VERSION = '1.0.16';
+
+  /* ── HC · provisional hardcoding entries (doc-maintenance chat
+        assigns real numbers). Each is a platform constant, never a
+        publisher or title value. ─────────────────────────────── */
+  var HC = {
+    // HC-P-FMB1-1 · print-match confidence below which a card says
+    // "check". Platform constant until Jeff rules it per title.
+    printMatchCheckBelow: 75,
+    // HC-P-AAB1-1 · Paid switch on. ARTICLES paid-article is live
+    // (24 Sept). Set false to hide the obligation flow in one place.
+    paidLive: true,
+    // HC-P-AAB1-2 · Uploadcare preview used for card and slot photos.
+    thumbTransform: '-/preview/640x640/-/format/auto/-/quality/smart/',
+    // HC-P-AAB1-5 · body character guide, carried unchanged from
+    // v1.10.0 (renderMainBodyInline maxChars).
+    bodyMaxChars: 20000,
+    // HC-P-AAB1-3 · target lengths carried unchanged from v1.10.0
+    // (renderMainTeaser / renderMainShortSummary). Maximums come from
+    // ta-asf CFG.limits; these are the lower edge of the green band.
+    teaserMin: 350,
+    shortSummaryMin: 120,
+    // HC-P-A1-8 · what a finished Standard article needs (Jeff's rulings, 28 Nov, sheet v0.1). Platform rule,
+    // not tenant data. Customer and Obligation are needed when Paid is on; the call to action when it is on.
+    needs: { sectionId: 1, name: 1, teaser: 1, shortSummary: 1, writerName: 1 }
+  };
+
+  var B = null;          // bridge from ta-asf
+  var S = null;          // ta-asf state (B.state)
+  var PENDING_ARCHIVE = null;   // v1.0.11 — { mediaId, articleId, name } until the article's Save is verified
+
+  /* ── Field definitions. Order = order on screen (mockup v0.10). ──
+     key = the ta-asf state key. Nothing here is tenant data. */
+  // v1.0.16 — one row per field (Jeff, 28 Nov). hint = the short line under the name.
+  var FACT_GROUPS = [
+    { n: '1', title: 'Where it runs', where: true, fields: [
+      { key: 'sectionId', label: 'Section', hint: 'decides the block', kind: 'section', opts: 'section', req: true },
+      { key: 'printIssueSource', label: 'Print source', hint: 'record keeping', kind: 'text' }
+    ]},
+    { n: '2', title: 'Who pays', fields: [
+      // Paid is the question that matters (ruled 24 Sept). Paid + Customer
+      // leads to an OBLIGATION: connect an open one or create one.
+      { key: 'isPaid', label: 'Paid', hint: 'who pays', kind: 'switch', text: 'Paid article' },
+      { key: 'customerId', label: 'Customer', hint: 'needed when paid', kind: 'select', opts: 'customer' },
+      { key: 'obligationId', label: 'Obligation', hint: 'needed when paid', kind: 'select', opts: 'obligation' }
+    ]},
+    { n: '3', title: 'People', fields: [
+      { key: 'writerName', label: 'Writer', hint: 'the \u201cBy\u201d line', kind: 'text', req: true },
+      { key: 'writerTitle', label: 'Writer title', hint: 'under the name', kind: 'text' },
+      { key: 'cowriterName', label: 'Co-writer', hint: 'second byline', kind: 'text' },
+      { key: 'cowriterTitle', label: 'Co-writer title', hint: 'under the co-writer', kind: 'text' },
+      { key: 'photographer', label: 'Photographer', hint: 'photo credit', kind: 'text' },
+      // v1.0.10 · the byline is a choice, never a rule (Jeff, 28 Oct)
+      { key: 'showPhotoCredits', label: 'Photo credits', hint: 'print the photographer', kind: 'switch', text: 'Show' },
+      { key: 'hideWriterTitles', label: 'Writer titles', hint: 'in the byline', kind: 'switch', text: 'Hide writer titles' },
+      { key: 'showBusinessInByline', label: 'Business', hint: 'in the byline', kind: 'switch', text: 'Show business' }
+    ]}
+  ];
+  // v1.0.14 — the call to action is its own chapter (Jeff, 27 Nov)
+  var CTA_FIELDS = [
+    { key: 'ctaButton', label: 'Button label', hint: 'the words on the button', kind: 'text', req: true },
+    { key: 'ctaUrl', label: 'Link', hint: 'where the button goes', kind: 'text', req: true },
+    { key: 'ctaText', label: 'Text beside the button', hint: 'one or two lines', kind: 'textarea', req: true }
+  ];
+  var CTA_KEYS = ['ctaButton', 'ctaUrl', 'ctaText'];
+  var MORE = [
+    { key: 'slug', label: 'Address', hint: 'the page address, set on create', kind: 'text' },
+    // Unused today; kept reachable, not in the way (ruled 24 Sept).
+    { key: 'revenueType', label: 'Revenue type', hint: 'not used today', kind: 'select', opts: 'revenue' },
+    { key: 'videoUrl', label: 'Video URL', hint: 'a video link', kind: 'text' },
+    { key: 'audioUrl', label: 'Audio URL', hint: 'an audio link', kind: 'text' }
+  ];
+  var WORDS = [
+    { key: 'name', label: 'Headline', hint: 'every tile and the page', kind: 'text', req: true, cls: 'asf2-headline' },
+    { key: 'subtitle', label: 'Subtitle', hint: 'under the headline', kind: 'text' },
+    { key: 'bannerStatement', label: 'Banner statement', hint: 'the small flag above the headline', kind: 'text' },   // v1.0.16: up from Rarely used
+    // v1.0.16 — Web teaser and Email teaser (Jeff, 28 Nov). Same fields as Teaser and Short summary.
+    { key: 'teaser', label: 'Web teaser', hint: 'web issue tile and archive', kind: 'textarea', req: true },
+    { key: 'shortSummary', label: 'Email teaser', hint: 'the email tile, one complete thought', kind: 'textarea', req: true }
+  ];
+
+  // Every article key this form edits and therefore owns the dirty
+  // entry for. Image keys are owned through the roles model below.
+  var FIELD_KEYS = [
+    'name', 'subtitle', 'teaser', 'shortSummary',
+    'printIssueSource', 'sectionId', 'productId', 'mnlsId', 'customerId', 'isPaid', 'revenueType',
+    'writerName', 'writerTitle', 'cowriterName', 'cowriterTitle',
+    'photographer', 'showPhotoCredits', 'hideWriterTitles', 'showBusinessInByline',   // v1.0.10
+    'ctaButton', 'ctaUrl', 'ctaText', 'slug', 'bannerStatement',
+    'videoUrl', 'audioUrl', 'photoEssay', 'videoArticle', 'galleryMediaIds'
+  ];
+  var BOOL_KEYS = { isPaid: 1, showPhotoCredits: 1, photoEssay: 1, videoArticle: 1, hideWriterTitles: 1, showBusinessInByline: 1 };   // v1.0.10
+  var IMAGE_KEYS = ['mainImageSrc', 'mainImageMediaId', 'ogImageSrc', 'ogImageMediaId', 'mainImageAlt'];
+  var NAME_KEYS = { sectionId: 'sectionName', productId: 'productName', customerId: 'customerName' };
+  var NAME_LIST = { sectionId: 'section', productId: 'product', customerId: 'customer' };
+
+  // Plain words for the pending list and the AI strip.
+  var LABELS = {
+    name: 'headline', subtitle: 'subtitle', teaser: 'web teaser', shortSummary: 'email teaser',   // v1.0.16
+    printIssueSource: 'print source', sectionId: 'section', productId: 'product', mnlsId: 'MNLS', customerId: 'customer', revenueType: 'revenue type',
+    writerName: 'writer', writerTitle: 'writer title', cowriterName: 'co-writer',
+    cowriterTitle: 'co-writer title', photographer: 'photographer', showPhotoCredits: 'credits',
+    hideWriterTitles: 'hide writer titles', showBusinessInByline: 'show business in byline',   // v1.0.10
+    ctaButton: 'CTA label', ctaUrl: 'CTA URL', ctaText: 'CTA text', slug: 'address',
+    bannerStatement: 'banner', videoUrl: 'video URL', audioUrl: 'audio URL',
+    galleryMediaIds: 'gallery', bodyHtml: 'body'
+  };
+
+  var AI_BADGE = '<span class="ix-ai-badge ix-ai-badge--sm" role="img" aria-label="Filled by AI \u2014 review before publishing" title="Filled by AI \u2014 review before publishing">' +
+    '<svg class="ix-ai-badge__glyph" viewBox="0 0 16 16" aria-hidden="true">' +
+    '<path class="ix-ai-star ix-ai-star--lg" d="M6 1.6 L7.05 4.95 L10.4 6 L7.05 7.05 L6 10.4 L4.95 7.05 L1.6 6 L4.95 4.95 Z"/>' +
+    '<path class="ix-ai-star ix-ai-star--md" d="M12.1 7.2 L12.75 9.25 L14.8 9.9 L12.75 10.55 L12.1 12.6 L11.45 10.55 L9.4 9.9 L11.45 9.25 Z"/>' +
+    '<path class="ix-ai-star ix-ai-star--sm" d="M4.3 11.2 L4.75 12.6 L6.15 13.05 L4.75 13.5 L4.3 14.9 L3.85 13.5 L2.45 13.05 L3.85 12.6 Z"/></svg></span>';
+  var THINK = '<svg class="asf2-ai-think" viewBox="0 0 50 24" width="40" height="19" aria-hidden="true">' +
+    '<circle class="d1" cx="28" cy="12" r="2.3"/><circle class="d2" cx="36" cy="12" r="2.3"/><circle class="d3" cx="44" cy="12" r="2.3"/>' +
+    '<path class="s1" d="M9 4 L10.3 8.7 L15 10 L10.3 11.3 L9 16 L7.7 11.3 L3 10 L7.7 8.7 Z"/></svg>';
+
+  /* ── Per-open module state. Reset whenever ta-asf opens a new form
+        (S.openSeq changes). ────────────────────────────────────── */
+  var M = null;
+  function freshM(seq) {
+    return {
+      seq: seq,
+      token: null,
+      base: {},            // article values the form opened with (or last saved)
+      baseType: 'standard',
+      baseRoles: { main: '', og: null },
+      roles: { main: '', og: null },     // og null = OG follows Main
+      imgBase: {},         // mediaId -> { caption, alt } as opened / last saved
+      imgText: {},         // mediaId -> { caption, alt } current
+      aiImages: {},        // mediaId -> true for generated images
+      traySeeded: false,
+      trayPref: null,      // null = automatic; true / false = operator's choice
+      lastUnused: null,
+      moreOpen: false,
+      popOpen: false,
+      savedRange: null,
+      trixTouched: false,
+      trixBaseline: null,  // editor HTML of the opening body, once Trix has it
+      lastBodyFromTrix: null,
+      inlineSig: '',
+      savingMedia: false,
+      cssChecked: false,
+      // OBLIGATION link (the OBLIGATION holds the reference to the article)
+      obl: { base: '', cur: '', list: [], loadedFor: null, loading: false, err: '', baseKnown: false },
+      modalOpen: false,
+      // v1.0.11 — photo facts from the Data Worker, and crop recipes.
+      photo: { facts: null, asked: '', loading: false, err: '' },
+      recBase: {},         // mediaId -> recipe as opened / last saved (object or null)
+      recCur: {},          // mediaId -> recipe now (object or null)
+      ogAtBase: null,      // the OG crop position the article opened with (null = not yet known)
+      archive: null,       // { oldId, newId, keep, usedBy: [], checking, err }
+      composites: {},      // mediaId -> true for inset photos made this session
+      leftOpen: false,     // v1.0.14 — the finish bar's what's-left list is open
+      kindOpen: false,     // v1.0.14 — Change was pressed on the kind band (edit only)
+      limitsAsked: false   // v1.0.14 — asked ta-asf to repaint once the field limits are in
+    };
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     SMALL HELPERS
+     ════════════════════════════════════════════════════════════ */
+  function esc(s) { return B.esc(s); }
+  function A() { return S.article || (S.article = {}); }
+  function clone(v) { return (v && typeof v === 'object') ? JSON.parse(JSON.stringify(v)) : v; }
+  function own(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  function eqVal(k, a, b) {
+    if (k === 'galleryMediaIds') return JSON.stringify(a || []) === JSON.stringify(b || []);
+    if (BOOL_KEYS[k]) return !!a === !!b;
+    return B.fieldsEqual(a, b);
+  }
+  function rootEl() { return S.overlay ? S.overlay.querySelector('.asf2') : null; }
+  function q(sel) { var r = rootEl(); return r ? r.querySelector(sel) : null; }
+  function qa(sel) { var r = rootEl(); return r ? Array.prototype.slice.call(r.querySelectorAll(sel)) : []; }
+  function scroller() { return S.overlay ? S.overlay.querySelector('.asf-overlay') : null; }
+  function trixEl() { return q('trix-editor.asf2-rte'); }
+  function isPhotoEssay() { return S.articleType === 'photo-essay'; }
+
+  /* ════════════════════════════════════════════════════════════
+     MEDIA LOOKUP — the tray only ever shows this article's images.
+     A record is resolved from the page's MEDIA rows (plus this
+     session's uploads), then from the edit hydrate, then from the
+     article's own main / OG URL.
+     ════════════════════════════════════════════════════════════ */
+  var IDX = null;   // per-patch memo; cleared on every patch and event
+  function mediaIndex() {
+    if (IDX) return IDX;
+    var map = {};
+    // Several rows can carry one id (the hydrated row and the synthetic
+    // Main / OG row ta-asf keeps for readiness). Merge; never blank a value.
+    (S.media || []).forEach(function (m) {
+      var id = m.mediaId || m.id;
+      if (!id) return;
+      var prev = map[id] || {};
+      map[id] = {
+        id: id,
+        fn: prev.fn || m.originalFilename || m.name || '',
+        url: prev.url || m.imageUrl || m.src || '',
+        caption: prev.caption || m.caption || '',
+        alt: prev.alt || m.altText || '',
+        role: prev.role || (m.role && m.role !== 'main-image' && m.role !== 'og-image' ? m.role : ''),
+        printMatch: prev.printMatch || m.printMatch || null,
+        captionFromPrint: !!(prev.captionFromPrint || m.captionFromPrint)
+      };
+    });
+    B.hydrateAllMedia().forEach(function (m) {
+      if (!m.mediaId) return;
+      var prev = map[m.mediaId] || {};
+      map[m.mediaId] = {
+        id: m.mediaId,
+        fn: m.originalFilename || m.name || prev.fn || '',
+        url: m.imageUrl || prev.url || '',
+        caption: (m.caption != null && m.caption !== '') ? m.caption : (prev.caption || ''),
+        alt: (m.altText != null && m.altText !== '') ? m.altText : (prev.alt || ''),
+        role: m.role || prev.role || '',
+        printMatch: m.printMatch || prev.printMatch || null,
+        captionFromPrint: !!(m.captionFromPrint || prev.captionFromPrint)
+      };
+    });
+    var a = A(), b = M.base;
+    [[b.mainImageMediaId, b.mainImageSrc], [b.ogImageMediaId, b.ogImageSrc],
+     [a.mainImageMediaId, a.mainImageSrc], [a.ogImageMediaId, a.ogImageSrc]].forEach(function (p) {
+      if (p[0] && !map[p[0]] && p[1]) map[p[0]] = { id: p[0], fn: '', url: p[1], caption: '', alt: '', role: '' };
+    });
+    IDX = map;
+    return map;
+  }
+
+  function thumbUrl(url) {
+    if (!url) return '';
+    return B.applyUploadcareTransform(url, HC.thumbTransform);
+  }
+
+  // Print match is read, never invented. Nothing sets printMatch until
+  // the visual matcher ships; until then no line is shown (ruled 24 Sept).
+  function printMatchOf(rec) {
+    var p = rec && rec.printMatch;
+    if (!p || p.page == null || p.conf == null) return null;
+    return { page: p.page, conf: +p.conf };
+  }
+
+  // Inline images, in body order, read back out of the body.
+  function inlineOrder() {
+    var html = A().bodyHtml || '';
+    var ids = [];
+    try {
+      var tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      var imgs = tmp.querySelectorAll('img[data-media-id]');
+      for (var i = 0; i < imgs.length; i++) {
+        var id = (imgs[i].getAttribute('data-media-id') || '').trim();
+        if (id) ids.push(id);
+      }
+    } catch (e) {}
+    if (!ids.length) ids = B.extractInlineMediaIds(html);   // serialized-attachment fallback
+    return ids;
+  }
+
+  function trayIds() {
+    var idx = mediaIndex();
+    return (S.bundleImageIds || []).filter(function (id) { return idx[id] && idx[id].url; });
+  }
+
+  function ensureImgText(id, rec) {
+    if (own(M.imgBase, id)) return;
+    var alt = rec.alt || '';
+    if (!alt && id === M.baseRoles.main) alt = M.base.mainImageAlt || '';
+    M.imgBase[id] = { caption: rec.caption || '', alt: alt };
+    M.imgText[id] = { caption: rec.caption || '', alt: alt };
+  }
+  function imgChanged(id, f) {
+    var a = M.imgText[id], b = M.imgBase[id];
+    if (!a || !b) return false;
+    return String(a[f] || '') !== String(b[f] || '');
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     v1.0.11 — PHOTO FACTS, RECIPES, INSET PHOTOS
+     ════════════════════════════════════════════════════════════ */
+  function PC() { return window.IxPhotoCompose || null; }
+  function recipe(id) { return own(M.recCur, id) ? M.recCur[id] : null; }
+  function recipeKey(r) { return r ? JSON.stringify(r) : ''; }
+  function cropsChanged(id) {
+    if (!own(M.recCur, id)) return false;
+    return recipeKey((M.recCur[id] || {}).crops || null) !== recipeKey((M.recBase[id] || {}).crops || null);
+  }
+  function compositeOf(id) { var r = recipe(id); return r && r.composite && r.composite.sources ? r.composite : null; }
+  function shapes() { return (M.photo.facts && M.photo.facts.shapes) || []; }
+  function factItem(id) { var f = M.photo.facts; return f && f.items ? f.items[id] || null : null; }
+  // Photos used inside an inset photo that is in this tray.
+  function insetSources() {
+    var out = {};
+    trayIds().forEach(function (id) {
+      var c = compositeOf(id);
+      if (c) { if (c.sources.base) out[c.sources.base] = id; if (c.sources.inset) out[c.sources.inset] = id; }
+    });
+    return out;
+  }
+  function canRebuild(id) {
+    var c = compositeOf(id); if (!c) return false;
+    var idx = mediaIndex();
+    return [c.sources.base, c.sources.inset].every(function (sid) {
+      var fi = factItem(sid);
+      return (idx[sid] && idx[sid].url) || (fi && fi.found && fi.url);
+    });
+  }
+  // Read the facts for every tray photo (and the sources of inset photos).
+  function loadPhotoFacts(force) {
+    if (!PC()) { M.photo.err = 'ix-photo-compose is not on this page.'; return; }
+    var ids = trayIds().slice();
+    Object.keys(M.recCur).forEach(function (id) {
+      var c = compositeOf(id);
+      if (c) [c.sources.base, c.sources.inset].forEach(function (x) { if (x && ids.indexOf(x) < 0) ids.push(x); });
+    });
+    var sig = ids.slice().sort().join(',');
+    if (!force && (M.photo.loading || sig === M.photo.asked)) return;
+    M.photo.loading = true; M.photo.asked = sig;
+    var seq = M.seq;
+    PC().facts({ ids: ids, label: 'Photo facts' }).then(function (f) {
+      if (!M || M.seq !== seq) return;
+      M.photo.loading = false; M.photo.err = ''; M.photo.facts = mergeFacts(M.photo.facts, f);
+      Object.keys(f.items || {}).forEach(function (id) {
+        var it = f.items[id];
+        if (!it.found || own(M.recBase, id)) return;
+        M.recBase[id] = it.recipe ? clone(it.recipe) : null;
+        M.recCur[id] = it.recipe ? clone(it.recipe) : null;
+      });
+      // A source of a newly read inset photo may still be unread.
+      var again = false;
+      Object.keys(M.recCur).forEach(function (id) {
+        var c = compositeOf(id);
+        if (c) [c.sources.base, c.sources.inset].forEach(function (x) { if (x && !factItem(x)) again = true; });
+      });
+      if (M.ogAtBase === null) M.ogAtBase = ogAtOpened();
+      IDX = null;
+      if (again) loadPhotoFacts(false);
+      B.render();
+    }).catch(function (e) {
+      if (!M || M.seq !== seq) return;
+      M.photo.loading = false; M.photo.err = (e && e.message) || String(e);
+      B.render();
+    });
+  }
+  function mergeFacts(prev, f) {
+    if (!prev) return f;
+    var out = clone(f);
+    out.items = Object.assign({}, prev.items || {}, f.items || {});
+    return out;
+  }
+  // The OG photo's crop position as ta-asf will write it ('' = automatic).
+  function ogAtNow() {
+    var og = effOg();
+    if (!og || !PC() || !M.photo.facts) return '';
+    return PC().alignFor(recipe(og), 'og', shapes());
+  }
+  // The same, for the roles and recipes the form opened with (the baseline).
+  function ogAtOpened() {
+    var og = M.baseRoles.og || M.baseRoles.main;
+    if (!og || !PC() || !M.photo.facts) return '';
+    return PC().alignFor(own(M.recBase, og) ? M.recBase[og] : null, 'og', shapes());
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     BASELINE — what Cancel returns to and what gold is measured
+     against. Taken when the form is built for an open, and again
+     after every confirmed save (ta-asf bumps S.baseSeq).
+     ════════════════════════════════════════════════════════════ */
+  function takeBaseline() {
+    var a = A();
+    var base = {};
+    FIELD_KEYS.concat(IMAGE_KEYS).concat(['bodyHtml', 'sectionName', 'productName', 'mnlsName', 'customerName'])
+      .forEach(function (k) { base[k] = clone(own(a, k) ? a[k] : (BOOL_KEYS[k] ? false : (k === 'galleryMediaIds' ? [] : ''))); });
+    M.base = base;
+    M.baseType = S.articleType || 'standard';
+    M.baseRoles = normRoles(base.mainImageMediaId, base.ogImageMediaId);
+    M.roles = clone(M.baseRoles);
+    M.trixBaseline = null;
+    M.lastBodyFromTrix = null;
+    M.ctaBase = hasCta(base);                  // v1.0.14
+    M.ctaOn = M.ctaBase || hasCta(a);
+    // Dirty entries for keys this form owns are rebuilt from the new
+    // baseline; anything a prefill or AI pass wrote stays as a value.
+    reconcileAll();
+  }
+  function normRoles(main, og) {
+    main = main || '';
+    og = og || '';
+    return { main: main, og: (!og || og === main) ? null : og };
+  }
+
+  // Seed the tray for this open: bundle images, every image the article
+  // already carries, Main, OG, inline and gallery. Order kept, no dups.
+  function seedTray() {
+    if (M.traySeeded) return;
+    M.traySeeded = true;
+    var ids = (S.bundleImageIds || []).slice();
+    function add(id) { if (id && ids.indexOf(id) === -1) ids.push(id); }
+    var idx = mediaIndex();
+    (S.media || []).forEach(function (m) {
+      var id = m.mediaId || m.id;
+      if (id && idx[id] && idx[id].url) add(id);
+    });
+    add(M.base.mainImageMediaId);
+    add(M.base.ogImageMediaId);
+    inlineOrder().forEach(add);
+    (M.base.galleryMediaIds || []).forEach(add);
+    S.bundleImageIds = ids;
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     DIRTY MODEL
+     ════════════════════════════════════════════════════════════ */
+  function setDirty(k, from, to) {
+    if (!S.dirtyFields) S.dirtyFields = {};
+    if (eqVal(k, from, to)) delete S.dirtyFields[k];
+    else S.dirtyFields[k] = { from: clone(from), to: clone(to) };
+  }
+  function reconcileKey(k) { setDirty(k, M.base[k], A()[k]); }
+  function reconcileAll() {
+    FIELD_KEYS.forEach(reconcileKey);
+    reconcileBody();
+    if (isPhotoEssay()) M.roles.main = A().mainImageMediaId || '';
+    applyRoles();
+    B.deriveDirtySections();
+  }
+  function reconcileBody() {
+    var cur = A().bodyHtml || '';
+    var base = M.base.bodyHtml || '';
+    var same = (cur === base) || (M.trixBaseline != null && cur === M.trixBaseline);
+    if (same) {
+      if (S.dirtyFields) delete S.dirtyFields.bodyHtml;
+    } else {
+      setDirty('bodyHtml', base, cur);
+    }
+  }
+  function bodyChanged() { return !!(S.dirtyFields && S.dirtyFields.bodyHtml); }
+
+  function rolesEqual(a, b) { return (a.main || '') === (b.main || '') && (a.og || null) === (b.og || null); }
+  function mainChanged() { return (M.roles.main || '') !== (M.baseRoles.main || ''); }
+  function ogChanged() { return (M.roles.og || null) !== (M.baseRoles.og || null); }
+  function effOg() { return M.roles.og || M.roles.main || ''; }
+
+  // Write the roles model onto the article fields ta-asf saves.
+  function applyRoles() {
+    var a = A(), b = M.base;
+    var idx = null;
+    function urlOf(id) {
+      if (!id) return '';
+      if (!idx) idx = mediaIndex();
+      var r = idx[id];
+      return r && r.url ? B.stripUcTransforms(r.url) : '';
+    }
+    if (!isPhotoEssay()) {
+      if (!mainChanged()) {
+        a.mainImageMediaId = b.mainImageMediaId;
+        a.mainImageSrc = b.mainImageSrc;
+      } else {
+        a.mainImageMediaId = M.roles.main;
+        a.mainImageSrc = urlOf(M.roles.main);
+      }
+    }
+    if (rolesEqual(M.roles, M.baseRoles) && !isPhotoEssay()) {
+      a.ogImageMediaId = b.ogImageMediaId;
+      a.ogImageSrc = b.ogImageSrc;
+    } else if (!ogChanged() && (a.mainImageMediaId || '') === (b.mainImageMediaId || '')) {
+      a.ogImageMediaId = b.ogImageMediaId;
+      a.ogImageSrc = b.ogImageSrc;
+    } else {
+      var og = effOg();
+      a.ogImageMediaId = og;
+      a.ogImageSrc = og ? (urlOf(og) || (og === a.mainImageMediaId ? a.mainImageSrc : '')) : '';
+    }
+    // v1.0.11 — the share image's crop position (ta-asf v1.12.5 ogCropAt).
+    // Known only once the photo facts are in; until then nothing changes.
+    if (M.ogAtBase !== null) {
+      a.ogCropAt = ogAtNow();
+      setDirty('ogCropAt', M.ogAtBase, a.ogCropAt);
+    } else if (S.dirtyFields) delete S.dirtyFields.ogCropAt;
+    // Main alt on the ARTICLE mirrors the Main card's alt, but only once
+    // the operator has moved Main or edited that alt. Otherwise the saved
+    // article alt stands untouched.
+    var mid = a.mainImageMediaId || '';
+    if (mainChanged() || (mid && imgChanged(mid, 'alt'))) {
+      a.mainImageAlt = (mid && M.imgText[mid]) ? (M.imgText[mid].alt || '') : '';
+    } else {
+      a.mainImageAlt = b.mainImageAlt;
+    }
+    IMAGE_KEYS.forEach(function (k) { setDirty(k, b[k], a[k]); });
+    // computeRTP and findMediaByRole read synthetic role rows.
+    var media = (S.media || []).filter(function (m) { return m.role !== 'main-image' && m.role !== 'og-image'; });
+    if (a.mainImageMediaId || a.mainImageSrc) media.push({ mediaId: a.mainImageMediaId, imageUrl: a.mainImageSrc, role: 'main-image' });
+    if (a.ogImageMediaId || a.ogImageSrc) media.push({ mediaId: a.ogImageMediaId, imageUrl: a.ogImageSrc, role: 'og-image' });
+    S.media = media;
+  }
+
+  function tickChanged(id) {
+    return !!(S.rtpManualState || {})[id] !== !!(S.originalManual || {})[id];
+  }
+
+  // Everything Save would write, as plain names.
+  function changeList() {
+    var out = [];
+    var d = S.dirtyFields || {};
+    FIELD_KEYS.forEach(function (k) {
+      if (!own(d, k)) return;
+      if (k === 'photoEssay' || k === 'videoArticle') return;
+      out.push(LABELS[k] || k);
+    });
+    if (own(d, 'photoEssay') || own(d, 'videoArticle')) out.push('type');
+    if (bodyChanged()) out.push('body');
+    if (!isPhotoEssay() && mainChanged()) out.push('main image');
+    if (ogChanged()) out.push('OG image');
+    var idx = mediaIndex();
+    Object.keys(M.imgText).forEach(function (id) {
+      var fn = (idx[id] && idx[id].fn) || id;
+      if (imgChanged(id, 'caption')) out.push(fn + ' caption');
+      if (imgChanged(id, 'alt')) out.push(fn + ' alt');
+    });
+    Object.keys(M.recCur).forEach(function (id) {
+      if (cropsChanged(id)) out.push(((idx[id] && idx[id].fn) || id) + ' crops');
+    });
+    if (archiveWillRun()) out.push('archive the old inset photo');
+    if (M.obl.cur !== M.obl.base) out.push('obligation');
+    if (tickChanged('sponsor-ok')) out.push('sponsor OK');
+    if (tickChanged('edit-pass')) out.push('edit pass');
+    return out;
+  }
+  function mediaTextItems() {
+    var items = [], ids = Object.keys(M.imgText);
+    Object.keys(M.recCur).forEach(function (id) { if (ids.indexOf(id) < 0) ids.push(id); });
+    ids.forEach(function (id) {
+      var c = imgChanged(id, 'caption'), l = imgChanged(id, 'alt'), r = cropsChanged(id);   // r v1.0.11
+      if (!c && !l && !r) return;
+      var it = { mediaId: id, setCaption: c, setAltText: l, setRecipe: r };
+      if (c) it.caption = M.imgText[id].caption || '';
+      if (l) it.altText = M.imgText[id].alt || '';
+      if (r) it.imageRecipe = recipeOut(M.recCur[id]);
+      items.push(it);
+    });
+    return items;
+  }
+  // A recipe as stored: '' when it holds nothing.
+  function recipeOut(r) {
+    if (!r) return '';
+    var o = clone(r);
+    if (!o.crops) delete o.crops;
+    if (!o.crops && !o.composite) return '';
+    o.v = o.v || 1;
+    return JSON.stringify(o);
+  }
+  function articleHasChanges() {
+    var d = S.dirtyFields || {};
+    for (var k in d) if (own(d, k)) return true;
+    return tickChanged('sponsor-ok') || tickChanged('edit-pass');
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     v1.0.9 — THE SECTION, AND WHAT FOLLOWS FROM IT
+     ════════════════════════════════════════════════════════════ */
+  function sectionRow(id) {
+    if (!id) return null;
+    return B.readSections().filter(function (s) { return s.id === id; })[0] || null;
+  }
+  function legacyOn() {
+    return !!(B.sectionsLegacy && B.sectionsLegacy().productField);
+  }
+  // Product Library and MNLS follow the Section, for the old newsletter
+  // page only. Not touched until SECTIONS has its PRODUCT LIBRARY link.
+  function deriveLegacy() {
+    if (!legacyOn()) return;
+    var a = A(), sec = sectionRow(a.sectionId);
+    if (a.sectionId && !sec) return;                // list not loaded: leave them alone
+    var p = sec && sec.product, m = sec && sec.mnls;
+    a.productId = p ? p.id : ''; a.productName = p ? p.name : '';
+    a.mnlsId = m ? m.id : '';    a.mnlsName = m ? m.name : '';
+    reconcileKey('productId'); reconcileKey('mnlsId');
+  }
+  function paintWhere() {
+    var a = A(), sec = sectionRow(a.sectionId), st = B.sectionsStatus ? B.sectionsStatus() : { state: 'ready' };
+    var type = sec ? (sec.blockType || '') : '';
+    var tag = q('[data-a2-ttag]');
+    if (tag) {
+      var tt = !a.sectionId ? 'Not set' : (sec ? (type || 'No type') : '\u2026');
+      if (tag.textContent !== tt) tag.textContent = tt;
+      tag.classList.toggle('is-unset', !type && !(a.sectionId && !sec));
+      tag.title = a.sectionId && sec && !type ? 'This Section has no type yet. Set it in SECTIONS.' : 'Comes from the Section';
+    }
+    var why = q('[data-a2-why]');
+    if (why) {
+      var bad = !a.sectionId || (sec && !type);
+      var h = !a.sectionId
+        ? 'No Section yet. It can be saved, but the Picker can only place it in a slot with no type.'
+        : !sec ? (st.state === 'error' ? 'Sections did not load, so the type is not known.' : 'Loading the Section\u2026')
+        : !type ? 'This Section has no type, so the Picker can only place it in a slot with no type.'
+        : 'Goes in ' + (/^[AEFHILMNORSX]/.test(type) ? 'an ' : 'a ') + esc(type) + ' block.';
+      if (why.innerHTML !== h) why.innerHTML = h;
+      why.classList.toggle('is-bad', !!bad);
+    }
+    var lg = q('[data-a2-legacy]');
+    if (lg) {
+      lg.hidden = !legacyOn() && !a.productId && !a.mnlsId;
+      var pn = q('[data-a2-lg="product"]'), mn = q('[data-a2-lg="mnls"]');
+      // Names: the article's own, else the Section's when it is the same row.
+      var sp = sec && sec.product && sec.product.id === a.productId ? sec.product.name : '';
+      var sm = sec && sec.mnls && sec.mnls.id === a.mnlsId ? sec.mnls.name : '';
+      var pv = a.productId ? (a.productName || sp || 'Set, name not loaded') : '(empty)';   // v1.0.14: no ids
+      var mv = a.mnlsId ? (a.mnlsName || sm || 'Set, name not loaded') : '(empty)';
+      if (pn && pn.textContent !== pv) pn.textContent = pv;
+      if (mn && mn.textContent !== mv) mn.textContent = mv;
+      var d = S.dirtyFields || {};
+      if (pn) pn.classList.toggle('is-changed', own(d, 'productId'));
+      if (mn) mn.classList.toggle('is-changed', own(d, 'mnlsId'));
+      var note = q('[data-a2-lgnote]');
+      var nt = legacyOn() ? 'Old newsletter page \u00B7 filled from the Section' : 'Old newsletter page \u00B7 Sections not linked yet';
+      if (note && note.textContent !== nt) note.textContent = nt;
+    }
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     OPTIONS — from the page, never from constants
+     ════════════════════════════════════════════════════════════ */
+  function optionsFor(kind) {
+    var a = A();
+    var list, cur, curName;
+    if (kind === 'articleType') {
+      return (B.cfg.articleTypes || []).map(function (t) {
+        return { value: t.id, label: t.label.replace(/\s+Article$/i, '') + (t.soon ? ' (soon)' : ''), disabled: !!t.soon };
+      });
+    }
+    if (kind === 'revenue') {
+      var ids = ((B.cfg.tenant.cfg() || {}).optionIds || {}).revenueType || {};
+      var rev = a.revenueType || '';
+      var ro = [{ value: '', label: '\u2014 none \u2014' }];
+      if (ids.paidArticle) ro.push({ value: ids.paidArticle, label: 'Paid Article' });
+      if (ids.paidAd)      ro.push({ value: ids.paidAd,      label: 'Paid Ad' });
+      if (ids.sponsorable) ro.push({ value: ids.sponsorable, label: 'Sponsorable' });
+      if (rev && !ro.some(function (o) { return o.value === rev; })) ro.push({ value: rev, label: 'A value that is not a revenue type' });   // v1.0.14: no ids
+      return ro;
+    }
+    var lead = '\u2014 none \u2014';
+    if (kind === 'section') {
+      list = B.readSections(); cur = a.sectionId; curName = a.sectionName;
+      // v1.0.8 — the list comes from the Data Worker; say what is happening.
+      var st = B.sectionsStatus ? B.sectionsStatus() : { state: 'ready', error: '' };
+      if (st.state === 'loading' && !list.length) lead = 'Loading sections\u2026';
+      if (st.state === 'error') lead = 'Sections did not load: ' + st.error;
+    }
+    else if (kind === 'product') { list = B.readProducts ? B.readProducts() : []; cur = a.productId; curName = a.productName; }
+    else if (kind === 'customer') { list = B.readCustomers(); cur = a.customerId; curName = a.customerName; }
+    else return [];
+    var opts = [{ value: '', label: lead }];
+    var found = false;
+    list.forEach(function (it) {
+      if (it.id === cur) found = true;
+      opts.push({ value: it.id, label: it.name });
+    });
+    if (cur && !found) opts.push({ value: cur, label: curName || 'Saved choice, not in this list' });   // v1.0.14: no ids
+    if (kind === 'customer') opts.push({ value: '__new__', label: '+ New customer\u2026' });
+    return opts;
+  }
+  function optionsHTML(kind) {
+    return optionsFor(kind).map(function (o) {
+      return '<option value="' + esc(o.value) + '"' + (o.disabled ? ' disabled' : '') + '>' + esc(o.label) + '</option>';
+    }).join('');
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     MARKUP — mirrors mockup v0.10 exactly
+     ════════════════════════════════════════════════════════════ */
+  // v1.0.16 — a field is one row: name and hint · the field · status · tools (Jeff, 28 Nov).
+  function fieldHTML(d) {
+    var cs = counterSpec(d.key), ctl;
+    if (d.kind === 'readonly') {
+      ctl = '<div class="asf2-readonly" data-a2-ro="' + d.key + '"></div>';
+    } else if (d.kind === 'section') {                          // v1.0.9 — Section + its type, read-only
+      ctl = '<div class="asf2-secrow"><select class="ix-picker-input asf2-sec" data-a2-f="' + d.key + '" data-a2-opts="' + d.opts + '">' + optionsHTML(d.opts) + '</select>' +
+        '<span class="asf2-ttag" data-a2-ttag title="Comes from the Section"></span></div>' +
+        '<div class="asf2-why" data-a2-why></div>' +
+        '<div class="asf2-legacy" data-a2-legacy>' +
+          '<div class="asf2-legacy-head" data-a2-lgnote></div>' +
+          '<div class="asf2-legacy-row"><span>Product Library</span><span data-a2-lg="product"></span></div>' +
+          '<div class="asf2-legacy-row"><span>MNLS</span><span data-a2-lg="mnls"></span></div>' +
+        '</div>';
+    } else if (d.kind === 'select') {
+      ctl = '<select class="ix-picker-input" data-a2-f="' + d.key + '" data-a2-opts="' + d.opts + '">' + (d.opts === 'obligation' ? '' : optionsHTML(d.opts)) + '</select>';
+    } else if (d.kind === 'switch') {
+      ctl = '<label class="ix-switch" data-a2-sw="' + d.key + '"><input type="checkbox" data-a2-f="' + d.key + '"><span class="ix-switch-track"></span><span>' + esc(d.text) + '</span></label>';
+    } else if (d.kind === 'textarea') {
+      ctl = '<textarea class="ix-picker-input asf2-grow" rows="1" data-a2-f="' + d.key + '"></textarea>';   // v1.0.14: grows, never scrolls
+    } else {
+      ctl = '<input type="text" class="ix-picker-input' + (d.cls ? ' ' + d.cls : '') + '" data-a2-f="' + d.key + '"' +
+        (cs && cs.hard ? ' maxlength="' + cs.max + '"' : '') + '>';
+    }
+    return '<div class="asf2-row" data-a2-row="' + d.key + '">' +
+      '<div class="asf2-row-n"><div class="asf2-row-l">' + esc(d.label) + (d.req ? ' <span class="ix-field-req">*</span>' : '') +
+        '<span data-a2-ai="' + d.key + '"></span></div>' +
+        (d.hint ? '<div class="asf2-row-h">' + esc(d.hint) + '</div>' : '') + '</div>' +
+      '<div class="asf2-row-c">' + ctl + '</div>' +
+      '<div class="asf2-row-s"><span class="asf2-pill" data-a2-st="' + d.key + '"></span></div>' +
+      '<div class="asf2-row-t">' +
+        (cs ? '<span class="asf2-count" data-a2-count="' + d.key + '"></span>' : '') +
+        (d.kind === 'readonly' ? '' : '<button type="button" class="ix-revert" data-a2-revert="' + d.key + '" hidden>cancel</button>') +
+      '</div></div>';
+  }
+  function rowsHTML(list) {
+    return '<div class="asf2-rows"><div class="asf2-row asf2-row--hd" aria-hidden="true"><span>Field</span><span>Value</span><span>Status</span><span>Tools</span></div>' +
+      list.map(fieldHTML).join('') + '</div>';
+  }
+  // v1.10.0 counters: subtitle and banner are hard caps (maxlength);
+  // teaser and short summary show a target band.
+  function counterSpec(k) {
+    var L = Object.assign({}, B.cfg.limits || {});
+    // v1.0.14 — the maximum comes from Webflow's own limit (config/field-limits.json) once it is in.
+    (B.limitsFor ? B.limitsFor('article') : []).forEach(function (d) { if (own(L, d.k)) L[d.k] = d.max; });
+    if (k === 'subtitle' && L.subtitle) return { max: L.subtitle, hard: true };
+    if (k === 'bannerStatement' && L.bannerStatement) return { max: L.bannerStatement, hard: true };
+    if (k === 'teaser' && L.teaser) return { max: L.teaser, min: HC.teaserMin };
+    if (k === 'shortSummary' && L.shortSummary) return { max: L.shortSummary, min: HC.shortSummaryMin };
+    return null;
+  }
+  function paintCounter(k, v) {
+    var c = q('[data-a2-count="' + k + '"]'), sp = counterSpec(k);
+    if (!c || !sp) return;
+    var n = String(v || '').length;
+    c.textContent = n + ' / ' + (sp.min ? sp.min + '\u2013' + sp.max : sp.max);
+    c.className = 'asf2-count' + (n > sp.max ? ' over' : sp.min ? (n >= sp.min ? ' inrange' : ' under') : (n >= sp.max * 0.85 ? ' near' : ''));
+  }
+  // v1.0.14 — the six chapters (P3). n = the number on screen; id = the jump target.
+  var CHAPTERS = [
+    { n: 1, id: 'where',    title: 'Where it runs and who pays', q: 'Decides the block and the label readers see' },
+    { n: 2, id: 'words',    title: 'The words',                  q: 'What a reader meets first' },
+    { n: 3, id: 'byline',   title: 'Byline',                     q: 'Who wrote it and how the name prints' },
+    { n: 4, id: 'pictures', title: 'Pictures',                   q: 'This article’s photos. Main, share image, captions and alt text' },
+    { n: 5, id: 'body',     title: 'Body',                       q: 'The story. Grows with the text' },
+    { n: 6, id: 'cta',      title: 'Call to action',             q: 'Optional. A button readers can click' }
+  ];
+  function chapterHTML(c, body, cls) {
+    return '<section class="asf2-ch' + (cls ? ' ' + cls : '') + '" data-a2-ch="' + c.id + '" aria-label="' + esc(c.title) + '">' +
+      '<div class="asf2-ch-h"><span class="asf2-ch-n">' + c.n + '</span><h2 class="asf2-ch-t">' + esc(c.title) + '</h2>' +
+        '<span class="asf2-ch-q">' + esc(c.q) + '</span><span class="asf2-ch-s" data-a2-chs="' + c.id + '"></span></div>' +
+      '<div class="asf2-ch-b">' + body + '</div></section>';
+  }
+  function ch(id) { return CHAPTERS.filter(function (c) { return c.id === id; })[0]; }
+
+  function rootHTML() {
+    return '<div class="asf2 asf2-shell ix-dense ix-surface-scope" data-a2-root="' + M.seq + '">' +
+      '<div class="asf2-kind" data-a2-kind></div>' +
+      chapterHTML(ch('where'), rowsHTML(FACT_GROUPS[0].fields.concat(FACT_GROUPS[1].fields)), 'asf2-ch--rows') +
+      chapterHTML(ch('words'),
+        '<div class="asf2-ai" data-a2-ai-strip></div>' + rowsHTML(WORDS), 'asf2-ch--rows') +
+      chapterHTML(ch('byline'), rowsHTML(FACT_GROUPS[2].fields), 'asf2-ch--rows') +
+      chapterHTML(ch('pictures'),
+        '<div class="asf2-lead" data-a2-lead></div>' +
+        '<div data-a2-gallery></div>' +
+        '<div class="asf2-traybox" data-a2-traycol></div>') +
+      chapterHTML(ch('body'),
+        '<div data-a2-srcshots>' + (B.renderSourceScreenshots() || '') + '</div>' +
+        '<div class="ix-field-label asf2-bodyrow"><span>Body</span><span class="asf2-srclinks" data-a2-srclinks></span>' +
+          '<button type="button" class="ix-revert" data-a2-revert="bodyHtml" hidden>cancel body</button></div>' +
+        '<div class="asf2-bodygrid" data-a2-bodygrid>' +
+          '<div class="asf2-body" data-a2-body>' + bodyInnerHTML() + '</div>' +
+          '<div class="asf2-side" data-a2-side hidden></div>' +
+        '</div>') +
+      chapterHTML(ch('cta'),
+        '<div class="asf2-rows">' +
+          '<div class="asf2-row" data-a2-row="_cta"><div class="asf2-row-n"><div class="asf2-row-l">Call to action</div><div class="asf2-row-h">a button readers click</div></div>' +
+            '<div class="asf2-row-c"><label class="ix-switch asf2-cta-sw" data-a2-ctasw><input type="checkbox" data-a2-act="cta"><span class="ix-switch-track"></span><span>Add a call to action</span></label>' +
+              '<p class="asf2-cta-note">When it is on, all three are needed. A button inside the body itself is a later idea.</p></div>' +
+            '<div class="asf2-row-s"><span class="asf2-pill" data-a2-st="_cta"></span></div>' +
+            '<div class="asf2-row-t"><button type="button" class="ix-revert" data-a2-act="cta-cancel" hidden>cancel</button></div></div>' +
+          '<div data-a2-ctabox>' + CTA_FIELDS.map(fieldHTML).join('') + '</div>' +
+        '</div>', 'asf2-ch--rows') +
+      '<section class="asf2-ch asf2-ch--more" data-a2-ch="more">' +
+        '<details class="asf2-more"' + (M.moreOpen ? ' open' : '') + '><summary><span class="asf2-ch-n">7</span>' +
+          '<span class="asf2-ch-t">Rarely used</span><span class="asf2-ch-q">Address, revenue type, video and audio links</span></summary>' +
+          '<div class="asf2-more-body">' + rowsHTML(MORE) + '</div></details>' +
+      '</section>' +
+      finishHTML() +
+    '</div>';
+  }
+
+  // v1.0.14 — the finish bar (P8, P9, P11, P14, P15). Fixed at the bottom right.
+  var RING_C = 106.8;   // 2 * pi * 17, the ring's circumference
+  // v1.0.16 — rail A: one full-width ink bar (Jeff, 28 Nov). What's left opens upward from its left end.
+  function finishHTML() {
+    return '<div class="asf2-finish asf2-rail' + (M.leftOpen ? ' is-open' : '') + '" data-a2-finish role="region" aria-label="Save">' +
+      '<div class="asf2-left" data-a2-left></div>' +
+      '<div class="asf2-fin-top">' +
+        '<div class="asf2-fin-ready">' +
+          '<svg class="asf2-ring" viewBox="0 0 42 42" aria-hidden="true"><circle class="asf2-ring-bg" cx="21" cy="21" r="17"/>' +
+            '<circle class="asf2-ring-v" data-a2-ring cx="21" cy="21" r="17" transform="rotate(-90 21 21)" stroke-dasharray="' + RING_C + '" stroke-dashoffset="' + RING_C + '"/></svg>' +
+          '<div class="asf2-fin-txt"><div class="asf2-fin-t" data-a2-fin-t></div>' +
+            '<div class="asf2-fin-s"><button type="button" class="ix-revert" data-a2-act="left" aria-expanded="false">Show what\u2019s left</button></div></div>' +
+        '</div>' +
+        '<div class="asf2-fin-foot"><span class="asf2-dirtycount" data-a2-dirtycount></span><span data-a2-archmsg></span></div>' +
+        '<button type="button" class="asf2-rbtn asf2-rbtn--ghost asf2-fin-cancel" data-a2-act="cancel-all">Cancel changes</button>' +   // v1.0.16: own buttons on the ink rail
+        '<button type="button" class="asf2-rbtn asf2-rbtn--save asf2-fin-save" data-a2-act="save">Save</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  // v1.0.14 — the kind band (P12).
+  function kindName(id) {
+    var t = (B.cfg.articleTypes || []).filter(function (x) { return x.id === id; })[0];
+    var base = t ? t.label.replace(/\s+Article$/i, '') : 'Standard';
+    base = base.charAt(0).toUpperCase() + base.slice(1).toLowerCase();       // "Photo essay"
+    return id === 'photo-essay' ? base : base + ' article';                 // "Standard article", "Video article"
+  }
+  function renderKind() {
+    var host = q('[data-a2-kind]');
+    if (!host) return;
+    var cur = S.articleType || 'standard', changed = cur !== M.baseType;
+    var create = S.mode === 'create', open = create || M.kindOpen || changed;
+    var alts = (B.cfg.articleTypes || []).filter(function (t) { return t.id !== cur; }).map(function (t) {
+      var nm = kindName(t.id);
+      if (!open || t.soon) return '<span class="asf2-kind-alt' + (t.soon ? ' is-soon' : '') + '"' + (t.soon ? ' title="Comes in a later build"' : '') + '>' + esc(nm) + '</span>';
+      return '<button type="button" class="asf2-kind-alt is-pick" data-a2-kind-pick="' + esc(t.id) + '">' + esc(nm) + '</button>';
+    }).join('');
+    var note = create ? 'Choose it now. It is set when the article is created, and the form follows it.'
+      : changed ? 'Changed. Save writes the new kind.'
+      : 'Set when it was created. The form shows what this kind needs.';
+    var h = '<div class="asf2-kind-on"><span class="asf2-kind-ic" aria-hidden="true">' + (cur === 'photo-essay' ? '▦' : cur === 'video' ? '▶' : '¶') + '</span>' +
+        '<div><div class="asf2-kind-l">This is a</div><div class="asf2-kind-n">' + esc(kindName(cur)) + '</div></div></div>' +
+      '<div class="asf2-kind-alts">' + alts + '</div>' +
+      '<div class="asf2-kind-note">' + esc(note) +
+        (changed ? ' <button type="button" class="ix-revert asf2-kind-link" data-a2-revert="_type">cancel</button>'
+          : (!create && !open ? ' <button type="button" class="ix-revert asf2-kind-link" data-a2-act="kind-open">Change</button>' : '')) + '</div>';
+    if (host.innerHTML !== h) host.innerHTML = h;
+    host.classList.toggle('is-changed', changed);
+  }
+
+  function loadingHTML(msg) {
+    return '<div class="asf2 asf2-shell ix-dense ix-surface-scope" data-a2-root="' + M.seq + '">' +
+      '<p class="asf2-note asf2-loading">' + esc(msg) + '</p></div>';
+  }
+
+  function bodyInnerHTML() {
+    var tb = 'a2-trix-toolbar-' + M.seq, inp = 'a2-trix-input-' + M.seq;
+    // Empty on purpose: Trix fills it with its full default toolbar,
+    // then customizeToolbar() makes the v1.10.0 changes.
+    var bar = '<trix-toolbar id="' + tb + '" class="asf2-rtebar"></trix-toolbar>';
+    if (!B.isTrixAvailable()) {
+      B.ensureTrixLoaded();
+      return bar + '<div class="asf2-rte" data-a2-trix-wait>Loading the body editor\u2026</div>';
+    }
+    B.registerTrixHeadings();
+    return bar +
+      '<input type="hidden" id="' + inp + '" value="' + esc(A().bodyHtml || '') + '">' +
+      '<trix-editor input="' + inp + '" toolbar="' + tb + '" class="asf2-rte" placeholder="Start writing the article body\u2026"></trix-editor>' +
+      '<div class="asf2-body-foot"><span class="asf2-trixcount" data-a2-trixcount></span></div>';
+  }
+  // v1.10.0 body counter (renderMainBodyInline / refreshTrixFooter).
+  function paintBodyCount() {
+    var c = q('[data-a2-trixcount]');
+    if (!c) return;
+    var len = B.stripTags(A().bodyHtml || '').length, max = HC.bodyMaxChars;
+    c.textContent = len.toLocaleString() + ' / ' + max.toLocaleString();
+    c.className = 'asf2-trixcount' + (len > max ? ' over' : len > max * 0.85 ? ' near' : '');
+    var box = q('[data-a2-body]');
+    if (box) box.classList.toggle('is-over', len > max);
+  }
+
+  // v1.10.0 customizeTrixToolbar(), on this form's toolbar. Idempotent.
+  function customizeToolbar() {
+    var tb = q('trix-toolbar.asf2-rtebar');
+    if (!tb || tb.querySelector('[data-a2-act="imgpop"]')) return;
+    var text = tb.querySelector('.trix-button-group--text-tools');
+    if (!text) return;                                   // not populated yet
+    var files = tb.querySelector('.trix-button-group--file-tools');
+    if (files) files.remove();                           // photos come from Images
+    var block = tb.querySelector('.trix-button-group--block-tools');
+    if (block && !block.querySelector('[data-trix-attribute="heading2"]')) {
+      var mk = function (attr, label) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'trix-button asf2-trix-head';
+        b.setAttribute('data-trix-attribute', attr);
+        b.title = label; b.textContent = label; b.tabIndex = -1;
+        return b;
+      };
+      var h3 = mk('heading3', 'H3'), h2 = mk('heading2', 'H2');
+      block.insertBefore(h3, block.firstChild);
+      block.insertBefore(h2, h3);
+    }
+    var img = document.createElement('button');
+    img.type = 'button';
+    img.className = 'asf2-rtebtn asf2-rtebtn--img';
+    img.setAttribute('data-a2-act', 'imgpop');
+    img.setAttribute('aria-haspopup', 'true');
+    img.setAttribute('aria-expanded', 'false');
+    img.title = 'Place one of this article\u2019s photos';
+    img.textContent = '\uD83D\uDDBC Image';
+    text.appendChild(img);
+    var up = document.createElement('button');
+    up.type = 'button';
+    up.className = 'asf2-rtebtn asf2-rtebtn--up';
+    up.setAttribute('data-a2-act', 'upload-body');
+    up.title = 'Upload a new photo straight into the body';
+    up.textContent = '\u2191 Upload';
+    text.appendChild(up);
+    var hint = document.createElement('span');
+    hint.className = 'asf2-rtehint';
+    hint.textContent = 'click where the photo goes, then Image';
+    tb.appendChild(hint);
+    var pop = document.createElement('div');
+    pop.className = 'asf2-pop';
+    pop.setAttribute('data-a2-pop', '');
+    pop.hidden = true;
+    tb.appendChild(pop);
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     BUILD / PATCH
+     ════════════════════════════════════════════════════════════ */
+  function tokenNow() {
+    return [S.openSeq || 0, S.baseSeq || 0, S.hydrated ? 1 : 0, S.hydrateFailed ? 1 : 0, S.mode].join(':');
+  }
+
+  function render(panel) {
+    if (!B) return;
+    if (!M || M.seq !== S.openSeq) M = freshM(S.openSeq);
+    var tok = tokenNow();
+    var root = panel.querySelector('.asf2[data-a2-root="' + M.seq + '"]');
+    if (!root || M.token !== tok) build(panel, tok);
+    else patch(panel);
+  }
+
+  function build(panel, tok) {
+    var prevBase = M.token && M.token.split(':')[1];
+    var d = q('details.asf2-more');
+    if (d) M.moreOpen = d.open;
+    M.token = tok;
+    M.popOpen = false;
+
+    if (!S.hydrated || S.hydrateFailed) {
+      panel.innerHTML = '<div data-a2-cx>' + B.renderContextBar() + '</div>' +
+        loadingHTML(S.hydrateFailed ? 'Could not load this article. Close and open it again.' : 'Loading the article\u2026');
+      return;
+    }
+    // A new baseline after a confirmed save: what was saved is now the
+    // opening state for captions and alt too.
+    if (prevBase && prevBase !== String(S.baseSeq || 0)) {
+      M.imgBase = clone(M.imgText);
+      M.recBase = clone(M.recCur);   // v1.0.11
+      M.ogAtBase = null;             // re-read from the recipes below
+      M.archive = null;
+      M.composites = {};
+    }
+
+    takeBaseline();
+    seedTray();
+    if (M.photo.facts && M.ogAtBase === null) M.ogAtBase = ogAtOpened();   // v1.0.11
+    loadPhotoFacts(false);
+    panel.classList.add('asf2-panel--full');   // v1.0.14 — full width for this form
+    panel.classList.add('asf2-panel--article'); // v1.0.15 — its header row stays at the top
+    panel.innerHTML = '<div data-a2-cx>' + B.renderContextBar() + '</div>' + rootHTML();
+    var root = rootEl();
+    root.addEventListener('mousedown', onMouseDown);
+    bindTrix();
+    patch(panel);
+    checkCss();
+    if (A().isPaid && A().customerId) loadObligations();
+  }
+
+  function patch(panel) {
+    var sc = scroller(), top = sc ? sc.scrollTop : 0;
+    IDX = null;
+    var cx = panel.querySelector('[data-a2-cx]');
+    if (cx) {
+      var cxh = B.renderContextBar();
+      if (cx.innerHTML !== cxh) cx.innerHTML = cxh;
+    }
+    if (!S.hydrated || S.hydrateFailed) return;
+    if (!trixEl() && B.isTrixAvailable()) {
+      var box = q('[data-a2-body]');
+      if (box) { box.innerHTML = bodyInnerHTML(); bindTrix(); }
+    }
+    loadPhotoFacts(false);   // v1.0.11: only when the tray's photos changed
+    reconcileAll();
+    syncBodyFromState();
+    syncFields();
+    renderAi();
+    renderGallery();
+    renderLeadAndTray();
+    renderKind();      // v1.0.14
+    renderCta();       // v1.0.14
+    renderTicks();
+    renderBar();
+    growAll();         // v1.0.14
+    if (M.popOpen) renderPop();
+    if (sc) sc.scrollTop = top;
+  }
+
+  function checkCss() {
+    if (M.cssChecked) return;
+    M.cssChecked = true;
+    var g = q('[data-a2-finish]');   // v1.0.14: the finish bar is fixed only when the v1.0.11 CSS is on the page
+    if (g && window.getComputedStyle(g).position !== 'fixed') {
+      B.warn('ta-asf-article CSS v1.0.11 is not on the page \u2014 the Article form will not lay out');
+      B.toast('Article form styles are missing \u2014 add ta-asf-article-v1.0.11.css, ix-photo-compose-v1.0.0.css and ix-form-controls-v1.2.0.css to the page', 'error');
+    }
+  }
+
+  var OPT_SIG = (typeof WeakMap === 'function') ? new WeakMap() : { get: function () { return null; }, set: function () {} };
+  function syncFields() {
+    var a = A();
+    qa('[data-a2-f]').forEach(function (el) {
+      var k = el.getAttribute('data-a2-f');
+      var ch, v;
+      if (k === '_type') {
+        v = S.articleType || 'standard';
+        ch = v !== M.baseType;
+        if (el.value !== v) el.value = v;
+        el.classList.toggle('ix-picker-input--changed', ch);
+      } else if (k === 'obligationId') {
+        syncObligationSelect(el);
+        ch = M.obl.cur !== M.obl.base;
+        el.classList.toggle('ix-picker-input--changed', ch);
+      } else if (el.type === 'checkbox') {
+        el.checked = !!a[k];
+        ch = own(S.dirtyFields || {}, k);
+        var sw = el.closest('.ix-switch');
+        if (sw) sw.classList.toggle('ix-switch--changed', ch);
+        if (k === 'isPaid') {
+          el.disabled = !HC.paidLive;
+          if (sw) sw.title = HC.paidLive ? '' : 'Paid articles arrive with OBLIGATIONS \u2014 not in the CMS yet';
+        }
+      } else {
+        v = a[k] == null ? '' : String(a[k]);
+        ch = own(S.dirtyFields || {}, k);
+        if (el.tagName === 'SELECT') {
+          var kind = el.getAttribute('data-a2-opts');
+          var forCust = kind === 'obligation' && el.getAttribute('data-a2-for') !== (a.customerId || '');
+          if (kind === 'obligation') {
+            if (forCust || !Array.prototype.some.call(el.options, function (o) { return o.value === v; })) {
+              el.innerHTML = optionsHTML(kind);
+              el.setAttribute('data-a2-for', a.customerId || '');
+            }
+          } else {
+            // v1.0.8 — repaint whenever the list itself changed.
+            var oh = optionsHTML(kind);
+            if (OPT_SIG.get(el) !== oh) { el.innerHTML = oh; OPT_SIG.set(el, oh); }
+          }
+          if (el.value !== v) el.value = v;
+        } else if (document.activeElement !== el && el.value !== v) {
+          el.value = v;
+        }
+        el.classList.toggle('ix-picker-input--changed', ch);
+        paintCounter(k, el.value);
+        if (k === 'slug') el.readOnly = true;   // v1.10.0: slug is never edited here
+      }
+      var rv = q('[data-a2-revert="' + k + '"]');
+      if (rv) rv.hidden = !ch;
+    });
+    qa('[data-a2-ai]').forEach(function (sp) {
+      var k = sp.getAttribute('data-a2-ai');
+      var on = !!(S.aiFilled && S.aiFilled[k]);
+      var tf = !on && !!(S.textFilled && S.textFilled[k]);
+      var h = on ? ' ' + AI_BADGE : tf ? ' <span class="asf2-tcap-src" title="Read from the uploaded document text">from text</span>' : '';
+      if (sp.innerHTML !== h) sp.innerHTML = h;
+    });
+    var sl = q('[data-a2-srclinks]');
+    if (sl) {
+      var lh = (S.sourceBodyOriginal ? '<button type="button" class="ix-revert" data-asf-action="' + (S.rawTextOpen ? 'close-raw-text' : 'see-raw-text') + '">' + (S.rawTextOpen ? 'Close raw text' : 'See raw text \u2192') + '</button>' : '') +
+               (S.sourceMetadata ? '<button type="button" class="ix-revert" data-asf-action="' + (S.sourceMetaOpen ? 'close-source-meta' : 'see-source-meta') + '">' + (S.sourceMetaOpen ? 'Close source metadata' : 'Source metadata \u2192') + '</button>' : '') +
+               ((S.printSource && B.renderPrintPanel) ? '<button type="button" class="ix-revert" data-asf-action="' + (S.printOpen ? 'close-print' : 'see-print') + '">' + (S.printOpen ? 'Close print' : 'Compare with print \u2192') + '</button>' : '');   // v1.0.7
+      if (sl.innerHTML !== lh) sl.innerHTML = lh;
+    }
+    paintWhere();                                              // v1.0.9
+    paintBodyCount();
+    var bch = bodyChanged();
+    var box = q('[data-a2-body]');
+    if (box) box.classList.toggle('is-changed', bch);
+    var rb = q('[data-a2-revert="bodyHtml"]');
+    if (rb) rb.hidden = !bch;
+  }
+
+  /* ── AI assist strip ── */
+  function renderAi() {
+    var bar = q('[data-a2-ai-strip]');
+    if (!bar) return;
+    var st = B.aiAssistState(), h;
+    var hasBody = !!B.stripTags(A().bodyHtml || '');
+    var eligible = B.aiAssistEligible();
+    if (!eligible) {
+      h = '<span class="asf2-ai-spark">\u2728</span><span class="asf2-ai-txt"><b>AI assist</b> is not loaded on this page (ta-generate)</span>' +
+          '<button type="button" class="asf2-ai-btn asf2-ai-btn--go" disabled>Generate from body</button>';
+    } else if (st.busy) {
+      h = '<span class="asf2-ai-spark">\u2728</span><span class="asf2-ai-txt"><b>Generating\u2026</b> title, writers, photographer, teaser, summary and section headers from the body</span>' + THINK;
+    } else if (st.error) {
+      h = '<span class="asf2-ai-spark">\u2728</span><span class="asf2-ai-txt"><b>Generation failed.</b> ' + esc(st.error) + '</span>' +
+          '<button type="button" class="asf2-ai-btn asf2-ai-btn--go" data-asf-action="ai-regen">Try again</button>';
+    } else if (st.done) {
+      h = '<span class="asf2-ai-spark">\u2728</span><span class="asf2-ai-txt"><b>Filled from body.</b> ' + esc(aiSummary(st)) + ' Existing text untouched.</span>' +
+          (st.bodyUndo != null ? '<button type="button" class="asf2-ai-btn" data-asf-action="ai-undo">Undo headers</button>' : '') +
+          '<button type="button" class="asf2-ai-btn" data-asf-action="ai-regen">\u21BB Regenerate</button>';
+    } else {
+      h = '<span class="asf2-ai-spark">\u2728</span><span class="asf2-ai-txt"><b>AI assist</b> fills empty fields and adds section headers from the body</span>' +
+          '<button type="button" class="asf2-ai-btn asf2-ai-btn--go" data-asf-action="ai-gen"' + (hasBody ? '' : ' disabled') + '>Generate from body</button>';
+    }
+    if (bar.innerHTML !== h) bar.innerHTML = h;
+    bar.classList.toggle('is-busy', !!st.busy);
+  }
+  function aiSummary(st) {
+    var f = [];
+    Object.keys(S.aiFilled || {}).forEach(function (k) {
+      if (!S.aiFilled[k] || k === 'bodyHtml' || k === 'showPhotoCredits') return;
+      f.push(LABELS[k] || k);
+    });
+    var filled = f.length ? 'Filled ' + (f.length > 1 ? f.slice(0, -1).join(', ') + ' and ' + f[f.length - 1] : f[0]) + '.' : 'Filled no empty fields.';
+    var hdr;
+    if (st.hdrAuthor) hdr = 'Kept the author\u2019s own section headers.';
+    else if (st.hdrIn === 0) hdr = 'No section headers added.';
+    else if (st.hdrIn === 1) hdr = 'Added 1 section header.';
+    else if (st.hdrIn > 1) hdr = 'Added ' + st.hdrIn + ' section headers.';
+    else hdr = 'Section headers checked.';
+    return filled + ' ' + hdr;
+  }
+
+  /* ── Photo essay: the gallery order strip (v1.10.0 control) ── */
+  function renderGallery() {
+    var host = q('[data-a2-gallery]');
+    if (!host) return;
+    var html = isPhotoEssay() ? B.renderSideS8Gallery() : '';
+    if (host.innerHTML !== html) host.innerHTML = html;
+  }
+
+  /* ── Ticks ── */
+  function placedCount() {
+    var inl = inlineOrder(), ids = trayIds(), n = 0;
+    var gal = isPhotoEssay() ? (A().galleryMediaIds || []) : [];
+    var og = effOg();
+    var src = insetSources();   // v1.0.11
+    ids.forEach(function (id) {
+      if (id === M.roles.main || id === og || inl.indexOf(id) > -1 || gal.indexOf(id) > -1 || src[id] || archiveAccounted(id)) n++;
+    });
+    return { total: ids.length, placed: n, unused: ids.length - n };
+  }
+  // v1.0.14 — what's left before the article is complete. Each item knows its chapter and where to jump.
+  //   { ch, text, jump, ok }   jump: 'f:<key>' a field, 'alt:<mediaId>' a photo's alt, 'ch:<id>' a chapter.
+  //   A tick item carries tick: '<id>' and toggles in the list.
+  function usedPhotoIds() {
+    var a = A(), out = [], seen = {};
+    function add(id) { if (id && !seen[id]) { seen[id] = 1; out.push(id); } }
+    if (!isPhotoEssay()) add(M.roles.main || a.mainImageMediaId);
+    add(effOg());
+    inlineOrder().forEach(add);
+    (isPhotoEssay() ? (a.galleryMediaIds || []) : []).forEach(add);
+    var tray = trayIds();
+    return out.filter(function (id) { return tray.indexOf(id) > -1; });
+  }
+  // v1.0.16 — HC-P-A1-8: what a finished Standard article needs (Jeff, 28 Nov).
+  function needed(k) {
+    var a = A();
+    if (HC.needs[k]) return true;
+    if (k === 'customerId' || k === 'obligationId') return !!a.isPaid;
+    if (CTA_KEYS.indexOf(k) > -1) return !!M.ctaOn;
+    return false;
+  }
+  function valueOf(k) {
+    if (k === 'obligationId') return M.obl.cur || '';
+    var v = A()[k];
+    return v == null ? '' : String(v).trim();
+  }
+  function bodyText() { return String(B.stripTags(A().bodyHtml || '') || '').replace(/\u00a0/g, ' ').trim(); }
+  function checks() {
+    var a = A(), list = [], idx = mediaIndex();
+    var ids = trayIds();
+    function need(chap, k, text) { list.push({ ch: chap, text: text, jump: 'f:' + k, ok: !!valueOf(k) }); }
+    need('where', 'sectionId', 'Choose the Section');
+    if (a.isPaid) {
+      need('where', 'customerId', 'Choose the customer who pays');
+      need('where', 'obligationId', 'Connect or create the obligation');
+    }
+    need('words', 'name', 'Write the headline');
+    need('words', 'teaser', 'Write the web teaser');
+    need('words', 'shortSummary', 'Write the email teaser');
+    var lc = B.limitCheck ? B.limitCheck() : { ready: true, over: [], error: '' };
+    if (!lc.ready) {
+      list.push({ ch: 'words', text: lc.error ? 'The field limits could not be read (' + lc.error + ')' : 'Reading Webflow\u2019s field limits\u2026', jump: '', ok: false });
+      if (!M.limitsAsked && B.whenLimits) { M.limitsAsked = true; B.whenLimits(function () { if (M) B.render(); }); }
+    } else if (!lc.over.length) {
+      list.push({ ch: 'words', text: 'Every field within Webflow\u2019s limits', jump: '', ok: true });
+    } else {
+      lc.over.forEach(function (o) {
+        list.push({ ch: chapterOf(o.k), text: formLabel(o.k, o.label) + ' is ' + o.n + ' characters, ' + (o.n - o.max) + ' over its limit of ' + o.max, jump: 'f:' + o.k, ok: false });
+      });
+    }
+    need('byline', 'writerName', 'Add the writer');
+    if (isPhotoEssay()) {
+      list.push({ ch: 'pictures', text: 'Add photos to the gallery', jump: 'ch:pictures', ok: (a.galleryMediaIds || []).length > 0 });
+    } else {
+      var hasMain = !!(M.roles.main || a.mainImageMediaId || a.mainImageSrc);
+      list.push({ ch: 'pictures', text: 'Choose a Main photo', jump: 'ch:pictures', ok: hasMain });
+      // the email and web tiles take their photo from the share image; it follows Main unless changed, so it is
+      // listed once there is a Main (before that, "Choose a Main photo" covers both)
+      if (hasMain) list.push({ ch: 'pictures', text: 'Choose a share photo', jump: 'ch:pictures', ok: !!(effOg() || a.ogImageSrc || a.mainImageSrc) });
+    }
+    var used = usedPhotoIds();
+    used.forEach(function (id) {
+      var tx = M.imgText[id] || {}, rec = idx[id] || {};
+      list.push({ ch: 'pictures', text: 'Alt text for ' + (rec.fn || ('photo ' + (ids.indexOf(id) + 1))), jump: 'alt:' + id, ok: !!String(tx.alt || '').trim() });
+    });
+    // v1.0.16 — a Main photo that is not among this article's photos still needs its alt text
+    var mainId = M.roles.main || a.mainImageMediaId || '';
+    if (!isPhotoEssay() && (mainId || a.mainImageSrc) && used.indexOf(mainId) < 0) {
+      var mAlt = !!String(a.mainImageAlt || '').trim();
+      list.push({ ch: 'pictures', text: mAlt ? 'Alt text for the Main photo' : 'Alt text for the Main photo: add it from the library, then write it on its card', jump: 'ch:pictures', ok: mAlt });
+    }
+    list.push({ ch: 'body', text: 'Write the body', jump: 'f:bodyHtml', ok: !!bodyText() });
+    if (M.ctaOn) {
+      CTA_FIELDS.forEach(function (d) {
+        list.push({ ch: 'cta', text: 'Call to action: ' + d.label.toLowerCase(), jump: 'f:' + d.key, ok: !!valueOf(d.key) });
+      });
+    }
+    var ticks = [['edit-pass', 'Edit pass']];
+    if (a.isPaid) ticks.unshift(['sponsor-ok', 'Sponsor OK']);   // ruled 28 Nov: Sponsor OK only when paid
+    ticks.forEach(function (t) {
+      list.push({ ch: '', text: t[1], tick: t[0], ok: !!(S.rtpManualState || {})[t[0]] });
+    });
+    return list;
+  }
+  // v1.0.16 — the form's own name for a field (Web teaser, not Webflow's Post Summary)
+  function formLabel(k, fallback) {
+    var all = WORDS.concat(FACT_GROUPS[0].fields, FACT_GROUPS[1].fields, FACT_GROUPS[2].fields, CTA_FIELDS, MORE);
+    var d = all.filter(function (x) { return x.key === k; })[0];
+    return d ? d.label : (k === 'bodyHtml' ? 'Body' : fallback);
+  }
+  function chapterOf(k) {
+    if (k === 'bodyHtml') return 'body';
+    if (CTA_KEYS.indexOf(k) > -1) return 'cta';
+    if (MORE_KEYS[k]) return 'more';
+    if (k in BYLINE_KEYS) return 'byline';
+    if (k === 'sectionId' || k === 'printIssueSource' || k === 'customerId' || k === 'obligationId') return 'where';
+    return 'words';
+  }
+  // v1.0.16 — a row's status pill.
+  function fieldStatus(k, over) {
+    var a = A();
+    if (k === '_cta') return M.ctaOn ? { t: 'On', c: 'opt' } : { t: 'Off', c: 'opt' };
+    if (BOOL_KEYS[k]) {
+      var on = !!a[k];
+      return k === 'isPaid' ? { t: on ? 'Paid' : 'Not paid', c: 'opt' } : { t: on ? 'On' : 'Off', c: 'opt' };
+    }
+    if ((k === 'customerId' || k === 'obligationId') && !a.isPaid) return { t: 'Not needed', c: 'opt' };
+    if (over[k]) return { t: (over[k].n - over[k].max) + ' over', c: 'bad' };
+    if (!valueOf(k)) return needed(k) ? { t: 'Missing', c: 'todo' } : { t: 'Optional', c: 'opt' };
+    return { t: 'Done', c: 'ok' };
+  }
+  var MORE_KEYS = { slug: 1, revenueType: 1, videoUrl: 1, audioUrl: 1 };   // v1.0.16: banner statement is in The words
+  var BYLINE_KEYS = { writerName: 1, writerTitle: 1, cowriterName: 1, cowriterTitle: 1, photographer: 1 };
+
+  function renderTicks() {
+    var fin = q('[data-a2-finish]');
+    if (!fin) return;
+    var list = checks(), left = list.filter(function (x) { return !x.ok; });
+    var done = list.length - left.length;
+    var ring = q('[data-a2-ring]');
+    if (ring) {
+      ring.setAttribute('stroke-dashoffset', String(RING_C * (1 - (list.length ? done / list.length : 1))));
+      ring.classList.toggle('is-done', !left.length);
+    }
+    var t = q('[data-a2-fin-t]');
+    var tt = left.length ? left.length + (left.length === 1 ? ' thing' : ' things') + ' before this is complete' : 'Complete';
+    if (t && t.textContent !== tt) t.textContent = tt;
+    var tog = q('[data-a2-act="left"]');
+    if (tog) { tog.textContent = M.leftOpen ? 'Hide what\u2019s left' : 'Show what\u2019s left'; tog.setAttribute('aria-expanded', M.leftOpen ? 'true' : 'false'); }
+    // v1.0.16 — each row's status pill
+    var over = {};
+    (B.limitCheck ? (B.limitCheck().over || []) : []).forEach(function (o) { over[o.k] = o; });
+    qa('[data-a2-st]').forEach(function (el) {
+      var st = fieldStatus(el.getAttribute('data-a2-st'), over);
+      if (el.textContent !== st.t) el.textContent = st.t;
+      var cls = 'asf2-pill is-' + st.c;
+      if (el.className !== cls) el.className = cls;
+      var row = el.closest('.asf2-row');
+      if (row) row.classList.toggle('is-over', st.c === 'bad');
+    });
+    fin.classList.toggle('is-open', !!M.leftOpen);
+    var host = q('[data-a2-left]');
+    if (host) {
+      var h = left.map(function (x) {
+        if (x.tick) return '<button type="button" class="asf2-left-i is-tick' + (tickChanged(x.tick) ? ' is-changed' : '') + '" data-a2-tick="' + x.tick + '" aria-pressed="false"><i class="asf2-box"></i>' + esc(x.text) + '<span class="asf2-left-hint">tick when done</span></button>';
+        return '<button type="button" class="asf2-left-i"' + (x.jump ? ' data-a2-jump="' + esc(x.jump) + '"' : ' disabled') + '><i class="asf2-dot"></i>' + esc(x.text) + '</button>';
+      }).join('');
+      // ticks already done stay reachable, so they can be unticked
+      list.filter(function (x) { return x.tick && x.ok; }).forEach(function (x) {
+        h += '<button type="button" class="asf2-left-i is-tick is-on' + (tickChanged(x.tick) ? ' is-changed' : '') + '" data-a2-tick="' + x.tick + '" aria-pressed="true"><i class="asf2-box"></i>' + esc(x.text) + '<span class="asf2-left-hint">done</span></button>';
+      });
+      h += '<p class="asf2-left-note">' + (left.length ? 'You can save before it is complete.' : 'Nothing left. Save when you are ready.') + '</p>';
+      if (host.innerHTML !== h) host.innerHTML = h;
+    }
+    // chapter heads: Done, or how many things are left in that chapter
+    CHAPTERS.forEach(function (c) {
+      var el = q('[data-a2-chs="' + c.id + '"]');
+      if (!el) return;
+      var mine = left.filter(function (x) { return x.ch === c.id; }), n = mine.length;
+      var off = c.id === 'cta' && !M.ctaOn;
+      var txt = off ? 'Off' : n ? n + ' to fix' : 'Done';
+      if (el.textContent !== txt) el.textContent = txt;
+      var bad = mine.some(function (x) { return / over its limit /.test(x.text); });
+      el.className = 'asf2-ch-s ' + (off ? 'is-opt' : bad ? 'is-bad' : n ? 'is-todo' : 'is-ok');
+    });
+  }
+  /* ── The finish bar's Save, Cancel changes and change count (was the top bar) ── */
+  function renderBar() {
+    var list = changeList(), n = list.length;
+    var save = q('[data-a2-act="save"]');
+    var cancel = q('[data-a2-act="cancel-all"]');
+    var cnt = q('[data-a2-dirtycount]');
+    var busy = !!(S.saving || M.savingMedia);
+    var checking = !!(archiveLive() && M.archive.checking);   // v1.0.11
+    if (save) {
+      var idle = !n && S.mode !== 'create';
+      save.textContent = busy ? 'Saving\u2026' : (n ? 'Save \u00B7 ' + n : (idle ? 'No changes' : 'Save'));
+      save.disabled = busy || idle || checking;
+      save.title = idle ? 'Nothing to save yet \u2014 Save lights up as soon as you change something'
+        : checking ? 'Checking where the old inset photo is used first' : '';
+    }
+    var am = q('[data-a2-archmsg]');
+    if (am) { var ah = archiveLineHTML(); if (am.innerHTML !== ah) am.innerHTML = ah; }
+    if (cancel) {
+      cancel.disabled = busy || !n;
+      cancel.title = n ? 'Put every field back to how this form opened' : '';
+    }
+    if (cnt) {
+      var ct = n ? n + (n === 1 ? ' change \u00B7 Save writes it' : ' changes \u00B7 Save writes them') : 'No changes yet';
+      if (cnt.textContent !== ct) cnt.textContent = ct;
+      cnt.title = list.join(', ');
+    }
+  }
+
+  // v1.0.14 — the call-to-action chapter.
+  function hasCta(o) { return CTA_KEYS.some(function (k) { return !!String((o && o[k]) || '').trim(); }); }
+  function renderCta() {
+    var sw = q('[data-a2-act="cta"]'), box = q('[data-a2-ctabox]'), cx = q('[data-a2-act="cta-cancel"]');
+    if (!sw || !box) return;
+    sw.checked = !!M.ctaOn;
+    var ch = !!M.ctaOn !== !!M.ctaBase;
+    var w = q('[data-a2-ctasw]'); if (w) w.classList.toggle('ix-switch--changed', ch);
+    if (cx) cx.hidden = !ch;
+    box.hidden = !M.ctaOn;
+  }
+  function setCta(on) {
+    M.ctaOn = !!on;
+    if (!on) CTA_KEYS.forEach(function (k) { if (String(A()[k] || '')) setField(k, ''); });
+    renderCta(); renderTicks(); renderBar();
+    if (on) { var f = q('[data-a2-f="ctaButton"]'); if (f) f.focus(); }
+  }
+  function cancelCta() {
+    CTA_KEYS.forEach(function (k) { if (!B.fieldsEqual(A()[k], M.base[k])) revertKey(k); });
+    M.ctaOn = M.ctaBase;
+    renderCta(); renderTicks(); renderBar();
+  }
+
+  // v1.0.14 — boxes grow with their text; nothing scrolls inside a box.
+  function grow(el) {
+    if (!el || el.tagName !== 'TEXTAREA') return;
+    el.style.height = 'auto';
+    el.style.height = (el.scrollHeight + 2) + 'px';
+  }
+  function growAll() { qa('textarea.asf2-grow').forEach(grow); }
+
+  // v1.0.14 — a what's-left item takes you to its field.
+  function jumpTo(target) {
+    var m = /^(f|alt|ch):(.+)$/.exec(target || '');
+    if (!m) return;
+    var el = null, focus = null;
+    if (m[1] === 'alt' || (m[1] === 'ch' && m[2] === 'pictures')) {
+      if (trayShut()) openTray(true);
+    }
+    if (m[1] === 'f') {
+      if (m[2] === 'bodyHtml') { el = q('[data-a2-body]'); focus = trixEl(); }
+      else {
+        el = q('[data-a2-f="' + m[2] + '"]');
+        if (el && el.closest('details.asf2-more')) { var d = el.closest('details'); d.open = true; M.moreOpen = true; }
+        focus = el;
+      }
+    } else if (m[1] === 'alt') {
+      el = q('[data-a2-img-f="' + m[2] + ':alt"]'); focus = el;
+    } else {
+      el = q('[data-a2-ch="' + m[2] + '"]');
+    }
+    if (!el) el = q('[data-a2-ch="' + (m[1] === 'alt' ? 'pictures' : 'words') + '"]');
+    if (!el) return;
+    var box = el.closest('.asf2-row') || el.closest('.ix-field') || el;   // v1.0.16 rows
+    if (box.scrollIntoView) box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    box.classList.remove('asf2-flash'); void box.offsetWidth; box.classList.add('asf2-flash');
+    if (focus && focus.focus) setTimeout(function () { try { focus.focus({ preventScroll: true }); } catch (e) { focus.focus(); } }, 350);
+  }
+
+  /* ── Main / OG previews and the Images column ── */
+  function trayShut() {
+    var pc = placedCount();
+    var u = pc.unused;
+    // Ruled 24 Sept: Images reopens whenever a photo becomes unused,
+    // even if the operator had collapsed it.
+    if (M.lastUnused !== null && u > M.lastUnused) M.trayPref = null;
+    M.lastUnused = u;
+    return false;   // v1.0.16: Pictures never fold away; the alt boxes always show (Jeff, 28 Nov)
+  }
+
+  function imgFill(url) {
+    return url ? '<img class="asf2-imgfill" src="' + esc(thumbUrl(url)) + '" alt="" loading="lazy">' : '';
+  }
+
+  function slotHTML(label, rec, fallbackUrl, sub, changed, revKey) {
+    var url = (rec && rec.url) || fallbackUrl || '';
+    var fn = (rec && rec.fn) || '';
+    return '<div class="asf2-roleslot' + (changed ? ' is-changed' : '') + (url ? '' : ' is-empty') + '">' +
+      '<div class="asf2-roleslot-pic"' + (url && label === 'Main' ? ' data-asf-action="preview-main-image" title="Open full size"' : '') + '>' +
+        (url ? imgFill(url) : 'No ' + label.toLowerCase() + ' image yet') + '</div>' +
+      '<div class="asf2-roleslot-cap"><b>' + label + '</b><span class="asf2-rs-fn">' + (url ? (fn ? esc(fn) + ' \u00B7 ' : '') + esc(sub) : esc(sub)) + '</span>' +
+      '<span class="asf2-rs-act">' +
+        (changed ? '<button type="button" class="ix-revert" data-a2-revert="' + revKey + '">cancel</button>' : '') +
+        '<button type="button" class="ix-revert" data-a2-tray="open" data-a2-for="' + (revKey === '_og' ? 'og' : 'main') + '">' + (url ? 'change' : 'pick') + '</button>' +
+      '</span></div></div>';
+  }
+
+  function ratioOf(transform) {
+    var m = /(\d+)x(\d+)/.exec(transform || '');
+    if (!m) return '';
+    var w = +m[1], h = +m[2];
+    function g(x, y) { return y ? g(y, x % y) : x; }
+    var d = g(w, h);
+    return (w / d) + ':' + (h / d);
+  }
+
+  function renderLeadAndTray() {
+    var lead = q('[data-a2-lead]'), tray = q('[data-a2-traycol]');
+    if (!lead || !tray) return;
+    var idx = mediaIndex(), a = A();
+    var ids = trayIds();
+    ids.forEach(function (id) { ensureImgText(id, idx[id]); });
+
+    var mainRec = idx[a.mainImageMediaId] || null;
+    var ogId = isPhotoEssay() ? (a.ogImageMediaId || a.mainImageMediaId) : effOg();
+    var ogRec = idx[ogId] || null;
+    var mainSub = (a.mainImageMediaId || a.mainImageSrc)
+      ? (isPhotoEssay() ? 'hero \u00B7 follows the gallery' : ratioOf((B.cfg.transforms || {}).main) || 'set')
+      : 'required';
+    var ogSub = M.roles.og ? 'set' : 'follows main';
+    var leadHTML = slotHTML('Main', mainRec, a.mainImageSrc, mainSub, !isPhotoEssay() && mainChanged(), '_main') +
+                   slotHTML('OG', ogRec, ogId === a.mainImageMediaId ? a.mainImageSrc : a.ogImageSrc, ogSub, ogChanged(), '_og');
+    if (lead.innerHTML !== leadHTML) lead.innerHTML = leadHTML;
+
+    var panelHtml = (S.inlinePicker && S.inlinePicker.open) ? B.renderInlinePicker()
+      : (S.rawTextOpen && S.sourceBodyOriginal) ? B.renderRawSourcePanel()
+      : (S.sourceMetaOpen && S.sourceMetadata) ? B.renderSourceMetaPanel()
+      : (S.printOpen && S.printSource && B.renderPrintPanel) ? B.renderPrintPanel()   // v1.0.7
+      : null;
+    // v1.0.14 — raw text, source metadata, print and the body photo picker open beside the body (chapter 5).
+    var side = q('[data-a2-side]'), bg = q('[data-a2-bodygrid]');
+    if (side) {
+      var sh = panelHtml === null ? '' : panelHtml;
+      if (side.innerHTML !== sh) side.innerHTML = sh;
+      side.hidden = panelHtml === null;
+      if (bg) bg.classList.toggle('is-split', panelHtml !== null);
+    }
+    var shut = trayShut();
+    var pc = placedCount();
+    var html;
+    if (shut) {
+      html = '<button type="button" class="asf2-tray-line" data-a2-tray="open" aria-expanded="false">' + pc.total + (pc.total === 1 ? ' photo' : ' photos') + ', all placed \u00B7 <u>Show the photos</u></button>';
+    } else {
+      html = trayOpenHTML(ids, idx, pc);
+    }
+    if (tray.innerHTML === html) return;
+    // Keep the operator's place when a repaint lands mid-typing.
+    var ae = document.activeElement, keep = null;
+    if (ae && tray.contains(ae) && ae.hasAttribute('data-a2-img-f')) {
+      keep = { k: ae.getAttribute('data-a2-img-f'), s: ae.selectionStart, e: ae.selectionEnd };
+    }
+    tray.innerHTML = html;
+    if (keep) {
+      var el = tray.querySelector('[data-a2-img-f="' + keep.k + '"]');
+      if (el) { el.focus(); try { el.setSelectionRange(keep.s, keep.e); } catch (e) {} }
+    }
+  }
+
+  function trayOpenHTML(ids, idx, pc) {
+    var inl = inlineOrder(), gal = isPhotoEssay() ? (A().galleryMediaIds || []) : [];
+    var og = effOg();
+    var html = '<div class="asf2-group">' +   // v1.0.14: inside the Pictures chapter, no group head of its own
+      '<div class="asf2-tray-head"><span class="asf2-tray-title">This article\u2019s photos</span><span class="asf2-tray-sum">' + pc.total + ' \u00B7 ' + pc.placed + ' placed' +
+      (pc.unused ? ' \u00B7 <span class="bad">' + pc.unused + ' unused</span>' : '') + '</span>' +
+      '</div>' +
+      '<div class="asf2-tlist">';
+    ids.forEach(function (id) {
+      var rec = idx[id], tx = M.imgText[id];
+      var isMain = id === (A().mainImageMediaId || ''), isOg = id === og;
+      var galPos = gal.indexOf(id);
+      var stat = '';
+      inl.forEach(function (x, j) { if (x === id) stat += '<span class="asf2-tag asf2-tag--inline">In body ' + (j + 1) + '</span>'; });
+      var comp = compositeOf(id), srcOf = insetSources()[id], leaving = archiveLeaving(id), elsewhere = archiveElsewhere(id);   // v1.0.11
+      if (comp) stat += '<span class="asf2-tag asf2-tag--inset">Inset photo</span>';
+      if (srcOf) stat += '<span class="asf2-tag asf2-tag--ininset">In inset photo</span>';
+      if (leaving) stat += '<span class="asf2-tag asf2-tag--arch">Will be archived</span>';
+      if (elsewhere) stat += '<span class="asf2-tag asf2-tag--inline">Used elsewhere</span>';
+      var unused = !isMain && !isOg && inl.indexOf(id) < 0 && galPos < 0 && !srcOf && !leaving && !elsewhere;
+      if (unused) stat += '<span class="asf2-tag asf2-tag--unused">Unused</span>';
+      var cropCh = cropsChanged(id), newMain = isMain && !!M.composites[id] && mainChanged();
+      var follows = !M.roles.og && isMain;
+      var capCh = imgChanged(id, 'caption'), altCh = imgChanged(id, 'alt');
+      var pm = printMatchOf(rec), low = pm && pm.conf < HC.printMatchCheckBelow;
+      var match = pm ? '<div class="asf2-tmatch' + (low ? ' low' : '') + '" title="How closely this file matches the photo printed on that page">Print p.' + esc(pm.page) + ' \u00B7 ' + pm.conf + '% match' + (low ? ' \u00B7 check' : '') + '</div>' : '';
+      var firstBtn = '<button type="button" class="asf2-tbtn" data-a2-role="main" data-a2-img="' + esc(id) + '" aria-pressed="' + isMain + '"' +
+        (isPhotoEssay() ? ' disabled title="The hero follows the gallery"' : '') + '>Main</button>';
+      html += '<div class="asf2-tcard' + (unused ? ' is-unused' : '') + ((cropCh || newMain) ? ' is-pending' : '') + (leaving ? ' is-leaving' : '') + '">' +
+        '<div class="asf2-tfn"><span class="asf2-tfn-t">' + esc(rec.fn || ('Photo ' + (ids.indexOf(id) + 1))) + (M.aiImages[id] ? ' ' + AI_BADGE : '') + '</span>' +   // v1.0.14: no ids
+          (cropCh ? '<button type="button" class="ix-revert" data-a2-revcrop="' + esc(id) + '">cancel crops</button>' : '') + '</div>' +
+        '<div class="asf2-tthumb">' + imgFill(rec.url) + '</div>' +
+        '<div class="asf2-trow">' + firstBtn +
+          '<button type="button" class="asf2-tbtn' + (follows ? ' is-follow' : '') + '" data-a2-role="og" data-a2-img="' + esc(id) + '" aria-pressed="' + (M.roles.og === id) + '"' +
+            (follows ? ' title="OG follows Main until you pick a different OG"' : '') + '>' + (follows ? 'OG \u00B7 follows' : 'OG') + '</button>' +
+          '<span class="asf2-tstat">' + stat + '</span></div>' +
+        '<div class="ix-field"><div class="ix-field-label"><span>Caption</span>' +
+          (rec.captionFromPrint && !capCh ? '<span class="asf2-tcap-src">from print</span>' : '') +
+          '<button type="button" class="ix-revert" data-a2-revimg="' + esc(id) + ':caption"' + (capCh ? '' : ' hidden') + '>cancel</button></div>' +
+          '<input type="text" class="ix-picker-input' + (capCh ? ' ix-picker-input--changed' : '') + '" data-a2-img-f="' + esc(id) + ':caption" value="' + esc(tx.caption) + '" placeholder="only if printed"></div>' +
+        '<div class="ix-field"><div class="ix-field-label"><span>Alt' + (isMain ? ' <span class="ix-field-req">*</span>' : '') + '</span>' +
+          '<button type="button" class="ix-revert" data-a2-revimg="' + esc(id) + ':alt"' + (altCh ? '' : ' hidden') + '>cancel</button></div>' +
+          '<input type="text" class="ix-picker-input' + (altCh ? ' ix-picker-input--changed' : '') + '" data-a2-img-f="' + esc(id) + ':alt" value="' + esc(tx.alt) + '" placeholder="describe the photo"></div>' +
+        match + photoActsHTML(id, comp, ids) + '</div>';
+    });
+    var up = S.upload || {};
+    html += '</div><div class="asf2-tray-foot">' +
+      '<button type="button" class="ix-btn ix-btn--secondary" data-asf-action="lib-open">+ Add from library</button>' +
+      '<button type="button" class="ix-btn ix-btn--secondary" data-asf-action="generate-main">\u2728 Generate image</button>' +
+      '<button type="button" class="ix-btn ix-btn--ghost" data-a2-act="upload-help" data-a2-target="tray"' + (up.busy ? ' disabled' : '') + '>' + (up.busy ? 'Uploading\u2026' : 'Upload') + '</button>' +
+      (up.busy ? '<button type="button" class="ix-revert" data-asf-action="upload-cancel">cancel</button>' : '') +
+      ((S.printSource && B.renderPrintPanel) ? '<button type="button" class="ix-btn ix-btn--secondary" data-asf-action="print-grab" title="Box a photo on the printed page, then find its source or generate a similar one">Grab from print</button>' : '') +   // v1.0.13
+      '</div>' +
+      '<p class="asf2-note">Only this article\u2019s images. Captions and alt text save to each MEDIA record. Unused photos are flagged, never blocked. ' +
+        '<button type="button" class="ix-revert" data-a2-act="upload-about">About uploads</button></p></div>';
+    return html;
+  }
+
+  /* ── v1.0.11 · the two photo actions under each card ── */
+  function photoActsHTML(id, comp, ids) {
+    var why = !PC() ? 'ix-photo-compose is not on this page'
+      : M.photo.err ? 'Photo facts did not load: ' + M.photo.err
+      : !M.photo.facts ? 'Loading the photo facts\u2026' : '';
+    var cropT = why ? ' disabled title="' + esc(why) + '"' : '';
+    var second;
+    if (comp) {
+      var ok = canRebuild(id);
+      second = '<button type="button" class="asf2-tact" data-a2-photo="edit" data-a2-img="' + esc(id) + '"' +
+        (why ? ' disabled title="' + esc(why) + '"' : (!ok ? ' disabled title="A photo it was made from is gone"' : '')) + '>Edit inset photo</button>';
+    } else {
+      var lone = ids.length < 2;
+      second = '<button type="button" class="asf2-tact" data-a2-photo="inset" data-a2-img="' + esc(id) + '"' +
+        (why ? ' disabled title="' + esc(why) + '"' : (lone ? ' disabled title="Add another photo to this article first"' : '')) + '>Make inset photo</button>';
+    }
+    return '<div class="asf2-tacts"><button type="button" class="asf2-tact" data-a2-photo="crops" data-a2-img="' + esc(id) + '"' + cropT + '>Adjust crops</button>' + second + '</div>' +
+      (comp && M.photo.facts && !canRebuild(id) ? '<p class="asf2-tnote">A photo it was made from is gone, so it can no longer be rebuilt.</p>' : '');
+  }
+
+  /* ── v1.0.11 · archiving the inset photo a rebuild replaced ── */
+  function archiveSetupMissing() {
+    var c = (B.cfg.tenant.cfg && B.cfg.tenant.cfg()) || {};
+    var miss = [];
+    if (!c.makeAttachFiles) miss.push('TA_CONFIG.makeAttachFiles');
+    if (!(c.wfColl && c.wfColl.media)) miss.push('TA_CONFIG.wfColl.media');
+    return miss;
+  }
+  function archiveLive() { var x = M.archive; return !!(x && x.newId && M.roles.main === x.newId); }
+  function archiveWillRun() { var x = M.archive; return archiveLive() && !x.keep && !x.checking && !x.err && !x.usedBy.length; }
+  function archiveLeaving(id) { return archiveWillRun() && M.archive.oldId === id; }
+  function archiveElsewhere(id) { return archiveLive() && M.archive.oldId === id && !M.archive.checking && M.archive.usedBy.length > 0; }
+  function archiveAccounted(id) { return archiveLeaving(id) || archiveElsewhere(id); }
+  function startArchiveCheck(oldId, newId) {
+    var x = M.archive = { oldId: oldId, newId: newId, keep: false, usedBy: [], checking: true, err: '' };
+    var miss = archiveSetupMissing();
+    if (miss.length) { x.checking = false; x.err = 'Scenario K is not set up on this page (' + miss.join(', ') + '), so the old inset photo stays Available.'; return; }
+    if (inlineOrder().indexOf(oldId) > -1) x.usedBy.push('in this article\u2019s body');
+    if ((A().galleryMediaIds || []).indexOf(oldId) > -1) x.usedBy.push('in this article\u2019s gallery');
+    var seq = M.seq;
+    PC().facts({ usage: [oldId], articleId: A().id || '', fresh: true, label: 'Where the old inset photo is used' }).then(function (f) {
+      if (!M || M.seq !== seq || M.archive !== x) return;
+      ((f.usage || {})[oldId] || []).forEach(function (u) {
+        x.usedBy.push(u.as.join(' and ') + ' on \u201C' + (u.name || u.slug || u.articleId) + '\u201D');
+      });
+      x.checking = false;
+      B.render();
+    }).catch(function (e) {
+      if (!M || M.seq !== seq || M.archive !== x) return;
+      x.checking = false;
+      x.err = 'Could not check where the old inset photo is used (' + ((e && e.message) || e) + '), so it stays Available.';
+      B.render();
+    });
+  }
+  function archiveLineHTML() {
+    var x = M.archive;
+    if (!archiveLive()) return '';
+    if (x.checking) return '<span class="asf2-archmsg">Checking where the old inset photo is used\u2026</span>';
+    if (x.err) return '<span class="asf2-archmsg is-kept">' + esc(x.err) + '</span>';
+    if (x.usedBy.length) return '<span class="asf2-archmsg is-kept">The old inset photo stays Available. It is used ' + esc(x.usedBy.join('; ')) + '.</span>';
+    if (x.keep) return '<span class="asf2-archmsg is-kept">The old inset photo stays Available. <button type="button" class="ix-revert" data-a2-arch="archive">archive it</button></span>';
+    return '<span class="asf2-archmsg">The old inset photo will be archived. <button type="button" class="ix-revert" data-a2-arch="keep">keep it</button></span>';
+  }
+
+  /* ── v1.0.11 · opening the composer and the crop panel ── */
+  function photoRec(id) {
+    var idx = mediaIndex(), rec = idx[id] || {}, fi = factItem(id) || {};
+    return { id: id, url: rec.url || fi.url || '', name: rec.fn || fi.name || id,
+             alt: (M.imgText[id] && M.imgText[id].alt) || rec.alt || '',
+             w: fi.width || (compositeOf(id) && compositeOf(id).output ? compositeOf(id).output.w : null),
+             h: fi.height || (compositeOf(id) && compositeOf(id).output ? compositeOf(id).output.h : null) };
+  }
+  function roleWord(id) {
+    var w = [];
+    if (id === (A().mainImageMediaId || '')) w.push('Main');
+    if (id === effOg()) w.push('OG');
+    return w.join(' \u00B7 ');
+  }
+  function crumbText() { return 'Article \u00B7 ' + (A().name || 'untitled'); }
+  function openCropsFor(id) {
+    if (!PC() || !M.photo.facts) return;
+    var ph = photoRec(id), seq = M.seq;
+    var go = function (others) {
+      if (!M || M.seq !== seq) return;
+      PC().openCrops({
+        photo: ph, recipe: recipe(id), crumb: crumbText(), sub: ph.name + (roleWord(id) ? ' \u00B7 ' + roleWord(id) : ''),
+        shapes: shapes(), otherShareArticles: others,
+        onUse: function (cr) {
+          if (!M || M.seq !== seq) return;
+          var r = clone(recipe(id)) || { v: 1 };
+          if (cr) r.crops = cr; else delete r.crops;
+          M.recCur[id] = (r.crops || r.composite) ? r : null;
+          B.render();
+        }
+      });
+    };
+    PC().facts({ usage: [id], articleId: A().id || '', label: 'Where this photo is used' }).then(function (f) {
+      var list = ((f.usage || {})[id] || []).filter(function (u) { return u.as.indexOf('share image') > -1; })
+        .map(function (u) { return '\u201C' + (u.name || u.slug) + '\u201D'; });
+      go(list);
+    }).catch(function () { go([]); });
+  }
+  function openComposerFor(id, mode) {
+    if (!PC() || !M.photo.facts) return;
+    var comp = mode === 'edit' ? compositeOf(id) : null;
+    var baseId = comp ? comp.sources.base : id;
+    var ids = trayIds().slice();
+    if (comp && comp.sources.inset && ids.indexOf(comp.sources.inset) < 0) ids.push(comp.sources.inset);
+    var choices = ids.filter(function (x) { return x !== baseId && x !== id; }).map(photoRec).filter(function (r) { return r.url; });
+    var n = 1;
+    trayIds().forEach(function (x) { if (compositeOf(x)) n++; });
+    var seq = M.seq;
+    PC().openComposer({
+      mode: comp ? 'edit' : 'new', base: photoRec(baseId), choices: choices, recipe: comp ? recipe(id) : null,
+      alt: comp ? photoRec(id).alt : '', caption: comp ? ((M.imgText[id] && M.imgText[id].caption) || '') : '',
+      crumb: crumbText(), headline: A().name || '', articleId: A().id || '', facts: M.photo.facts, nextNumber: n,
+      onSaved: function (res) {
+        if (!M || M.seq !== seq) return;
+        var oldMain = A().mainImageMediaId || '';
+        B.registerSessionMedia({ mediaId: res.mediaId, name: res.name, imageUrl: res.url, originalFilename: res.name, caption: res.caption, altText: res.alt });
+        if (S.bundleImageIds.indexOf(res.mediaId) < 0) S.bundleImageIds.push(res.mediaId);
+        M.composites[res.mediaId] = true;
+        M.recBase[res.mediaId] = clone(res.recipe); M.recCur[res.mediaId] = clone(res.recipe);
+        M.imgBase[res.mediaId] = { caption: res.caption, alt: res.alt }; M.imgText[res.mediaId] = { caption: res.caption, alt: res.alt };
+        M.photo.facts.items[res.mediaId] = { id: res.mediaId, found: true, name: res.name, url: res.url, width: res.w, height: res.h, recipe: clone(res.recipe) };
+        if (!isPhotoEssay()) {
+          if (M.roles.og === id) M.roles.og = res.mediaId;
+          M.roles.main = res.mediaId;
+          if (M.roles.og === M.roles.main) M.roles.og = null;
+        }
+        IDX = null;
+        if (comp) startArchiveCheck(id, res.mediaId);
+        else if (M.archive && M.archive.newId === oldMain) M.archive = null;
+        B.render();
+        B.toast('Inset photo saved to MEDIA and set as Main \u2014 press Save to put it on the article', 'success');
+      }
+    });
+  }
+
+  /* ── Body image popover: this article's images only ── */
+  function renderPop() {
+    var pop = q('[data-a2-pop]');
+    if (!pop) return;
+    var idx = mediaIndex(), inl = inlineOrder(), ids = trayIds();
+    pop.innerHTML = '<div class="asf2-pop-head">This article\u2019s images<span>goes where the cursor is</span></div>' +
+      (ids.length ? '<div class="asf2-pop-grid">' + ids.map(function (id) {
+        var rec = idx[id], j = inl.indexOf(id);
+        return '<button type="button" class="asf2-pop-item" data-a2-insert="' + esc(id) + '"><div>' + imgFill(rec.url) + '</div><span>' +
+          (j > -1 ? 'in body ' + (j + 1) + ' \u00B7 ' : '') + esc(rec.fn || id) + '</span></button>';
+      }).join('') + '</div>' : '') +
+      '<div class="asf2-pop-foot"><span class="ix-chip-group">' + sizeChips() + '</span></div>' +
+      '<div class="asf2-pop-foot"><span class="ix-chip-group">' + alignChips() + '</span></div>' +
+      '<div class="asf2-pop-foot">Not here? <button type="button" class="ix-revert" data-asf-action="lib-open">Add from library</button></div>';
+  }
+  function sizeChips() {
+    var cur = (S.inlinePicker && S.inlinePicker.imgSize) || 'large';
+    return Object.keys(B.cfg.imgSizePct || {}).map(function (k) {
+      return '<button type="button" class="ix-chip" data-a2-size="' + k + '" aria-pressed="' + (k === cur) + '">' + k + '</button>';
+    }).join('');
+  }
+  function alignChips() {
+    var size = (S.inlinePicker && S.inlinePicker.imgSize) || 'large';
+    var cur = (S.inlinePicker && S.inlinePicker.imgAlign) || 'center';
+    return Object.keys(B.cfg.imgAlignCss || {}).map(function (k) {
+      return '<button type="button" class="ix-chip" data-a2-align="' + k + '" aria-pressed="' + (k === cur) + '"' + (size === 'full' ? ' disabled' : '') + '>' + k + '</button>';
+    }).join('');
+  }
+  function setPop(open) {
+    M.popOpen = !!open;
+    var pop = q('[data-a2-pop]'), btn = q('[data-a2-act="imgpop"]');
+    if (open) renderPop();
+    if (pop) pop.hidden = !open;
+    if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     BODY EDITOR (inline Trix; popout retired for Articles, 24 Sept)
+     ════════════════════════════════════════════════════════════ */
+  function bindTrix() {
+    var t = trixEl();
+    if (!t || t._a2Bound) return;
+    t._a2Bound = true;
+    t.addEventListener('trix-initialize', function () {
+      if ((A().bodyHtml || '') === (M.base.bodyHtml || '')) M.trixBaseline = t.innerHTML;
+      M.lastBodyFromTrix = A().bodyHtml || '';
+    });
+    t.addEventListener('trix-change', onTrixChange);
+    t.addEventListener('trix-initialize', customizeToolbar);
+    setTimeout(customizeToolbar, 0);
+    t.addEventListener('trix-focus', function () { M.trixTouched = true; });
+    // The editor's own file drop would bypass MEDIA entirely.
+    t.addEventListener('trix-file-accept', function (e) { e.preventDefault(); B.toast('Add photos through Images \u2014 Upload or Add from library', 'info'); });
+  }
+
+  function onTrixChange(e) {
+    var html = e.target.innerHTML || '';
+    var a = A();
+    a.bodyHtml = (M.trixBaseline != null && html === M.trixBaseline) ? (M.base.bodyHtml || '') : html;
+    M.lastBodyFromTrix = a.bodyHtml;
+    reconcileBody();
+    B.deriveDirtySections();
+    syncFields();
+    renderBar();
+    renderAi();
+    paintBodyCount();
+    var sig = inlineOrder().join('|');
+    if (sig !== M.inlineSig) {
+      M.inlineSig = sig;
+      renderLeadAndTray();
+      renderTicks();
+      if (M.popOpen) renderPop();
+    }
+  }
+
+  // AI, Undo headers and cancel change the body from outside the editor.
+  function syncBodyFromState() {
+    var t = trixEl();
+    if (!t || !t.editor) return;
+    var want = A().bodyHtml || '';
+    if (M.lastBodyFromTrix === null || want === M.lastBodyFromTrix) return;
+    M.lastBodyFromTrix = want;
+    try { t.editor.loadHTML(want); } catch (err) { B.warn('body reload failed', err); }
+  }
+
+  function onMouseDown(e) {
+    var b = e.target.closest && e.target.closest('[data-a2-act="imgpop"],[data-a2-act="upload-body"]');
+    if (!b) return;
+    e.preventDefault();          // keep the editor's selection alive
+    var t = trixEl();
+    if (t && t.editor) {
+      try {
+        var len = t.editor.getDocument().getLength();
+        M.savedRange = M.trixTouched ? t.editor.getSelectedRange() : [Math.max(0, len - 1), Math.max(0, len - 1)];
+      } catch (err) { M.savedRange = null; }
+    }
+  }
+
+  /* ── Upload helper (v1.0.4) ───────────────────────────────── */
+  var UPLOAD_HELP_KEY = 'inbx.asf.uploadHelp.hidden';
+  function helpHidden() { try { return localStorage.getItem(UPLOAD_HELP_KEY) === '1'; } catch (e) { return false; } }
+  function setHelpHidden(on) { try { if (on) localStorage.setItem(UPLOAD_HELP_KEY, '1'); else localStorage.removeItem(UPLOAD_HELP_KEY); } catch (e) {} }
+
+  function startUpload(target, forceHelp) {
+    if (S.upload && S.upload.busy) { B.toast('An upload is already running \u2014 wait for it or cancel it', 'info'); return; }
+    if (!forceHelp && helpHidden()) { chooseFile(target); return; }
+    openUploadHelp(target, false);
+  }
+
+  // Opens ta-asf's own file picker (its upload-rail action) from inside
+  // the operator's click, so the browser allows the file dialog.
+  function chooseFile(target) {
+    if (target === 'body') uploadIntoBody();
+    var trig = S.overlay && S.overlay.querySelector('[data-a2-upload-trigger]');
+    if (!trig) {
+      trig = document.createElement('button');
+      trig.type = 'button';
+      trig.hidden = true;
+      trig.setAttribute('data-a2-upload-trigger', '');
+      trig.setAttribute('data-asf-action', 'upload-rail');
+      S.overlay.appendChild(trig);           // outside .asf2, so ta-asf handles it
+    }
+    trig.click();
+  }
+
+  function typeLabels() {
+    var seen = {}, out = [];
+    ((B.cfg.upload || {}).allowedMime || []).forEach(function (m) {
+      var k = String(m).toLowerCase().replace(/^image\//, '');
+      k = (k === 'jpeg' || k === 'jpg') ? 'JPG' : (k === 'svg+xml') ? 'SVG' : (k === 'heic' || k === 'heif') ? 'HEIC / HEIF' : k.toUpperCase();
+      if (!seen[k]) { seen[k] = true; out.push(k); }
+    });
+    return out;
+  }
+
+  function openUploadHelp(target, infoOnly) {
+    closeModal();
+    var u = B.cfg.upload || {};
+    var mb = u.maxBytes ? Math.round(u.maxBytes / 1048576) : null;
+    var title = (B.cfg.tenant.titleSlug() || '').toUpperCase() || 'this title';
+    var row = function (n, head, text) {
+      return '<div class="ix-modal-row"><span class="ix-modal-row-icon">' + n + '</span>' +
+        '<div class="ix-modal-row-info"><div class="ix-modal-row-title">' + head + '</div>' +
+        '<div class="ix-modal-row-meta">' + text + '</div></div></div>';
+    };
+    var last = target === 'body'
+      ? row('4', 'Placed in the body, at your cursor',
+          'As soon as Scenario B confirms the MEDIA item, the photo goes where your cursor was, carrying that item\u2019s id. ' +
+          'HEIC photos are shown converted to JPEG so every browser can display them. It also appears under Images.')
+      : row('4', 'Added to this article\u2019s Images',
+          'It shows under Images marked Unused until you make it Main or OG or place it in the body. ' +
+          'Saving the article links it. If you never use it, it stays Available in the library for later.');
+    var host = document.createElement('div');
+    host.className = 'ix-overlay';
+    host.setAttribute('data-a2-modal', '1');
+    host.innerHTML =
+      '<div class="ix-modal" role="dialog" aria-modal="true" aria-labelledby="a2-up-t">' +
+        '<div class="ix-modal-bar"></div>' +
+        '<div class="ix-modal-head"><div class="ix-modal-title-block">' +
+          '<h2 class="ix-modal-title" id="a2-up-t">' + (target === 'body' ? 'Upload a photo into the body' : 'Upload a photo') + '</h2>' +
+          '<div class="ix-modal-sub">what happens to your file</div>' +
+        '</div></div>' +
+        '<div class="ix-modal-body">' +
+          row('1', 'Checked here first',
+            esc(typeLabels().join(', ')) + (mb ? ' \u00B7 up to ' + mb + ' MB' : '') +
+            '. Anything else is refused before it uploads, with a message saying why.') +
+          row('2', 'Stored on Uploadcare',
+            'Uploadcare is the image host. Your original is kept there as you sent it. The MEDIA item points at a web-ready copy of it: ' +
+            'resized and compressed for the site, in whichever format each browser shows best (so HEIC shows too). Webflow also keeps its own copy.') +
+          row('3', 'Filed as a MEDIA item by Scenario B',
+            'Scenario B (the file handler) creates one MEDIA item: named after your file (prefixed IMG___), ' +
+            'type Image, role Interior Image, status Available, belonging to ' + esc(title) + '. It takes a few seconds; you can cancel while it uploads.') +
+          last +
+        '</div>' +
+        '<div class="ix-modal-footer">' +
+          '<span class="ix-modal-footer-info"><label class="ix-switch"><input type="checkbox" data-a2m-hide' + (helpHidden() ? ' checked' : '') + '>' +
+            '<span class="ix-switch-track"></span><span>Don\u2019t show this again on this computer</span></label></span>' +
+          '<span class="ix-modal-footer-right">' +
+            '<button type="button" class="ix-btn ix-btn--ghost" data-a2m="close">' + (infoOnly ? 'Close' : 'Cancel') + '</button>' +
+            (infoOnly ? '' : '<button type="button" class="ix-btn ix-btn--primary" data-a2m="choose">Choose a file</button>') +
+          '</span></div>' +
+      '</div>';
+    host.addEventListener('change', function (e) {
+      if (e.target.hasAttribute('data-a2m-hide')) setHelpHidden(e.target.checked);
+    });
+    host.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-a2m]');
+      if (!b && e.target !== host) return;
+      var choose = b && b.getAttribute('data-a2m') === 'choose';
+      closeModal();
+      if (choose) chooseFile(target);
+    });
+    (S.overlay || document.body).appendChild(host);
+    M.modalOpen = true;
+    var f = host.querySelector('[data-a2m="choose"]') || host.querySelector('[data-a2m="close"]');
+    if (f) f.focus();
+  }
+
+  // v1.10.0 "↑ Upload": ta-asf's file input with the inline-body target.
+  // fireUpload inserts at the saved cursor, then Scenario B makes the
+  // MEDIA row, which registerSessionMedia also adds to Images.
+  function uploadIntoBody() {
+    if (S.upload && S.upload.busy) return;          // ta-asf says so itself
+    if (!S.inlinePicker) S.inlinePicker = {};
+    S.inlinePicker.savedRange = M.savedRange;
+    // ta-asf's upload-rail handler runs after this and clears the target;
+    // mark the file input for the body once it has.
+    setTimeout(function () {
+      if (S.fileInput) S.fileInput.setAttribute('data-asf-upload-target', 'inline-body');
+    }, 0);
+  }
+
+  function insertInline(id) {
+    var rec = mediaIndex()[id];
+    if (!rec || !rec.url) { B.toast('That image has no file to place', 'error'); return; }
+    if (!S.inlinePicker) S.inlinePicker = {};
+    S.inlinePicker.savedRange = M.savedRange;
+    var ok = B.insertImageIntoBody({ imageUrl: rec.url, name: rec.fn, originalFilename: rec.fn, mediaId: id, role: rec.role || '' });
+    setPop(false);
+    if (ok) B.toast('Placed in the body', 'success');
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     EDITS
+     ════════════════════════════════════════════════════════════ */
+  function setField(k, v) {
+    var a = A();
+    if (k === '_type') { B.handleTypeChange(v); syncFields(); renderKind(); return; }   // renders when accepted
+    if (k === 'customerId' && v === '__new__') {
+      var sel = q('[data-a2-f="customerId"]');
+      if (sel) sel.value = a.customerId || '';
+      B.pickerOpenRef('customer');                                  // near matches, then + New customer
+      return;
+    }
+    if (k === 'obligationId') { setObligation(v); return; }
+    if (BOOL_KEYS[k]) v = !!v;
+    if (k === 'isPaid' && !v && M.obl.base && M.obl.cur === M.obl.base) {
+      var box = q('[data-a2-f="isPaid"]');
+      if (box) box.checked = true;               // nothing changes until the warning is answered
+      openPaidOffWarning();
+      return;
+    }
+    a[k] = v;
+    if (k === 'isPaid') {
+      M.obl.cur = v ? M.obl.base : '';
+      if (v) loadObligations();
+    }
+    if (k === 'customerId') {
+      M.obl.cur = (v && v === M.base.customerId && a.isPaid) ? M.obl.base : '';
+      if (a.isPaid) loadObligations();
+    }
+    if (NAME_KEYS[k]) {
+      var hit = optionsFor(NAME_LIST[k])
+        .filter(function (o) { return o.value === v; })[0];
+      a[NAME_KEYS[k]] = v ? (hit ? hit.label : '') : '';
+    }
+    if (k === 'sectionId') deriveLegacy();                     // v1.0.9
+    if (S.aiFilled && S.aiFilled[k]) delete S.aiFilled[k];
+    reconcileKey(k);
+    B.deriveDirtySections();
+    syncFields();
+    renderTicks();
+    renderBar();
+  }
+
+  function revertKey(k) {
+    var a = A();
+    if (k === '_type') {
+      if ((S.articleType || 'standard') !== M.baseType) B.handleTypeChange(M.baseType);
+      a.photoEssay = M.base.photoEssay; a.videoArticle = M.base.videoArticle;
+      reconcileKey('photoEssay'); reconcileKey('videoArticle');
+      M.kindOpen = false;   // v1.0.14
+      B.render();
+      return;
+    }
+    if (k === 'bodyHtml') {
+      a.bodyHtml = M.base.bodyHtml || '';
+      var st = B.aiAssistState(); st.bodyUndo = null;
+      B.render();
+      return;
+    }
+    if (k === '_main') { M.roles.main = M.baseRoles.main; if (M.roles.og === M.roles.main) M.roles.og = null; M.archive = null; B.render(); return; }
+    if (k === '_og') { M.roles.og = M.baseRoles.og; B.render(); return; }
+    if (k === 'obligationId') { M.obl.cur = M.obl.base; syncFields(); renderBar(); return; }
+    if (k === 'isPaid' || k === 'customerId') { M.obl.cur = M.obl.base; }
+    a[k] = clone(M.base[k]);
+    if (NAME_KEYS[k]) a[NAME_KEYS[k]] = M.base[NAME_KEYS[k]] || '';
+    if (k === 'sectionId') {                                   // v1.0.9 — the Section's cancel puts all three back
+      ['productId', 'productName', 'mnlsId', 'mnlsName'].forEach(function (x) { a[x] = clone(M.base[x]) || ''; });
+      reconcileKey('productId'); reconcileKey('mnlsId');
+    }
+    if (S.aiFilled) delete S.aiFilled[k];
+    if (S.textFilled) delete S.textFilled[k];
+    reconcileKey(k);
+    B.deriveDirtySections();
+    syncFields();
+    renderTicks();
+    renderBar();
+    if (k === 'galleryMediaIds') B.render();
+  }
+
+  function cancelAll() {
+    var a = A();
+    FIELD_KEYS.forEach(function (k) { a[k] = clone(M.base[k]); });
+    ['sectionName', 'productName', 'mnlsName', 'customerName'].forEach(function (k) { a[k] = M.base[k] || ''; });
+    M.obl.cur = M.obl.base;
+    S.articleType = M.baseType;
+    a.bodyHtml = M.base.bodyHtml || '';
+    M.roles = clone(M.baseRoles);
+    M.imgText = clone(M.imgBase);
+    M.recCur = clone(M.recBase);   // v1.0.11
+    M.archive = null;
+    S.rtpManualState = clone(S.originalManual || {});
+    S.aiFilled = {};
+    var st = B.aiAssistState(); st.done = false; st.error = ''; st.bodyUndo = null;
+    M.trayPref = null;
+    M.kindOpen = false;   // v1.0.14
+    M.ctaOn = M.ctaBase;  // v1.0.14
+    B.render();
+    B.toast(S.mode === 'create' ? 'Back to how this form opened' : 'Reverted to the saved version', 'info');
+  }
+
+  function clickRole(role, id) {
+    if (role === 'main') {
+      if (isPhotoEssay()) return;
+      M.roles.main = (M.roles.main === id) ? '' : id;
+      if (M.roles.og === M.roles.main) M.roles.og = null;
+    } else {
+      M.roles.og = (M.roles.og === id) ? null : (id === M.roles.main ? null : id);
+    }
+    B.render();
+  }
+
+  function setImgText(key, v) {
+    var p = key.split(':'), id = p[0], f = p[1];
+    if (!M.imgText[id]) return;
+    M.imgText[id][f] = v;
+    var ch = imgChanged(id, f);
+    var el = q('[data-a2-img-f="' + key + '"]');
+    if (el) el.classList.toggle('ix-picker-input--changed', ch);
+    var rv = q('[data-a2-revimg="' + key + '"]');
+    if (rv) rv.hidden = !ch;
+    if (f === 'alt') applyRoles();
+    renderTicks();
+    renderBar();
+  }
+  function revertImgText(key) {
+    var p = key.split(':'), id = p[0], f = p[1];
+    if (!M.imgText[id] || !M.imgBase[id]) return;
+    M.imgText[id][f] = M.imgBase[id][f];
+    var el = q('[data-a2-img-f="' + key + '"]');
+    if (el) el.value = M.imgText[id][f];
+    setImgText(key, M.imgText[id][f]);
+  }
+
+  function toggleTick(id) {
+    if (!S.rtpManualState) S.rtpManualState = {};
+    S.rtpManualState[id] = !S.rtpManualState[id];
+    renderTicks();
+    renderBar();
+  }
+
+  // v1.0.6 — "change" / "pick" on a preview: open Images, bring it into
+  // view, and say what to do next.
+  function guideToImages(role) {
+    openTray(true);
+    var col = q('[data-a2-traycol]');
+    if (col && col.scrollIntoView) col.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    var n = trayIds().length, word = role === 'og' ? 'OG' : 'Main';
+    if (isPhotoEssay() && role === 'main') {
+      B.toast('In a Photo Essay the Main photo is the first gallery photo \u2014 reorder the gallery to change it', 'info');
+    } else if (n > 1) {
+      B.toast('Click ' + word + ' on the photo you want in Images', 'info');
+    } else {
+      B.toast('This article has one photo. Add another (Add from library or Upload), then click its ' + word + ' button', 'info');
+      var add = q('[data-a2-traycol] [data-asf-action="lib-open"]');
+      if (add) add.focus();
+    }
+  }
+
+  function openTray(open) {
+    M.trayPref = !!open;
+    renderLeadAndTray();
+    if (open && window.innerWidth <= 1180) {
+      var tc = q('[data-a2-traycol]');
+      if (tc && tc.scrollIntoView) tc.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     OBLIGATION — Paid + Customer (ruled 24 Sept)
+     The OBLIGATION holds the reference to the article. Scenario G
+     lists this customer's Open Article obligations (Title-Admin empty
+     or this title) plus the one already linked to this article.
+     Connect / create / unhook are pending until Save.
+     ════════════════════════════════════════════════════════════ */
+  function oblIds() {
+    var oi = (B.cfg.tenant.cfg() || {}).optionIds || {};
+    return { status: oi.obligationStatus || {}, type: oi.obligationType || {} };
+  }
+  function oblConfigMissing() {
+    var o = oblIds(), miss = [];
+    if (!o.type.article) miss.push('TA_CONFIG.optionIds.obligationType.article');
+    ['open', 'assigned'].forEach(function (k) { if (!o.status[k]) miss.push('TA_CONFIG.optionIds.obligationStatus.' + k); });
+    if (!B.cfg.tenant.makeStudio()) miss.push('TA_CONFIG.makeStudio');
+    return miss;
+  }
+  function statusWord(hash) {
+    var st = oblIds().status;
+    for (var k in st) if (own(st, k) && st[k] === hash) return k;
+    return '';
+  }
+
+  function loadObligations() {
+    var a = A(), cust = a.customerId || '';
+    if (!HC.paidLive || !a.isPaid || !cust) { syncFields(); renderBar(); return; }
+    if (M.obl.loadedFor === cust || M.obl.loading) return;
+    var miss = oblConfigMissing();
+    if (miss.length) { M.obl.err = 'missing ' + miss.join(', '); M.obl.loadedFor = cust; syncFields(); return; }
+    var o = oblIds();
+    M.obl.loading = true; M.obl.err = '';
+    syncFields();
+    var seq = M.seq;
+    postG({
+      action: 'listObligations',
+      customerId: cust,
+      titleAdminId: B.cfg.tenant.taItemId(),
+      articleItemId: a.id || '',
+      obligationType: o.type.article,
+      statusOpen: o.status.open,
+      statusAssigned: o.status.assigned
+    }).then(function (j) {
+      if (!M || M.seq !== seq) return;
+      M.obl.loading = false;
+      M.obl.loadedFor = cust;
+      if (!j || j.ok !== true || !Array.isArray(j.items)) {
+        M.obl.list = [];
+        M.obl.err = (j && j.error) || 'Scenario G did not return a list';
+      } else {
+        M.obl.list = j.items.filter(function (x) { return x && x.id; });
+        var aid = A().id || '';
+        if (!M.obl.baseKnown && aid && cust === (M.base.customerId || '')) {
+          var linked = M.obl.list.filter(function (x) { return x.articleId === aid; })[0];
+          M.obl.base = linked ? linked.id : '';
+          if (M.obl.cur === '' && A().isPaid) M.obl.cur = M.obl.base;
+          M.obl.baseKnown = true;
+        }
+      }
+      syncFields(); renderBar();
+    }).catch(function (err) {
+      if (!M || M.seq !== seq) return;
+      M.obl.loading = false; M.obl.loadedFor = cust; M.obl.list = [];
+      M.obl.err = err && err.message ? err.message : 'request failed';
+      syncFields();
+    });
+  }
+
+  function syncObligationSelect(el) {
+    var a = A();
+    var dis = !HC.paidLive || !a.isPaid || !a.customerId || M.obl.loading || !!M.obl.err;
+    var opts;
+    if (!HC.paidLive || !a.isPaid) opts = [['', '\u2014 not a paid article \u2014']];
+    else if (!a.customerId) opts = [['', 'Pick a customer first']];
+    else if (M.obl.loading) opts = [['', 'Looking up obligations\u2026']];
+    else if (M.obl.err) opts = [['', 'Could not load obligations \u2014 ' + M.obl.err]];
+    else {
+      opts = [['', '\u2014 none \u2014']];
+      M.obl.list.forEach(function (x) {
+        var w = statusWord(x.status);
+        opts.push([x.id, (x.name || 'Unnamed obligation') + (w && w !== 'open' ? ' (' + w + ')' : '')]);   // v1.0.14: no ids
+      });
+      opts.push(['__new__', '+ New obligation']);
+    }
+    var html = opts.map(function (o) { return '<option value="' + esc(o[0]) + '">' + esc(o[1]) + '</option>'; }).join('');
+    if (el.innerHTML !== html) el.innerHTML = html;
+    var v = dis ? '' : M.obl.cur;
+    if (el.value !== v) el.value = v;
+    el.disabled = dis;
+    el.title = M.obl.err ? M.obl.err : '';
+  }
+
+  function setObligation(v) {
+    M.obl.cur = v || '';
+    syncFields();
+    renderBar();
+  }
+
+  function oblName(id) {
+    var x = M.obl.list.filter(function (o) { return o.id === id; })[0];
+    return x ? (x.name || id) : id;
+  }
+
+  /* Paid off while linked: warn first (ruled 24 Sept). */
+  function openPaidOffWarning() {
+    closeModal();
+    var host = document.createElement('div');
+    host.className = 'ix-overlay';
+    host.setAttribute('data-a2-modal', '1');
+    host.innerHTML =
+      '<div class="ix-modal" role="dialog" aria-modal="true" aria-labelledby="a2-paidoff-t">' +
+        '<div class="ix-modal-bar"></div>' +
+        '<div class="ix-modal-head"><div class="ix-modal-title-block">' +
+          '<h2 class="ix-modal-title" id="a2-paidoff-t">Turn Paid off?</h2>' +
+          '<div class="ix-modal-sub">this article is linked to an obligation</div>' +
+        '</div></div>' +
+        '<div class="ix-modal-body"><p>This article fulfils <b>' + esc(oblName(M.obl.base)) + '</b>. ' +
+          'If you turn Paid off, Save will unhook the article and set that obligation back to Open, ' +
+          'so it can be used by another article. Nothing changes until you press Save.</p></div>' +
+        '<div class="ix-modal-footer"><span class="ix-modal-footer-right">' +
+          '<button type="button" class="ix-btn ix-btn--ghost" data-a2m="keep">Keep paid</button>' +
+          '<button type="button" class="ix-btn ix-btn--primary" data-a2m="off">Turn off</button>' +
+        '</span></div>' +
+      '</div>';
+    host.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-a2m]');
+      if (!b && e.target !== host) return;
+      var off = b && b.getAttribute('data-a2m') === 'off';
+      closeModal();
+      if (off) {
+        A().isPaid = false;
+        M.obl.cur = '';
+        reconcileKey('isPaid');
+        B.deriveDirtySections();
+        syncFields(); renderTicks(); renderBar();
+      }
+    });
+    (S.overlay || document.body).appendChild(host);
+    M.modalOpen = true;
+    var f = host.querySelector('[data-a2m="keep"]');
+    if (f) f.focus();
+  }
+  function closeModal() {
+    if (!S || !S.overlay) return;
+    Array.prototype.forEach.call(S.overlay.querySelectorAll('[data-a2-modal]'), function (n) { n.remove(); });
+    if (M) M.modalOpen = false;
+  }
+
+  function postG(payload) {
+    var url = B.cfg.tenant.makeStudio();
+    payload.titleSlug = B.cfg.tenant.titleSlug();
+    payload.taItemId = B.cfg.tenant.taItemId();
+    payload.asfVersion = B.version;
+    payload.moduleVersion = VERSION;
+    B.log(payload.action + ' \u2192 Scenario G', payload);
+    return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      .then(function (r) {
+        return r.text().then(function (t) {
+          var j = null;
+          try { j = JSON.parse(t); } catch (e) {}
+          if (!r.ok) throw new Error('HTTP ' + r.status + ((j && j.error) ? ' \u00B7 ' + j.error : ''));
+          if (!j) throw new Error('Scenario G returned no JSON for ' + payload.action);
+          return j;
+        });
+      });
+  }
+
+  /* Run the pending obligation change for articleId. Resolves
+     { ok, note } and never throws. TOAST-TRUTH: each step must come
+     back with the record as written. */
+  function runObligation(articleId) {
+    var base = M.obl.base, cur = M.obl.cur;
+    if (cur === base) return Promise.resolve({ ok: true, note: '' });
+    var o = oblIds(), a = A();
+    var steps = [];
+    if (base) steps.push(function () {
+      return postG({ action: 'unlinkObligation', obligationId: base, articleItemId: articleId, statusOpen: o.status.open })
+        .then(function (j) {
+          var w = j && j.obligation;
+          if (j.ok !== true || !w || w.id !== base || (w.articleId || '') !== '' || w.status !== o.status.open)
+            throw new Error('unhook of ' + oblName(base) + ' not confirmed');
+          return 'unhooked ' + oblName(base) + ' (back to Open)';
+        });
+    });
+    if (cur === '__new__') steps.push(function () {
+      var name = (a.customerName || 'Customer') + ' \u2014 Article \u2014 ' + (a.name || 'Untitled');
+      return postG({
+        action: 'createObligation', name: name, customerId: a.customerId,
+        titleAdminId: B.cfg.tenant.taItemId(), articleItemId: articleId,
+        obligationType: o.type.article, statusAssigned: o.status.assigned
+      }).then(function (j) {
+        var w = j && j.obligation;
+        if (j.ok !== true || !w || !w.id || w.articleId !== articleId || w.status !== o.status.assigned)
+          throw new Error('new obligation not confirmed');
+        M.obl.list.push({ id: w.id, name: w.name || name, status: w.status, articleId: articleId });
+        M.obl.cur = w.id;
+        return 'created obligation ' + (w.name || name);
+      });
+    });
+    else if (cur) steps.push(function () {
+      return postG({
+        action: 'linkObligation', obligationId: cur, articleItemId: articleId,
+        titleAdminId: B.cfg.tenant.taItemId(), statusAssigned: o.status.assigned
+      }).then(function (j) {
+        var w = j && j.obligation;
+        if (j.ok !== true || !w || w.id !== cur || w.articleId !== articleId || w.status !== o.status.assigned)
+          throw new Error('link to ' + oblName(cur) + ' not confirmed');
+        return 'linked to ' + oblName(cur);
+      });
+    });
+    var notes = [];
+    return steps.reduce(function (p, fn) {
+      return p.then(function () { return fn().then(function (n) { notes.push(n); }); });
+    }, Promise.resolve()).then(function () {
+      M.obl.base = M.obl.cur;
+      return { ok: true, note: notes.join('; ') };
+    }).catch(function (err) {
+      B.warn('obligation step failed', err);
+      return { ok: false, note: notes.join('; '), error: err && err.message ? err.message : 'failed' };
+    });
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     EVENTS — ta-asf offers every overlay event here first
+     ════════════════════════════════════════════════════════════ */
+  function handle(type, e) {
+    if (!B || !S || !M) return false;
+    IDX = null;
+    var t = e.target;
+    if (type === 'keydown') {
+      var key = e.key || '';
+      if ((e.metaKey || e.ctrlKey) && (key === 's' || key === 'S')) {
+        if (S.lib && S.lib.open) return false;
+        e.preventDefault();
+        save();
+        return true;
+      }
+      if (key === 'Escape' && M.modalOpen) {
+        e.preventDefault(); e.stopPropagation();
+        closeModal();
+        return true;
+      }
+      if (key === 'Escape' && M.popOpen) {
+        e.preventDefault(); e.stopPropagation();
+        setPop(false);
+        return true;
+      }
+      return false;
+    }
+    if (!t || !t.closest || !t.closest('.asf2')) {
+      if (type === 'click' && M.popOpen) setPop(false);
+      return false;
+    }
+
+    if (type === 'click') {
+      var el = t.closest('[data-a2-act],[data-a2-revert],[data-a2-revimg],[data-a2-role],[data-a2-tray],[data-a2-tick],[data-a2-insert],[data-a2-size],[data-a2-align],[data-a2-photo],[data-a2-revcrop],[data-a2-arch],[data-a2-jump],[data-a2-kind-pick]');
+      if (M.popOpen && !t.closest('[data-a2-pop]') && !(el && el.getAttribute('data-a2-act') === 'imgpop')) setPop(false);
+      if (!el || el.disabled) return false;
+      var act = el.getAttribute('data-a2-act');
+      if (act === 'save') { save(); return true; }
+      if (act === 'cancel-all') { cancelAll(); return true; }
+      if (act === 'cta') { setCta(el.checked); return true; }                                 // v1.0.14
+      if (act === 'cta-cancel') { cancelCta(); return true; }                                 // v1.0.14
+      if (act === 'left') { M.leftOpen = !M.leftOpen; renderTicks(); return true; }          // v1.0.14
+      if (act === 'kind-open') { M.kindOpen = true; renderKind(); return true; }              // v1.0.14
+      if (el.hasAttribute('data-a2-jump')) { jumpTo(el.getAttribute('data-a2-jump')); return true; }   // v1.0.14
+      if (el.hasAttribute('data-a2-kind-pick')) { setField('_type', el.getAttribute('data-a2-kind-pick')); return true; }   // v1.0.14
+      if (act === 'imgpop') { setPop(!M.popOpen); return true; }
+      if (act === 'upload-body') { startUpload('body', false); return true; }
+      if (act === 'upload-help') { startUpload('tray', false); return true; }
+      if (act === 'upload-about') { openUploadHelp('tray', true); return true; }
+      if (el.hasAttribute('data-a2-revert')) { revertKey(el.getAttribute('data-a2-revert')); return true; }
+      if (el.hasAttribute('data-a2-revimg')) { revertImgText(el.getAttribute('data-a2-revimg')); return true; }
+      if (el.hasAttribute('data-a2-photo')) {   // v1.0.11
+        var pa = el.getAttribute('data-a2-photo'), pid = el.getAttribute('data-a2-img');
+        if (pa === 'crops') openCropsFor(pid); else openComposerFor(pid, pa === 'edit' ? 'edit' : 'new');
+        return true;
+      }
+      if (el.hasAttribute('data-a2-revcrop')) {
+        var rid = el.getAttribute('data-a2-revcrop');
+        M.recCur[rid] = clone(M.recBase[rid] || null);
+        B.render();
+        return true;
+      }
+      if (el.hasAttribute('data-a2-arch')) {
+        if (M.archive) M.archive.keep = el.getAttribute('data-a2-arch') === 'keep';
+        B.render();
+        return true;
+      }
+      if (el.hasAttribute('data-a2-role')) { clickRole(el.getAttribute('data-a2-role'), el.getAttribute('data-a2-img')); return true; }
+      if (el.hasAttribute('data-a2-for')) { guideToImages(el.getAttribute('data-a2-for')); return true; }
+      if (el.hasAttribute('data-a2-tray')) { openTray(el.getAttribute('data-a2-tray') === 'open'); return true; }
+      if (el.hasAttribute('data-a2-tick')) { toggleTick(el.getAttribute('data-a2-tick')); return true; }
+      if (el.hasAttribute('data-a2-insert')) { insertInline(el.getAttribute('data-a2-insert')); return true; }
+      if (el.hasAttribute('data-a2-size') || el.hasAttribute('data-a2-align')) {
+        if (!S.inlinePicker) S.inlinePicker = {};
+        if (el.hasAttribute('data-a2-size')) {
+          S.inlinePicker.imgSize = el.getAttribute('data-a2-size');
+          if (S.inlinePicker.imgSize === 'full') S.inlinePicker.imgAlign = 'center';
+        } else {
+          S.inlinePicker.imgAlign = el.getAttribute('data-a2-align');
+        }
+        renderPop();
+        return true;
+      }
+      return false;
+    }
+
+    if (type === 'input') {
+      if (t.hasAttribute('data-a2-img-f')) { setImgText(t.getAttribute('data-a2-img-f'), t.value); return true; }
+      if (t.hasAttribute('data-a2-f') && t.tagName !== 'SELECT' && t.type !== 'checkbox') {
+        setField(t.getAttribute('data-a2-f'), t.value);
+        grow(t);   // v1.0.14
+        return true;
+      }
+      return !!t.closest('trix-editor');
+    }
+
+    if (type === 'change') {
+      if (t.hasAttribute('data-a2-f')) {
+        setField(t.getAttribute('data-a2-f'), t.type === 'checkbox' ? t.checked : t.value);
+        return true;
+      }
+      return !!t.hasAttribute('data-a2-img-f');
+    }
+
+    if (type === 'focusout') {
+      var f = t.getAttribute && t.getAttribute('data-a2-f');
+      if (f && B.urlFields[f] && !t.readOnly) {
+        var norm = B.normalizeUrl(t.value);
+        if (norm !== t.value) { t.value = norm; setField(f, norm); }
+        return true;
+      }
+      return !!f || !!(t.hasAttribute && t.hasAttribute('data-a2-img-f'));
+    }
+    return false;
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     SAVE — one Save for everything (ruled 24 Sept, C1 rule: a
+     multi-field record written through a Make scenario).
+       1. captions / alt  → Scenario G updateMediaText (MEDIA)
+       2. the article     → ta-asf commitSaveDraft (updateAsset or
+                            createAsset), which verifies and toasts
+     Step 2 does not run if step 1 is not confirmed.
+     ════════════════════════════════════════════════════════════ */
+  function save() {
+    if (!B || S.saving || M.savingMedia) return;
+    if (!S.hydrated) return;
+    // v1.0.14 — Webflow's limits first, so an over-limit field means nothing at all is sent (not even captions).
+    if (B.blockedByLimits && B.blockedByLimits()) { M.leftOpen = true; renderTicks(); return; }
+    var items = mediaTextItems();
+    var art = articleHasChanges();
+    var oblChange = M.obl.cur !== M.obl.base;
+    if (!items.length && !art && !oblChange && S.mode !== 'create') { B.toast('Nothing to save', 'info'); return; }
+    if (S.mode === 'create' && !String(A().name || '').trim()) {
+      B.toast('Headline is required to create an article', 'error');
+      var h = q('[data-a2-f="name"]'); if (h) h.focus();
+      return;
+    }
+    if (oblChange && M.obl.cur && oblConfigMissing().length) {
+      B.toast('NOT SAVED: obligation settings missing \u2014 ' + oblConfigMissing().join(', '), 'error');
+      return;
+    }
+    // v1.0.11 — archive the replaced inset photo once the article's Save is verified.
+    PENDING_ARCHIVE = archiveWillRun() ? { mediaId: M.archive.oldId, articleId: A().id || '', name: (mediaIndex()[M.archive.oldId] || {}).fn || M.archive.oldId } : null;
+    var notes = [];
+    var step1 = items.length ? saveMediaText(items) : Promise.resolve({ ok: true, count: 0 });
+    step1.then(function (res) {
+      if (!res.ok) return;
+      if (res.count) notes.push(res.count + ' caption/alt/crop change' + (res.count === 1 ? '' : 's') + ' confirmed on MEDIA');
+
+      if (S.mode === 'create') {
+        // The article must exist before an obligation can point at it.
+        if (oblChange) {
+          S.afterCreate = function (newId) {
+            return runObligation(newId).then(function (r) {
+              if (r.ok) return { ok: true, note: r.note };
+              return { ok: false, note: r.note, error: 'obligation NOT saved \u2014 ' + r.error + '. The article was created; press Save to try the obligation again.' };
+            });
+          };
+        }
+        saveArticle(notes.join('; '));
+        return;
+      }
+
+      var step2 = oblChange ? (M.savingMedia = true, renderBar(), runObligation(A().id)) : Promise.resolve({ ok: true, note: '' });
+      step2.then(function (r) {
+        M.savingMedia = false;
+        if (!r.ok) {
+          B.toast('NOT SAVED: ' + r.error + (notes.concat(r.note ? [r.note] : []).length ? ' (' + notes.concat(r.note ? [r.note] : []).join('; ') + ' \u2014 those did save.)' : '') + ' The article was not saved.', 'error');
+          syncFields(); renderBar();
+          return;
+        }
+        if (r.note) notes.push(r.note);
+        if (art) { saveArticle(notes.join('; ')); return; }
+        B.toast('Saved \u2014 ' + notes.join('; '), 'success');
+        try { window.dispatchEvent(new CustomEvent('inbx:asset-saved', { detail: { assetType: 'article', itemId: A().id } })); } catch (e) {}
+        setTimeout(B.publicClose, 350);
+      });
+    });
+  }
+
+  function saveArticle(note) {
+    S.saveExtraNote = note || '';
+    B.commitSaveDraft();
+    renderBar();
+  }
+
+  function sameRecipe(a, b) {
+    var x = String(a == null ? '' : a).trim(), y = String(b == null ? '' : b).trim();
+    if (!x || !y) return !x && !y;
+    try { return JSON.stringify(JSON.parse(x)) === JSON.stringify(JSON.parse(y)); } catch (e) { return false; }
+  }
+
+  // One MEDIA row per call, in order. Scenario G echoes the row it wrote
+  // ({{fieldData}}), so a caption with quotes comes back as valid JSON.
+  // Rows that confirm are saved even if a later one fails, and the toast
+  // says exactly which did and did not.
+  function saveMediaText(items) {
+    if (!B.cfg.tenant.makeStudio()) {
+      B.toast('NOT SAVED: captions and alt \u2014 Scenario G (makeStudio) is not configured', 'error');
+      return Promise.resolve({ ok: false });
+    }
+    M.savingMedia = true;
+    renderBar();
+    var confirmed = 0, failed = [];
+    function same(a, b) { return String(a == null ? '' : a).trim() === String(b == null ? '' : b).trim(); }
+    return items.reduce(function (p, it) {
+      return p.then(function () {
+        return postG({
+          action: 'updateMediaText', articleItemId: A().id || '',
+          mediaId: it.mediaId,
+          setCaption: !!it.setCaption, caption: it.setCaption ? (it.caption || '') : '',
+          setAltText: !!it.setAltText, altText: it.setAltText ? (it.altText || '') : '',
+          setRecipe: !!it.setRecipe, imageRecipe: it.setRecipe ? (it.imageRecipe || '') : ''   // v1.0.11
+        }).then(function (j) {
+          var e = (j && Array.isArray(j.items)) ? j.items[0] : null;
+          var md = (e && e.media) || {};
+          if (!j || j.ok !== true || !e || e.mediaId !== it.mediaId) {
+            if (it.setCaption) failed.push({ mediaId: it.mediaId, field: 'caption', why: (j && j.error) || 'no record returned' });
+            if (it.setAltText) failed.push({ mediaId: it.mediaId, field: 'alt', why: (j && j.error) || 'no record returned' });
+            if (it.setRecipe) failed.push({ mediaId: it.mediaId, field: 'crops', why: (j && j.error) || 'no record returned' });
+            return;
+          }
+          if (it.setRecipe) {   // v1.0.11 — compared as JSON; '' must come back empty
+            if (sameRecipe(md['image-recipe'], it.imageRecipe)) { confirmed++; M.recBase[it.mediaId] = clone(M.recCur[it.mediaId] || null); }
+            else failed.push({ mediaId: it.mediaId, field: 'crops', why: 'mismatch (is the Scenario G blueprint of 8 Nov imported?)', got: md['image-recipe'] });
+          }
+          var base = M.imgBase[it.mediaId];
+          if (it.setCaption) {
+            if (same(md.caption, it.caption)) { confirmed++; if (base) base.caption = it.caption; }
+            else failed.push({ mediaId: it.mediaId, field: 'caption', why: 'mismatch', got: md.caption });
+          }
+          if (it.setAltText) {
+            if (same(md['alt-text'], it.altText)) { confirmed++; if (base) base.alt = it.altText; }
+            else failed.push({ mediaId: it.mediaId, field: 'alt', why: 'mismatch', got: md['alt-text'] });
+          }
+        }).catch(function (err) {
+          if (it.setCaption) failed.push({ mediaId: it.mediaId, field: 'caption', why: err && err.message });
+          if (it.setAltText) failed.push({ mediaId: it.mediaId, field: 'alt', why: err && err.message });
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      M.savingMedia = false;
+      renderLeadAndTray();
+      if (failed.length) {
+        B.warn('updateMediaText NOT CONFIRMED', failed);
+        var idx = mediaIndex();
+        B.toast('NOT SAVED: ' + failed.slice(0, 4).map(function (f) {
+          return ((idx[f.mediaId] && idx[f.mediaId].fn) || f.mediaId) + ' ' + f.field;
+        }).join(', ') + (failed.length > 4 ? ' +' + (failed.length - 4) + ' more' : '') +
+          (confirmed ? ' (' + confirmed + ' other caption/alt change' + (confirmed === 1 ? '' : 's') + ' did save)' : '') +
+          '. The article was not saved. See console.', 'error');
+        renderBar();
+        return { ok: false };
+      }
+      renderBar();
+      return { ok: true, count: confirmed };
+    });
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     HOOKS ta-asf calls
+     ════════════════════════════════════════════════════════════ */
+  function connect(bridge) {
+    B = bridge;
+    S = bridge.state;
+  }
+  function hasPending() { return !!(M && S && S.hydrated && changeList().length); }
+  function onSaveState() { if (M) renderBar(); }
+  function onClose() { M = null; }
+
+  // ta-image-gen hands its result to setMainImageFromMedia. On the
+  // Article form that result joins the tray instead (ruled 24 Sept):
+  // AI badge, unused until the operator places it.
+  function addGeneratedImage(media) {
+    if (!media || !media.mediaId) return false;
+    B.registerSessionMedia({ mediaId: media.mediaId, name: media.name || '', imageUrl: media.imageUrl || '', originalFilename: media.name || '' });
+    if (M) M.aiImages[media.mediaId] = true;
+    B.render();
+    setTimeout(function () { B.toast('Generated image added to Images \u2014 unused until you place it', 'success'); }, 60);
+    return true;
+  }
+
+  /* v1.0.12 — a photo made from the print page (ta-asf v1.12.7 print
+     panel, ix-print-photo). Main only when there is none. */
+  function addPrintPhoto(media) {
+    if (!media || !media.mediaId) return false;
+    B.registerSessionMedia({ mediaId: media.mediaId, name: media.name || '', imageUrl: media.imageUrl || '', originalFilename: media.originalFilename || media.name || '' });
+    var madeMain = false;
+    if (M) {
+      M.aiImages[media.mediaId] = true;
+      if (!isPhotoEssay() && !M.roles.main) {
+        M.roles.main = media.mediaId;
+        if (M.roles.og === M.roles.main) M.roles.og = null;
+        madeMain = true;
+      }
+    }
+    IDX = null;
+    B.render();
+    setTimeout(function () {
+      B.toast(madeMain
+        ? 'Generated photo added to Images and set as Main \u2014 press Save to put it on the article'
+        : 'Generated photo added to Images \u2014 click Main on it to use it, then Save', 'success');
+    }, 60);
+    return true;
+  }
+
+  /* v1.0.11 — the replaced inset photo is archived only after ta-asf
+     announces a VERIFIED article save (inbx:asset-saved fires before the
+     form closes). Scenario K's archive route; mediaPatched must be 1. */
+  window.addEventListener('inbx:asset-saved', function (ev) {
+    var p = PENDING_ARCHIVE, d = (ev && ev.detail) || {};
+    if (!p || (d.assetType && d.assetType !== 'article')) return;
+    if (p.articleId && d.itemId && d.itemId !== p.articleId) return;
+    PENDING_ARCHIVE = null;
+    var c = (B && B.cfg.tenant.cfg && B.cfg.tenant.cfg()) || window.TA_CONFIG || {};
+    fetch(c.makeAttachFiles, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, ixLabel: 'Archive old inset photo',
+      body: JSON.stringify({ mode: 'archive', mediaIds: [p.mediaId], titleSlug: c.titleSlug || null, mediaCollId: (c.wfColl || {}).media || '', assetType: 'article' })
+    }).then(function (r) {
+      return r.text().then(function (t) { var j = null; try { j = JSON.parse(t); } catch (e) {} return { ok: r.ok, j: j }; });
+    }).then(function (x) {
+      if (x.ok && x.j && x.j.ok === true && Number(x.j.mediaPatched) === 1) {
+        if (B) B.toast('The old inset photo (' + p.name + ') is archived. It can be set back to Available any time.', 'success');
+      } else {
+        throw new Error((x.j && x.j.error) || 'Scenario K did not confirm it');
+      }
+    }).catch(function (e) {
+      if (B) B.toast('NOT ARCHIVED: the old inset photo (' + p.name + ') is still Available \u2014 ' + ((e && e.message) || e) + '. The article itself saved.', 'error');
+    });
+  });
+
+  window.InbxASFArticle = {
+    version: VERSION,
+    connect: connect,
+    render: render,
+    handle: handle,
+    save: save,
+    hasPending: hasPending,
+    onSaveState: onSaveState,
+    onClose: onClose,
+    addGeneratedImage: addGeneratedImage,
+    addPrintPhoto: addPrintPhoto,   // v1.0.12
+    // Read-only, for console checks and tests. Never write through it.
+    _debug: function () { return M; }
+  };
+
+  // ta-asf may already be open (script order on the page). Repaint.
+  try {
+    if (window.InbxASF && window.InbxASF.isOpen && window.InbxASF.isOpen() &&
+        window.InbxASF._internal && window.InbxASF._internal.render) {
+      window.InbxASF._internal.render();
+    }
+  } catch (e) {}
+})();
