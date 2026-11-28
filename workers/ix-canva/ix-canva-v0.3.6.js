@@ -1,8 +1,18 @@
-// workers/ix-canva/ix-canva-v0.3.5.js
+// workers/ix-canva/ix-canva-v0.3.6.js
 // ============================================================
 // INBXIFY · Cloudflare Worker · ix-canva
 // Host: ix-canva.jeff-2cd.workers.dev
 //
+// v0.3.6 (28 Nov 2026, Ad Maker Build S6) — AN IN CANVA ROW SHOWS THE DESIGN AS IT IS IN CANVA NOW.
+//   Jeff, 28 Nov (Test 5): a design never brought back (AA ChemDry, "not brought back yet") still showed Canva's blank
+//   thumbnail; he wants every row to show the actual design.
+//   · GET /draft/png?design=<id>&updated=<Canva's last edit, ISO>&shape=<shape>. When no picture is kept, or the kept one
+//     is older than Canva's last edit, the Worker exports the design as it is now (a preview export) and keeps that.
+//     A preview export never counts as brought back: the job and the draft record are not touched (exportedAt, the
+//     "brought back" line, Finish this ad's picture all stay as they were). Otherwise the kept picture is answered as
+//     before, so a design is exported again only after it has been changed in Canva.
+//   · The kept picture's metadata gains preview (true for these exports).
+
 // v0.3.5 (27 Nov 2026, Ad Maker Build S6) — AN IN CANVA ROW SHOWS THE DESIGN AS IT CAME BACK, NOT CANVA'S THUMBNAIL.
 //   Jeff, 27 Nov: a banner made from scratch in Canva and brought back with Return showed a blank picture on its In
 //   Canva row. Checked on the live Ads tab (Bergen Performance Marine): the picture loads, 771 × 259, and is white.
@@ -123,7 +133,7 @@
 // v0.1.3 (18 Nov 2026) — the test Worker: /connect, /test, /return; see the git history for its notes.
 // ============================================================
 
-const VERSION = '0.3.5';
+const VERSION = '0.3.6';
 const SHEET_MAX = 65536;   // HC-P-CANVA1-10
 const APPROVED_FOLDER = 'Approved';   // HC-P-CANVA1-12 · v0.3.1: the subfolder approved designs move to
 const DRAFT_THUMBS = 24;              // HC-P-CANVA1-13 · v0.3.1: designs looked up in Canva per GET /drafts
@@ -453,18 +463,24 @@ async function jobExport(env, id, from) {
 }
 // v0.3.5 · HC-P-CANVA1-16 · the newest export of a design, kept in KV for its In Canva row (Canva's thumbnail goes stale)
 function pngKey(designId) { return 'png:' + designId; }
-async function pngKeep(env, designId, url, at, jobId) {
+async function pngKeep(env, designId, url, at, jobId, preview) {
   if (!designId || !url) return false;
-  try { const r = await fetch(url); if (!r.ok) return false; await env.CANVA_KV.put(pngKey(designId), await r.arrayBuffer(), { metadata: { at: at || '', jobId: jobId || '' } }); return true; }
+  try { const r = await fetch(url); if (!r.ok) return false; await env.CANVA_KV.put(pngKey(designId), await r.arrayBuffer(), { metadata: { at: at || '', jobId: jobId || '', preview: !!preview } }); return true; }
   catch (e) { return false; }   // the export itself stands; the row falls back to Canva's thumbnail
 }
 async function draftPng(env, origin, url) {
   const designId = String(url.searchParams.get('design') || '').trim(); if (!designId) throw httpErr(400, 'design is required.');
+  const updated = Date.parse(String(url.searchParams.get('updated') || '')) || 0, shape = String(url.searchParams.get('shape') || '');
   let got = await env.CANVA_KV.getWithMetadata(pngKey(designId), 'arrayBuffer');
-  if (!got || !got.value) {   // exported before v0.3.5: keep its newest job's export once (never a new export)
-    const jobId = await env.CANVA_KV.get('design:' + designId), job = jobId ? await env.CANVA_KV.get(jobKey(jobId), 'json') : null;
-    if (!job || !job.exportUrl) throw httpErr(404, 'This design has not been brought back from Canva yet.');
-    if (!(await pngKeep(env, designId, job.exportUrl, job.exportedAt, job.id))) throw httpErr(404, 'Canva’s link to the last export has lapsed. Bring the design back again (Edit in Canva, then Return to inbxify).');
+  const jobId = await env.CANVA_KV.get('design:' + designId), job = jobId ? await env.CANVA_KV.get(jobKey(jobId), 'json') : null;
+  if ((!got || !got.value) && job && job.exportUrl) {   // exported before v0.3.5: keep its newest job's export once
+    await pngKeep(env, designId, job.exportUrl, job.exportedAt, job.id);
+    got = await env.CANVA_KV.getWithMetadata(pngKey(designId), 'arrayBuffer');
+  }
+  const keptAt = got && got.value && got.metadata ? (Date.parse(got.metadata.at) || 0) : 0;
+  if (!got || !got.value || (updated && keptAt && updated > keptAt + 1000)) {   // v0.3.6: none kept, or changed in Canva since: export it as it is now
+    const u = await exportPng(env, designId, SHAPES[shape] ? shape : (job && job.shape) || '');
+    if (!(await pngKeep(env, designId, u, new Date().toISOString(), job ? job.id : '', true))) throw httpErr(502, 'Canva exported the design, but the picture could not be fetched.');
     got = await env.CANVA_KV.getWithMetadata(pngKey(designId), 'arrayBuffer');
   }
   const h = Object.assign({ 'Content-Type': 'image/png', 'Cache-Control': 'no-store', 'X-Exported-At': String((got.metadata && got.metadata.at) || '') }, corsHeaders(env, origin));

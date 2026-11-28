@@ -1,6 +1,13 @@
-/* ta-admaker-v4.12.25.js
+/* ta-admaker-v4.12.26.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.26 (28 Nov 2026, Ad Maker Build S6) — EVERY IN CANVA ROW SHOWS THE DESIGN AS IT IS IN CANVA. JS only.
+     Jeff, 28 Nov (Test 5): AA ChemDry's row ("not brought back yet") was still white: a row only asked for our picture
+     when the design had come back. Every row now asks ix-canva v0.3.6 GET /draft/png with Canva's last-edit time and
+     the shape; the Worker answers the kept picture, or exports the design as it is now when none is kept or it has
+     been changed since. Canva's thumbnail is only the fall-back if that fails. The "Canva has no picture of it yet"
+     note shows only then.
 
    v4.12.25 (28 Nov 2026, Ad Maker Build S6) — THE IN CANVA LIST IS READ AGAIN EACH TIME THE TASK LIST OPENS. JS only.
      Found in Test 5: a design just sent to Canva did not show under In Canva when Jeff clicked TASK LIST; the list was
@@ -1129,8 +1136,8 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.25', CSS_FILE = 'ta-admaker-v4.12.9.css';
-  var NEEDS = 'needs ix-canva v0.3.5 or later · ix-sales v1.3.20 or later · ix-members v1.1.1 or later · ix-approval-mail v1.0.0 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
+  var VERSION = '4.12.26', CSS_FILE = 'ta-admaker-v4.12.9.css';
+  var NEEDS = 'needs ix-canva v0.3.6 or later · ix-sales v1.3.20 or later · ix-members v1.1.1 or later · ix-approval-mail v1.0.0 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
   var ADVICE_BIGGER = 1.25;   // HC-P-SSB8-25
@@ -5345,7 +5352,7 @@
   };
   var ADS_W = { title: 'Ads', newAd: '+ New ad', allAds: 'Task list', idea: 'Idea · not built', works: 'Works today', notBuilt: 'Not built · thinking only', purpose: 'Purpose', decided: 'Decided so far', open: 'Open questions',
     formLine: 'Type an ADS row by hand: the name, the customer, pictures already hosted, the click link. The same form the Articles, Events and Real Estate tabs use.', formBtn: 'Open the ad form', formMissing: 'The Asset Form (ta-asf) is not on this page.' };
-  var A = { drPng: {}, drPngBusy: {}, tab: 'all', page: 'tabs', board: null, mounted: false, pubId: '', pubName: '', contact: null, you: null, linkDays: 14, drafts: { list: null, err: '', loading: false, ask: '', busy: '' } };
+  var A = { drPng: {}, drPngBusy: {}, drPngFail: {}, tab: 'all', page: 'tabs', board: null, mounted: false, pubId: '', pubName: '', contact: null, you: null, linkDays: 14, drafts: { list: null, err: '', loading: false, ask: '', busy: '' } };
   function adsEl() { return document.getElementById(ADS_MOUNT_ID); }
   function adsBadge() {
     if (!(window.IxInfo && IxInfo.badge)) return '';
@@ -5736,25 +5743,25 @@
       var id = esc(d.designId), sh = d.shape || '', busy = D.busy === d.designId;
       var acts = D.ask === d.designId ? '<span class="q">' + DW.removeAsk + '</span><button type="button" class="ix-btn ix-btn--danger ta-ads-drbtn" data-ads="drRemoveYes" data-v="' + id + '" title="' + esc(DW.yesNote) + '">' + DW.yes + '</button><button type="button" class="ix-btn ix-btn--danger ta-ads-drbtn" data-ads="drRemoveDel" data-v="' + id + '" title="' + esc(DW.delNote) + '">' + DW.del + '</button><a href="#" class="ta-ads-drx" data-ads="drRemoveNo">' + DW.no + '</a>'
         : '<button type="button" class="ix-btn ix-btn--primary ta-ads-drbtn" data-ads="drEdit" data-v="' + id + '"' + (busy ? ' disabled' : '') + '>' + DW.edit + '</button><button type="button" class="ix-btn ix-btn--secondary ta-ads-drbtn" data-ads="drCheck" data-v="' + id + '"' + (busy ? ' disabled' : '') + '>' + DW.check + '</button><a href="#" class="ta-ads-drx" data-ads="drRemove" data-v="' + id + '">' + DW.remove + '</a>';
-      var line = esc(sh ? shapeLabel(sh) : DW.noShape) + ' \u00b7 ' + (d.copiedFrom ? esc(DW.copy) + ' \u00b7 ' : '') + esc(fillW(DW.worked, { on: fmtDate(d.canvaUpdated || d.updated) })) + ' \u00b7 ' + esc(d.exportedAt ? fillW(DW.back, { on: fmtDate(d.exportedAt) }) : DW.notBack) + (!d.thumb && !d.hasPng ? ' \u00b7 <span class="np">' + esc(d.thumbError ? DW.noPic + ': ' + d.thumbError : DW.noPicYet) + '</span>' : '');   // v4.12.16: one line under the name
+      var line = esc(sh ? shapeLabel(sh) : DW.noShape) + ' \u00b7 ' + (d.copiedFrom ? esc(DW.copy) + ' \u00b7 ' : '') + esc(fillW(DW.worked, { on: fmtDate(d.canvaUpdated || d.updated) })) + ' \u00b7 ' + esc(d.exportedAt ? fillW(DW.back, { on: fmtDate(d.exportedAt) }) : DW.notBack) + (A.drPngFail[d.designId] && !d.thumb ? ' \u00b7 <span class="np">' + esc(d.thumbError ? DW.noPic + ': ' + d.thumbError : DW.noPicYet) + '</span>' : '');   // v4.12.16: one line under the name
       return '<div class="ta-ads-drrow' + (D.ask === d.designId ? ' asking' : '') + '"><span class="tx"><span class="cu" title="' + esc(d.customer.name) + '">' + esc(d.customer.name) + '</span><span class="l2" title="' + esc(d.title || '') + '">' + line + '</span></span>' +
-        '<span class="th">' + (d.hasPng ? '<img data-drpng="' + esc(d.designId) + '" alt=""' + (A.drPng[d.designId + '|' + d.exportedAt] ? ' src="' + A.drPng[d.designId + '|' + d.exportedAt] + '"' : '') + '>' : d.thumb ? '<img src="' + esc(d.thumb) + '" alt="" loading="lazy">' : '') + '</span><span class="pill">' + esc(DW.pill) + '</span><span class="ac">' + acts + '</span><span class="sp"></span></div>'; }).join('');
+        '<span class="th">' + '<img data-drpng="' + esc(d.designId) + '" alt=""' + (A.drPng[drPngKey(d)] ? ' src="' + A.drPng[drPngKey(d)] + '"' : A.drPngFail[d.designId] && d.thumb ? ' src="' + esc(d.thumb) + '"' : '') + '>' + '</span><span class="pill">' + esc(DW.pill) + '</span><span class="ac">' + acts + '</span><span class="sp"></span></div>'; }).join('');
     host.innerHTML = h + '</div>' + asPanelsHTML();   // v4.12.23: In Ad Maker and Dormant under In Canva
     adsDraftPngs();
   }
   // v4.12.20 · the row's picture is the design as it last came back from Canva (ix-canva v0.3.5 GET /draft/png), not Canva's
   // thumbnail, which Canva draws when a design is made (a design started from scratch shows white) and does not redraw.
+  function drPngKey(d) { return d.designId + '|' + (d.exportedAt || '') + '|' + (d.canvaUpdated || ''); }   // v4.12.26: a change in Canva asks again
   function adsDraftPngs() {
     (A.drafts.list || []).forEach(function (d) {
-      if (!d.hasPng) return;
-      var k = d.designId + '|' + d.exportedAt;
+      var k = drPngKey(d);
       if (A.drPng[k] || A.drPngBusy[k]) return;
       A.drPngBusy[k] = 1;
-      canvaApi('/draft/png?design=' + encodeURIComponent(d.designId), { raw: true }).then(function (blob) {
+      canvaApi('/draft/png?design=' + encodeURIComponent(d.designId) + '&updated=' + encodeURIComponent(d.canvaUpdated || '') + '&shape=' + encodeURIComponent(d.shape || ''), { raw: true }).then(function (blob) {
         A.drPng[k] = URL.createObjectURL(blob); delete A.drPngBusy[k];
         var img = document.querySelector('#ta-ads-drafts img[data-drpng="' + d.designId.replace(/"/g, '') + '"]'); if (img) img.src = A.drPng[k];
       }, function (e) {
-        log('draft png', d.designId, e && e.message);
+        log('draft png', d.designId, e && e.message); A.drPngFail[d.designId] = 1; setTimeout(adsDraftsRender, 0);
         if (d.thumb) { var img = document.querySelector('#ta-ads-drafts img[data-drpng="' + d.designId.replace(/"/g, '') + '"]'); if (img) img.src = d.thumb; }   // fall back to Canva's thumbnail
       });   // a failed picture is not asked for again until the page reloads
     });
