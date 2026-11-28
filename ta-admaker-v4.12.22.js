@@ -1,6 +1,11 @@
-/* ta-admaker-v4.12.21.js
+/* ta-admaker-v4.12.22.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.22 (27 Nov 2026, Ad Maker Build S6) — WITH SEND FOR APPROVAL PICKED, CHECK'S BUTTON READS "NEXT: SEE THE EMAIL". JS only.
+     Jeff, 27 Nov (Test 1 passed): with Send for approval picked, the bottom button still said Save although it saves
+     nothing; it opens the email pop-up. It now reads "Next: see the email" (for any other choice it stays Save), and
+     the bar beside it says nothing is saved or sent until Save and send (Send email for a version already saved).
 
    v4.12.21 (27 Nov 2026, Ad Maker Build S6) — "CHECK AND SAVE" IS NOW "FINISH THIS AD". JS only (CSS v4.12.8).
      Jeff, 27 Nov (by voice, during Test 1): "Check and save" did not say what it does; he would not have clicked it on
@@ -1091,7 +1096,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.21', CSS_FILE = 'ta-admaker-v4.12.8.css';
+  var VERSION = '4.12.22', CSS_FILE = 'ta-admaker-v4.12.8.css';
   var NEEDS = 'needs ix-canva v0.3.5 or later · ix-sales v1.3.20 or later · ix-members v1.1.1 or later · ix-approval-mail v1.0.0 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -5057,7 +5062,7 @@
       '<div class="am-card am-sum">' + fcHead + '<div class="am-sumrow big"><div class="pic" id="am-cvbig"></div><div class="am-sumr"><b>' + esc(shapeLabel(S.shape)) + '</b> · ' + (cv.existing ? 'saved' : 'made in Canva') + '<div class="am-srcl">' + checkNameLine(cv, c) + '</div>' +
       '<div class="am-phoneh" style="margin-top:8px">On a phone <span>' + PHONE_W + ' px</span></div><div class="am-phonepic" id="am-cvphone"></div></div></div></div>' + clickCardHTML();   // v4.11.5: What happens moved to the right-hand column
     later(function () { if (!img) return; var b = document.getElementById('am-cvbig'), p = document.getElementById('am-cvphone'); if (b) { var i1 = new Image(); i1.src = img.src; i1.style.width = Math.min(dims.w || 700, 700) + 'px'; i1.style.display = 'block'; b.innerHTML = ''; b.appendChild(i1); } if (p) { var i2 = new Image(); i2.src = img.src; i2.style.width = PHONE_W + 'px'; i2.style.display = 'block'; p.innerHTML = ''; p.appendChild(i2); } });
-    shell(mid, barHTML(whatBarMsg(), ghost('back', W.back) + (cv.editUrl ? btn('cvAgain', CANVA_WORDS.again, 'secondary') : '') + btn('cvSave', W.saveBtn, 'primary', !whatCanBut())), { right: whatHTML() });   // v4.11.3: one Save; the choice above it decides what it does
+    shell(mid, barHTML(whatBarMsg(), ghost('back', W.back) + (cv.editUrl ? btn('cvAgain', CANVA_WORDS.again, 'secondary') : '') + btn('cvSave', (cv.what === 'send' ? SAVE_WORDS.pop.next : W.saveBtn), 'primary', !whatCanBut())), { right: whatHTML() });   // v4.11.3: one Save; the choice above it decides what it does
   }
   function canvaAsk() {
     var cv = S.canva, cfg = CFG(); if (!cv || !cv.img || cv.fc.busy) return;
@@ -5085,11 +5090,11 @@
       plain: ['Save', 'Saves the splash to the customer. Splash ads have no approval fields yet.']
     },
     pop: { subNew: 'will be saved as “{name}”', subFix: 'replaces the {shape} on “{name}”', subSaved: 'saved as “{name}”', loading: 'Reading the email…',
-      go: 'Save and send', goSaved: 'Send email', bar: 'Save writes the {shape} as Pending, then emails {to}.', barSaved: 'Send emails {to}. The ad stays Pending until the answer comes back.',
+      next: 'Next: see the email', go: 'Save and send', goSaved: 'Send email', bar: 'Save writes the {shape} as Pending, then emails {to}.', barSaved: 'Send emails {to}. The ad stays Pending until the answer comes back.',
       missing: 'The approval email pop-up (ix-approval-mail) is not on this page, so nothing was saved. Add it to the page’s loader list.' },   // v4.12.19 · HC-P-AMS6-3
     need: 'Choose what happens, then Save', needClick: 'Pick where a click goes, then Save',
-    bar: { draft: 'Save keeps the design in Canva as a draft', send: 'Save shows you the email first; nothing is saved or sent until you press Save and send', current: 'Save writes the ad, approves it and makes it current', hold: 'Save writes the ad, approves it and holds it', plain: 'Save writes the splash to the customer' },
-    barSaved: { send: 'Save shows you the email first; nothing goes until you press Send email', current: 'Save approves it and makes it current', hold: 'Save approves it and holds it', plain: 'Already saved' },
+    bar: { draft: 'Save keeps the design in Canva as a draft', send: 'Nothing is saved or sent until you press Save and send in the email', current: 'Save writes the ad, approves it and makes it current', hold: 'Save writes the ad, approves it and holds it', plain: 'Save writes the splash to the customer' },
+    barSaved: { send: 'Nothing goes until you press Send email in the email', current: 'Save approves it and makes it current', hold: 'Save approves it and holds it', plain: 'Already saved' },
     optsSaved: { send: 'Emails a review link that needs no login. The ad stays Pending until the answer comes back.' },
     step: { draft: 'Keeping the design as a draft in Canva', send: 'Emailing the review link to {to}', current: 'Approving and making it the current {shape}, for the publisher', hold: 'Approving and holding it, for the publisher', sent: 'Marking the design as saved in Canva', approved: 'Moving the design to the customer’s Approved folder in Canva' },
     head2: { draft: 'Kept as a draft in Canva', send: '1 version saved and sent for approval', current: '1 version saved, approved and made current', hold: '1 version saved, approved and held', plain: '1 version saved' },
