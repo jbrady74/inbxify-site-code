@@ -14,6 +14,11 @@
 // the "Field limits" Action runs this and opens a pull request.
 //
 // The file is data, read by ta-asf at the page's own commit. Nothing types a limit by hand.
+//
+// v1.1.0 (28 Nov 2026, Jeff): every ruled character limit is enforced. config/field-limit-overrides.json holds the
+// platform caps that are tighter than Webflow's (the headline's 60), each with the ruling it comes from. They are
+// applied on every rebuild, so a field Webflow lets run long (Article Name, 256) is still held to its ruled cap,
+// and any "enforce": false from the Worker is dropped for that field (HC-P-A1-14, replaces HC-P-A1-3).
 // ============================================================
 import fs from 'node:fs';
 
@@ -65,7 +70,28 @@ function table(j) {
   return L.join('\n') + '\n';
 }
 
-const j = shape(await read());
+const OVR = 'config/field-limit-overrides.json';
+function overrides(j) {
+  if (!fs.existsSync(OVR)) return j;
+  const o = JSON.parse(fs.readFileSync(OVR, 'utf8'));
+  Object.keys((o && o.types) || {}).forEach(k => {
+    const t = j.types[k]; if (!t) die(OVR + ' names asset type "' + k + '", which the answer does not have');
+    Object.keys(o.types[k]).forEach(slug => {
+      const want = o.types[k][slug];
+      if (!(want.limit > 0)) die(OVR + ': ' + k + ' ' + slug + ' has no limit');
+      const f = t.fields.find(x => x.slug === slug);
+      if (!f) die(OVR + ' names ' + k + ' field "' + slug + '", which Webflow does not limit; add it there or remove it here');
+      f.webflowLimit = f.limit;
+      f.limit = Math.min(f.limit, want.limit);
+      delete f.enforce;
+      f.why = want.why;
+      f.source = 'platform';
+    });
+  });
+  return j;
+}
+
+const j = overrides(shape(await read()));
 const old = fs.existsSync(OUT) ? JSON.parse(fs.readFileSync(OUT, 'utf8')) : null;
 const same = old && body(old) === body(j);
 if (TABLE) fs.writeFileSync(TABLE, table(j));

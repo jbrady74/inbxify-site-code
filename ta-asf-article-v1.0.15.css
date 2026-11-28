@@ -1,3 +1,9 @@
+/* ta-asf-article-v1.0.15.css
+   v1.0.15 (28 Nov 2026, ASF Rethink A1) — THE COUNT GOES DOWN, VISIBLY. Pairs ta-asf-article v1.0.19. Each row's count
+   ("23 left") is set in the body face at the small size, bold, right in the tools column: grey normally, gold in the
+   last 15 per cent or under a teaser's aim, green inside a teaser's aim, red at "0 left" or over. The body's count the
+   same. Tokens only. Everything else is v1.0.14 unchanged.
+*/
 /* ta-asf-article-v1.0.14.css
    v1.0.14 (28 Nov 2026, ASF Rethink A1) — THE SAVE-ANYWAY BOX. Pairs ta-asf-article v1.0.17. When an article in a
    released or sent issue is saved, a white card opens upward from the rail's right end (above Save) with the sentence,
@@ -186,6 +192,16 @@
 .asf2[class] .asf2-ask-b{display:flex;align-items:center;gap:var(--ix-sp-16);}
 .asf2[class] .asf2-rail .asf2-issues{color:var(--ix-ink-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
 .asf2[class] .asf2-rail .asf2-issues:empty{display:none;}
+
+
+/* v1.0.15 — the count goes down, visibly */
+.asf2[class] .asf2-row-t .asf2-count{margin-left:0;font-family:var(--ix-font-body);font-size:var(--ix-fs-small);font-weight:700;color:var(--ix-text-light);white-space:nowrap;}
+.asf2[class] .asf2-row-t .asf2-count.near,.asf2[class] .asf2-row-t .asf2-count.under{color:var(--ix-warn);}
+.asf2[class] .asf2-row-t .asf2-count.inrange{color:var(--ix-ok);}
+.asf2[class] .asf2-row-t .asf2-count.at{color:var(--ix-danger-deep);}
+.asf2[class] .asf2-trixcount{font-family:var(--ix-font-body);font-size:var(--ix-fs-small);font-weight:700;color:var(--ix-text-light);}
+.asf2[class] .asf2-trixcount.near{color:var(--ix-warn);}
+.asf2[class] .asf2-trixcount.over{color:var(--ix-danger-deep);}
 
 @media (max-width:1180px){.asf2[class] .asf2-grid{grid-template-columns:360px minmax(0,1fr);}.asf2[class] .asf2-col--tray{grid-column:1 / -1;border-left:0;border-top:1px solid var(--ix-border-soft);position:static;}}
 @media (max-width:760px){.asf2[class] .asf2-grid{grid-template-columns:1fr;}.asf2[class] .asf2-col + .asf2-col{border-left:0;border-top:1px solid var(--ix-border-soft);}}

@@ -1,7 +1,68 @@
-/* ta-asf-article-v1.0.14.js */
+/* ta-asf-article-v1.0.19.js */
 /* ============================================================
-   ta-asf-article-v1.0.14.js
+   ta-asf-article-v1.0.19.js
    INBXIFY TA Studio — the Article form of the ASF (create and edit)
+
+   v1.0.19 (28 Nov 2026, ASF Rethink A1) — THE COUNT GOES DOWN. Needs ta-asf v1.12.20 and ta-asf-article-v1.0.15.css.
+   Jeff, 28 Nov: "count down from remaining in a visible way." Each row's count reads what is left ("23 left"), gold in
+   the last 15 per cent, red at "0 left"; a value already over reads "N over". The two teasers add their aim
+   ("38 left · aim 350–400" until the Web teaser reaches 350). The body's count does the same against its limit from
+   the limits file (15,000), not the old 20,000 guide. Nothing else changed.
+
+   v1.0.18 header follows.
+
+   v1.0.18 (28 Nov 2026, ASF Rethink A1) — THE HEADLINE IS HELD TO 60; TYPING STOPS AT EVERY LIMIT. Needs ta-asf
+   v1.12.19. Jeff, 28 Nov: every ruled limit is enforced, by not letting more be typed. The headline's ruled cap (60,
+   CFG.limits.title, confirmed in v1.0.3) now comes from config/field-limits.json like every other limit, and its row
+   shows a count (n / 60). ta-asf v1.12.19 puts maxlength on every limited row (headline, subtitle, banner statement,
+   both teasers, the call-to-action fields when limited) and stops the body at its limit. counterSpec takes every
+   limit from the file, not only the keys CFG.limits already named. Nothing else changed.
+
+   v1.0.17 header follows.
+
+   v1.0.17 (28 Nov 2026, ASF Rethink A1) — CHANGES AFTER APPROVAL. Needs ix-issue-data v1.0.227 for 2; ta-asf v1.12.18
+   and ta-asf-article-v1.0.14.css. Jeff, 28 Nov ("all yes"):
+     1 · RULING A. On a paid article opened with Sponsor OK ticked, changing its words (headline, subtitle, banner
+         statement, either teaser, body, call to action) or its pictures (Main, share photo, captions, alt text, crops,
+         gallery, kind) clears Sponsor OK, and the list says why. Putting the changes back restores it. Ticking it again
+         by hand (the sponsor approved the change) keeps it ticked.
+     2 · RULING D. An article already in an issue that is released or sent still saves, but Save first says so in the
+         rail: "This article is in WLN-124, already sent. Saving changes its web page now; the email readers got stays
+         as it was." with Save anyway and cancel. The rail's middle names those issues while the form is open. Reads
+         the Data Worker's /article-issues (v1.0.227); with an older Worker nothing is shown and Save works as before.
+     Nothing else changed.
+
+   v1.0.16 header follows.
+
+   v1.0.16 (28 Nov 2026, ASF Rethink A1) — ROWS, THE INK RAIL, WEB AND EMAIL TEASER, THE FULLER LIST. Needs
+   ta-asf v1.12.18 and ta-asf-article-v1.0.13.css. Jeff's rulings of 28 Nov (rows mockup "no changes"; rail A;
+   "What a finished article needs" v0.1; Web teaser and Email teaser).
+     1 · ROWS. Where it runs, The words, Byline, Call to action and Rarely used show every field as one row:
+         name and a short hint · the field · a status pill (Done, Missing, Optional, N over, Not needed, Off) ·
+         tools (AI mark, count, cancel). Pairs are gone; each field has its own row. Banner statement moves up
+         to The words. Pictures stay as tiles and the Body stays full width.
+     2 · WEB TEASER AND EMAIL TEASER. Teaser is now "Web teaser" (web issue tile and archive) and Short summary
+         is "Email teaser" (the email tile, one complete thought). Both are needed. Same fields, same saves.
+         ix-issue-data v1.0.225 prints the Email teaser on the email tile.
+     3 · THE FULLER WHAT'S-LEFT LIST (HC-P-A1-8): Section, Headline, Web teaser, Email teaser, Writer, Main photo,
+         Share photo, alt text on every photo in use, Body, Edit pass; Customer, Obligation and Sponsor OK when
+         paid; the three call-to-action fields when it is on; every field within Webflow's limits.
+     4 · PICTURES NEVER FOLD AWAY. The photo cards (with their alt boxes) always show. A Main photo that is not
+         in this article's photos still needs alt text, and the list says so.
+     5 · THE INK RAIL (rail A). The finish card becomes one full-width ink bar at the bottom: ring and count on
+         the left, the change count, then Cancel changes and Save. What's left opens upward from its left end.
+     Saves are unchanged; Save still writes to Webflow until C1 and C2 build the drafts rule of 28 Nov.
+
+   v1.0.15 header follows.
+
+   v1.0.15 (27 Nov 2026, ASF Rethink A1) — CANCEL BESIDE SAVE; THE TOP ROW STAYS. Needs ta-asf v1.12.17 and
+   ta-asf-article-v1.0.12.css. Jeff, 27 Nov: Cancel and Save together on the bottom bar; Cancel more prominent;
+   the top row fixed.
+     · The finish bar (still fixed at the bottom right) ends with two equal buttons, Cancel changes then Save.
+       Cancel changes is always there; it is greyed until something has changed, and puts the form back to how it
+       opened. The small text link is gone. Show what's left stays under the count.
+     · The header row (Edit Article Record, ⓘ, ✕) stays at the top of the screen while the form scrolls.
+     Nothing else changed.
 
    v1.0.14 (27 Nov 2026, ASF Rethink A1) — THE FORM SHELL. Needs ta-asf v1.12.15 and ta-asf-article-v1.0.11.css.
      Spec: ASF-Rethink-Scoping-v0_3.md (P3, P8, P9, P11, P12, P14, P15, P16) and "ASF rethink mockup v0.5".
@@ -262,7 +323,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.0.14';
+  var VERSION = '1.0.19';
 
   /* ── HC · provisional hardcoding entries (doc-maintenance chat
         assigns real numbers). Each is a platform constant, never a
@@ -283,7 +344,10 @@
     // (renderMainTeaser / renderMainShortSummary). Maximums come from
     // ta-asf CFG.limits; these are the lower edge of the green band.
     teaserMin: 350,
-    shortSummaryMin: 120
+    shortSummaryMin: 120,
+    // HC-P-A1-8 · what a finished Standard article needs (Jeff's rulings, 28 Nov, sheet v0.1). Platform rule,
+    // not tenant data. Customer and Obligation are needed when Paid is on; the call to action when it is on.
+    needs: { sectionId: 1, name: 1, teaser: 1, shortSummary: 1, writerName: 1 }
   };
 
   var B = null;          // bridge from ta-asf
@@ -292,59 +356,52 @@
 
   /* ── Field definitions. Order = order on screen (mockup v0.10). ──
      key = the ta-asf state key. Nothing here is tenant data. */
+  // v1.0.16 — one row per field (Jeff, 28 Nov). hint = the short line under the name.
   var FACT_GROUPS = [
-    // v1.0.9 — group 1 is drawn by whereHTML() (its fields are listed
-    // here so counts and keys stay in one place).
     { n: '1', title: 'Where it runs', where: true, fields: [
-      { key: 'sectionId', label: 'Section', kind: 'section', opts: 'section' },
-      // v1.0.14 — the Format select is the kind band now (P12)
-      { key: 'printIssueSource', label: 'Print source', kind: 'text' }
+      { key: 'sectionId', label: 'Section', hint: 'decides the block', kind: 'section', opts: 'section', req: true },
+      { key: 'printIssueSource', label: 'Print source', hint: 'record keeping', kind: 'text' }
     ]},
     { n: '2', title: 'Who pays', fields: [
-      { key: 'customerId', label: 'Customer', kind: 'select', opts: 'customer' },
       // Paid is the question that matters (ruled 24 Sept). Paid + Customer
       // leads to an OBLIGATION: connect an open one or create one.
-      { key: 'isPaid', label: 'Paid', kind: 'switch', text: 'Paid article' },
-      { key: 'obligationId', label: 'Obligation', kind: 'select', opts: 'obligation' }
+      { key: 'isPaid', label: 'Paid', hint: 'who pays', kind: 'switch', text: 'Paid article' },
+      { key: 'customerId', label: 'Customer', hint: 'needed when paid', kind: 'select', opts: 'customer' },
+      { key: 'obligationId', label: 'Obligation', hint: 'needed when paid', kind: 'select', opts: 'obligation' }
     ]},
     { n: '3', title: 'People', fields: [
-      { pair: [
-        { key: 'writerName', label: 'Writer', kind: 'text' },
-        { key: 'writerTitle', label: 'Title', kind: 'text' } ] },
-      { pair: [
-        { key: 'cowriterName', label: 'Co-writer', kind: 'text' },
-        { key: 'cowriterTitle', label: 'Title', kind: 'text' } ] },
-      { pair: [
-        { key: 'photographer', label: 'Photographer', kind: 'text' },
-        { key: 'showPhotoCredits', label: 'Credits', kind: 'switch', text: 'Show' } ] },
+      { key: 'writerName', label: 'Writer', hint: 'the \u201cBy\u201d line', kind: 'text', req: true },
+      { key: 'writerTitle', label: 'Writer title', hint: 'under the name', kind: 'text' },
+      { key: 'cowriterName', label: 'Co-writer', hint: 'second byline', kind: 'text' },
+      { key: 'cowriterTitle', label: 'Co-writer title', hint: 'under the co-writer', kind: 'text' },
+      { key: 'photographer', label: 'Photographer', hint: 'photo credit', kind: 'text' },
       // v1.0.10 · the byline is a choice, never a rule (Jeff, 28 Oct)
-      { pair: [
-        { key: 'hideWriterTitles', label: 'Byline', kind: 'switch', text: 'Hide writer titles' },
-        { key: 'showBusinessInByline', label: '', kind: 'switch', text: 'Show business' } ] }
+      { key: 'showPhotoCredits', label: 'Photo credits', hint: 'print the photographer', kind: 'switch', text: 'Show' },
+      { key: 'hideWriterTitles', label: 'Writer titles', hint: 'in the byline', kind: 'switch', text: 'Hide writer titles' },
+      { key: 'showBusinessInByline', label: 'Business', hint: 'in the byline', kind: 'switch', text: 'Show business' }
     ]}
   ];
   // v1.0.14 — the call to action is its own chapter (Jeff, 27 Nov)
   var CTA_FIELDS = [
-    { key: 'ctaButton', label: 'Button label', kind: 'text', req: true },
-    { key: 'ctaUrl', label: 'Link', kind: 'text', req: true },
-    { key: 'ctaText', label: 'Text beside the button', kind: 'textarea', req: true }
+    { key: 'ctaButton', label: 'Button label', hint: 'the words on the button', kind: 'text', req: true },
+    { key: 'ctaUrl', label: 'Link', hint: 'where the button goes', kind: 'text', req: true },
+    { key: 'ctaText', label: 'Text beside the button', hint: 'one or two lines', kind: 'textarea', req: true }
   ];
   var CTA_KEYS = ['ctaButton', 'ctaUrl', 'ctaText'];
   var MORE = [
-    { key: 'slug', label: 'Address', kind: 'text' },   // v1.0.14: the page address, set on create
-    { key: 'bannerStatement', label: 'Banner', kind: 'text' },
+    { key: 'slug', label: 'Address', hint: 'the page address, set on create', kind: 'text' },
     // Unused today; kept reachable, not in the way (ruled 24 Sept).
-    { key: 'revenueType', label: 'Revenue type', kind: 'select', opts: 'revenue' },
-    { pair: [
-      { key: 'videoUrl', label: 'Video URL', kind: 'text' },
-      { key: 'audioUrl', label: 'Audio URL', kind: 'text' } ] }
+    { key: 'revenueType', label: 'Revenue type', hint: 'not used today', kind: 'select', opts: 'revenue' },
+    { key: 'videoUrl', label: 'Video URL', hint: 'a video link', kind: 'text' },
+    { key: 'audioUrl', label: 'Audio URL', hint: 'an audio link', kind: 'text' }
   ];
   var WORDS = [
-    { key: 'name', label: 'Headline', kind: 'text', req: true, cls: 'asf2-headline' },
-    { key: 'subtitle', label: 'Subtitle', kind: 'text' },
-    { pair: [
-      { key: 'teaser', label: 'Teaser', kind: 'textarea' },
-      { key: 'shortSummary', label: 'Short summary', kind: 'textarea' } ] }
+    { key: 'name', label: 'Headline', hint: 'every tile and the page', kind: 'text', req: true, cls: 'asf2-headline' },
+    { key: 'subtitle', label: 'Subtitle', hint: 'under the headline', kind: 'text' },
+    { key: 'bannerStatement', label: 'Banner statement', hint: 'the small flag above the headline', kind: 'text' },   // v1.0.16: up from Rarely used
+    // v1.0.16 — Web teaser and Email teaser (Jeff, 28 Nov). Same fields as Teaser and Short summary.
+    { key: 'teaser', label: 'Web teaser', hint: 'web issue tile and archive', kind: 'textarea', req: true },
+    { key: 'shortSummary', label: 'Email teaser', hint: 'the email tile, one complete thought', kind: 'textarea', req: true }
   ];
 
   // Every article key this form edits and therefore owns the dirty
@@ -364,7 +421,7 @@
 
   // Plain words for the pending list and the AI strip.
   var LABELS = {
-    name: 'headline', subtitle: 'subtitle', teaser: 'teaser', shortSummary: 'summary',
+    name: 'headline', subtitle: 'subtitle', teaser: 'web teaser', shortSummary: 'email teaser',   // v1.0.16
     printIssueSource: 'print source', sectionId: 'section', productId: 'product', mnlsId: 'MNLS', customerId: 'customer', revenueType: 'revenue type',
     writerName: 'writer', writerTitle: 'writer title', cowriterName: 'co-writer',
     cowriterTitle: 'co-writer title', photographer: 'photographer', showPhotoCredits: 'credits',
@@ -421,7 +478,12 @@
       composites: {},      // mediaId -> true for inset photos made this session
       leftOpen: false,     // v1.0.14 — the finish bar's what's-left list is open
       kindOpen: false,     // v1.0.14 — Change was pressed on the kind band (edit only)
-      limitsAsked: false   // v1.0.14 — asked ta-asf to repaint once the field limits are in
+      limitsAsked: false,  // v1.0.14 — asked ta-asf to repaint once the field limits are in
+      spManual: false,     // v1.0.17 — Sponsor OK was ticked or unticked by hand on this open
+      spCleared: false,    // v1.0.17 — Sponsor OK was cleared because the words or pictures changed (ruling A)
+      issues: null,        // v1.0.17 — { state, list } the issues this article is in (ruling D)
+      issueAsk: false,     // v1.0.17 — Save is waiting for "Save anyway"
+      issueOk: false       // v1.0.17 — "Save anyway" was pressed on this open
     };
   }
 
@@ -690,6 +752,25 @@
     if (isPhotoEssay()) M.roles.main = A().mainImageMediaId || '';
     applyRoles();
     B.deriveDirtySections();
+    sponsorRule();   // v1.0.17
+  }
+  // v1.0.17 — ruling A: a change to what the sponsor approved clears Sponsor OK.
+  var SPONSOR_WORDS = ['name', 'subtitle', 'bannerStatement', 'teaser', 'shortSummary', 'ctaButton', 'ctaUrl', 'ctaText', 'galleryMediaIds'];
+  function sponsorSeenChanged() {
+    var d = S.dirtyFields || {};
+    if (SPONSOR_WORDS.some(function (k) { return own(d, k); }) || own(d, 'bodyHtml')) return true;
+    if ((S.articleType || 'standard') !== M.baseType) return true;
+    if (mainChanged() || ogChanged()) return true;
+    return trayIds().some(function (id) { return imgChanged(id, 'caption') || imgChanged(id, 'alt') || cropsChanged(id); });
+  }
+  function sponsorRule() {
+    var was = !!(S.originalManual || {})['sponsor-ok'];
+    M.spCleared = false;
+    if (!was || !A().isPaid || M.spManual) return;
+    var ch = sponsorSeenChanged();
+    if (!S.rtpManualState) S.rtpManualState = {};
+    S.rtpManualState['sponsor-ok'] = !ch;
+    M.spCleared = ch;
   }
   function reconcileBody() {
     var cur = A().bodyHtml || '';
@@ -935,78 +1016,72 @@
   /* ════════════════════════════════════════════════════════════
      MARKUP — mirrors mockup v0.10 exactly
      ════════════════════════════════════════════════════════════ */
+  // v1.0.16 — a field is one row: name and hint · the field · status · tools (Jeff, 28 Nov).
   function fieldHTML(d) {
-    if (d.pair) return '<div class="asf2-pair">' + d.pair.map(fieldHTML).join('') + '</div>';
-    var lab = '<div class="ix-field-label"><span>' + esc(d.label) +
-      (d.req ? ' <span class="ix-field-req">*</span>' : '') +
-      '<span data-a2-ai="' + d.key + '"></span></span>' +
-      (counterSpec(d.key) ? '<span class="asf2-count" data-a2-count="' + d.key + '"></span>' : '') +
-      (d.kind === 'readonly' ? '' : '<button type="button" class="ix-revert" data-a2-revert="' + d.key + '" hidden>cancel</button>') +
-      '</div>';
-    var ctl;
+    var cs = counterSpec(d.key), ctl;
     if (d.kind === 'readonly') {
       ctl = '<div class="asf2-readonly" data-a2-ro="' + d.key + '"></div>';
     } else if (d.kind === 'section') {                          // v1.0.9 — Section + its type, read-only
       ctl = '<div class="asf2-secrow"><select class="ix-picker-input asf2-sec" data-a2-f="' + d.key + '" data-a2-opts="' + d.opts + '">' + optionsHTML(d.opts) + '</select>' +
-        '<span class="asf2-ttag" data-a2-ttag title="Comes from the Section"></span></div>';
+        '<span class="asf2-ttag" data-a2-ttag title="Comes from the Section"></span></div>' +
+        '<div class="asf2-why" data-a2-why></div>' +
+        '<div class="asf2-legacy" data-a2-legacy>' +
+          '<div class="asf2-legacy-head" data-a2-lgnote></div>' +
+          '<div class="asf2-legacy-row"><span>Product Library</span><span data-a2-lg="product"></span></div>' +
+          '<div class="asf2-legacy-row"><span>MNLS</span><span data-a2-lg="mnls"></span></div>' +
+        '</div>';
     } else if (d.kind === 'select') {
       ctl = '<select class="ix-picker-input" data-a2-f="' + d.key + '" data-a2-opts="' + d.opts + '">' + (d.opts === 'obligation' ? '' : optionsHTML(d.opts)) + '</select>';
     } else if (d.kind === 'switch') {
       ctl = '<label class="ix-switch" data-a2-sw="' + d.key + '"><input type="checkbox" data-a2-f="' + d.key + '"><span class="ix-switch-track"></span><span>' + esc(d.text) + '</span></label>';
     } else if (d.kind === 'textarea') {
-      ctl = '<textarea class="ix-picker-input asf2-grow" rows="1" data-a2-f="' + d.key + '"></textarea>';   // v1.0.14: grows, never scrolls
+      ctl = '<textarea class="ix-picker-input asf2-grow" rows="1" data-a2-f="' + d.key + '"' + (cs ? ' maxlength="' + cs.max + '"' : '') + '></textarea>';   // v1.0.14: grows, never scrolls; v1.0.18 stops at its limit
     } else {
-      var cs = counterSpec(d.key);
       ctl = '<input type="text" class="ix-picker-input' + (d.cls ? ' ' + d.cls : '') + '" data-a2-f="' + d.key + '"' +
         (cs && cs.hard ? ' maxlength="' + cs.max + '"' : '') + '>';
     }
-    return '<div class="ix-field">' + lab + ctl + '</div>';
+    return '<div class="asf2-row" data-a2-row="' + d.key + '">' +
+      '<div class="asf2-row-n"><div class="asf2-row-l">' + esc(d.label) + (d.req ? ' <span class="ix-field-req">*</span>' : '') +
+        '<span data-a2-ai="' + d.key + '"></span></div>' +
+        (d.hint ? '<div class="asf2-row-h">' + esc(d.hint) + '</div>' : '') + '</div>' +
+      '<div class="asf2-row-c">' + ctl + '</div>' +
+      '<div class="asf2-row-s"><span class="asf2-pill" data-a2-st="' + d.key + '"></span></div>' +
+      '<div class="asf2-row-t">' +
+        (cs ? '<span class="asf2-count" data-a2-count="' + d.key + '"></span>' : '') +
+        (d.kind === 'readonly' ? '' : '<button type="button" class="ix-revert" data-a2-revert="' + d.key + '" hidden>cancel</button>') +
+      '</div></div>';
+  }
+  function rowsHTML(list) {
+    return '<div class="asf2-rows"><div class="asf2-row asf2-row--hd" aria-hidden="true"><span>Field</span><span>Value</span><span>Status</span><span>Tools</span></div>' +
+      list.map(fieldHTML).join('') + '</div>';
   }
   // v1.10.0 counters: subtitle and banner are hard caps (maxlength);
   // teaser and short summary show a target band.
   function counterSpec(k) {
     var L = Object.assign({}, B.cfg.limits || {});
     // v1.0.14 — the maximum comes from Webflow's own limit (config/field-limits.json) once it is in.
-    (B.limitsFor ? B.limitsFor('article') : []).forEach(function (d) { if (own(L, d.k)) L[d.k] = d.max; });
+    (B.limitsFor ? B.limitsFor('article') : []).forEach(function (d) { L[d.k] = d.max; });   // v1.0.18: every limit in the file
+    if (k === 'name' && (L.name || L.title)) return { max: L.name || L.title, hard: true };   // v1.0.18: typing stops at 60   // v1.0.18: the headline (60); not cut while typing, so a pasted headline shows whole
     if (k === 'subtitle' && L.subtitle) return { max: L.subtitle, hard: true };
     if (k === 'bannerStatement' && L.bannerStatement) return { max: L.bannerStatement, hard: true };
     if (k === 'teaser' && L.teaser) return { max: L.teaser, min: HC.teaserMin };
     if (k === 'shortSummary' && L.shortSummary) return { max: L.shortSummary, min: HC.shortSummaryMin };
     return null;
   }
+  // v1.0.19 — the count goes down (Jeff, 28 Nov)
+  function leftText(len, max) { var d = max - len; return d < 0 ? (-d).toLocaleString() + ' over' : d.toLocaleString() + ' left'; }
+  function leftClass(len, max, min) {
+    if (len > max || len === max) return ' at';
+    if ((max - len) <= Math.max(3, Math.ceil(max * 0.15))) return min && len >= min ? ' inrange' : ' near';
+    return min ? (len >= min ? ' inrange' : ' under') : '';
+  }
   function paintCounter(k, v) {
     var c = q('[data-a2-count="' + k + '"]'), sp = counterSpec(k);
     if (!c || !sp) return;
     var n = String(v || '').length;
-    c.textContent = n + ' / ' + (sp.min ? sp.min + '\u2013' + sp.max : sp.max);
-    c.className = 'asf2-count' + (n > sp.max ? ' over' : sp.min ? (n >= sp.min ? ' inrange' : ' under') : (n >= sp.max * 0.85 ? ' near' : ''));
-  }
-  function groupHTML(g) {
-    if (g.where) return whereHTML(g);
-    return '<div class="asf2-group"><div class="asf2-sub">' + esc(g.title) + '</div>' +   // v1.0.14: a sub-head inside its chapter
-      g.fields.map(fieldHTML).join('') + '</div>';
-  }
-  // v1.0.9 — group 1, "Where it runs". Section, the line that says what
-  // it means, the old page's Product Library and MNLS, then the rest.
-  function whereHTML(g) {
-    var sec = g.fields[0], rest = g.fields.slice(1);
-    return '<div class="asf2-group asf2-where"><div class="asf2-sub">' + esc(g.title) +   // v1.0.14
-        '<span class="asf2-gh-note">decides the block it can go in</span></div>' +
-      '<div class="asf2-where-box">' +
-        fieldHTML(sec) +
-        '<div class="asf2-why" data-a2-why></div>' +
-        '<div class="asf2-legacy" data-a2-legacy>' +
-          '<div class="asf2-legacy-head" data-a2-lgnote></div>' +
-          '<div class="asf2-legacy-row"><span>Product Library</span><span data-a2-lg="product"></span></div>' +
-          '<div class="asf2-legacy-row"><span>MNLS</span><span data-a2-lg="mnls"></span></div>' +
-        '</div>' +
-        rest.map(fieldHTML).join('') +
-      '</div></div>';
-  }
-  function countFields(list) {
-    var n = 0;
-    list.forEach(function (d) { n += d.pair ? d.pair.length : 1; });
-    return n;
+    var t = leftText(n, sp.max) + (sp.min && n < sp.min ? ' \u00b7 aim ' + sp.min + '\u2013' + sp.max : '');   // v1.0.19: what is left
+    if (c.textContent !== t) c.textContent = t;
+    c.className = 'asf2-count' + leftClass(n, sp.max, sp.min);
   }
   // v1.0.14 — the six chapters (P3). n = the number on screen; id = the jump target.
   var CHAPTERS = [
@@ -1026,16 +1101,12 @@
   function ch(id) { return CHAPTERS.filter(function (c) { return c.id === id; })[0]; }
 
   function rootHTML() {
-    var people = FACT_GROUPS[2];
     return '<div class="asf2 asf2-shell ix-dense ix-surface-scope" data-a2-root="' + M.seq + '">' +
       '<div class="asf2-kind" data-a2-kind></div>' +
-      chapterHTML(ch('where'),
-        '<div class="asf2-band asf2-band--2">' + groupHTML(FACT_GROUPS[0]) + groupHTML(FACT_GROUPS[1]) + '</div>') +
+      chapterHTML(ch('where'), rowsHTML(FACT_GROUPS[0].fields.concat(FACT_GROUPS[1].fields)), 'asf2-ch--rows') +
       chapterHTML(ch('words'),
-        '<div class="asf2-ai" data-a2-ai-strip></div>' +
-        '<div class="asf2-words">' + WORDS.map(fieldHTML).join('') + '</div>') +
-      chapterHTML(ch('byline'),
-        '<div class="asf2-band asf2-band--2">' + people.fields.map(fieldHTML).join('') + '</div>') +
+        '<div class="asf2-ai" data-a2-ai-strip></div>' + rowsHTML(WORDS), 'asf2-ch--rows') +
+      chapterHTML(ch('byline'), rowsHTML(FACT_GROUPS[2].fields), 'asf2-ch--rows') +
       chapterHTML(ch('pictures'),
         '<div class="asf2-lead" data-a2-lead></div>' +
         '<div data-a2-gallery></div>' +
@@ -1049,14 +1120,18 @@
           '<div class="asf2-side" data-a2-side hidden></div>' +
         '</div>') +
       chapterHTML(ch('cta'),
-        '<label class="ix-switch asf2-cta-sw" data-a2-ctasw><input type="checkbox" data-a2-act="cta"><span class="ix-switch-track"></span><span>Add a call to action</span></label>' +
-        '<button type="button" class="ix-revert" data-a2-act="cta-cancel" hidden>cancel</button>' +
-        '<p class="asf2-cta-note">When it is on, all three are needed. A button placed inside the body itself, for example at the end of the story, is a later idea; this is the article\u2019s one call to action.</p>' +
-        '<div class="asf2-band asf2-band--3" data-a2-ctabox>' + CTA_FIELDS.map(fieldHTML).join('') + '</div>') +
+        '<div class="asf2-rows">' +
+          '<div class="asf2-row" data-a2-row="_cta"><div class="asf2-row-n"><div class="asf2-row-l">Call to action</div><div class="asf2-row-h">a button readers click</div></div>' +
+            '<div class="asf2-row-c"><label class="ix-switch asf2-cta-sw" data-a2-ctasw><input type="checkbox" data-a2-act="cta"><span class="ix-switch-track"></span><span>Add a call to action</span></label>' +
+              '<p class="asf2-cta-note">When it is on, all three are needed. A button inside the body itself is a later idea.</p></div>' +
+            '<div class="asf2-row-s"><span class="asf2-pill" data-a2-st="_cta"></span></div>' +
+            '<div class="asf2-row-t"><button type="button" class="ix-revert" data-a2-act="cta-cancel" hidden>cancel</button></div></div>' +
+          '<div data-a2-ctabox>' + CTA_FIELDS.map(fieldHTML).join('') + '</div>' +
+        '</div>', 'asf2-ch--rows') +
       '<section class="asf2-ch asf2-ch--more" data-a2-ch="more">' +
         '<details class="asf2-more"' + (M.moreOpen ? ' open' : '') + '><summary><span class="asf2-ch-n">7</span>' +
-          '<span class="asf2-ch-t">Rarely used</span><span class="asf2-ch-q">Address, banner statement, revenue type, video and audio links</span></summary>' +
-          '<div class="asf2-more-body asf2-band asf2-band--3">' + MORE.map(fieldHTML).join('') + '</div></details>' +
+          '<span class="asf2-ch-t">Rarely used</span><span class="asf2-ch-q">Address, revenue type, video and audio links</span></summary>' +
+          '<div class="asf2-more-body">' + rowsHTML(MORE) + '</div></details>' +
       '</section>' +
       finishHTML() +
     '</div>';
@@ -1064,18 +1139,22 @@
 
   // v1.0.14 — the finish bar (P8, P9, P11, P14, P15). Fixed at the bottom right.
   var RING_C = 106.8;   // 2 * pi * 17, the ring's circumference
+  // v1.0.16 — rail A: one full-width ink bar (Jeff, 28 Nov). What's left opens upward from its left end.
   function finishHTML() {
-    return '<div class="asf2-finish' + (M.leftOpen ? ' is-open' : '') + '" data-a2-finish role="region" aria-label="Finish">' +
-      '<div class="asf2-fin-top">' +
-        '<svg class="asf2-ring" viewBox="0 0 42 42" aria-hidden="true"><circle class="asf2-ring-bg" cx="21" cy="21" r="17"/>' +
-          '<circle class="asf2-ring-v" data-a2-ring cx="21" cy="21" r="17" transform="rotate(-90 21 21)" stroke-dasharray="' + RING_C + '" stroke-dashoffset="' + RING_C + '"/></svg>' +
-        '<div class="asf2-fin-txt"><div class="asf2-fin-t" data-a2-fin-t></div>' +
-          '<div class="asf2-fin-s"><button type="button" class="ix-revert" data-a2-act="left">Show what’s left</button>' +
-          '<span data-a2-cancelwrap> · <button type="button" class="ix-revert" data-a2-act="cancel-all">Cancel changes</button></span></div></div>' +
-        '<button type="button" class="ix-btn ix-btn--primary" data-a2-act="save">Save</button>' +
-      '</div>' +
+    return '<div class="asf2-finish asf2-rail' + (M.leftOpen ? ' is-open' : '') + '" data-a2-finish role="region" aria-label="Save">' +
       '<div class="asf2-left" data-a2-left></div>' +
-      '<div class="asf2-fin-foot"><span data-a2-archmsg></span><span class="asf2-dirtycount" data-a2-dirtycount></span></div>' +
+      '<div class="asf2-ask" data-a2-ask hidden></div>' +   // v1.0.17 ruling D
+      '<div class="asf2-fin-top">' +
+        '<div class="asf2-fin-ready">' +
+          '<svg class="asf2-ring" viewBox="0 0 42 42" aria-hidden="true"><circle class="asf2-ring-bg" cx="21" cy="21" r="17"/>' +
+            '<circle class="asf2-ring-v" data-a2-ring cx="21" cy="21" r="17" transform="rotate(-90 21 21)" stroke-dasharray="' + RING_C + '" stroke-dashoffset="' + RING_C + '"/></svg>' +
+          '<div class="asf2-fin-txt"><div class="asf2-fin-t" data-a2-fin-t></div>' +
+            '<div class="asf2-fin-s"><button type="button" class="ix-revert" data-a2-act="left" aria-expanded="false">Show what\u2019s left</button></div></div>' +
+        '</div>' +
+        '<div class="asf2-fin-foot"><span class="asf2-dirtycount" data-a2-dirtycount></span><span class="asf2-issues" data-a2-issues></span><span data-a2-archmsg></span></div>' +
+        '<button type="button" class="asf2-rbtn asf2-rbtn--ghost asf2-fin-cancel" data-a2-act="cancel-all">Cancel changes</button>' +   // v1.0.16: own buttons on the ink rail
+        '<button type="button" class="asf2-rbtn asf2-rbtn--save asf2-fin-save" data-a2-act="save">Save</button>' +
+      '</div>' +
     '</div>';
   }
 
@@ -1133,9 +1212,10 @@
   function paintBodyCount() {
     var c = q('[data-a2-trixcount]');
     if (!c) return;
-    var len = B.stripTags(A().bodyHtml || '').length, max = HC.bodyMaxChars;
-    c.textContent = len.toLocaleString() + ' / ' + max.toLocaleString();
-    c.className = 'asf2-trixcount' + (len > max ? ' over' : len > max * 0.85 ? ' near' : '');
+    var lim = (B.limitsFor ? B.limitsFor('article') : []).filter(function (d) { return d.k === 'bodyHtml'; })[0];
+    var len = B.stripTags(A().bodyHtml || '').length, max = lim ? lim.max : HC.bodyMaxChars;   // v1.0.19: the file's limit (15,000)
+    c.textContent = leftText(len, max);
+    c.className = 'asf2-trixcount' + (len > max ? ' over' : leftClass(len, max) === ' near' ? ' near' : len === max ? ' over' : '');
     var box = q('[data-a2-body]');
     if (box) box.classList.toggle('is-over', len > max);
   }
@@ -1232,6 +1312,7 @@
     if (M.photo.facts && M.ogAtBase === null) M.ogAtBase = ogAtOpened();   // v1.0.11
     loadPhotoFacts(false);
     panel.classList.add('asf2-panel--full');   // v1.0.14 — full width for this form
+    panel.classList.add('asf2-panel--article'); // v1.0.15 — its header row stays at the top
     panel.innerHTML = '<div data-a2-cx>' + B.renderContextBar() + '</div>' + rootHTML();
     var root = rootEl();
     root.addEventListener('mousedown', onMouseDown);
@@ -1428,10 +1509,32 @@
     var tray = trayIds();
     return out.filter(function (id) { return tray.indexOf(id) > -1; });
   }
+  // v1.0.16 — HC-P-A1-8: what a finished Standard article needs (Jeff, 28 Nov).
+  function needed(k) {
+    var a = A();
+    if (HC.needs[k]) return true;
+    if (k === 'customerId' || k === 'obligationId') return !!a.isPaid;
+    if (CTA_KEYS.indexOf(k) > -1) return !!M.ctaOn;
+    return false;
+  }
+  function valueOf(k) {
+    if (k === 'obligationId') return M.obl.cur || '';
+    var v = A()[k];
+    return v == null ? '' : String(v).trim();
+  }
+  function bodyText() { return String(B.stripTags(A().bodyHtml || '') || '').replace(/\u00a0/g, ' ').trim(); }
   function checks() {
     var a = A(), list = [], idx = mediaIndex();
     var ids = trayIds();
-    list.push({ ch: 'words', text: 'Write the headline', jump: 'f:name', ok: !!String(a.name || '').trim() });
+    function need(chap, k, text) { list.push({ ch: chap, text: text, jump: 'f:' + k, ok: !!valueOf(k) }); }
+    need('where', 'sectionId', 'Choose the Section');
+    if (a.isPaid) {
+      need('where', 'customerId', 'Choose the customer who pays');
+      need('where', 'obligationId', 'Connect or create the obligation');
+    }
+    need('words', 'name', 'Write the headline');
+    need('words', 'teaser', 'Write the web teaser');
+    need('words', 'shortSummary', 'Write the email teaser');
     var lc = B.limitCheck ? B.limitCheck() : { ready: true, over: [], error: '' };
     if (!lc.ready) {
       list.push({ ch: 'words', text: lc.error ? 'The field limits could not be read (' + lc.error + ')' : 'Reading Webflow\u2019s field limits\u2026', jump: '', ok: false });
@@ -1440,33 +1543,71 @@
       list.push({ ch: 'words', text: 'Every field within Webflow\u2019s limits', jump: '', ok: true });
     } else {
       lc.over.forEach(function (o) {
-        var chap = o.k === 'bodyHtml' ? 'body' : CTA_KEYS.indexOf(o.k) > -1 ? 'cta' : MORE_KEYS[o.k] ? 'more' : o.k in BYLINE_KEYS ? 'byline' : 'words';
-        list.push({ ch: chap, text: o.label + ' is ' + o.n + ' characters, ' + (o.n - o.max) + ' over its limit of ' + o.max, jump: 'f:' + o.k, ok: false });
+        list.push({ ch: chapterOf(o.k), text: formLabel(o.k, o.label) + ' is ' + o.n + ' characters, ' + (o.n - o.max) + ' over its limit of ' + o.max, jump: 'f:' + o.k, ok: false });
       });
     }
+    need('byline', 'writerName', 'Add the writer');
     if (isPhotoEssay()) {
       list.push({ ch: 'pictures', text: 'Add photos to the gallery', jump: 'ch:pictures', ok: (a.galleryMediaIds || []).length > 0 });
     } else {
-      list.push({ ch: 'pictures', text: 'Choose a Main photo', jump: 'ch:pictures', ok: !!(M.roles.main || a.mainImageMediaId || a.mainImageSrc) });
+      var hasMain = !!(M.roles.main || a.mainImageMediaId || a.mainImageSrc);
+      list.push({ ch: 'pictures', text: 'Choose a Main photo', jump: 'ch:pictures', ok: hasMain });
+      // the email and web tiles take their photo from the share image; it follows Main unless changed, so it is
+      // listed once there is a Main (before that, "Choose a Main photo" covers both)
+      if (hasMain) list.push({ ch: 'pictures', text: 'Choose a share photo', jump: 'ch:pictures', ok: !!(effOg() || a.ogImageSrc || a.mainImageSrc) });
     }
-    usedPhotoIds().forEach(function (id) {
+    var used = usedPhotoIds();
+    used.forEach(function (id) {
       var tx = M.imgText[id] || {}, rec = idx[id] || {};
       list.push({ ch: 'pictures', text: 'Alt text for ' + (rec.fn || ('photo ' + (ids.indexOf(id) + 1))), jump: 'alt:' + id, ok: !!String(tx.alt || '').trim() });
     });
-    if (!usedPhotoIds().length && (a.mainImageSrc) && !isPhotoEssay()) {
-      list.push({ ch: 'pictures', text: 'Alt text for the Main photo', jump: 'ch:pictures', ok: !!String(a.mainImageAlt || '').trim() });
+    // v1.0.16 — a Main photo that is not among this article's photos still needs its alt text
+    var mainId = M.roles.main || a.mainImageMediaId || '';
+    if (!isPhotoEssay() && (mainId || a.mainImageSrc) && used.indexOf(mainId) < 0) {
+      var mAlt = !!String(a.mainImageAlt || '').trim();
+      list.push({ ch: 'pictures', text: mAlt ? 'Alt text for the Main photo' : 'Alt text for the Main photo: add it from the library, then write it on its card', jump: 'ch:pictures', ok: mAlt });
     }
+    list.push({ ch: 'body', text: 'Write the body', jump: 'f:bodyHtml', ok: !!bodyText() });
     if (M.ctaOn) {
       CTA_FIELDS.forEach(function (d) {
-        list.push({ ch: 'cta', text: 'Call to action: ' + d.label.toLowerCase(), jump: 'f:' + d.key, ok: !!String(a[d.key] || '').trim() });
+        list.push({ ch: 'cta', text: 'Call to action: ' + d.label.toLowerCase(), jump: 'f:' + d.key, ok: !!valueOf(d.key) });
       });
     }
-    [['sponsor-ok', 'Sponsor OK'], ['edit-pass', 'Edit pass']].forEach(function (t) {
+    var ticks = [['edit-pass', 'Edit pass']];
+    if (a.isPaid) ticks.unshift(['sponsor-ok', M.spCleared ? 'Sponsor OK (cleared: the words or pictures changed since the sponsor approved)' : 'Sponsor OK']);   // ruled 28 Nov: Sponsor OK only when paid; v1.0.17 ruling A
+    ticks.forEach(function (t) {
       list.push({ ch: '', text: t[1], tick: t[0], ok: !!(S.rtpManualState || {})[t[0]] });
     });
     return list;
   }
-  var MORE_KEYS = { slug: 1, bannerStatement: 1, revenueType: 1, videoUrl: 1, audioUrl: 1 };
+  // v1.0.16 — the form's own name for a field (Web teaser, not Webflow's Post Summary)
+  function formLabel(k, fallback) {
+    var all = WORDS.concat(FACT_GROUPS[0].fields, FACT_GROUPS[1].fields, FACT_GROUPS[2].fields, CTA_FIELDS, MORE);
+    var d = all.filter(function (x) { return x.key === k; })[0];
+    return d ? d.label : (k === 'bodyHtml' ? 'Body' : fallback);
+  }
+  function chapterOf(k) {
+    if (k === 'bodyHtml') return 'body';
+    if (CTA_KEYS.indexOf(k) > -1) return 'cta';
+    if (MORE_KEYS[k]) return 'more';
+    if (k in BYLINE_KEYS) return 'byline';
+    if (k === 'sectionId' || k === 'printIssueSource' || k === 'customerId' || k === 'obligationId') return 'where';
+    return 'words';
+  }
+  // v1.0.16 — a row's status pill.
+  function fieldStatus(k, over) {
+    var a = A();
+    if (k === '_cta') return M.ctaOn ? { t: 'On', c: 'opt' } : { t: 'Off', c: 'opt' };
+    if (BOOL_KEYS[k]) {
+      var on = !!a[k];
+      return k === 'isPaid' ? { t: on ? 'Paid' : 'Not paid', c: 'opt' } : { t: on ? 'On' : 'Off', c: 'opt' };
+    }
+    if ((k === 'customerId' || k === 'obligationId') && !a.isPaid) return { t: 'Not needed', c: 'opt' };
+    if (over[k]) return { t: (over[k].n - over[k].max) + ' over', c: 'bad' };
+    if (!valueOf(k)) return needed(k) ? { t: 'Missing', c: 'todo' } : { t: 'Optional', c: 'opt' };
+    return { t: 'Done', c: 'ok' };
+  }
+  var MORE_KEYS = { slug: 1, revenueType: 1, videoUrl: 1, audioUrl: 1 };   // v1.0.16: banner statement is in The words
   var BYLINE_KEYS = { writerName: 1, writerTitle: 1, cowriterName: 1, cowriterTitle: 1, photographer: 1 };
 
   function renderTicks() {
@@ -1483,7 +1624,18 @@
     var tt = left.length ? left.length + (left.length === 1 ? ' thing' : ' things') + ' before this is complete' : 'Complete';
     if (t && t.textContent !== tt) t.textContent = tt;
     var tog = q('[data-a2-act="left"]');
-    if (tog) tog.textContent = M.leftOpen ? 'Hide what\u2019s left' : 'Show what\u2019s left';
+    if (tog) { tog.textContent = M.leftOpen ? 'Hide what\u2019s left' : 'Show what\u2019s left'; tog.setAttribute('aria-expanded', M.leftOpen ? 'true' : 'false'); }
+    // v1.0.16 — each row's status pill
+    var over = {};
+    (B.limitCheck ? (B.limitCheck().over || []) : []).forEach(function (o) { over[o.k] = o; });
+    qa('[data-a2-st]').forEach(function (el) {
+      var st = fieldStatus(el.getAttribute('data-a2-st'), over);
+      if (el.textContent !== st.t) el.textContent = st.t;
+      var cls = 'asf2-pill is-' + st.c;
+      if (el.className !== cls) el.className = cls;
+      var row = el.closest('.asf2-row');
+      if (row) row.classList.toggle('is-over', st.c === 'bad');
+    });
     fin.classList.toggle('is-open', !!M.leftOpen);
     var host = q('[data-a2-left]');
     if (host) {
@@ -1502,18 +1654,73 @@
     CHAPTERS.forEach(function (c) {
       var el = q('[data-a2-chs="' + c.id + '"]');
       if (!el) return;
-      var n = left.filter(function (x) { return x.ch === c.id; }).length;
-      var txt = n ? n + (n === 1 ? ' thing left' : ' things left') : 'Done';
+      var mine = left.filter(function (x) { return x.ch === c.id; }), n = mine.length;
+      var off = c.id === 'cta' && !M.ctaOn;
+      var txt = off ? 'Off' : n ? n + ' to fix' : 'Done';
       if (el.textContent !== txt) el.textContent = txt;
-      el.className = 'asf2-ch-s ' + (n ? 'is-todo' : 'is-ok');
+      var bad = mine.some(function (x) { return / over its limit /.test(x.text); });
+      el.className = 'asf2-ch-s ' + (off ? 'is-opt' : bad ? 'is-bad' : n ? 'is-todo' : 'is-ok');
     });
   }
+  /* ── v1.0.17 · ruling D: the issues this article is in ── */
+  function issuesUrl() {
+    var c = (B.cfg.tenant && B.cfg.tenant.cfg) ? (B.cfg.tenant.cfg() || {}) : {};
+    var ta = (B.cfg.tenant && B.cfg.tenant.taItemId) ? B.cfg.tenant.taItemId() : (c.taItemId || '');
+    if (!c.planList || !ta) return '';
+    return String(c.planList).replace(/\/plans(\?.*)?$/, '/article-issues') + '?titleAdminId=' + encodeURIComponent(ta);
+  }
+  function loadIssues() {
+    var id = A().id || '';
+    if (M.issues || S.mode === 'create' || !id) return;
+    var url = issuesUrl();
+    if (!url) { M.issues = { state: 'off', list: [] }; return; }
+    M.issues = { state: 'loading', list: [] };
+    var mine = M;
+    fetch(url + '&article=' + encodeURIComponent(id), { method: 'GET', credentials: 'omit' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (M !== mine) return;
+        // an older Worker answers 404 or no list: show nothing, save as before
+        M.issues = (j && j.ok && Array.isArray(j.issues)) ? { state: 'ready', list: j.issues } : { state: 'off', list: [] };
+        paintIssues();
+      })
+      .catch(function () { if (M === mine) { M.issues = { state: 'off', list: [] }; paintIssues(); } });
+  }
+  function lockedIssues() {
+    return (M.issues && M.issues.state === 'ready' ? M.issues.list : []).filter(function (x) { return x && (x.sent || x.released); });
+  }
+  function issuesSentence(list) {
+    var names = list.map(function (x) { return x.name || 'an issue'; });
+    var nm = names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0];
+    var anySent = list.some(function (x) { return x.sent; });
+    return anySent
+      ? 'This article is in ' + nm + ', already sent. Saving changes its web page now; the email readers got stays as it was.'
+      : 'This article is in ' + nm + ', already released. Saving changes its web page now; the email file keeps the old version until the issue is unlocked on Compile and compiled again.';
+  }
+  function paintIssues() {
+    if (!M) return;
+    loadIssues();
+    var list = lockedIssues();
+    var line = q('[data-a2-issues]');
+    if (line) {
+      var t = list.length ? 'In ' + list.map(function (x) { return x.name + (x.sent ? ' (sent)' : ' (released)'); }).join(', ') : '';
+      if (line.textContent !== t) line.textContent = t;
+    }
+    var box = q('[data-a2-ask]');
+    if (!box) return;
+    var show = !!(M.issueAsk && list.length);
+    var h = show ? '<p class="asf2-ask-t">' + esc(issuesSentence(list)) + '</p>' +
+      '<div class="asf2-ask-b"><button type="button" class="asf2-rbtn asf2-rbtn--save" data-a2-act="ask-save">Save anyway</button>' +
+      '<button type="button" class="ix-revert" data-a2-act="ask-cancel">cancel</button></div>' : '';
+    if (box.innerHTML !== h) box.innerHTML = h;
+    box.hidden = !show;
+  }
+
   /* ── The finish bar's Save, Cancel changes and change count (was the top bar) ── */
   function renderBar() {
     var list = changeList(), n = list.length;
     var save = q('[data-a2-act="save"]');
     var cancel = q('[data-a2-act="cancel-all"]');
-    var cwrap = q('[data-a2-cancelwrap]');
     var cnt = q('[data-a2-dirtycount]');
     var busy = !!(S.saving || M.savingMedia);
     var checking = !!(archiveLive() && M.archive.checking);   // v1.0.11
@@ -1524,20 +1731,18 @@
       save.title = idle ? 'Nothing to save yet \u2014 Save lights up as soon as you change something'
         : checking ? 'Checking where the old inset photo is used first' : '';
     }
+    paintIssues();   // v1.0.17
     var am = q('[data-a2-archmsg]');
     if (am) { var ah = archiveLineHTML(); if (am.innerHTML !== ah) am.innerHTML = ah; }
-    if (cwrap) cwrap.hidden = !n;          // Cancel changes shows once something has changed
     if (cancel) {
       cancel.disabled = busy || !n;
       cancel.title = n ? 'Put every field back to how this form opened' : '';
     }
     if (cnt) {
-      var ct = n ? n + (n === 1 ? ' change' : ' changes') + ' (gold) \u00B7 Save writes them' : '';
+      var ct = n ? n + (n === 1 ? ' change \u00B7 Save writes it' : ' changes \u00B7 Save writes them') : 'No changes yet';
       if (cnt.textContent !== ct) cnt.textContent = ct;
       cnt.title = list.join(', ');
     }
-    var foot = q('.asf2-fin-foot');
-    if (foot) foot.hidden = !n && !(am && am.innerHTML);
   }
 
   // v1.0.14 — the call-to-action chapter.
@@ -1593,7 +1798,7 @@
     }
     if (!el) el = q('[data-a2-ch="' + (m[1] === 'alt' ? 'pictures' : 'words') + '"]');
     if (!el) return;
-    var box = el.closest('.ix-field') || el;
+    var box = el.closest('.asf2-row') || el.closest('.ix-field') || el;   // v1.0.16 rows
     if (box.scrollIntoView) box.scrollIntoView({ block: 'center', behavior: 'smooth' });
     box.classList.remove('asf2-flash'); void box.offsetWidth; box.classList.add('asf2-flash');
     if (focus && focus.focus) setTimeout(function () { try { focus.focus({ preventScroll: true }); } catch (e) { focus.focus(); } }, 350);
@@ -1607,8 +1812,7 @@
     // even if the operator had collapsed it.
     if (M.lastUnused !== null && u > M.lastUnused) M.trayPref = null;
     M.lastUnused = u;
-    if (M.trayPref !== null) return !M.trayPref;
-    return pc.unused === 0 && !!(M.roles.main || A().mainImageSrc);
+    return false;   // v1.0.16: Pictures never fold away; the alt boxes always show (Jeff, 28 Nov)
   }
 
   function imgFill(url) {
@@ -1695,7 +1899,7 @@
     var html = '<div class="asf2-group">' +   // v1.0.14: inside the Pictures chapter, no group head of its own
       '<div class="asf2-tray-head"><span class="asf2-tray-title">This article\u2019s photos</span><span class="asf2-tray-sum">' + pc.total + ' \u00B7 ' + pc.placed + ' placed' +
       (pc.unused ? ' \u00B7 <span class="bad">' + pc.unused + ' unused</span>' : '') + '</span>' +
-      (pc.unused === 0 && pc.total ? '<button type="button" class="ix-revert asf2-tray-toggle" data-a2-tray="shut" aria-expanded="true">Hide the photos</button>' : '') + '</div>' +
+      '</div>' +
       '<div class="asf2-tlist">';
     ids.forEach(function (id) {
       var rec = idx[id], tx = M.imgText[id];
@@ -2199,6 +2403,7 @@
     M.recCur = clone(M.recBase);   // v1.0.11
     M.archive = null;
     S.rtpManualState = clone(S.originalManual || {});
+    M.spManual = false; M.spCleared = false;   // v1.0.17
     S.aiFilled = {};
     var st = B.aiAssistState(); st.done = false; st.error = ''; st.bodyUndo = null;
     M.trayPref = null;
@@ -2244,6 +2449,7 @@
   function toggleTick(id) {
     if (!S.rtpManualState) S.rtpManualState = {};
     S.rtpManualState[id] = !S.rtpManualState[id];
+    if (id === 'sponsor-ok') { M.spManual = true; M.spCleared = false; }   // v1.0.17
     renderTicks();
     renderBar();
   }
@@ -2536,6 +2742,8 @@
       var act = el.getAttribute('data-a2-act');
       if (act === 'save') { save(); return true; }
       if (act === 'cancel-all') { cancelAll(); return true; }
+      if (act === 'ask-save') { M.issueOk = true; M.issueAsk = false; paintIssues(); save(); return true; }   // v1.0.17
+      if (act === 'ask-cancel') { M.issueAsk = false; paintIssues(); return true; }                         // v1.0.17
       if (act === 'cta') { setCta(el.checked); return true; }                                 // v1.0.14
       if (act === 'cta-cancel') { cancelCta(); return true; }                                 // v1.0.14
       if (act === 'left') { M.leftOpen = !M.leftOpen; renderTicks(); return true; }          // v1.0.14
@@ -2630,6 +2838,8 @@
     var art = articleHasChanges();
     var oblChange = M.obl.cur !== M.obl.base;
     if (!items.length && !art && !oblChange && S.mode !== 'create') { B.toast('Nothing to save', 'info'); return; }
+    // v1.0.17 — ruling D: say so before saving an article that is in a released or sent issue
+    if (lockedIssues().length && !M.issueOk) { M.issueAsk = true; paintIssues(); return; }
     if (S.mode === 'create' && !String(A().name || '').trim()) {
       B.toast('Headline is required to create an article', 'error');
       var h = q('[data-a2-f="name"]'); if (h) h.focus();

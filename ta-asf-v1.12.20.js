@@ -1,8 +1,43 @@
-/* ta-asf-v1.12.17.js
+/* ta-asf-v1.12.20.js
    ============================================================
-   ta-asf-v1.12.17.js
+   ta-asf-v1.12.20.js
    INBXIFY TA Studio — ASF (Asset Submission Form)
-   Pairs ta-asf-article v1.0.15 (+ ta-asf-article-v1.0.12.css).
+   Pairs ta-asf-article v1.0.19 (+ ta-asf-article-v1.0.15.css).
+
+   v1.12.20 (28 Nov 2026, ASF Rethink A1) — THE COUNT GOES DOWN. Jeff, 28 Nov: "It should also count down from remaining
+   in a visible way." Every character counter on the asset forms now reads what is left ("23 left"), turns gold in the
+   last 15 per cent and red at "0 left"; a value already over reads "N over". A range field adds its aim
+   ("38 left · aim 350–400"). Every limited field that had no counter gets one under it (for example the event's name,
+   description and state). Counters are larger and bold. Nothing else changed.
+
+   v1.12.19 header follows.
+
+   v1.12.19 (28 Nov 2026, ASF Rethink A1) — A LIMIT STOPS THE TYPING. Jeff, 28 Nov: "just not allow any more characters
+   to be typed in. That's how it used to be. Go back to that on every single form."
+     · Every limited field on the Article, Ad, Event and Real Estate forms gets maxlength = its limit from
+       config/field-limits.json (the headline included: 60). Typing stops at the limit; a paste is cut at the limit
+       and a toast says so, naming the field. A value already over its limit (an older record) can be shortened,
+       never lengthened.
+     · Rich text with a limit (the article body, 15,000 visible characters; the event description, 1,800) stops
+       growing at its limit: a change that would pass it is taken back, with the same toast.
+     · The older fields that set maxlength to twice the limit (so the count could run over) now set the limit itself.
+     · Save still checks every limit (a value filled in code is not stopped by maxlength).
+     Nothing else changed.
+
+   v1.12.18 header follows.
+
+   v1.12.18 (28 Nov 2026, ASF Rethink A1) — CLOSE FORM; THE INK RAIL ON EVERY ASSET FORM.
+     Jeff, 28 Nov: "The close X needs to be replaced with a prominent button with a distinctive background colour
+     from the Title colour variables, text Close form"; one save rail construct everywhere, colour A (ink).
+     · Every asset form's header: the ✕ becomes a "Close form" button in the title's colour (TA_CONFIG.titleColor),
+       falling back to the platform deep teal (HC-P-A1-9). Its words are white or ink, whichever reads better on
+       that colour. It does what the ✕ did (asks first if anything is unsaved); Esc still closes.
+     · Ad, Event and Real Estate forms: the bottom action bar becomes the full-width ink rail of the Article form.
+       Cancel (outlined white) sits beside Save (gold) at the right; the Event readiness line reads in light words
+       at the left. "✕ Cancel" reads "Cancel". What each button does is unchanged.
+     Nothing else changed.
+
+   v1.12.17 header follows.
 
    v1.12.17 (27 Nov 2026, ASF Rethink A1) — CANCEL AND SAVE TOGETHER ON THE BOTTOM BAR; THE TOP ROW STAYS.
      Jeff, 27 Nov: "Put Cancel and Save together on the bottom bar across all instances. But also fix the top row."
@@ -4453,7 +4488,7 @@
   //   hydrate field each for Main and OG; small MEDIA picker cards.
   // v1.12.6 (8 Nov, Inset Photo S3) — article saves stop sending mainImageAlt
   //   (Scenario G no longer writes alt-text-for-image; the alt lives on MEDIA).
-  var VERSION = '1.12.17';
+  var VERSION = '1.12.20';
   // v1.12.15 — this script's own address, so config/field-limits.json is read from the same commit.
   var SELF_SRC = (document.currentScript && document.currentScript.src) || '';
   // v1.11.14 — undo UTF-8-read-as-Windows-1252 ("Â®" → "®", "â€™" → "’").
@@ -6151,7 +6186,12 @@
   //  full re-renders are cheaper than diffing for this surface size.
   //  Chunk C may add fine-grained patch helpers if perf demands.
   // ═══════════════════════════════════════════════════════════════
+  // v1.12.19 — every render ends by putting the limits on the fields it drew.
   function render() {
+    renderInner();
+    try { enforceLimits(); } catch (e) { warn('enforceLimits', e); }
+  }
+  function renderInner() {
     var panel = qs(S.overlay, '#asf-panel');
     if (!panel) return;
 
@@ -6606,10 +6646,29 @@
         '<span class="asf-cx-right">' +                                        // v1.5.20
           '<span class="asf-cx-info" data-asf-action="toggle-provenance"' +
             ' title="What powers this surface">i</span>' +
-          '<span class="asf-cx-close" data-asf-action="close-overlay" title="Close (Esc)">✕</span>' +
+          closeFormButton() +                                                  // v1.12.18 (was the ✕)
         '</span>' +
       '</div>' +
       renderProvenance();                                                      // v1.5.20
+  }
+
+  // v1.12.18 — "Close form" in the title's colour (Jeff, 28 Nov). HC-P-A1-9: the fallback colour.
+  var CLOSE_FALLBACK = '#142E2E';
+  function closeFormColor() {
+    var c = String((window.TA_CONFIG && window.TA_CONFIG.titleColor) || '').trim();
+    if (c && c[0] !== '#') c = '#' + c;
+    if (/^#[0-9a-fA-F]{3}$/.test(c)) c = '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+    return /^#[0-9a-fA-F]{6}$/.test(c) ? c : CLOSE_FALLBACK;
+  }
+  function lumOf(hex) {
+    var f = function (i) { var v = parseInt(hex.substr(i, 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    return 0.2126 * f(1) + 0.7152 * f(3) + 0.0722 * f(5);
+  }
+  function closeFormButton() {
+    var bg = closeFormColor(), l = lumOf(bg);
+    // white or ink, whichever has the higher contrast on this colour
+    var fg = (1.05 / (l + 0.05)) >= ((l + 0.05) / (lumOf('#16181D') + 0.05)) ? '#FFFFFF' : '#16181D';
+    return '<button type="button" class="asf-cx-closeform" data-asf-action="close-overlay" title="Close (Esc)" style="background:' + bg + ';color:' + fg + ';">Close form</button>';
   }
 
   // v1.12.16 — the title's own name for the header; a slug is never shown.
@@ -6651,6 +6710,30 @@
       '.ta-asf .asf-action-bar > .asf-action-cancel{order:2!important;}' +
       '.ta-asf .asf-action-bar > .asf-action-save{order:3!important;}' +
       '.ta-asf .asf-action-bar .asf-action-cancel{font-size:13px!important;padding:9px 18px!important;font-weight:600!important;}' +
+      /* v1.12.18 — Close form, and the ink rail on the Ad, Event and Real Estate forms */
+      '.ta-asf .asf-cx--v2 .asf-cx-right{display:inline-flex!important;align-items:center!important;gap:14px!important;}' +
+      '.ta-asf .asf-cx-closeform{height:40px!important;padding:0 18px!important;border:0!important;border-radius:8px!important;cursor:pointer!important;' +
+      'font:700 14px "DM Sans",system-ui,sans-serif!important;letter-spacing:0!important;white-space:nowrap!important;}' +
+      '.ta-asf .asf-cx-closeform:hover{filter:brightness(1.12);}' +
+      '.ta-asf .asf-cx-closeform:focus-visible{outline:2px solid #16181D!important;outline-offset:2px!important;}' +
+      '.ta-asf .asf-action-bar,.ta-asf .asf-panel--evx .asf-action-bar{left:0!important;right:0!important;transform:none!important;width:auto!important;max-width:none!important;' +
+      'height:68px!important;box-sizing:border-box!important;padding:0 32px!important;background:#16181D!important;border-top:1px solid rgba(255,255,255,.14)!important;box-shadow:none!important;color:#fff!important;}' +
+      '.ta-asf .asf-action-bar .asf-action-cancel{width:150px!important;height:42px!important;padding:0!important;border-radius:8px!important;background:transparent!important;' +
+      'color:#fff!important;border:1.5px solid #fff!important;font:700 14px "DM Sans",system-ui,sans-serif!important;}' +
+      '.ta-asf .asf-action-bar .asf-action-cancel:hover{background:rgba(255,255,255,.06)!important;}' +
+      '.ta-asf .asf-action-bar .asf-action-save{min-width:150px!important;height:42px!important;padding:0 18px!important;border-radius:8px!important;background:#C4A35A!important;' +
+      'color:#16181D!important;border:0!important;font:700 14px "DM Sans",system-ui,sans-serif!important;}' +
+      '.ta-asf .asf-action-bar .asf-action-save:disabled{opacity:.45!important;}' +
+      '.ta-asf .asf-action-bar .evx-ready, .ta-asf .asf-action-bar .evx-ready span{color:#D9D2C3!important;}' +
+      '.ta-asf .asf-action-bar .evx-ready .ok{color:#4CB782!important;}' +
+      '.ta-asf .asf-action-bar .evx-ready .no{color:#E8C172!important;}' +
+      '.ta-asf .asf-panel--evx .asf-evx{padding-bottom:72px!important;}' +
+      /* v1.12.20 — counters read what is left; larger and bold */
+      '.ta-asf .asf-charcount,.ta-asf .asf-char-counter,.ta-asf .asf-trix-charcount,.ta-asf .asf-left{font:700 12px "DM Sans",system-ui,sans-serif!important;color:#5A5E66!important;letter-spacing:0!important;}' +
+      '.ta-asf .asf-left{display:block!important;text-align:right!important;margin-top:4px!important;}' +
+      '.ta-asf .asf-charcount.near,.ta-asf .asf-char-counter.near,.ta-asf .asf-trix-charcount.near,.ta-asf .asf-left.near,.ta-asf .asf-charcount.under{color:#7A4E12!important;}' +
+      '.ta-asf .asf-charcount.over,.ta-asf .asf-char-counter.at,.ta-asf .asf-trix-charcount.over,.ta-asf .asf-left.at{color:#9E1F14!important;}' +
+      '.ta-asf .asf-charcount.inrange{color:#0F5C3F!important;}' +
       '.ta-asf .asf-cx--v2 .asf-cx-info:hover{border-color:var(--ix-text-dark,#22252B)!important;background:var(--ix-cream,#FAF6EE)!important;}' +
       '.ta-asf .asf-record-head{font-family:var(--ix-font-display,"Fraunces",Georgia,serif)!important;' +
       'font-size:28px!important;line-height:1.15!important;font-weight:600!important;' +
@@ -11183,7 +11266,7 @@
             '<span class="asf-trix-charcount' +
               (over ? ' over' :
                (charCount > maxChars * 0.85 ? ' near' : '')) + '">' +
-              charCount.toLocaleString() + ' / ' + maxChars.toLocaleString() +
+              leftText(charCount, maxChars) +   // v1.12.20
             '</span>' +
           '</div>' +
         '</div>' +
@@ -11339,7 +11422,7 @@
     var html  = (S.article && S.article.bodyHtml) || '';
     var len   = stripTags(html).length;
     var max   = 20000;
-    counter.textContent = len.toLocaleString() + ' / ' + max.toLocaleString();
+    counter.textContent = leftText(len, max);   // v1.12.20
     counter.classList.remove('over', 'near');
     if (len > max) counter.classList.add('over');
     else if (len > max * 0.85) counter.classList.add('near');
@@ -11379,7 +11462,7 @@
     var saveCls    = 'asf-action-save' + (S.saving ? ' saving' : '');
     return '' +
       '<div class="asf-action-bar">' +
-        '<button type="button" class="asf-action-cancel" data-asf-action="close-overlay">✕ Cancel</button>' +
+        '<button type="button" class="asf-action-cancel" data-asf-action="close-overlay">Cancel</button>' +   // v1.12.18
         (S.assetType === 'event' ? renderEvxReady() : '') +   // v1.12.0
         '<button type="button" class="' + saveCls + '" data-asf-action="save-draft"' +
           (S.saving ? ' disabled' : '') + '>' + esc(saveLabel) + '</button>' +
@@ -13808,7 +13891,7 @@
     var counter = lim
       ? '<span class="asf-charcount' +
           (over ? ' over' : (near ? ' near' : '')) +
-        '">' + len + ' / ' + lim + '</span>'
+        '">' + leftText(len, lim) + '</span>'   // v1.12.20
       : '';
 
     return '' +
@@ -13819,7 +13902,7 @@
           ' value="' + esc(v) + '"' +
           (o.readonly    ? ' readonly' : '') +
           (o.placeholder ? ' placeholder="' + esc(o.placeholder) + '"' : '') +
-          (lim           ? ' maxlength="' + (lim * 2) + '"' : '') +
+          (lim           ? ' maxlength="' + lim + '" data-asf-lim="' + lim + '"' : '') +   // v1.12.19: the limit itself
         '>' +
         counter +
       '</div>';
@@ -13870,7 +13953,7 @@
         ' data-counter-for="' + esc(o.field) + '"' +
         ' data-counter-max="' + lim + '"' +
         ' data-counter-min="' + rmin + '"' +
-        ' data-counter-label="' + esc(cntLabel) + '">' + len + ' / ' + cntLabel + '</span>'
+        ' data-counter-label="' + esc(cntLabel) + '">' + leftText(len, lim) + (rmin ? ' \u00b7 aim ' + cntLabel : '') + '</span>'   // v1.12.20
       : '';
 
     return '' +
@@ -14090,7 +14173,7 @@
       var counter = document.querySelector('.asf-char-counter[data-counter-for="' + field + '"]');
       if (counter) {
         var len = (t.value == null ? (isCE ? (t.textContent || '') : '') : t.value).length;
-        counter.textContent = len + '/' + max;
+        counter.textContent = leftText(len, max);   // v1.12.20
         counter.classList.remove('near', 'at');
         if (len >= max)              counter.classList.add('at');
         else if (len >= max * 0.85)  counter.classList.add('near');
@@ -14107,7 +14190,7 @@
       var rmin = parseInt(rc.getAttribute('data-counter-min'), 10) || 0;
       var rlabel = rc.getAttribute('data-counter-label') || ('' + rmax);
       var rlen = (t.value == null ? (isCE ? (t.textContent || '') : '') : t.value).length;
-      rc.textContent = rlen + ' / ' + rlabel;
+      rc.textContent = rmax ? leftText(rlen, rmax) + (rmin ? ' \u00b7 aim ' + rlabel : '') : rlen + ' / ' + rlabel;   // v1.12.20
       rc.classList.remove('under', 'inrange', 'over', 'near');
       if (rmax && rlen > rmax)            rc.classList.add('over');
       else if (rmin && rlen >= rmin)      rc.classList.add('inrange');
@@ -14954,13 +15037,10 @@
     if (field) {
       var counter = qs(field, '.asf-charcount');
       if (counter) {
-        var lim = parseInt(inputEl.getAttribute('maxlength'), 10);
-        // maxlength was set to lim*2 in renderField so the user can
-        // exceed; derive the original limit by halving.
-        if (lim) lim = Math.floor(lim / 2);
+        var lim = parseInt(inputEl.getAttribute('data-asf-lim') || inputEl.getAttribute('maxlength'), 10);   // v1.12.19: maxlength is the limit
         var len = current.length;
         if (lim) {
-          counter.textContent = len + ' / ' + lim;
+          counter.textContent = leftText(len, lim);   // v1.12.20
           counter.classList.remove('over', 'near');
           if (len > lim) counter.classList.add('over');
           else if (len > Math.floor(lim * 0.85)) counter.classList.add('near');
@@ -15682,6 +15762,7 @@
     }).then(function (j) {
       if (!j || !j.types || !j.types.article) throw new Error('the file has no asset types');
       LIMITS.file = j; LIMITS.state = 'ready'; LIMITS.error = '';
+      try { enforceLimits(); } catch (e) { warn('enforceLimits', e); }   // v1.12.19
       log('field limits loaded', url, j.builtAt || '');
       flushLimitWaiters();
       if (S.open) render();
@@ -15694,6 +15775,92 @@
   function flushLimitWaiters() {
     var w = LIMITS.waiters; LIMITS.waiters = [];
     w.forEach(function (fn) { try { fn(); } catch (e) { warn('field-limit waiter threw', e); } });
+  }
+  // v1.12.20 — the count goes down (Jeff, 28 Nov).
+  function leftText(len, max) {
+    var d = max - len;
+    return d < 0 ? (-d).toLocaleString() + ' over' : d.toLocaleString() + ' left';
+  }
+  function leftClass(len, max) { return len >= max ? 'at' : (max - len) <= Math.max(3, Math.ceil(max * 0.15)) ? 'near' : ''; }
+  function paintLeft(el) {
+    var sp = el.__ixLeft; if (!sp) return;
+    var max = parseInt(el.getAttribute('data-asf-lim'), 10) || 0, len = String(el.value || '').length;
+    sp.textContent = leftText(len, max);
+    sp.className = 'asf-left ' + leftClass(len, max);
+  }
+  function hasOwnCounter(el) {
+    if (el.hasAttribute('data-a2-f')) return true;   // the Article form's rows carry their own count
+    var f = closestEl(el, '.asf-field') || el.parentNode;
+    return !!(f && f.querySelector && f.querySelector('.asf-charcount,.asf-char-counter,.asf-trix-charcount,.asf2-count'));
+  }
+  // v1.12.19 — Jeff, 28 Nov: a limit stops the typing, on every asset form.
+  var _limToastAt = 0;
+  function limToast(label, max) {
+    var now = Date.now(); if (now - _limToastAt < 2500) return; _limToastAt = now;
+    toast(label + ' is limited to ' + max.toLocaleString() + ' characters. Anything past that was not added.', 'info');
+  }
+  function limitByKey(k) {
+    var l = limitsFor(S.assetType || 'article');
+    for (var i = 0; i < l.length; i++) if (l[i].k === k) return l[i];
+    return null;
+  }
+  function enforceLimits() {
+    if (!S.overlay || LIMITS.state !== 'ready') return;
+    limitsFor(S.assetType || 'article').forEach(function (d) {
+      if (d.html) return;
+      var els = S.overlay.querySelectorAll('[data-asf-field="' + d.k + '"],[data-a2-f="' + d.k + '"]');
+      Array.prototype.forEach.call(els, function (el) {
+        var ok = el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|url|email|tel|)$/.test(el.type || ''));
+        if (!ok) return;
+        if (el.getAttribute('maxlength') !== String(d.max)) el.setAttribute('maxlength', String(d.max));
+        el.setAttribute('data-asf-lim', String(d.max));
+        // v1.12.20 — a limited field with no counter of its own gets one under it
+        if (!el.__ixLeft && !hasOwnCounter(el)) {
+          var sp = document.createElement('span');
+          sp.setAttribute('aria-live', 'polite');
+          el.parentNode.insertBefore(sp, el.nextSibling);
+          el.__ixLeft = sp;
+          el.addEventListener('input', function () { paintLeft(el); });
+        }
+        paintLeft(el);
+      });
+    });
+    bindLimitGuards();
+  }
+  function bindLimitGuards() {
+    if (!S.overlay || S.overlay.__ixLimBound) return;
+    S.overlay.__ixLimBound = true;
+    // a paste past the limit: the browser cuts it at maxlength; say so
+    S.overlay.addEventListener('paste', function (e) {
+      var el = e.target;
+      if (!el || !el.getAttribute) return;
+      var max = parseInt(el.getAttribute('maxlength'), 10);
+      if (!max || !el.hasAttribute('data-asf-lim')) return;
+      var add = ((e.clipboardData || window.clipboardData) && (e.clipboardData || window.clipboardData).getData('text')) || '';
+      var keep = String(el.value || '').length - Math.abs((el.selectionEnd || 0) - (el.selectionStart || 0));
+      if (keep + add.length > max) {
+        var k = el.getAttribute('data-asf-field') || el.getAttribute('data-a2-f');
+        var d = limitByKey(k);
+        limToast(d ? d.label : 'This field', max);
+      }
+    }, true);
+    // rich text: a change that passes the limit is taken back
+    document.addEventListener('trix-change', function (e) {
+      var ed = e.target;
+      if (!S.overlay || !ed || !S.overlay.contains(ed) || !ed.editor) return;
+      var d = limitByKey(S.assetType === 'event' ? 'eventDescription' : 'bodyHtml');
+      if (!d) return;
+      var n = Math.max(0, ed.editor.getDocument().toString().length - 1);
+      var prev = typeof ed.__ixLen === 'number' ? ed.__ixLen : null;
+      if (n > d.max && prev !== null && n > prev && ed.__ixGood) {
+        var snap = ed.__ixGood;
+        setTimeout(function () { try { ed.editor.loadSnapshot(snap); } catch (x) { warn('limit undo', x); } }, 0);
+        limToast(d.label, d.max);
+        return;
+      }
+      ed.__ixLen = n;
+      if (n <= d.max) ed.__ixGood = ed.editor.getSnapshot();
+    }, true);
   }
   function whenLimits(fn) {
     if (LIMITS.state === 'ready' || LIMITS.state === 'error') { fn(); return; }
