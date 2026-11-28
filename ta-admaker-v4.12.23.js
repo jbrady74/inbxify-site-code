@@ -1,6 +1,23 @@
-/* ta-admaker-v4.12.22.js
+/* ta-admaker-v4.12.23.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.23 (28 Nov 2026, Ad Maker Build S6, step 2) — OPEN JOBS ARE KEPT IN THIS BROWSER AND COME BACK ON A RELOAD. CSS v4.12.9.
+     Rulings (Jeff, 28 Nov): the jobs show in a second panel inside 02 In progress under In Canva (no mockup); open jobs
+     come back as tabs by themselves on the step they were on; a job untouched for 60 days goes to a Dormant panel and is
+     deleted 180 days later; one computer only for now (a store on the server is a later build). Words follow the ASF
+     Rethink rule of 28 Nov (an unfinished asset never goes into Webflow; Drafts, Finish, Discard draft).
+     · What is kept (IndexedDB 'ix-admaker-autosave'): every open job that has not reached Canva, about a second after
+       each change: customer, shape, sources (dropped files, the box drawn, read pictures), what Read found, word edits,
+       Set up choices, the step. Never the page-wide lists, never a passing state (reading, saving). A PDF document
+       object is not kept; its page picture is. Pictures are stored once and re-used by later saves.
+     · A job leaves the store when it reaches Canva (it then shows under In Canva), when it is saved, when its tab is
+       closed (the close question now says so), or on Discard draft.
+     · Task list: In Ad Maker (blue) and Dormant (grey) panels under In Canva, same rows as In Canva: picture, customer,
+       shape · at <step> · last worked on <date>, Finish this ad, Discard draft (asks first). The In progress count
+       includes In Ad Maker, not Dormant. Finish this ad on a dormant job reopens it and makes it active again.
+     · Only this page's publisher and title. A job stored with another format number shows "cannot be reopened".
+     HARDCODING: HC-P-AMS6-5 (60 / 180 days, database name, format 1), HC-P-AMS6-6 (AS_WORDS).
 
    v4.12.22 (27 Nov 2026, Ad Maker Build S6) — WITH SEND FOR APPROVAL PICKED, CHECK'S BUTTON READS "NEXT: SEE THE EMAIL". JS only.
      Jeff, 27 Nov (Test 1 passed): with Send for approval picked, the bottom button still said Save although it saves
@@ -1096,7 +1113,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.22', CSS_FILE = 'ta-admaker-v4.12.8.css';
+  var VERSION = '4.12.23', CSS_FILE = 'ta-admaker-v4.12.9.css';
   var NEEDS = 'needs ix-canva v0.3.5 or later · ix-sales v1.3.20 or later · ix-members v1.1.1 or later · ix-approval-mail v1.0.0 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -1285,6 +1302,7 @@
     doClose(j);
   }
   function doClose(j) {
+    if (j.asKey) asDel(j.asKey);   // v4.12.23: a closed tab is a discarded draft
     var i = JOBS.indexOf(j); if (i > -1) JOBS.splice(i, 1);
     if (j === S || i < 0) {
       var nxt = JOBS[Math.min(Math.max(i, 0), JOBS.length - 1)];
@@ -1297,7 +1315,7 @@
     ov.innerHTML = '<div class="ix-modal" role="dialog" aria-modal="true" aria-label="Close without saving?" style="max-width:480px">' +
       '<div class="ix-modal-banner ix-modal-banner--alert">Close without saving?</div>' +
       '<div class="ix-modal-body"><p style="margin:0 0 8px"><b>' + esc(tabName(j)) + '</b> has changes that are not saved: ' + esc(lost.join(', ')) + '.</p>' +
-      '<p style="margin:0">Closing throws them away. To keep them, go back and Save.</p></div>' +
+      '<p style="margin:0">Closing throws them away and takes the job off In Ad Maker on the Task list. To keep it, leave the tab open: it is kept in this browser.</p></div>' +
       '<div class="ix-modal-footer"><div class="ix-modal-footer-right">' +
       '<button type="button" class="ix-btn ix-btn--secondary" data-k="no">Keep working</button> ' +
       '<button type="button" class="ix-btn ix-btn--danger" data-k="yes">Close without saving</button></div></div></div>';
@@ -5414,7 +5432,7 @@
     A.board = IxAdsBoard.mount(host, { side: 'inbxify', view: A.tab === 'advs' ? 'advs' : 'tasks', title: '', api: adsApi, publisher: pub, who: { staff: true, email: '', name: '' }, info: null,
       onLoad: function (custs, ans) { adsBrand(custs); if (ans) { A.contact = ans.contact || null; A.you = ans.you || null; A.linkDays = ans.linkDays || 14; } adsDraftsLoad(custs); adsDeepReq(); },
       onAction: function (a) { adsAction(a); }, designUrl: adsDesignUrl, onDeleted: adsDeleted,   // v4.11.7
-      slot: function (st) { return st === 'wip' ? adsDraftsNode() : null; }, slotCount: function (st) { return st === 'wip' && A.drafts.list ? A.drafts.list.length : 0; } });   // v4.12.2
+      slot: function (st) { return st === 'wip' ? adsDraftsNode() : null; }, slotCount: function (st) { return st === 'wip' ? (A.drafts.list ? A.drafts.list.length : 0) + asActiveCount() : 0; } });   // v4.12.2
   }
   function adsDeepReq() {   // v4.12.0 · Quill's ?admaker=open&request=<id>: once, after the board's first read
     var id = A.deepReq; if (!id || !A.board || !A.board.findRequest) return; A.deepReq = '';
@@ -5506,11 +5524,191 @@
     }).catch(function (e) { D.loading = false; D.err = (e && e.message) || String(e); adsDraftsRender(); });
   }
   function adsDraftsNode() { if (!A.draftsEl) { A.draftsEl = document.createElement('div'); A.draftsEl.id = 'ta-ads-drafts'; } return A.draftsEl; }   // v4.12.2: kept across board renders
+  // ── v4.12.23 · AUTOSAVE OF OPEN JOBS (Ad Maker Build S6, step 2; rulings 28 Nov) ──────────────────────────────────
+  // An open job that has not reached Canva is kept in this browser (IndexedDB), never in Webflow (ASF Rethink rule,
+  // 28 Nov: an unfinished asset never goes into Webflow). It is saved a moment after each change. On a reload the
+  // jobs come back as tabs, on the step they were on, and they are listed on the Task list under In Ad Maker with
+  // Finish this ad and Discard draft. A job leaves the store when it reaches Canva (it then shows under In Canva),
+  // when it is saved, when its tab is closed, or on Discard draft. Untouched for 60 days it goes to Dormant (not
+  // reopened as a tab); 180 days after that it is deleted. One computer only (ruled 12 Nov and 28 Nov; a store on the
+  // server is a later build). HC-P-AMS6-5: the 60 / 180 days, the database name and the format number.
+  var AS = { fmt: 1, dbName: 'ix-admaker-autosave', activeDays: 60, dormantDays: 180, db: null, list: null, booted: false, timer: 0, ask: '', ids: new WeakMap(), seq: 0, restoring: false };
+  var AS_SKIP = { reading: 1, cleanBusy: 1, savingPieces: 1, saving: 1, drawing: 1, boxing: 1, improveErr: 1, err: 1 };   // passing states, never kept
+  var AS_WORDS = {   // HC-P-AMS6-6 · shared words (ASF Rethink, 28 Nov): Drafts, Finish, Discard draft
+    head: 'In Ad Maker', sub: 'not in Canva yet · kept in this browser', pill: 'In Ad Maker', dHead: 'Dormant', dSub: 'untouched for 60 days · deleted 180 days later', dPill: 'Dormant',
+    finish: 'Finish this ad', discard: 'Discard draft', ask: 'Discard this draft?', yes: 'Yes, discard', no: 'Keep it', gone: 'Draft discarded.',
+    line: '{shape} · at {step} · last worked on {on}', dLine: '{shape} · at {step} · last worked on {on} · deleted after {end}', noShape: 'No shape yet', old: 'Saved by an older Ad Maker; it cannot be reopened.',
+    noIdb: 'This browser cannot keep Ad Maker jobs (no IndexedDB), so a reload loses them.'
+  };
+  function asOpen() {
+    if (AS.db) return Promise.resolve(AS.db);
+    return new Promise(function (ok, bad) {
+      if (!window.indexedDB) { bad(new Error(AS_WORDS.noIdb)); return; }
+      var rq = indexedDB.open(AS.dbName, 1);
+      rq.onupgradeneeded = function () { var db = rq.result; if (!db.objectStoreNames.contains('jobs')) db.createObjectStore('jobs', { keyPath: 'key' }); if (!db.objectStoreNames.contains('blobs')) db.createObjectStore('blobs'); };
+      rq.onsuccess = function () { AS.db = rq.result; ok(AS.db); };
+      rq.onerror = function () { bad(rq.error || new Error('IndexedDB did not open.')); };
+    });
+  }
+  function asTx(stores, mode, fn) {
+    return asOpen().then(function (db) { return new Promise(function (ok, bad) { var t = db.transaction(stores, mode), out; t.oncomplete = function () { ok(out); }; t.onerror = t.onabort = function () { bad(t.error || new Error('IndexedDB write failed.')); }; out = fn(t); }); });
+  }
+  function asPage() { var c = CFG() || {}; return { pub: pagePublisher() || '', ta: c.taItemId || '' }; }
+  function asAllRecs() { return asTx(['jobs'], 'readonly', function (t) { var r = t.objectStore('jobs').getAll(), box = { v: [] }; r.onsuccess = function () { box.v = r.result || []; }; return box; }).then(function (b) { return b.v; }); }
+  // ── turning a job into storable data, and back ──
+  function asPlain(v) { if (!v || typeof v !== 'object') return false; var p = Object.getPrototypeOf(v); return p === Object.prototype || p === null; }
+  function asEnc(v, key, blobs, stack) {   // blobs: { fresh: [[id, thing]] new this save, refs: [ids] every picture this job uses }
+    if (v === null || v === undefined || typeof v === 'number' || typeof v === 'string' || typeof v === 'boolean') return v;
+    if (typeof v === 'function') return undefined;
+    if (v instanceof HTMLCanvasElement || (window.ImageBitmap && v instanceof ImageBitmap)) { var id = AS.ids.get(v); if (!id) { id = key + ':c' + Date.now().toString(36) + (++AS.seq); AS.ids.set(v, id); blobs.fresh.push([id, v]); } blobs.refs.push(id); return { __c: id }; }
+    if (v instanceof HTMLImageElement) {
+      if (/^https?:/i.test(v.src || '')) return { __i: v.src };
+      var cid = AS.ids.get(v); if (!cid) { cid = key + ':i' + Date.now().toString(36) + (++AS.seq); AS.ids.set(v, cid); blobs.fresh.push([cid, v]); } blobs.refs.push(cid); return { __im: cid };
+    }
+    if (v instanceof Blob) { var bid = AS.ids.get(v); if (!bid) { bid = key + ':b' + Date.now().toString(36) + (++AS.seq); AS.ids.set(v, bid); blobs.fresh.push([bid, v]); } blobs.refs.push(bid); return { __b: bid, n: v.name || '', t: v.type || '' }; }
+    if (Array.isArray(v)) { if (stack.indexOf(v) > -1) return undefined; stack.push(v); var a = v.map(function (x) { var e = asEnc(x, key, blobs, stack); return e === undefined ? null : e; }); stack.pop(); return a; }
+    if (!asPlain(v) || stack.indexOf(v) > -1) return undefined;   // class instances (a PDF document, a DOM node) are not kept
+    stack.push(v); var o = {}; Object.keys(v).forEach(function (k) { var e = asEnc(v[k], key, blobs, stack); if (e !== undefined) o[k] = e; }); stack.pop(); return o;
+  }
+  function asPng(src) {   // a canvas, bitmap or loaded picture as a PNG blob
+    return new Promise(function (ok) {
+      var c = src;
+      if (!(src instanceof HTMLCanvasElement)) { c = document.createElement('canvas'); c.width = src.naturalWidth || src.width || 1; c.height = src.naturalHeight || src.height || 1; try { c.getContext('2d').drawImage(src, 0, 0); } catch (e) { ok(null); return; } }
+      try { c.toBlob(function (b) { ok(b); }, 'image/png'); } catch (e) { ok(null); }   // a tainted canvas cannot be read: that picture is not kept
+    });
+  }
+  function asDec(v, blobs) {
+    if (v === null || typeof v !== 'object') return Promise.resolve(v);
+    if (Array.isArray(v)) return Promise.all(v.map(function (x) { return asDec(x, blobs); }));
+    if (v.__i) return asImg(v.__i);
+    if (v.__c || v.__im) { var b = blobs[v.__c || v.__im]; if (!b) return Promise.resolve(null); var u = URL.createObjectURL(b);
+      return asImg(u).then(function (img) { if (img && v.__im) AS.ids.set(img, v.__im); if (!img || v.__im) return img; var c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext('2d').drawImage(img, 0, 0); AS.ids.set(c, v.__c); return c; }); }
+    if (v.__b) { var bb = blobs[v.__b]; if (!bb) return Promise.resolve(null); var f = bb; try { if (v.n) f = new File([bb], v.n, { type: v.t || bb.type }); } catch (e) {} AS.ids.set(f, v.__b); return Promise.resolve(f); }
+    var ks = Object.keys(v), out = {};
+    return Promise.all(ks.map(function (k) { return asDec(v[k], blobs).then(function (d) { out[k] = d; }); })).then(function () { return out; });
+  }
+  function asImg(src) { return new Promise(function (ok) { var i = new Image(); i.crossOrigin = /^https?:/i.test(src) ? 'anonymous' : null; i.onload = function () { ok(i); }; i.onerror = function () { ok(null); }; i.src = src; }); }
+  // ── which jobs are kept ──
+  function asKeyOf(s) { if (!s.asKey) s.asKey = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); return s.asKey; }
+  function asWorth(s) { return !!(s && s.sel && (s.custId || (s.srcs && s.srcs.length) || s.shape)); }
+  function asPast(s) { return !!(s && ((s.canva && s.canva.job) || s.screen === 'canva' || s.screen === 'check' || s.screen === 'fixdone' || (s.saving && s.saving.done && !s.saving.err))); }   // reached Canva, or saved
+  function asSchedule() { if (AS.restoring) return; clearTimeout(AS.timer); AS.timer = setTimeout(function () { asSaveJob(S); }, 1200); }
+  function asSaveJob(s) {
+    if (!s || !s.sel || AS.restoring) return Promise.resolve();
+    if (asPast(s)) return s.asKey ? asDel(s.asKey) : Promise.resolve();
+    if (!asWorth(s)) return Promise.resolve();
+    if (busyWord(s) || (s.saving && !s.saving.done)) { asSchedule(); return Promise.resolve(); }   // wait until the job is quiet
+    var key = asKeyOf(s), blobs = { fresh: [], refs: [] }, data = {};
+    Object.keys(s).forEach(function (k) { if (SHARED_KEYS.indexOf(k) > -1 || AS_SKIP[k]) return; var e = asEnc(s[k], key, blobs, []); if (e !== undefined) data[k] = e; });
+    var c = withS(s, function () { return cust(); }), pg = asPage(), now = new Date().toISOString();
+    var pic = s.srcCanvas || s.verImg || null;
+    return Promise.all(blobs.fresh.map(function (p) { return p[1] instanceof Blob ? Promise.resolve([p[0], p[1]]) : asPng(p[1]).then(function (b) { return [p[0], b]; }); }))
+      .then(function (pairs) { return asThumb(pic).then(function (th) { return [pairs, th]; }); })
+      .then(function (r) {
+        var pairs = r[0].filter(function (p) { return p[1]; });
+        var rec = { key: key, fmt: AS.fmt, pub: pg.pub, ta: pg.ta, custId: s.custId || '', custName: c ? c.name : '', shape: s.shape || '', step: stepWordOf(s), savedAt: now, front: s === S, thumb: r[1] || '', blobIds: blobs.refs.filter(function (id, i, a) { return a.indexOf(id) === i; }), data: data };
+        return asTx(['jobs', 'blobs'], 'readwrite', function (t) {
+          var bs = t.objectStore('blobs'); pairs.forEach(function (p) { bs.put(p[1], p[0]); });
+          var js = t.objectStore('jobs'), g = js.get(key);
+          g.onsuccess = function () { var old = g.result; if (old && old.blobIds) old.blobIds.forEach(function (id) { if (rec.blobIds.indexOf(id) < 0) bs.delete(id); }); js.put(rec); };
+        }).then(function () { asListPut(rec); });
+      }).catch(function (e) { log('autosave', e && e.message); });
+  }
+  function asThumb(src) {
+    if (!src) return Promise.resolve('');
+    var w = src.naturalWidth || src.width, h = src.naturalHeight || src.height; if (!w || !h) return Promise.resolve('');
+    var k = Math.min(264 / w, 88 / h, 1), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+    try { c.getContext('2d').drawImage(src, 0, 0, c.width, c.height); return Promise.resolve(c.toDataURL('image/png')); } catch (e) { return Promise.resolve(''); }
+  }
+  function asDel(key) {
+    if (!key) return Promise.resolve();
+    asListDrop(key);
+    return asTx(['jobs', 'blobs'], 'readwrite', function (t) {
+      var js = t.objectStore('jobs'), bs = t.objectStore('blobs'), g = js.get(key);
+      g.onsuccess = function () { var r = g.result; if (r && r.blobIds) r.blobIds.forEach(function (id) { bs.delete(id); }); js.delete(key); };
+    }).catch(function (e) { log('autosave delete', e && e.message); });
+  }
+  // ── the Task list's view of the store (this page's publisher only) ──
+  function asAge(r) { return (Date.now() - new Date(r.savedAt).getTime()) / 86400000; }
+  function asDormant(r) { return asAge(r) > AS.activeDays; }
+  function asListPut(rec) { if (!AS.list) return; var m = Object.assign({}, rec); delete m.data; AS.list = AS.list.filter(function (x) { return x.key !== rec.key; }).concat([m]); adsDraftsRender(); }
+  function asListDrop(key) { if (!AS.list) return; AS.list = AS.list.filter(function (x) { return x.key !== key; }); adsDraftsRender(); }
+  // ── on page load: tidy the store, then bring the active jobs back as tabs ──
+  function asBoot() {
+    if (AS.booted) return; AS.booted = true;
+    var pg = asPage();
+    asAllRecs().then(function (recs) {
+      var mine = [];
+      recs.forEach(function (r) {
+        if (asAge(r) > AS.activeDays + AS.dormantDays) { asDel(r.key); return; }   // 60 days active, then 180 dormant
+        if (r.pub && pg.pub && r.pub !== pg.pub) return;   // another publisher's page
+        if (r.ta && pg.ta && r.ta !== pg.ta) return;
+        var m = Object.assign({}, r); delete m.data; mine.push(m);
+      });
+      AS.list = mine; adsDraftsRender(); if (A.board && A.board.rerender) A.board.rerender();
+      var reopen = recs.filter(function (r) { return mine.some(function (m) { return m.key === r.key; }) && !asDormant(r) && r.fmt === AS.fmt; });
+      reopen.sort(function (a, b) { return String(a.savedAt).localeCompare(String(b.savedAt)); });
+      return reopen.reduce(function (p, r) { return p.then(function () { return asRestore(r, false); }); }, Promise.resolve());
+    }).then(function () { if (mounted) render(); }).catch(function (e) { AS.list = AS.list || []; log('autosave boot', e && e.message); adsDraftsRender(); });
+  }
+  function asJobByKey(key) { for (var i = 0; i < JOBS.length; i++) if (JOBS[i].asKey === key) return JOBS[i]; return null; }
+  function asRestore(rec, toFront) {
+    if (asJobByKey(rec.key)) return Promise.resolve(asJobByKey(rec.key));
+    AS.restoring = true;
+    return asTx(['blobs'], 'readonly', function (t) { var bs = t.objectStore('blobs'), box = {}; (rec.blobIds || []).forEach(function (id) { var g = bs.get(id); g.onsuccess = function () { if (g.result) box[id] = g.result; }; }); return box; })
+      .then(function (blobs) { return asDec(rec.data || {}, blobs); })
+      .then(function (d) {
+        var keep = S; reset(); var j = S; S = keep;
+        Object.keys(d).forEach(function (k) { j[k] = d[k]; });
+        shareInto(j, S); j.asKey = rec.key; j.reading = false; j.saving = null;
+        if (j.canva) { j.canva.busy = false; j.canva.fetching = false; }
+        if (j.screen === 'read' && !j.read && !(j.srcs || []).some(function (r) { return r.snap; })) j.screen = 'start';   // a read that never finished: start again from Start
+        var m = /^new-(\d+)$/.exec(j.sel || ''); if (m) newN = Math.max(newN, +m[1]);
+        if (!S.sel && !JOBS.length) { S = j; JOBS.push(j); } else JOBS.push(j);
+        if (toFront || rec.front) { var prev = S; S = j; shareInto(S, prev); }
+        AS.restoring = false; return j;
+      }, function (e) { AS.restoring = false; throw e; });
+  }
+  // ── Task list actions ──
+  function asFinish(key) {
+    var r = (AS.list || []).filter(function (x) { return x.key === key; })[0]; if (!r) return;
+    if (r.fmt !== AS.fmt) { toast(AS_WORDS.old, 'err'); return; }
+    A.tab = 'maker'; adsShowTab();
+    var go = function (j) { if (!mount()) return; railOpen = false; switchTo(j); asSaveJob(j); };   // saving it again wakes a dormant job
+    var j = asJobByKey(key); if (j) { go(j); return; }
+    asAllRecs().then(function (recs) { var rec = recs.filter(function (x) { return x.key === key; })[0]; if (!rec) throw new Error('The draft is no longer in this browser.'); return asRestore(rec, true); })
+      .then(go).catch(function (e) { toast('The draft did not open: ' + ((e && e.message) || e), 'err'); });
+  }
+  function asDiscard(key) {
+    AS.ask = ''; var j = asJobByKey(key);
+    if (j) { doClose(j); }   // doClose deletes its draft too
+    asDel(key).then(function () { toast(AS_WORDS.gone, 'ok'); });
+  }
+  function asRowsHTML(list, dormant) {
+    var DW = AS_WORDS;
+    return list.map(function (r) {
+      var k = esc(r.key), old = r.fmt !== AS.fmt, end = new Date(new Date(r.savedAt).getTime() + (AS.activeDays + AS.dormantDays) * 86400000);
+      var line = old ? esc(DW.old) : esc(fillW(dormant ? DW.dLine : DW.line, { shape: r.shape ? shapeLabel(r.shape) : DW.noShape, step: r.step || 'Start', on: fmtDate(r.savedAt), end: fmtDate(end) }));
+      var acts = AS.ask === r.key ? '<span class="q">' + DW.ask + '</span><button type="button" class="ix-btn ix-btn--danger ta-ads-drbtn" data-ads="asDiscardYes" data-v="' + k + '">' + DW.yes + '</button><a href="#" class="ta-ads-drx" data-ads="asDiscardNo">' + DW.no + '</a>'
+        : (old ? '' : '<button type="button" class="ix-btn ix-btn--secondary ta-ads-drbtn" data-ads="asFinish" data-v="' + k + '">' + DW.finish + '</button>') + '<a href="#" class="ta-ads-drx" data-ads="asDiscard" data-v="' + k + '">' + DW.discard + '</a>';
+      return '<div class="ta-ads-drrow' + (AS.ask === r.key ? ' asking' : '') + '"><span class="tx"><span class="cu" title="' + esc(r.custName || '') + '">' + esc(r.custName || W.newC) + '</span><span class="l2">' + line + '</span></span>' +
+        '<span class="th">' + (r.thumb ? '<img src="' + esc(r.thumb) + '" alt="">' : '') + '</span><span class="pill">' + (dormant ? DW.dPill : DW.pill) + '</span><span class="ac">' + acts + '</span><span></span></div>';
+    }).join('');
+  }
+  function asPanelsHTML() {
+    var L = AS.list || [], act = L.filter(function (r) { return !asDormant(r); }), dor = L.filter(asDormant), DW = AS_WORDS, h = '';
+    var by = function (a, b) { return String(b.savedAt).localeCompare(String(a.savedAt)); }; act.sort(by); dor.sort(by);
+    if (act.length) h += '<div class="ta-ads-dr ta-ads-as"><div class="ta-ads-drh"><h3>' + DW.head + '</h3><span class="n">' + act.length + '</span><span class="s">' + DW.sub + '</span></div>' + asRowsHTML(act, false) + '</div>';
+    if (dor.length) h += '<div class="ta-ads-dr ta-ads-asd"><div class="ta-ads-drh"><h3>' + DW.dHead + '</h3><span class="n">' + dor.length + '</span><span class="s">' + DW.dSub + '</span></div>' + asRowsHTML(dor, true) + '</div>';
+    return h;
+  }
+  function asActiveCount() { return (AS.list || []).filter(function (r) { return !asDormant(r); }).length; }
+  window.addEventListener('pagehide', function () { if (S && S.sel) asSaveJob(S); });   // best effort on the way out
   function adsDraftsRender() {
     var host = adsDraftsNode();
-    var D = A.drafts, DW = DRAFT_WORDS, n = D.list ? D.list.length : 0;
-    if (n !== A.draftsN) { A.draftsN = n; if (A.board && A.board.rerender) setTimeout(function () { A.board.rerender(); }, 0); }   // the stage's count
-    if (!D.err && (!D.list || !n)) { host.innerHTML = ''; return; }   // nothing in Canva: the stage shows only its own rows
+    var D = A.drafts, DW = DRAFT_WORDS, n = D.list ? D.list.length : 0, nAll = n + asActiveCount();
+    if (nAll !== A.draftsN) { A.draftsN = nAll; if (A.board && A.board.rerender) setTimeout(function () { A.board.rerender(); }, 0); }   // the stage's count (v4.12.23: In Canva plus In Ad Maker)
+    if (!D.err && (!D.list || !n)) { host.innerHTML = asPanelsHTML(); return; }   // nothing in Canva: only the autosaved jobs, if any
     var h = '<div class="ta-ads-dr"><div class="ta-ads-drh"><h3>' + DW.head + '</h3>' + (D.list ? '<span class="n">' + n + '</span>' : '') + '<span class="s">' + DW.sub + '</span></div>';
     if (D.err) h += '<div class="am-err">' + esc(D.err) + '</div>';
     else if (!D.list) h += '<div class="ta-ads-drnone">' + (D.loading ? DW.loading : '') + '</div>';
@@ -5522,7 +5720,7 @@
       var line = esc(sh ? shapeLabel(sh) : DW.noShape) + ' \u00b7 ' + (d.copiedFrom ? esc(DW.copy) + ' \u00b7 ' : '') + esc(fillW(DW.worked, { on: fmtDate(d.canvaUpdated || d.updated) })) + ' \u00b7 ' + esc(d.exportedAt ? fillW(DW.back, { on: fmtDate(d.exportedAt) }) : DW.notBack) + (!d.thumb && !d.hasPng ? ' \u00b7 <span class="np">' + esc(d.thumbError ? DW.noPic + ': ' + d.thumbError : DW.noPicYet) + '</span>' : '');   // v4.12.16: one line under the name
       return '<div class="ta-ads-drrow' + (D.ask === d.designId ? ' asking' : '') + '"><span class="tx"><span class="cu" title="' + esc(d.customer.name) + '">' + esc(d.customer.name) + '</span><span class="l2" title="' + esc(d.title || '') + '">' + line + '</span></span>' +
         '<span class="th">' + (d.hasPng ? '<img data-drpng="' + esc(d.designId) + '" alt=""' + (A.drPng[d.designId + '|' + d.exportedAt] ? ' src="' + A.drPng[d.designId + '|' + d.exportedAt] + '"' : '') + '>' : d.thumb ? '<img src="' + esc(d.thumb) + '" alt="" loading="lazy">' : '') + '</span><span class="pill">' + esc(DW.pill) + '</span><span class="ac">' + acts + '</span><span class="sp"></span></div>'; }).join('');
-    host.innerHTML = h + '</div>';
+    host.innerHTML = h + '</div>' + asPanelsHTML();   // v4.12.23: In Ad Maker and Dormant under In Canva
     adsDraftPngs();
   }
   // v4.12.20 · the row's picture is the design as it last came back from Canva (ix-canva v0.3.5 GET /draft/png), not Canva's
@@ -5567,6 +5765,10 @@
       if (fromNew && A.tab === 'maker') setTimeout(function () { if (mount()) openJob({ id: 'new-' + (++newN), custId: '' }); }, 0);   // v4.12.9: the Ad Maker tile starts an ad
       return; }
     if (k === 'drEdit' || k === 'drCheck') { adsDraftOpen(t.getAttribute('data-v'), k === 'drCheck' ? 'check' : 'edit'); return; }   // v4.11.3
+    if (k === 'asFinish') { asFinish(t.getAttribute('data-v')); return; }   // v4.12.23
+    if (k === 'asDiscard') { AS.ask = t.getAttribute('data-v'); adsDraftsRender(); return; }
+    if (k === 'asDiscardNo') { AS.ask = ''; adsDraftsRender(); return; }
+    if (k === 'asDiscardYes') { asDiscard(t.getAttribute('data-v')); return; }
     if (k === 'drRemove') { A.drafts.ask = t.getAttribute('data-v'); adsDraftsRender(); return; }
     if (k === 'drRemoveNo') { A.drafts.ask = ''; adsDraftsRender(); return; }
     if (k === 'drRemoveYes') { adsDraftRemove(t.getAttribute('data-v')); return; }
@@ -5576,7 +5778,7 @@
   function adsMount() {
     var el = adsEl(); if (!el) return false;
     if (A.mounted) { adsShowTab(); return true; }
-    A.mounted = true; A.pubId = adsPublisher().id;
+    A.mounted = true; A.pubId = adsPublisher().id; setTimeout(asBoot, 0);   // v4.12.23
     el.addEventListener('click', adsOnClick);
     var q = {}; try { new URLSearchParams(location.search).forEach(function (v, k) { q[k] = v; }); } catch (e) {}
     if (q.admaker === 'open') A.tab = /^[0-9a-f]{24}$/.test(q.request || '') ? 'all' : 'maker';   // Quill's deep link opens Ad Maker (v4.12.0: a request waits for the board first)
@@ -5635,6 +5837,7 @@
     var v = { start: vStart, read: vRead, clean: vClean, improvewait: vImproveWait, drafts: vPick, make: vPick, pick: vPick, finetune: vMake, tune: vMake, fix: vTune, save: vSave, setup: vSetup, canva: vCanva, check: vCheck }[S.screen] || vStart;   // v4.11.0: the Canva screens   // v3.0.0 · v4.2.0: clean
     if (S.screen === 'fix' && S.reading) { shell(colh(W.fixing) + '<div class="am-prog"><b>Rebuilding the version from its recipe</b><div class="bar"><i></i></div></div>', '<div class="am-msg"></div><div class="am-grow"></div>' + ghost('startCancel', W.cancel)); return; }
     v();
+    if (S.sel) asSchedule();   // v4.12.23: autosave
     Object.keys(keep).forEach(function (k) { var el = document.querySelector('#' + MOUNT_ID + ' .am-col.' + k); if (el && keep[k]) el.scrollTop = keep[k]; });
     if (S.screen === 'start' && (S.src === 'drop' || S.src === 'paste' || S.srcChip === 'upload') && !S.drop) wireDrop();
   }
@@ -6158,6 +6361,7 @@
     if (miss.length) { m.innerHTML = '<div class="am"><div class="am-head"><h2>' + W.title + '</h2>' + badge() + '</div><div class="am-body"><div class="am-err">' + esc(miss.join(' ')) + '</div></div></div>'; return true; }
     render();
     Promise.all([loadNeeds(), loadAds(), loadMedia()]).then(function () { render(); });
+    asBoot();   // v4.12.23
     log('mounted');
     return true;
   }
