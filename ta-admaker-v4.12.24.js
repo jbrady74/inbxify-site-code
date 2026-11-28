@@ -1,6 +1,17 @@
-/* ta-admaker-v4.12.23.js
+/* ta-admaker-v4.12.24.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.24 (28 Nov 2026, Ad Maker Build S6) — ONE TAB PER CANVA DESIGN; A SAVE THAT FINISHES LATE CANNOT BRING A JOB BACK. JS only.
+     Found in Test 4 (Bfree Boutique): two "Bfree Boutique · banner" tabs. Two causes, both fixed:
+     · Finish this ad / Edit in Canva on an In Canva row always opened a new tab, even when the job that sent that design
+       to Canva was still open. It now goes to the open tab holding that Canva design and carries on there.
+     · Ruled 28 Nov: the In Canva row's "Remove from list" is now "Discard draft" (the shared word, ASF Rethink rule of
+       28 Nov). Its question keeps both choices: "Discard and delete in Canva" (opens the design to trash) and "Only take it
+       off this list" (the design stays in the customer's Canva folder).
+     · Autosave: a save still writing when the job reached Canva could land after the job was taken off the store and put
+       it back. A job taken off is now marked, and a late save for it is dropped. If the job goes back to before Canva,
+       it is kept again under a new key.
 
    v4.12.23 (28 Nov 2026, Ad Maker Build S6, step 2) — OPEN JOBS ARE KEPT IN THIS BROWSER AND COME BACK ON A RELOAD. CSS v4.12.9.
      Rulings (Jeff, 28 Nov): the jobs show in a second panel inside 02 In progress under In Canva (no mockup); open jobs
@@ -1113,7 +1124,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.23', CSS_FILE = 'ta-admaker-v4.12.9.css';
+  var VERSION = '4.12.24', CSS_FILE = 'ta-admaker-v4.12.9.css';
   var NEEDS = 'needs ix-canva v0.3.5 or later · ix-sales v1.3.20 or later · ix-members v1.1.1 or later · ix-approval-mail v1.0.0 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -5485,8 +5496,8 @@
   var CANVA_DESIGN_URL = 'https://www.canva.com/design/{id}/edit';   // HC-P-AMS3-8 · Canva's own address for a design (v4.11.6)
   var DRAFT_WORDS = {   // HC-P-AMS3-6
     head: 'In Canva', sub: 'not saved to the site yet', pill: 'In Canva', none: 'No drafts in Canva.', loading: 'Reading the drafts from Canva…',
-    edit: 'Edit in Canva', check: 'Finish this ad', remove: 'Remove from list', removeAsk: 'Take it off this list?', yes: 'Yes, remove', yesNote: 'the design stays in Canva', del: 'Remove and delete in Canva', delNote: 'opens the design; use File > Move to trash', no: 'cancel',
-    removed: 'Taken off the list. The design is still in Canva.', removedDel: 'Taken off the list. The design is open in Canva: use File > Move to trash to delete it.', blocked: 'The browser blocked the Canva tab. The row is still on the list.',
+    edit: 'Edit in Canva', check: 'Finish this ad', remove: 'Discard draft', removeAsk: 'Discard this draft?', yes: 'Only take it off this list', yesNote: 'the design stays in the customer’s Canva folder', del: 'Discard and delete in Canva', delNote: 'opens the design; use File > Move to trash', no: 'Keep it',
+    removed: 'Draft taken off the list. The design is still in Canva.', removedDel: 'Draft discarded. The design is open in Canva: use File > Move to trash to delete it.', blocked: 'The browser blocked the Canva tab. The row is still on the list.',
     noPic: 'No picture from Canva', noPicYet: 'Canva has no picture of it yet', worked: 'Worked on {on}', notBack: 'not brought back yet', back: 'brought back {on}', copy: 'A copy of an approved ad', noShape: 'Shape not recorded'
   };
   // v4.11.7 · what the board's Delete needs from this page
@@ -5532,7 +5543,7 @@
   // when it is saved, when its tab is closed, or on Discard draft. Untouched for 60 days it goes to Dormant (not
   // reopened as a tab); 180 days after that it is deleted. One computer only (ruled 12 Nov and 28 Nov; a store on the
   // server is a later build). HC-P-AMS6-5: the 60 / 180 days, the database name and the format number.
-  var AS = { fmt: 1, dbName: 'ix-admaker-autosave', activeDays: 60, dormantDays: 180, db: null, list: null, booted: false, timer: 0, ask: '', ids: new WeakMap(), seq: 0, restoring: false };
+  var AS = { gone: {}, fmt: 1, dbName: 'ix-admaker-autosave', activeDays: 60, dormantDays: 180, db: null, list: null, booted: false, timer: 0, ask: '', ids: new WeakMap(), seq: 0, restoring: false };
   var AS_SKIP = { reading: 1, cleanBusy: 1, savingPieces: 1, saving: 1, drawing: 1, boxing: 1, improveErr: 1, err: 1 };   // passing states, never kept
   var AS_WORDS = {   // HC-P-AMS6-6 · shared words (ASF Rethink, 28 Nov): Drafts, Finish, Discard draft
     head: 'In Ad Maker', sub: 'not in Canva yet · kept in this browser', pill: 'In Ad Maker', dHead: 'Dormant', dSub: 'untouched for 60 days · deleted 180 days later', dPill: 'Dormant',
@@ -5596,6 +5607,7 @@
   function asSaveJob(s) {
     if (!s || !s.sel || AS.restoring) return Promise.resolve();
     if (asPast(s)) return s.asKey ? asDel(s.asKey) : Promise.resolve();
+    if (s.asKey && AS.gone[s.asKey]) s.asKey = '';   // v4.12.24: taken off earlier, back before Canva: a new key
     if (!asWorth(s)) return Promise.resolve();
     if (busyWord(s) || (s.saving && !s.saving.done)) { asSchedule(); return Promise.resolve(); }   // wait until the job is quiet
     var key = asKeyOf(s), blobs = { fresh: [], refs: [] }, data = {};
@@ -5605,6 +5617,7 @@
     return Promise.all(blobs.fresh.map(function (p) { return p[1] instanceof Blob ? Promise.resolve([p[0], p[1]]) : asPng(p[1]).then(function (b) { return [p[0], b]; }); }))
       .then(function (pairs) { return asThumb(pic).then(function (th) { return [pairs, th]; }); })
       .then(function (r) {
+        if (AS.gone[key] || asPast(s)) return;   // v4.12.24: taken off (or reached Canva) while this save was being made
         var pairs = r[0].filter(function (p) { return p[1]; });
         var rec = { key: key, fmt: AS.fmt, pub: pg.pub, ta: pg.ta, custId: s.custId || '', custName: c ? c.name : '', shape: s.shape || '', step: stepWordOf(s), savedAt: now, front: s === S, thumb: r[1] || '', blobIds: blobs.refs.filter(function (id, i, a) { return a.indexOf(id) === i; }), data: data };
         return asTx(['jobs', 'blobs'], 'readwrite', function (t) {
@@ -5622,7 +5635,7 @@
   }
   function asDel(key) {
     if (!key) return Promise.resolve();
-    asListDrop(key);
+    AS.gone[key] = 1; asListDrop(key);   // v4.12.24
     return asTx(['jobs', 'blobs'], 'readwrite', function (t) {
       var js = t.objectStore('jobs'), bs = t.objectStore('blobs'), g = js.get(key);
       g.onsuccess = function () { var r = g.result; if (r && r.blobIds) r.blobIds.forEach(function (id) { bs.delete(id); }); js.delete(key); };
@@ -5745,6 +5758,8 @@
     var c = custById(d.customer.id); if (!c) { toast(d.customer.name + ' is not one of this page’s customers.', 'err'); return; }
     var sh = d.shape || 'banner';
     A.tab = 'maker'; adsShowTab();
+    var open = JOBS.filter(function (j) { return j.canva && j.canva.job && j.canva.job.designId === d.designId; })[0];   // v4.12.24: the tab that already holds this design
+    if (open && mount()) { switchTo(open); if (S === open) { S.shape = sh; S.mode = 'canva'; canvaEditAgain(null, { designId: d.designId, shape: sh }, { noTab: mode === 'check' }); } return; }
     var it = { kind: 'needed', id: 'draft-' + d.designId, custId: c.id, shape: sh, title: c.name, what: shapeLabel(sh), m: 'Draft in Canva', q: '', coming: false };
     openJob(it, function () { S.shape = sh; S.mode = 'canva'; S.srcs = []; canvaEditAgain(null, { designId: d.designId, shape: sh }, { noTab: mode === 'check' }); });
   }
