@@ -1,6 +1,11 @@
-/* ta-admaker-v4.12.24.js
+/* ta-admaker-v4.12.25.js
    ════════════════════════════════════════════════════════════════
    INBXIFY TA Studio — AD MAKER (sub-tab)
+
+   v4.12.25 (28 Nov 2026, Ad Maker Build S6) — THE IN CANVA LIST IS READ AGAIN EACH TIME THE TASK LIST OPENS. JS only.
+     Found in Test 5: a design just sent to Canva did not show under In Canva when Jeff clicked TASK LIST; the list was
+     read only when the Ads page loaded or on Refresh. Opening the TASK LIST tab now reads it again (ix-canva /drafts),
+     keeping the rows already shown until the new list arrives.
 
    v4.12.24 (28 Nov 2026, Ad Maker Build S6) — ONE TAB PER CANVA DESIGN; A SAVE THAT FINISHES LATE CANNOT BRING A JOB BACK. JS only.
      Found in Test 4 (Bfree Boutique): two "Bfree Boutique · banner" tabs. Two causes, both fixed:
@@ -1124,7 +1129,7 @@
    ════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var VERSION = '4.12.24', CSS_FILE = 'ta-admaker-v4.12.9.css';
+  var VERSION = '4.12.25', CSS_FILE = 'ta-admaker-v4.12.9.css';
   var NEEDS = 'needs ix-canva v0.3.5 or later · ix-sales v1.3.20 or later · ix-members v1.1.1 or later · ix-approval-mail v1.0.0 or later';   // HC-P-AMS3-12   // v4.11.0: the Ads tab and the Canva screens
   var BOARD_RETRY_MS = [6000, 12000];   // v4.10.5, HC-P-AM105-1: waits before asking again for a board Webflow refused (429)
   var RB_GROW1 = 1.5, RB_GROWN = 1.25, RB_GROWW = 1.08, BASE_KEEP = 15;   // HC-P-SSB8-26
@@ -5424,6 +5429,7 @@
   function adsShowTab() {
     var el = adsEl(); if (!el) return;
     if (A.tab === 'maker' && A.lastTab && A.lastTab !== 'maker') A.prevTab = A.lastTab; else if (A.tab !== 'maker') A.prevTab = '';   // v4.12.12: Back on Start returns here
+    if (A.tab === 'all' && A.lastTab !== 'all' && A.draftCusts && !A.drafts.loading) adsDraftsLoad(A.draftCusts);   // v4.12.25: In Canva read again on each visit (tab click, Back, Back to Task list)
     A.lastTab = A.tab;
     el.querySelectorAll('.ta-ads-pane').forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== A.tab; });
     el.querySelectorAll('.ta-ads-strip .ix-tab-l1').forEach(function (b) { var on = b.getAttribute('data-v') === A.tab; b.classList.toggle('is-active', on); b.setAttribute('aria-selected', on); });
@@ -5441,7 +5447,7 @@
     var pub = adsPublisher();
     if (!pub.id) { host.innerHTML = '<div class="am-err">This page names no publisher (TA_CONFIG.publisherId or #title-admin-id data-pub), so the ads cannot be read.</div>'; return; }
     A.board = IxAdsBoard.mount(host, { side: 'inbxify', view: A.tab === 'advs' ? 'advs' : 'tasks', title: '', api: adsApi, publisher: pub, who: { staff: true, email: '', name: '' }, info: null,
-      onLoad: function (custs, ans) { adsBrand(custs); if (ans) { A.contact = ans.contact || null; A.you = ans.you || null; A.linkDays = ans.linkDays || 14; } adsDraftsLoad(custs); adsDeepReq(); },
+      onLoad: function (custs, ans) { A.draftCusts = custs; adsBrand(custs); if (ans) { A.contact = ans.contact || null; A.you = ans.you || null; A.linkDays = ans.linkDays || 14; } adsDraftsLoad(custs); adsDeepReq(); },
       onAction: function (a) { adsAction(a); }, designUrl: adsDesignUrl, onDeleted: adsDeleted,   // v4.11.7
       slot: function (st) { return st === 'wip' ? adsDraftsNode() : null; }, slotCount: function (st) { return st === 'wip' ? (A.drafts.list ? A.drafts.list.length : 0) + asActiveCount() : 0; } });   // v4.12.2
   }
