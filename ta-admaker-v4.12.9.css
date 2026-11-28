@@ -1,4 +1,4 @@
-/* ta-admaker-v4.12.8.css */
+/* ta-admaker-v4.12.9.css */
 /* v4.12.8 CSS (27 Nov 2026, Ad Maker Build S5): "Remove from list" on an IN CANVA row and the "cancel" beside its question were drawn in the page's serif link font; they now use the body font (Sen) like every other word on the row. Nothing else changed. */
 /* v4.12.7 CSS (27 Nov 2026, preview v4.12.6 corrected: the panel bleeds 14px each side so the customer names sit on the task rows' left line, and the grid gap is 10px like the task rows so the buttons end on the same line) (27 Nov 2026, Ad Maker Build S5): the IN CANVA drafts get their own panel at the top of In progress (Jeff: "it gets lost"). Tinted panel with a purple rule down its left side; heading "In Canva · not saved to the site yet" with a count, at row-title size; rows shaped like the task rows below (name on the same left line, one muted line under it, picture to the right, a fixed purple "In Canva" pill, buttons lined up with the task rows' buttons). The older .ta-ads-dr rules are replaced by the block at the end. */
 /* v4.12.5 CSS (27 Nov 2026, Ad Maker Build S5): a ticked tile fills its circle. Jeff: on Set up, the Logo tile had the gold trim (ticked) but an empty circle. The circle was filled ink with a white tick, but a page rule turned its background white, so the white tick vanished. The ticked circle now holds ink, with the white tick, over any page rule. Checked on the live page: ticked circle rgb(30,42,58), unticked stays white. Nothing else changed. */
@@ -1161,3 +1161,14 @@ textarea.am-mailin, section.publisher-wrapper textarea.am-mailin { min-height: 1
 .ta-ads-drx { font-size: var(--ix-fs-12); color: var(--ps-muted); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
 @media (max-width: 1180px) { .ta-ads-drrow, section.publisher-wrapper .ta-ads-drrow { grid-template-columns: minmax(0,1fr) 96px 96px auto 26px; } .ta-ads-drrow .th { width: 96px; } }
 .ta-ads-drx, section.publisher-wrapper .ta-ads-drx { font-family: var(--ix-font-body) !important; font-weight: 400; }   /* v4.12.8 */
+
+/* v4.12.9 CSS (28 Nov 2026, Ad Maker Build S6, step 2): autosaved jobs on the Task list, under In Canva inside 02 In progress.
+   Same panel and row anatomy as In Canva (same grid, so names, pictures, pills and buttons line up across the three panels);
+   In Ad Maker has a blue rule and pill, Dormant a grey one. Buttons stay 128 px; Discard draft is the row's text link. */
+.ta-ads-dr.ta-ads-as, section.publisher-wrapper .ta-ads-dr.ta-ads-as { box-shadow: inset 3px 0 0 var(--ps-blue-text); }
+.ta-ads-as .ta-ads-drh .n, section.publisher-wrapper .ta-ads-as .ta-ads-drh .n { background: var(--ps-blue-text) !important; }
+.ta-ads-as .ta-ads-drrow .pill, section.publisher-wrapper .ta-ads-as .ta-ads-drrow .pill { background: var(--ps-blue-text) !important; }
+.ta-ads-dr.ta-ads-asd, section.publisher-wrapper .ta-ads-dr.ta-ads-asd { box-shadow: inset 3px 0 0 var(--ps-muted); }
+.ta-ads-asd .ta-ads-drh .n, section.publisher-wrapper .ta-ads-asd .ta-ads-drh .n { background: var(--ps-muted) !important; }
+.ta-ads-asd .ta-ads-drrow .pill, section.publisher-wrapper .ta-ads-asd .ta-ads-drrow .pill { background: var(--ps-muted) !important; }
+.ta-ads-asd .ta-ads-drrow .cu, .ta-ads-asd .ta-ads-drrow .th img { opacity: 0.75; }
