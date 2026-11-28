@@ -1,0 +1,11 @@
+{
+  "about": "Platform caps that are tighter than Webflow's own limit, applied by tools/build-field-limits.mjs on every rebuild (HC-P-A1-14). Each one was ruled by Jeff; none is invented here.",
+  "types": {
+    "article": {
+      "name": {
+        "limit": 60,
+        "why": "Headline: 60 characters, confirmed by Jeff (ta-asf CFG.limits.title, v1.0.3). Webflow allows 256."
+      }
+    }
+  }
+}

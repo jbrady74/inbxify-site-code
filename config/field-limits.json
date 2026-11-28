@@ -19,11 +19,12 @@
           "slug": "name",
           "label": "🟠 Article Title",
           "type": "PlainText",
-          "limit": 256,
+          "limit": 60,
           "rich": false,
           "required": true,
-          "enforce": false,
-          "why": "P16: Article Name has no limit enforced"
+          "why": "Headline: 60 characters, confirmed by Jeff (ta-asf CFG.limits.title, v1.0.3). Webflow allows 256.",
+          "webflowLimit": 256,
+          "source": "platform"
         },
         {
           "slug": "post-body",
